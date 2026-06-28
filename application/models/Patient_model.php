@@ -147,6 +147,14 @@ class Patient_model extends MY_Model
             $this->db->insert('patients', $data);
            
             $insert_id = $this->db->insert_id();
+            $setting = $this->db->select('uhid_prefix')->get('sch_settings')->row();
+            $prefix  = !empty($setting->uhid_prefix) ? strtoupper($setting->uhid_prefix) : 'AHID';
+            $uhid    = $prefix . str_pad($insert_id, 6, '0', STR_PAD_LEFT);
+            if (strlen($uhid) > 12) {
+                $this->db->trans_rollback();
+                return false;
+            }
+            $this->db->where('id', $insert_id)->update('patients', array('patient_unique_id' => $uhid));
             $message   = INSERT_RECORD_CONSTANT . " On Patient id " . $insert_id;
             $action    = "Insert";
             $record_id = $insert_id;

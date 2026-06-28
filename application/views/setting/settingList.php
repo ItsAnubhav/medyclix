@@ -380,6 +380,18 @@ $genderList = $this->customlib->getGender();
                                     </div>                                    
                                 </div>
                                     <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group row">
+                                            <label class="col-sm-5">UHID Prefix<small class="req"> *</small></label>
+                                            <div class="col-sm-7">
+                                                <input type="text" class="form-control text-uppercase" name="uhid_prefix" maxlength="4" pattern="[A-Za-z]{4}" value="<?php echo !empty($settinglist->uhid_prefix) ? $settinglist->uhid_prefix : 'AHID'; ?>" required>
+                                                <span class="text-danger"><?php echo form_error('uhid_prefix'); ?></span>
+                                                <small class="text-muted">Four letters, e.g. AHID. Generated UHID: AHID000001.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-md-12">
                                         <div class="settinghr"></div>
                                         <h4 class="session-head"><?php echo $this->lang->line('file_upload_path'); ?></h4>

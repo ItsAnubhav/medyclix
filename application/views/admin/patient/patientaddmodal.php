@@ -17,11 +17,24 @@ $marital_status = $this->config->item('marital_status');
                             <div class="row row-eq">
                                 <div class="col-lg-12 col-md-12 col-sm-12">
                                     <div class="row">
-                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                        <div class="col-lg-4 col-md-4 col-sm-6">
                                             <div class="form-group">
-                                                <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
-                                                <input id="name" name="name" placeholder="" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
-                                                <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                                <label><?php echo $this->lang->line('staff_first_name'); ?></label><small class="req"> *</small>
+                                                <input id="first_name" name="first_name" placeholder="" type="text" class="form-control" value="<?php echo set_value('first_name'); ?>" />
+                                                <span class="text-danger"><?php echo form_error('first_name'); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4 col-md-4 col-sm-6">
+                                            <div class="form-group">
+                                                <label>Middle Name</label>
+                                                <input id="middle_name" name="middle_name" placeholder="" type="text" class="form-control" value="<?php echo set_value('middle_name'); ?>" />
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4 col-md-4 col-sm-6">
+                                            <div class="form-group">
+                                                <label><?php echo $this->lang->line('staff_last_name'); ?></label><small class="req"> *</small>
+                                                <input id="last_name" name="last_name" placeholder="" type="text" class="form-control" value="<?php echo set_value('last_name'); ?>" />
+                                                <span class="text-danger"><?php echo form_error('last_name'); ?></span>
                                             </div>
                                         </div>
                                         <div class="col-lg-6 col-md-6 col-sm-6">

@@ -907,7 +907,9 @@ This Function is used to Add Patient
 
         $this->form_validation->set_rules('email', $this->lang->line('email'), 'trim|valid_email|xss_clean');
         $this->form_validation->set_rules('mobileno', $this->lang->line('phone'), 'trim|numeric|xss_clean');
-        $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('first_name', $this->lang->line('staff_first_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('middle_name', 'Middle Name', 'trim|xss_clean');
+        $this->form_validation->set_rules('last_name', $this->lang->line('staff_last_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('age[year]', $this->lang->line('year'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[month]', $this->lang->line('month'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[day]', $this->lang->line('day'), 'trim|required|xss_clean|numeric');
@@ -916,7 +918,9 @@ This Function is used to Add Patient
         if ($this->form_validation->run() == false) {
 
             $msg = array(
-                'name'       => form_error('name'),
+                'first_name' => form_error('first_name'),
+                'middle_name'=> form_error('middle_name'),
+                'last_name'  => form_error('last_name'),
                 'age'        => form_error('age'),
                 'age[year]'  => form_error('age[year]'),
                 'age[month]' => form_error('age[month]'),
@@ -1009,8 +1013,16 @@ This Function is used to Add Patient
                 $organisation_id = null;
             }
 			
+            $first_name   = trim($this->input->post('first_name'));
+            $middle_name  = trim($this->input->post('middle_name'));
+            $last_name    = trim($this->input->post('last_name'));
+            $patient_name = implode(' ', array_filter(array($first_name, $middle_name, $last_name), 'strlen'));
+
             $patient_data = array(
-                'patient_name'          => $this->input->post('name'),
+                'first_name'            => $first_name,
+                'middle_name'           => $middle_name !== '' ? $middle_name : null,
+                'last_name'             => $last_name,
+                'patient_name'          => $patient_name,
                 'mobileno'              => $this->input->post('mobileno'),
                 'marital_status'        => $this->input->post('marital_status'),
                 'email'                 => $this->input->post('email'),

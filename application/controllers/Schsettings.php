@@ -218,6 +218,7 @@ class Schsettings extends Admin_Controller
         $this->form_validation->set_rules('superadmin_restriction_mode', $this->lang->line('superadmin_restriction_mode'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('base_url', $this->lang->line('base_url'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('folder_path', $this->lang->line('file_upload_path'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('uhid_prefix', 'UHID Prefix', 'trim|required|alpha|exact_length[4]|strtoupper|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data = array(
@@ -237,6 +238,7 @@ class Schsettings extends Admin_Controller
                 'superadmin_restriction_mode' => form_error('superadmin_restriction_mode'),
                 'base_url'                    => form_error('base_url'),
                 'folder_path'                 => form_error('folder_path'),
+                'uhid_prefix'                 => form_error('uhid_prefix'),
             );
             $array = array('status' => 'fail', 'error' => $data);
             echo json_encode($array);
@@ -263,6 +265,7 @@ class Schsettings extends Admin_Controller
                 'mobile_api_url'           => $this->input->post('mobile_api_url'),
                 'patient_panel'            => $this->input->post('patient_panel'),
                 'scan_code_type'           => $this->input->post('scan_code_type'),
+                'uhid_prefix'              => strtoupper($this->input->post('uhid_prefix')),
                 'base_url'                 => $this->input->post('base_url'),
                 'folder_path'              => $this->input->post('folder_path'),
 

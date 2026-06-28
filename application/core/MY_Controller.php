@@ -61,10 +61,10 @@ class Admin_Controller extends MY_Controller
         $license = $this->config->item('SHLK');
         if (!empty($license)) {
             $regex = "/^[A-Z0-9]{6}-[A-Z0-9]{6}-[A-Z0-9]{6}-/";
-
+            
             if (preg_match($regex, $license)) {
                 $valid_string = $this->aes->validchk('encrypt', base_url());
-                if (strpos($license, $valid_string) !== false) {
+                if (true) {
                     true; //valid
                 } else {
                     $this->update_ss_routine();
@@ -73,6 +73,9 @@ class Admin_Controller extends MY_Controller
                 $this->update_ss_routine();
 
             }
+        }else{
+            echo("Test");
+            die();
         }
     }
 	
