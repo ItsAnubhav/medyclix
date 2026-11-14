@@ -206,7 +206,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             </td>
                         </tr>  
                         <tr>
-                            <th width="50%"><?php echo $this->lang->line('net_payable') . " " . $this->lang->line('amount') . " (" . $status . ")" ?></th> 
+                            <th width="50%"><?php echo $this->lang->line('net_payable') . " " . $this->lang->line('amount'); ?></th> 
                             <td class="text-end"><?php
                                 if (empty($billstatus['net_amount'])) {
                                     echo  number_format($gross_total - $paid_amount, 2);
@@ -217,6 +217,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         </tr>
                     </table>
                     <div class="divider mt-10 mb-10"></div>
+                    <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
                     <div class="footer-fixed"> 
                         <?php if (!empty($print_details[0]['print_footer'])) { ?>    
                             <p class="ptt10"><?php echo $print_details[0]['print_footer']; ?></p>

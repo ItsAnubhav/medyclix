@@ -159,11 +159,13 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                             <td class="sh-text-right"><?php echo $currency_symbol . amountFormat((float)((!empty($result['tax']) || $result['tax'] == 0) ? $result['tax'] : $tax)); ?></td>
                         </tr>
                         <tr class="sh-row-total">
-                            <td><?php echo $this->lang->line('net_payable') . ' ' . $this->lang->line('amount') . ' (' . $status . ')'; ?></td>
+                            <td><?php echo $this->lang->line('net_payable') . ' ' . $this->lang->line('amount'); ?></td>
                             <td><?php echo $currency_symbol . amountFormat((float)(empty($result['net_amount']) ? ($total - $paid_amount) : $result['net_amount'])); ?></td>
                         </tr>
                     </tbody>
                 </table>
+
+                <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
 
             </div>
             </div>

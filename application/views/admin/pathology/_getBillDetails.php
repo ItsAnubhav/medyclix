@@ -54,8 +54,8 @@ $tax_amt   = 0;
                                 <td><?php echo ($result->gender ? $this->lang->line(strtolower($result->gender)) : '-'); ?></td>
                             </tr>
                             <tr>
-                                <th><?php echo $this->lang->line('case_id'); ?></th>
-                                <td><?php echo ($result->case_reference_id ?: '-'); ?></td>
+                                <th><?php echo $this->lang->line('uhid'); ?></th>
+                                <td><?php echo (!empty($result->uhid) ? html_escape($result->uhid) : '-'); ?></td>
                             </tr>
                             <?php if (!empty($prescription)) { ?>
                             <tr>
@@ -70,18 +70,6 @@ $tax_amt   = 0;
                             <tr>
                                 <th><?php echo $this->lang->line('reporting_date'); ?></th>
                                 <td><?php echo ($result->date ? $this->customlib->YYYYMMDDHisTodateFormat($result->date) : '-'); ?></td>
-                            </tr>
-                            <tr>
-                                <th><?php echo $this->lang->line('paid_amount'); ?></th>
-                                <td><?php echo $currency_symbol . amountFormat($result->total_deposit); ?></td>
-                            </tr>
-                            <tr>
-                                <th><?php echo $this->lang->line('balance'); ?></th>
-                                <td><?php echo $currency_symbol . amountFormat($total_due); ?></td>
-                            </tr>
-                            <tr>
-                                <th><?php echo $this->lang->line('status'); ?></th>
-                                <td><?php echo ($total_due <= 0) ? $this->lang->line('paid') : $this->lang->line('due'); ?></td>
                             </tr>
                             <?php if (!empty($fields)) { foreach ($fields as $fields_key => $fields_value) {
                                 $display_field = $result->{"$fields_value->name"} ?? '';
@@ -177,6 +165,10 @@ $tax_amt   = 0;
                     </tfoot>
                 </table>
 
+                <?php
+                $generated_by = composeStaffNameByString($result->name, $result->surname, $result->employee_id);
+                include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+                ?>
 
             </div>
             </div>

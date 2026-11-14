@@ -94,7 +94,7 @@ $bill_no = $bill_no_prefix . 'BILL-' . $case_id;
                                     <span class="sh-badge-warn"><?php echo $this->lang->line('discharged'); ?></span>
                                 <?php } ?>
                             </td>
-                            <th><?php echo $this->lang->line('uhid'); ?> / <?php echo $this->lang->line('mr_number'); ?></th>
+                            <th><?php echo $this->lang->line('uhid'); ?></th>
                             <td><?php echo html_escape($uhid); ?></td>
                         </tr>
                         <tr>
@@ -122,10 +122,8 @@ $bill_no = $bill_no_prefix . 'BILL-' . $case_id;
                             <td><?php echo $discharge_date; ?></td>
                         </tr>
                         <tr>
-                            <th><?php echo $this->lang->line('case_id'); ?></th>
-                            <td><?php echo ($case_id ?: '-'); ?></td>
                             <th><?php echo $this->lang->line('address'); ?></th>
-                            <td><?php echo html_escape(!empty($patient['address']) ? $patient['address'] : '-'); ?></td>
+                            <td colspan="3"><?php echo html_escape(!empty($patient['address']) ? $patient['address'] : '-'); ?></td>
                         </tr>
                         <?php if (!empty($patient['guardian_name'])) { ?>
                         <tr>
@@ -562,6 +560,7 @@ $bill_no = $bill_no_prefix . 'BILL-' . $case_id;
                     </tbody>
                 </table>
 
+                <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
 
             </div>
             </div>

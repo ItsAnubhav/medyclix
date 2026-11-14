@@ -170,7 +170,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; paddi
     <td class="meta-label"><?php echo $this->lang->line('ip_number'); ?></td>
     <td>: <?php echo html_escape($ip_no); ?></td>
     <td class="meta-sep"></td>
-    <td class="meta-label"><?php echo $this->lang->line('uhid'); ?> / <?php echo $this->lang->line('mr_number'); ?></td>
+    <td class="meta-label"><?php echo $this->lang->line('uhid'); ?></td>
     <td>: <?php echo html_escape($uhid); ?></td>
 </tr>
 <tr>
@@ -207,7 +207,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; paddi
 </tr>
 <?php } else { ?>
 <tr>
-    <td class="meta-label"><?php echo $this->lang->line('uhid'); ?> / <?php echo $this->lang->line('mr_number'); ?></td>
+    <td class="meta-label"><?php echo $this->lang->line('uhid'); ?></td>
     <td>: <?php echo html_escape($uhid); ?></td>
     <td class="meta-sep"></td>
     <td class="meta-label"><?php echo $this->lang->line('tpa'); ?></td>
@@ -224,12 +224,8 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; paddi
     <td class="meta-label"><?php echo $this->lang->line('mobile'); ?></td>
     <td>: <?php echo html_escape(!empty($patient['mobileno']) ? $patient['mobileno'] : '-'); ?></td>
     <td class="meta-sep"></td>
-    <td class="meta-label"><?php echo $this->lang->line('case_id'); ?></td>
-    <td>: <?php echo html_escape($case_id ?: '-'); ?></td>
-</tr>
-<tr>
     <td class="meta-label"><?php echo $this->lang->line('address'); ?></td>
-    <td colspan="4">: <?php echo html_escape(!empty($patient['address']) ? $patient['address'] : '-'); ?></td>
+    <td>: <?php echo html_escape(!empty($patient['address']) ? $patient['address'] : '-'); ?></td>
 </tr>
 <?php } ?>
 </table>
@@ -389,19 +385,7 @@ $net_due = $total_amount - $total_discount - $overall_disc_amt - $deposited + $r
 </div>
 <div class="section-clear"></div>
 
-<div class="footer-meta">
-    Printed by : <?php echo html_escape($printed_by ?: '-'); ?>
-    &nbsp;&nbsp;&nbsp;
-    Print Date and Time : <?php echo $this->customlib->YYYYMMDDHisTodateFormat(date('Y-m-d H:i:s'), $this->customlib->getHospitalTimeFormat()); ?>
-</div>
-
-<table class="sign-table">
-<tr>
-    <td><div class="sign-line"><?php echo $this->lang->line('created_by'); ?></div></td>
-    <td><div class="sign-line">Verified By</div></td>
-    <td><div class="sign-line">Authorized Signature</div></td>
-</tr>
-</table>
+<?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
 <div class="letterhead-bottom"></div>
 </body>
 </html>

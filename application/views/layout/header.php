@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo isset($title) ? htmlspecialchars($title) : $this->customlib->getAppName(); ?> · Smart Hospital</title>
+  <title><?php echo isset($title) ? htmlspecialchars($title) : $this->customlib->getAppName(); ?></title>
   <meta name="robots" content="noindex, nofollow">
 
   <!-- Fonts: Inter + Roboto + Nunito (Theme Studio font-family choices) + JetBrains Mono -->

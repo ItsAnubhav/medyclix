@@ -849,7 +849,7 @@ if (typeof popup === 'undefined') {
             ? frame1[0].contentWindow
             : (frame1[0].contentDocument.document ? frame1[0].contentDocument.document : frame1[0].contentDocument);
         frameDoc.document.open();
-        frameDoc.document.write('<html><head><title></title>');
+        frameDoc.document.write('<html><head><title><?php echo html_escape($this->customlib->getAppName()); ?></title>');
         frameDoc.document.write('<link rel="preconnect" href="https://fonts.googleapis.com">');
         frameDoc.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">');
         frameDoc.document.write('<link rel="stylesheet" href="' + base_url + 'backend/bootstrap5/css/bootstrap.min.css">');

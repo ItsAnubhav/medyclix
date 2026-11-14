@@ -396,7 +396,7 @@ function popup(data, winload) {
     winload = winload || false;
     var newWin = window.open('', 'Print-Window');
     newWin.document.open();
-    newWin.document.write('<html><head><title></title>');
+    newWin.document.write('<html><head><title><?php echo html_escape($this->customlib->getAppName()); ?></title>');
     newWin.document.write('<link rel="preconnect" href="https://fonts.googleapis.com">');
     newWin.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">');
     newWin.document.write('<link rel="stylesheet" href="' + baseurl + 'backend/bootstrap5/css/bootstrap.min.css">');

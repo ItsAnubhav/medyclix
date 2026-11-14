@@ -5987,6 +5987,7 @@ class Bill extends Admin_Controller
                 'margin_top'    => 40,
                 'margin_bottom' => 24,
             ));
+            $mpdf->SetTitle($this->customlib->getAppName());
             $mpdf->WriteHTML($html);
             $mpdf->Output($bill_presentation['pdf_filename'], \Mpdf\Output\Destination::INLINE);
         } catch (Exception $e) {
