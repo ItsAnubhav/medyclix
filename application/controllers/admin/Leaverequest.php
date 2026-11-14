@@ -6,6 +6,13 @@ if (!defined('BASEPATH')) {
 
 class Leaverequest extends Admin_Controller
 {
+	public $contract_type;
+	public $marital_status;
+	public $payment_mode;
+	public $payroll_status;
+	public $staff_attendance;
+	public $status;
+
     public function __construct()
     {
         parent::__construct();
@@ -20,6 +27,18 @@ class Leaverequest extends Admin_Controller
         $this->payment_mode     = $this->config->item('payment_mode');
         $this->status           = $this->config->item('status');
         $this->load->library('system_notification');
+        $this->load->library('SaasValidation');
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the uploaded leave document would
+     * push the tenant over its storage quota. SaasValidation sets the message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function approveleaverequest()
@@ -71,23 +90,23 @@ class Leaverequest extends Admin_Controller
                 $row = array();
                 //====================================
 
-                $first_action = "<a href='#leavedetails' onclick='getRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip'  role='button' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder'></i></a>";
+                $first_action = "<a href='#leavedetails' onclick='getRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  role='button' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder'></i></a>";
 
                 $status_leave = "";
                 $action       = '';
                 if ($value->applied_by == $this->customlib->getAdminSessionUserName()) {
                     if ($this->rbac->hasPrivilege('approve_leave_request', 'can_edit')) {
-                        $action .= "<a href='#addleave' onclick='editRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                        $action .= "<a href='#addleave' onclick='editRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                     }
 
                     if (!empty($value->document_file)) {
-                        $action .= "<a href=" . base_url() . 'admin/staff/download/' . $value->staff_id . '/' . $value->ddocument_file . " onclick='' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
+                        $action .= "<a href=" . base_url() . 'admin/staff/download/' . $value->staff_id . '/' . $value->ddocument_file . " onclick='' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
                     }
                 }
 				
 				if ($this->rbac->hasPrivilege('approve_leave_request', 'can_delete')) {
                     if ($value->status != "approve") {
-                        $action .= "<a href='#leavedetails' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                        $action .= "<a href='#leavedetails' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     }
                 }
 
@@ -128,9 +147,25 @@ class Leaverequest extends Admin_Controller
 
     public function deleteRecord()
     {
-        $id = $this->input->post("id");
+        $id = $this->input->post("id", TRUE);
         if (!empty($id)) {
+            // SaaS: capture the document BEFORE the row is deleted so its storage can
+            // be released and the physical file removed (deleteleave only drops the row).
+            $existing_leave = $this->leaverequest_model->getLeaveRequestById($id);
             $result = $this->staff_model->deleteleave($id);
+            if ($result !== false && !empty($existing_leave['document_file'])) {
+                $doc_dir = 'uploads/staff_documents/' . $existing_leave['staff_id'];
+                // Read size before unlinking the file.
+                $kb = $this->media_storage->getUploadedFileSize($existing_leave['document_file'], $doc_dir);
+                if ($kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (leaverequest deleteRecord): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($existing_leave['document_file'], $doc_dir);
+            }
             $array  = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => '');
@@ -140,7 +175,7 @@ class Leaverequest extends Admin_Controller
 
     public function countLeave($id)
     {
-        $lid               = $this->input->post("lid");
+        $lid               = $this->input->post("lid", TRUE);
         $alloted_leavetype = $this->leaverequest_model->allotedLeaveType($id);
         $i    = 0;
         $html = "<select name='leave_type' id='leave_type' class='form-control'><option value=''>" . $this->lang->line('select') . "</option>";
@@ -185,9 +220,9 @@ class Leaverequest extends Admin_Controller
             access_denied();
         }
 
-        $leave_request_id = $this->input->post("leave_request_id");
-        $status           = $this->input->post("status");
-        $adminRemark      = $this->input->post("detailremark");
+        $leave_request_id = $this->input->post("leave_request_id", TRUE);
+        $status           = $this->input->post("status", TRUE);
+        $adminRemark      = $this->input->post("detailremark", TRUE);
         
         if($status == 'approve' || $status == 'disapprove'){
                 $approved_date = date("Y-m-d");
@@ -225,7 +260,7 @@ class Leaverequest extends Admin_Controller
             'staff_id'      => $result->staff_id,
             'staff_name'    => $result->name,
             'staff_surname' => $result->surname,
-            'employee_id'   => $this->input->post('staff_id'),
+            'employee_id'   => $this->input->post('staff_id', TRUE),
             'leave_status'  => $system_status,
         );
         $this->system_notification->send_system_notification('staff_leave_status', $event_data);
@@ -234,7 +269,7 @@ class Leaverequest extends Admin_Controller
 
     public function leaveRecord()
     {
-        $id     = $this->input->post("id");
+        $id     = $this->input->post("id", TRUE);
         $result = $this->staff_model->getLeaveRecord($id);
 
         if ($result->applier_employee_id != '') {
@@ -268,14 +303,14 @@ class Leaverequest extends Admin_Controller
 
     public function addLeave()
     {
-        $role         = $this->input->post("role");
-        $empid        = $this->input->post("empname");
-        $applied_date = $this->input->post("applieddate");
-        $leavetype    = $this->input->post("leave_type");
-        $reason       = $this->input->post("reason");
-        $remark       = $this->input->post("remark");
-        $status       = $this->input->post("addstatus");
-        $request_id   = $this->input->post("leaverequestid");
+        $role         = $this->input->post("role", TRUE);
+        $empid        = $this->input->post("empname", TRUE);
+        $applied_date = $this->input->post("applieddate", TRUE);
+        $leavetype    = $this->input->post("leave_type", TRUE);
+        $reason       = $this->input->post("reason", TRUE);
+        $remark       = $this->input->post("remark", TRUE);
+        $status       = $this->input->post("addstatus", TRUE);
+        $request_id   = $this->input->post("leaverequestid", TRUE);
         $this->form_validation->set_rules('role', $this->lang->line('role'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('empname', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('leave_from_date', $this->lang->line('leave_from_date'), 'trim|required|xss_clean');
@@ -283,8 +318,9 @@ class Leaverequest extends Admin_Controller
         
         $this->form_validation->set_rules('leave_type', $this->lang->line('leave_type'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('applieddate', $this->lang->line('apply_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('userfile', $this->lang->line('image'), 'callback_validateCanUploadFile[userfile]');
 
-        if ($this->form_validation->run() == false) { 
+        if ($this->form_validation->run() == false) {
             $msg = array(
                 'role'        => form_error('role'),
                 'empname'     => form_error('empname'),
@@ -298,8 +334,8 @@ class Leaverequest extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $leave_from_date         = $this->input->post("leave_from_date");
-            $leave_to_date         = $this->input->post("leave_to_date");            
+            $leave_from_date         = $this->input->post("leave_from_date", TRUE);
+            $leave_to_date         = $this->input->post("leave_to_date", TRUE);
             
             $leavefrom = $this->customlib->dateFormatToYYYYMMDD($leave_from_date);
             $leaveto   = $this->customlib->dateFormatToYYYYMMDD($leave_to_date);
@@ -337,9 +373,31 @@ class Leaverequest extends Admin_Controller
                         die("Error creating folder $uploaddir");
                     }
 
+                    // SaaS: capture the existing document for quota diff + cleanup (edit).
+                    $existing_leave = $this->leaverequest_model->getLeaveRequestById($request_id);
+                    $old_doc = (!empty($existing_leave['document_file'])) ? $existing_leave['document_file'] : '';
+                    $old_kb  = (!empty($old_doc)) ? $this->media_storage->getUploadedFileSize($old_doc, 'uploads/staff_documents/' . $staff_id) : 0;
+
                     $file_name = $this->media_storage->fileupload("userfile",'./uploads/staff_documents/' . $staff_id . '/');
                     $data_img = array('id' => $request_id, 'document_file' => $file_name, 'status' => $status);
                     $this->leaverequest_model->addLeaveRequest($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('userfile');
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (leaverequest addLeave edit): ' . $e->getMessage());
+                    }
+
+                    // Remove the replaced old document (new upload uses a unique name).
+                    if (!empty($old_doc) && $old_doc !== $file_name) {
+                        $this->media_storage->filedelete($old_doc, 'uploads/staff_documents/' . $staff_id);
+                    }
                 }
 
 
@@ -378,6 +436,16 @@ class Leaverequest extends Admin_Controller
                     $file_name = $this->media_storage->fileupload("userfile",'./uploads/staff_documents/' . $staff_id . '/');
                     $data_img = array('id' => $insert_id, 'document_file' => $file_name, 'status' => $status);
                     $this->leaverequest_model->addLeaveRequest($data_img);
+
+                    // SaaS: add the new document size to the storage quota usage.
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('userfile');
+                        if ($new_kb > 0) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (leaverequest addLeave): ' . $e->getMessage());
+                    }
                 }
             }
 
@@ -415,17 +483,17 @@ class Leaverequest extends Admin_Controller
     public function add_staff_leave()
     {
         $userdata     = $this->customlib->getUserData();
-        $applied_date = $this->input->post("applieddate");
-        $leavetype    = $this->input->post("leave_type");
-        $reason       = $this->input->post("reason");
+        $applied_date = $this->input->post("applieddate", TRUE);
+        $leavetype    = $this->input->post("leave_type", TRUE);
+        $reason       = $this->input->post("reason", TRUE);
         $remark       = '';
         $status       = 'pending';
-        $request_id   = $this->input->post("leaverequestid");
+        $request_id   = $this->input->post("leaverequestid", TRUE);
         $this->form_validation->set_rules('applieddate', $this->lang->line('apply_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('leave_from_date', $this->lang->line('leave_from_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('leave_to_date', $this->lang->line('leave_to_date'), 'trim|required|xss_clean');        
         $this->form_validation->set_rules('leave_type', $this->lang->line('leave_type'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('userfile', $this->lang->line('image'), 'callback_handle_doc_upload[userfile]');
+        $this->form_validation->set_rules('userfile', $this->lang->line('image'), 'callback_handle_doc_upload[userfile]|callback_validateCanUploadFile[userfile]');
 
         if ($this->form_validation->run() == false) {
 
@@ -440,8 +508,8 @@ class Leaverequest extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             
-            $leave_from_date =    $this->input->post("leave_from_date");
-            $leave_to_date =    $this->input->post("leave_to_date");
+            $leave_from_date =    $this->input->post("leave_from_date", TRUE);
+            $leave_to_date =    $this->input->post("leave_to_date", TRUE);
             $staff_id    = $userdata["id"];
             $leavefrom   = $this->customlib->dateFormatToYYYYMMDD($leave_from_date);
             $leaveto     = $this->customlib->dateFormatToYYYYMMDD($leave_to_date);
@@ -461,7 +529,37 @@ class Leaverequest extends Admin_Controller
                     if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
                         die("Error creating folder $uploaddir");
                     }
+
+                    // SaaS: on edit (request_id present), capture the existing document
+                    // for quota diff + cleanup. document_file stores a bare filename under
+                    // uploads/staff_documents/<staff_id>. For a fresh add, old_kb stays 0.
+                    $old_doc = '';
+                    $old_kb  = 0;
+                    if (!empty($request_id)) {
+                        $existing_leave = $this->leaverequest_model->getLeaveRequestById($request_id);
+                        $old_doc = (!empty($existing_leave['document_file'])) ? $existing_leave['document_file'] : '';
+                        $old_kb  = (!empty($old_doc)) ? $this->media_storage->getUploadedFileSize($old_doc, 'uploads/staff_documents/' . $staff_id) : 0;
+                    }
+
                     $document = $this->media_storage->fileupload("userfile", $uploaddir);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    // For a fresh add this is add-only (old_kb = 0).
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('userfile');
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (leaverequest add_staff_leave): ' . $e->getMessage());
+                    }
+
+                    // Remove the replaced old document (new upload uses a unique name).
+                    if (!empty($old_doc) && $old_doc !== $document) {
+                        $this->media_storage->filedelete($old_doc, 'uploads/staff_documents/' . $staff_id);
+                    }
                 } else {
                     $document = '';
                 }

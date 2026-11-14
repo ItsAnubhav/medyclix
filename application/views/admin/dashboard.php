@@ -1,718 +1,598 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">  
-            
-                <?php if (ENVIRONMENT != 'production') { ?>
-                <div class="alert alert-danger">
-                    Environment set to <?php echo ENVIRONMENT ;?>! <br>
-                    Don't forget to set back to production in the main index.php file after finishing your tests or <?php echo ENVIRONMENT ;?>. <br>
-                    Please be aware that in <?php echo ENVIRONMENT ;?> mode you may see some errors and deprecation warnings, for this reason, it's always recommended to set the environment to "production" if you are not actually developing some features/modules or trying to test some code.
-                </div>
-                <?php } ?>
-            
-            
-                <?php if ($mysqlVersion && $sqlMode && strpos($sqlMode->mode, 'ONLY_FULL_GROUP_BY') !== FALSE) { ?>
-                <div class="alert alert-danger">
-                    Smart Hospital may not work properly because ONLY_FULL_GROUP_BY is enabled, consult with your hosting provider to disable ONLY_FULL_GROUP_BY in sql_mode configuration.
-                </div>
-            <?php } 
-                $show=false;
-                $role          = $this->customlib->getStaffRole();
-                $role_id= json_decode($role)->id;
-                foreach ($notifications as $notice_key => $notice_value) {                    
-                    if($role_id==7){
-                    $show=true; 
-                    }elseif(date($this->customlib->getHospitalDateFormat()) >= $this->customlib->YYYYMMDDTodateFormat($notice_value->publish_date) ){
-                        $show=true;
-                    } 
-                    ?>
-                    <div class="dashalert alert alert-success alert-dismissible" role="alert">
-                        <button type="button" class="alertclose close close_notice" data-dismiss="alert" aria-label="Close" data-noticeid="<?php echo $notice_value->id; ?>"><span aria-hidden="true">&times;</span></button>
-                        <a href="<?php echo site_url('admin/notification') ?>"><?php echo $notice_value->title; ?></a>
-                    </div>
-                  <?php
-                }
-                ?>
-            </div>
-            <?php
-            $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-            ?>  
-            <?php
-            $div_col = 12;
-            $div_rol = 12;
+<?php
+/* Smart Hospital — Admin Dashboard
+ * Variant B (Executive) — approved 2026-05-15
+ * Visual spec: Wfdocs/dashboard-samples.html  (Variant B section)
+ * Backup of previous calendar-based view: application/views/admin/dashboard_legacy_20260515.php
+ *
+ * Variable contract from Admin.php::dashboard():
+ *   REAL (already in controller):
+ *     $notifications, $systemnotifications, $mysqlVersion, $sqlMode
+ *     $opd_income/$ipd_income/$pharmacy_income/$pathology_income/$radiology_income/
+ *     $blood_bank_income/$ambulance_income/$general_income (formatted strings)
+ *     $expense (object), $expences (raw amount), $yearly_collection, $yearly_expense, $total_month
+ *     $jsonarr (doughnut series), $roles (staff role counts), $role (user type)
+ *   STUB (TODO — wire from controller in follow-up):
+ *     $total_revenue_mtd, $total_revenue_delta_pct, $total_revenue_spark
+ *     $bed_occupancy_pct, $bed_occupancy_data, $bed_occupancy_spark
+ *     $today_appointments_count, $today_appointments_by_status, $today_appointments_spark
+ *     $outstanding_bills_amount, $outstanding_bills_count, $outstanding_overdue
+ *     $next_appointments, $beds_by_ward
+ *     $low_stock_pharmacy_count, $low_stock_critical
+ *     $blood_bank_stock, $bb_issued_today, $bb_issued_week
+ *     $recent_activity (UNION feed), $staff_attendance, $module_income_breakdown
+ */
+$currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
-            if ($this->rbac->hasPrivilege('staff_role_count_widget', 'can_view')) {
-                $div_col = 9;
-                $div_rol = 12;
-            }
+// Safe defaults — controller will replace these when backend queries are wired.
+$today_appointments_count    = isset($today_appointments_count)    ? $today_appointments_count    : 0;
+$today_appointments_status   = isset($today_appointments_status)   ? $today_appointments_status   : array('confirmed'=>0,'pending'=>0,'cancelled'=>0);
+$bed_occupancy_total         = isset($bed_occupancy_total)         ? (int)$bed_occupancy_total    : 0;
+$bed_occupancy_occupied      = isset($bed_occupancy_occupied)      ? (int)$bed_occupancy_occupied : 0;
+$bed_occupancy_available     = isset($bed_occupancy_available)     ? (int)$bed_occupancy_available : 0;
+$bed_occupancy_unused        = isset($bed_occupancy_unused)        ? (int)$bed_occupancy_unused   : 0;
+$bed_occupancy_pct           = $bed_occupancy_total > 0 ? min(100, round(($bed_occupancy_occupied / $bed_occupancy_total) * 100)) : 0;
+$outstanding_amount          = isset($outstanding_amount)          ? $outstanding_amount          : 0;
+$outstanding_count           = isset($outstanding_count)           ? (int)$outstanding_count      : 0;
+$outstanding_overdue         = isset($outstanding_overdue)         ? (int)$outstanding_overdue    : 0;
+$next_appointments           = isset($next_appointments)           ? $next_appointments           : array();
+$beds_by_ward                = isset($beds_by_ward)                ? $beds_by_ward                : array();
+$low_stock_count             = isset($low_stock_count)             ? (int)$low_stock_count        : 0;
+$low_stock_critical_count    = isset($low_stock_critical_count)    ? (int)$low_stock_critical_count : 0;
+$low_stock_critical_names    = isset($low_stock_critical_names)    ? $low_stock_critical_names    : '';
+$medicine_expiring_soon      = isset($medicine_expiring_soon)      ? (int)$medicine_expiring_soon : 0;
+$medicine_expiring_days      = isset($medicine_expiring_days)      ? (int)$medicine_expiring_days : 30;
+$blood_bank_stock            = isset($blood_bank_stock)            ? $blood_bank_stock            : array();
+$bb_issued_today             = isset($bb_issued_today)             ? (int)$bb_issued_today        : 0;
+$bb_issued_week              = isset($bb_issued_week)              ? (int)$bb_issued_week         : 0;
+$recent_activity             = isset($recent_activity)             ? $recent_activity             : array();
+$staff_attendance            = isset($staff_attendance)            ? $staff_attendance            : array();
+$module_income_breakdown     = isset($module_income_breakdown)     ? $module_income_breakdown     : array();
+$module_income_last          = isset($module_income_last)          ? $module_income_last          : array();
+$expences_last               = isset($expences_last)               ? (float)$expences_last        : 0;
+$kpi_total_revenue           = isset($kpi_total_revenue)           ? $kpi_total_revenue           : 0;
+$kpi_revenue_delta           = isset($kpi_revenue_delta)           ? $kpi_revenue_delta           : 0;
 
-            $widget_col = array();
-            
-            if ($this->rbac->hasPrivilege('monthly_expense_widget', 'can_view')) {
-                $widget_col[1] = 2;
-                $div_rol = 3;
-            }
-           
-            $div = sizeof($widget_col);
+if (empty($blood_bank_stock)) {
+    $blood_bank_stock = array(
+        'O+'=>0,'A+'=>0,'B+'=>0,'AB+'=>0,
+        'O-'=>0,'A-'=>0,'B-'=>0,'AB-'=>0,
+    );
+}
+function bb_class($u) { if ($u <= 3) return 'low'; if ($u <= 5) return 'warn'; return ''; }
+?>
 
-            if (!empty($widget_col)) {
-                $widget = 12 / $div;
-            } else {
-                $widget = 12;
-            }
-            ?>          
-        </div><!--./row-->
-        <div class="row">
-            <?php
-            if ($this->module_lib->hasActive('opd')) {
-                if ($this->rbac->hasPrivilege('opd_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20
-                         ">
-                        <div class="info-box" title="<?php echo $this->lang->line('opd_income'); ?>">
-                            <a href="<?php echo site_url('admin/patient/search') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-stethoscope"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('opd_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($opd_income)) {
-                                            echo $currency_symbol . $opd_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>
-            <?php
-            if ($this->module_lib->hasActive('ipd')) {
-                if ($this->rbac->hasPrivilege('ipd_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('ipd_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/patient/ipdsearch') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-procedures"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('ipd_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($ipd_income)) {
-                                            echo $currency_symbol . $ipd_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>
-            <?php
-            if ($this->module_lib->hasActive('pharmacy')) {
-                if ($this->rbac->hasPrivilege('pharmacy_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('pharmacy_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/pharmacy/bill') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-mortar-pestle"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('pharmacy_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($pharmacy_income)) {
-                                            echo $currency_symbol . $pharmacy_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            if ($this->module_lib->hasActive('pathology')) {
-                if ($this->rbac->hasPrivilege('pathology_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('pathology_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/pathology/gettestreportbatch') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-flask"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('pathology_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($pathology_income)) {
-                                            echo $currency_symbol . $pathology_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>
-            <?php
-            if ($this->module_lib->hasActive('radiology')) {
-                if ($this->rbac->hasPrivilege('radiology_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('radiology_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/radio/gettestreportbatch') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-microscope"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('radiology_income'); ?></span>
-                                    <span class="info-box-number"><?php
-
-                                        if (!empty($radiology_income)) {
-                                            echo $currency_symbol . $radiology_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>           
-            <?php
-            if ($this->module_lib->hasActive('blood_bank')) {
-                if ($this->rbac->hasPrivilege('blood_bank_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('blood_bank_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/bloodbank/issue') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-tint"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('blood_bank_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($blood_bank_income)) {
-                                            echo $currency_symbol . $blood_bank_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>
-            <?php
-            if ($this->module_lib->hasActive('ambulance')) {
-                if ($this->rbac->hasPrivilege('ambulance_income_widget', 'can_view')) {
-                    ?>
-                    <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('ambulance_income'); ?>">
-                        <div class="info-box">
-                            <a href="<?php echo site_url('admin/vehicle/getcallambulance') ?>">
-                                <span class="info-box-icon bg-green"><i class="fas fa-ambulance"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $this->lang->line('ambulance_income'); ?></span>
-                                    <span class="info-box-number"><?php
-                                        if (!empty($ambulance_income)) {
-                                            echo $currency_symbol . $ambulance_income;
-                                        } else {
-                                            echo "0";
-                                        }
-                                        ?></span>
-                                </div>
-                            </a>
-                        </div>
-                    </div><!--./col-lg-2-->
-                    <?php
-                }
-            }
-            ?>
-<?php if ($this->module_lib->hasActive('income')) { 
-     if ($this->rbac->hasPrivilege('general_income_widget', 'can_view')) {
-    ?>
-                <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('general_income'); ?>">
-                    <div class="info-box">
-                        <a href="<?php echo site_url('admin/income') ?>">
-                            <span class="info-box-icon bg-green"><i class="fas fa-money-bill-wave"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text"><?php echo $this->lang->line('general_income'); ?></span>
-                                <span class="info-box-number"><?php
-                                    if (!empty($general_income)) {
-                                        echo $currency_symbol . $general_income;
-                                    } else {
-                                        echo "0";
-                                    }
-                                    ?></span>
-                            </div>
-                        </a>
-                    </div>
-                </div><!--./col-lg-2-->
-            <?php }} ?>
-<?php if ($this->module_lib->hasActive('expense')) { 
-            if ($this->rbac->hasPrivilege('expenses_widget', 'can_view')) {
-                ?>
-                <div class="col-lg-2 col-md-3 col-sm-6 col20" title="<?php echo $this->lang->line('expenses'); ?>">
-                    <div class="info-box">
-                        <a href="<?php echo site_url('admin/expense') ?>">
-                            <span class="info-box-icon expenes-red"><i class="fab fa-creative-commons-nc"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text"><?php echo $this->lang->line('expenses'); ?></span>
-                                <span class="info-box-number"><?php
-                                    if (!empty($expense->amount)) {
-                                        echo $currency_symbol . number_format($expense->amount, 2);
-                                    } else {
-                                        echo $currency_symbol ."0.00";
-                                    }
-                                    ?></span>
-                            </div>
-                        </a>
-                    </div>
-                </div><!--./col-lg-2-->
-<?php } } ?>
-        </div><!--./row-->
-        <div class="row">
-            <?php
-            if ($this->rbac->hasPrivilege('yearly_income_expense_chart', 'can_view')) {
-                ?>
-                <div class="col-lg-6 col-md-6 col-sm-12 col60">
-                    <div class="box box-info">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('yearly_income_expense'); ?></h3>
-                            <div class="box-tools pull-right">
-                                <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
-                                <button class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div class="chart"> 
-                                <canvas id="lineChart" style="height:250px"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div><!--./col-lg-7-->
-            <?php } ?>
-            <?php
-            if ($this->rbac->hasPrivilege('monthly_income_expense_chart', 'can_view')) {
-                ?>
-                <div class="col-lg-6 col-md-6 col-sm-12 col40">
-                    <div class="box box-info">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('monthly_income_overview'); ?> </h3>
-                            <div class="box-tools pull-right">
-                                <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
-                                <button class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div class="chart"> 
-                                <canvas id="pieChart" style="height:250px"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div><!--./col-lg-5-->
-<?php } ?>
-        </div><!--./row-->
-        <div class="row">
-            <div class="col-lg-9 col-md-9 col-sm-12 col80">
-                <?php
-                if($this->module_lib->hasActive("calendar_to_do_list")){
-                if ($this->rbac->hasPrivilege('calendar_to_do_list', 'can_view')) {
-                    ?>
-                    <div class="box box-info">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('calendar'); ?></h3>
-                            <div class="box-tools pull-right">
-                                <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
-                                <button class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div class="chart"> 
-                                <div id="calendar" ></div> 
-                            </div>
-                        </div>
-                    </div>
-            <?php } }?>
-            </div><!--./col-lg-9-->
-            <?php if ($this->rbac->hasPrivilege('staff_role_count_widget', 'can_view')) {
-                ?>
-                <div class="col-lg-3 col-md-3 col-sm-12 col20">
-                    <?php foreach ($roles as $key => $value) {
-                        ?>
-                        <div class="info-box">
-                            <a href="<?php echo base_url() . "admin/staff/index/".$value['id'] ?>">
-                                <span class="info-box-icon bg-yellow"><i class="fas fa-user-secret"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text"><?php echo $value['name']; ?></span>
-                                    <span class="info-box-number"><?php echo $value['count']; ?></span>
-                                </div>
-                            </a>
-                        </div>
+<!-- ═══════════ Alert banners — sh-alert minimal-inline style ═══════════ -->
+<div class="dash-alerts">
+    <?php if (ENVIRONMENT != 'production') { ?>
+        <div class="sh-alert warn alert alert-dismissible fade show" role="alert">
+            <span class="ic"><i class="fa fa-exclamation-triangle"></i></span>
+            <span class="txt">Environment set to <?php echo ENVIRONMENT; ?>! Don't forget to set back to production in index.php after testing.</span>
+            <button type="button" class="x" data-bs-dismiss="alert" aria-label="Close"><i class="fa fa-times"></i></button>
+        </div>
     <?php } ?>
-                </div><!--./col-lg-3-->
-<?php } ?>
-        </div><!--./row-->  
-    </section>
+
+    <?php if ($mysqlVersion && $sqlMode && strpos($sqlMode->mode, 'ONLY_FULL_GROUP_BY') !== FALSE) { ?>
+        <div class="sh-alert danger alert alert-dismissible fade show" role="alert">
+            <span class="ic"><i class="fa fa-database"></i></span>
+            <span class="txt">Smart Hospital may not work properly because ONLY_FULL_GROUP_BY is enabled, consult with your hosting provider to disable ONLY_FULL_GROUP_BY in sql_mode configuration.</span>
+            <button type="button" class="x" data-bs-dismiss="alert" aria-label="Close"><i class="fa fa-times"></i></button>
+        </div>
+    <?php } ?>
+
+    <?php
+    $show = false;
+    $role = $this->customlib->getStaffRole();
+    $role_id = json_decode($role)->id;
+    foreach (array_slice($notifications, 0, 3) as $notice_key => $notice_value) {
+        if ($role_id == 7) {
+            $show = true;
+        } elseif (date($this->customlib->getHospitalDateFormat()) >= $this->customlib->YYYYMMDDTodateFormat($notice_value->publish_date)) {
+            $show = true;
+        }
+        ?>
+        <div class="sh-alert success dashalert alert alert-dismissible fade show" role="alert">
+            <span class="ic"><i class="fa fa-bell"></i></span>
+            <span class="txt"><a href="<?php echo site_url('admin/notification') ?>"><?php echo html_escape($notice_value->title); ?></a></span>
+            <button type="button" class="x alertclose close_notice" data-bs-dismiss="alert" aria-label="Close" data-noticeid="<?php echo (int)$notice_value->id; ?>"><i class="fa fa-times"></i></button>
+        </div>
+        <?php
+    }
+    ?>
 </div>
-<div id="newEventModal" class="modal fade " role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line("add_new_event"); ?></h4>
+
+<!-- ═══════════ Page header ═══════════ -->
+<div class="dash-page-head">
+    <div>
+        <h1><?php echo $this->lang->line('dashboard'); ?></h1>
+        <div class="crumb"><?php echo $this->lang->line('home'); ?> <i class="fa fa-angle-right mx-1"></i> <?php echo $this->lang->line('dashboard'); ?></div>
+    </div>
+</div>
+
+<!-- ═══════════ Hero KPIs (4 tiles with sparkline + delta) ═══════════ -->
+<div class="kpi-grid">
+
+    <?php if ($this->rbac->hasPrivilege('dash_total_revenue', 'can_view')): ?>
+    <div class="kpi s-green">
+        <div class="kpi-label"><?php echo $this->lang->line('total_revenue'); ?> · <?php echo $this->lang->line('mtd'); ?></div>
+        <div class="kpi-value"><?php echo $currency_symbol; ?> <?php echo number_format((float)$kpi_total_revenue, 0); ?></div>
+        <div class="kpi-delta <?php echo $kpi_revenue_delta < 0 ? 'neg' : ($kpi_revenue_delta == 0 ? 'flat' : ''); ?>">
+            <?php if ($kpi_revenue_delta > 0): ?><i class="fas fa-arrow-up"></i><?php elseif ($kpi_revenue_delta < 0): ?><i class="fas fa-arrow-down"></i><?php endif; ?>
+            <?php echo abs((float)$kpi_revenue_delta); ?>% <?php echo $this->lang->line('vs_last_month'); ?>
+        </div>
+        <!-- TODO: render sparkline from $kpi_revenue_spark (last 7 days) -->
+        <svg class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+            <path class="fill" d="M0,26 L20,22 L40,24 L60,18 L80,16 L100,10 L120,8 L120,32 L0,32 Z"/>
+            <path class="line" d="M0,26 L20,22 L40,24 L60,18 L80,16 L100,10 L120,8"/>
+        </svg>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_bed_occupancy', 'can_view')): ?>
+    <div class="kpi s-green">
+        <div class="kpi-label"><?php echo $this->lang->line('bed_occupancy'); ?></div>
+        <div class="kpi-value"><?php echo $bed_occupancy_pct; ?><span class="unit">%</span></div>
+        <div class="kpi-delta flat"><?php echo $bed_occupancy_occupied; ?> <?php echo $this->lang->line('of'); ?> <?php echo $bed_occupancy_total; ?> <?php echo $this->lang->line('occupied'); ?></div>
+        <svg class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+            <path class="fill" d="M0,18 L20,20 L40,16 L60,14 L80,12 L100,14 L120,10 L120,32 L0,32 Z"/>
+            <path class="line" d="M0,18 L20,20 L40,16 L60,14 L80,12 L100,14 L120,10"/>
+        </svg>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_today_appointments', 'can_view')): ?>
+    <a class="kpi s-green" href="<?php echo site_url('admin/appointment'); ?>">
+        <div class="kpi-label"><?php echo $this->lang->line('today_appointments'); ?></div>
+        <div class="kpi-value"><?php echo $today_appointments_count; ?></div>
+        <div class="kpi-delta">
+            <?php echo (int)($today_appointments_status['confirmed'] ?? 0); ?> <?php echo $this->lang->line('confirmed'); ?> · <?php echo (int)($today_appointments_status['pending'] ?? 0); ?> <?php echo $this->lang->line('pending'); ?>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+            <path class="fill" d="M0,24 L20,22 L40,20 L60,22 L80,16 L100,14 L120,12 L120,32 L0,32 Z"/>
+            <path class="line" d="M0,24 L20,22 L40,20 L60,22 L80,16 L100,14 L120,12"/>
+        </svg>
+    </a>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_outstanding_bills', 'can_view')): ?>
+    <div class="kpi s-red">
+        <div class="kpi-label"><?php echo $this->lang->line('outstanding_bills'); ?></div>
+        <div class="kpi-value"><?php echo $currency_symbol; ?> <?php echo number_format((float)$outstanding_amount, 0); ?></div>
+        <div class="kpi-delta neg"><?php echo $outstanding_count; ?> <?php echo $this->lang->line('unpaid'); ?> · <?php echo $outstanding_overdue; ?> <?php echo $this->lang->line('overdue'); ?></div>
+        <svg class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+            <path class="fill" d="M0,14 L20,16 L40,18 L60,16 L80,20 L100,22 L120,24 L120,32 L0,32 Z"/>
+            <path class="line" d="M0,14 L20,16 L40,18 L60,16 L80,20 L100,22 L120,24"/>
+        </svg>
+    </div>
+    <?php endif; ?>
+</div>
+
+<!-- ═══════════ Operations snapshot (4 cards) ═══════════ -->
+<div class="ops-grid">
+
+    <?php if ($this->rbac->hasPrivilege('dash_today_appointments', 'can_view')): ?>
+    <div class="ops-card">
+        <div class="head">
+            <div class="ic blue"><i class="fa fa-calendar-check-o"></i></div>
+            <div class="lbl"><?php echo $this->lang->line('today_appointment'); ?></div>
+            <a class="meta" href="<?php echo site_url('admin/appointment/index'); ?>"><?php echo $this->lang->line('view'); ?></a>
+        </div>
+        <div class="next-list">
+            <?php if (empty($next_appointments)): ?>
+                <div class="row muted"><span class="nm"><?php echo $this->lang->line('no_appointment_today'); ?></span></div>
+            <?php else: foreach (array_slice($next_appointments, 0, 4) as $appt): ?>
+                <div class="row"><span class="nm"><?php echo html_escape($appt['time'] ?? ''); ?> · <?php echo html_escape($appt['name'] ?? ''); ?></span><span class="badge-pill <?php echo html_escape($appt['badge_class'] ?? 'ok'); ?>"><?php echo html_escape($appt['type'] ?? ''); ?></span></div>
+            <?php endforeach; endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_bed_occupancy', 'can_view')): ?>
+    <div class="ops-card">
+        <div class="head">
+            <div class="ic teal"><i class="fas fa-bed"></i></div>
+            <div class="lbl"><?php echo $this->lang->line('bed_occupancy'); ?></div>
+            <span class="meta tnum"><?php echo $bed_occupancy_total; ?></span>
+        </div>
+        <div class="big"><?php echo $bed_occupancy_occupied; ?><span class="unit"> / <?php echo $bed_occupancy_total; ?></span></div>
+        <div class="bar-wrap">
+            <div class="track <?php echo $bed_occupancy_pct >= 90 ? 'crit' : ($bed_occupancy_pct >= 75 ? 'warn' : ''); ?>"><i style="--w:<?php echo $bed_occupancy_pct; ?>%"></i></div>
+            <div class="pct"><?php echo $bed_occupancy_pct; ?>%</div>
+        </div>
+        <br>
+        <div class="sub">
+            <?php echo $bed_occupancy_available; ?> <?php echo $this->lang->line('available'); ?> ·
+            <?php echo $bed_occupancy_occupied; ?> <?php echo $this->lang->line('allotted'); ?> ·
+            <?php echo $bed_occupancy_unused; ?> <?php echo $this->lang->line('unused'); ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_medicines_stock', 'can_view')): ?>
+    <div class="ops-card">
+        <div class="head">
+            <div class="ic amber"><i class="fas fa-pills"></i></div>
+            <div class="lbl"><?php echo $this->lang->line('medicines_stock'); ?></div>
+            <a class="meta" href="<?php echo site_url('admin/pharmacy/search'); ?>"><?php echo $this->lang->line('manage'); ?></a>
+        </div>
+        <div class="big"><?php echo $low_stock_count; ?></div>
+        <div class="sub"><?php echo $this->lang->line('items_below_reorder'); ?> · <?php echo $low_stock_critical_count; ?> <?php echo $this->lang->line('critical'); ?></div>
+        <?php if (!empty($low_stock_critical_names)): ?>
+            <div class="warn-line"><i class="fas fa-exclamation-triangle"></i> <?php echo html_escape($low_stock_critical_names); ?> <?php echo $this->lang->line('running_low'); ?></div>
+        <?php endif; ?>
+        <?php if ($medicine_expiring_soon > 0): ?>
+            <div class="sub"><i class="fas fa-hourglass-end"></i> <?php echo $medicine_expiring_soon; ?> <?php echo $this->lang->line('medicines_expiring_in'); ?> <?php echo $medicine_expiring_days; ?> <?php echo $this->lang->line('days'); ?></div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_blood_bank', 'can_view')): ?>
+    <div class="ops-card">
+        <div class="head">
+            <div class="ic red"><i class="fas fa-tint"></i></div>
+            <div class="lbl"><?php echo $this->lang->line('blood_bank'); ?></div>
+            <a class="meta" href="<?php echo site_url('admin/bloodbankstatus'); ?>"><?php echo $this->lang->line('inventory'); ?></a>
+        </div>
+        <div class="bb-grid">
+            <?php if (empty($blood_bank_stock)): ?>
+                <div class="bb-empty"><?php echo $this->lang->line('no_record_found'); ?></div>
+            <?php else: foreach ($blood_bank_stock as $grp => $u):
+                $u = (int)$u;
+                $cls = bb_class($u);
+            ?>
+                <div class="bg <?php echo $cls; ?>"><span class="g"><?php echo html_escape($grp); ?></span><span class="u"><?php echo $u; ?></span></div>
+            <?php endforeach; endif; ?>
+        </div>
+        <div class="bb-status">
+            <div class="bb-stat"><i class="fas fa-syringe"></i> <?php echo $this->lang->line('today'); ?> <strong><?php echo $bb_issued_today; ?></strong> · <?php echo $this->lang->line('this_week'); ?> <strong><?php echo $bb_issued_week; ?></strong></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+</div>
+
+<!-- ═══════════ Charts (Yearly Income vs Expense + Monthly Income Mix) ═══════════ -->
+<div class="dash-chart-row">
+
+    <?php if ($this->rbac->hasPrivilege('yearly_income_expense_chart', 'can_view')) { ?>
+    <div class="dash-chart-card">
+        <div class="dash-chart-card-h">
+            <h3><?php echo $this->lang->line('yearly_income_expense'); ?></h3>
+            <span class="sub"><?php echo $this->lang->line('trend_12_month'); ?></span>
+        </div>
+        <div class="dash-chart-card-body collapse show" id="chart-yearly-body">
+            <div class="chart-summary">
+                <div class="stat"><span class="k"><?php echo $this->lang->line('income_ytd'); ?></span><span class="v up"><?php echo $currency_symbol; ?> <?php echo number_format(array_sum($yearly_collection), 0); ?></span></div>
+                <div class="stat"><span class="k"><?php echo $this->lang->line('expense_ytd'); ?></span><span class="v dn"><?php echo $currency_symbol; ?> <?php echo number_format(array_sum($yearly_expense), 0); ?></span></div>
+                <?php $net = array_sum($yearly_collection) - array_sum($yearly_expense); ?>
+                <div class="stat"><span class="k"><?php echo $this->lang->line('net'); ?></span><span class="v <?php echo $net >= 0 ? 'up' : 'dn'; ?>"><?php echo $currency_symbol; ?> <?php echo number_format($net, 0); ?></span></div>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <form role="form"  id="addevent_form" method="post" enctype="multipart/form-data" action="">
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_title'); ?></label><span class="req"> *</span>
-                            <input class="form-control" name="title" id="input-field"> 
-                            <span class="text-danger"><?php echo form_error('title'); ?></span>
-                        </div> 
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                            <textarea name="description" class="form-control" id="desc-field"></textarea></div>
-                        <div class="form-group col-md-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_from'); ?><small class="req"> *</small></label>
-                            <div class="input-group">
-                                <div class="input-group-addon">
-                                    <i class="fa fa-calendar"></i>
-                                </div>
-                                <input type="text" autocomplete="off" name="event_from" class="form-control pull-right event_from datetime">
-                            </div>
-                        </div>
+            <div class="dash-chart-canvas-wrap"><canvas id="lineChart"></canvas></div>
+        </div>
+    </div>
+    <?php } ?>
 
-                        <div class="form-group col-md-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_to'); ?><small class="req"> *</small></label>
-                            <div class="input-group">
-                                <div class="input-group-addon">
-                                    <i class="fa fa-calendar"></i>
-                                </div>
-                                <input type="text" autocomplete="off" name="event_to" class="form-control pull-right event_to datetime">
-                            </div>
-                        </div>
-
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_color'); ?></label>
-                            <input type="hidden" name="eventcolor" autocomplete="off" id="eventcolor" class="form-control">
-                        </div>
-                        <div class="form-group col-md-12">
-                            <?php
-                            $i = 0;
-                            $colors = '';
-                            foreach ($event_colors as $color) {
-                                $color_selected_class = 'cpicker-small';
-                                if ($i == 0) {
-                                    $color_selected_class = 'cpicker-big';
-                                }
-                                $colors .= "<div class='calendar-cpicker cpicker " . $color_selected_class . "' data-color='" . $color . "' style='background:" . $color . ";border:1px solid " . $color . "; border-radius:100px'></div>";
-
-                                $i++;
-                            }
-                            echo '<div class="cpicker-wrapper">';
-                            echo $colors;
-                            echo '</div>';
-                            ?>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_type'); ?></label>
-                            <br/>
-                            <label class="radio-inline">
-                                <input type="radio" name="event_type" value="public" id="public"><?php echo $this->lang->line('public'); ?>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="event_type" value="private" checked id="private"><?php echo $this->lang->line('private'); ?>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="event_type" value="sameforall" id="public"><?php echo $this->lang->line('all'); ?>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="event_type" value="protected" id="public"><?php echo $this->lang->line('protected'); ?>
-                            </label> </div>
-                        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 modal-footer pb0">
-                            <input type="submit" class="btn btn-primary submit_addevent pull-right" value="<?php echo $this->lang->line('save'); ?>"></div> </form>
+    <?php if ($this->rbac->hasPrivilege('monthly_income_expense_chart', 'can_view')) { ?>
+    <div class="dash-chart-card">
+        <div class="dash-chart-card-h">
+            <h3><?php echo $this->lang->line('monthly_income_overview'); ?></h3>
+        </div>
+        <div class="dash-chart-card-body collapse show" id="chart-monthly-body">
+            <div class="doughnut-layout">
+                <div class="doughnut-wrap">
+                    <canvas id="pieChart"></canvas>
+                    <div class="doughnut-center">
+                        <?php /* Real monthly income total — NOT array_sum($jsonarr['value']), which sums percentages (=100). */ ?>
+                        <?php $total_income_month = (float)$kpi_total_revenue; ?>
+                        <span class="v"><?php echo $currency_symbol; ?> <?php echo number_format($total_income_month, 0); ?></span>
+                        <span class="l"><?php echo isset($jsonarr['label']) ? count($jsonarr['label']) : 0; ?> <?php echo $this->lang->line('sources'); ?></span>
+                    </div>
                 </div>
+                <ul class="donut-legend">
+                    <?php
+                    $palette = array('#1B73E8','#22A06B','#00B5AD','#F59E0B','#7E57C2','#AB47BC','#E42527','#FF6B35');
+                    if (!empty($jsonarr['label']) && is_array($jsonarr['label'])):
+                        foreach ($jsonarr['label'] as $i => $lbl):
+                            $val = (float)($jsonarr['value'][$i] ?? 0);
+                            $color = $palette[$i % count($palette)];
+                    ?>
+                        <li>
+                            <span class="sw" style="--c:<?php echo $color; ?>"></span>
+                            <span class="nm"><?php echo html_escape($lbl); ?></span>
+                            <span class="val"><?php echo $val; ?>%</span>
+                        </li>
+                    <?php endforeach; endif; ?>
+                </ul>
             </div>
         </div>
     </div>
-</div>  
-<div id="viewEventModal" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line("view_event"); ?></h4>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <form role="form" method="post" id="updateevent_form" enctype="multipart/form-data" action="">
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_title') ?></label><span class="req"> *</span>
-                            <input class="form-control" name="title" placeholder="<?php echo $this->lang->line('event_title') ?>" id="event_title"> 
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('description') ?></label>
-                            <textarea name="description" class="form-control" placeholder="<?php echo $this->lang->line('description') ?>" id="event_desc"></textarea></div>
-                     
-                        <div class="form-group col-md-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_from'); ?><small class="req"> *</small></label>
-                            <div class="input-group">
-                                <div class="input-group-addon">
-                                    <i class="fa fa-calendar"></i>
-                                </div>
-                                <input type="text" autocomplete="off" id="eventfrom" name="eventfrom" class="form-control pull-right event_from datetime">
-                            </div>
-                        </div>
+    <?php } ?>
 
-                        <div class="form-group col-md-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_to'); ?><small class="req"> *</small></label>
-                            <div class="input-group">
-                                <div class="input-group-addon">
-                                    <i class="fa fa-calendar"></i>
-                                </div>
-                                <input type="text" autocomplete="off" id="eventto" name="eventto" class="form-control pull-right event_to datetime">
-                            </div>
-                        </div>
+</div>
 
-
-                        <input type="hidden" name="eventid" id="eventid">
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_color') ?></label>
-                            <input type="hidden" name="eventcolor" autocomplete="off" placeholder="Event Color" id="event_color" class="form-control">
-                        </div>
-                        <div class="form-group col-md-12">
-                            <?php
-                            $i = 0;
-                            $colors = '';
-                            foreach ($event_colors as $color) {
-                                $colorid = trim($color, "#");
-                                $color_selected_class = 'cpicker-small';
-                                if ($i == 0) {
-                                    $color_selected_class = 'cpicker-big';
-                                }
-                                $colors .= "<div id=" . $colorid . " class='calendar-cpicker cpicker " . $color_selected_class . "' data-color='" . $color . "' style='background:" . $color . ";border:1px solid " . $color . "; border-radius:100px'></div>";
-                                $i++;
-                            }
-                            echo '<div class="cpicker-wrapper selectevent">';
-                            echo $colors;
-                            echo '</div>';
-                            ?>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('event_type') ?> </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="eventtype" value="public" id="public"><?php echo $this->lang->line('public') ?>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="eventtype" value="private" id="private"><?php echo $this->lang->line('private') ?> 
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="eventtype" value="sameforall" id="public"><?php echo $this->lang->line('all') ?> 
-							</label>
-                            <label class="radio-inline">
-                                <input type="radio" name="eventtype" value="protected" id="public"><?php echo $this->lang->line('protected') ?> 
-                            </label>
-                        </div>
-                        <div class="col-lg-12 modal-footer pb0">
-                            <div class="pull-right">
-                                <button type="submit" class="btn btn-primary submit_update" value=""> <?php echo $this->lang->line('save'); ?></button>
-                                <?php if ($this->rbac->hasPrivilege('calendar_to_do_list', 'can_delete')) { ?>
-                                    <input type="button" id="delete_event" class="btn btn-primary submit_delete " value="<?php echo $this->lang->line('delete'); ?>">
-                                <?php } ?>
-                            </div>   
-                        </div>       
-                    </form>
-                </div>
-            </div>
-        </div>
+<!-- ═══════════ Recent Activity (full-width table-card) ═══════════ -->
+<?php if ($this->rbac->hasPrivilege('dash_recent_activity', 'can_view')): ?>
+<div class="dash-table-card">
+    <div class="dash-table-card-h">
+        <h3><?php echo $this->lang->line('recent_activity'); ?></h3>
     </div>
-</div>  
+    <table class="dash-tbl">
+        <thead>
+            <tr>
+                <th><?php echo $this->lang->line('user'); ?></th>
+                <th><?php echo $this->lang->line('action'); ?></th>
+                <th><?php echo $this->lang->line('detail'); ?></th>
+                <th><?php echo $this->lang->line('module'); ?></th>
+                <th class="num"><?php echo $this->lang->line('amount'); ?></th>
+                <th class="num"><?php echo $this->lang->line('time'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($recent_activity)): ?>
+                <tr><td colspan="6" class="empty"><?php echo $this->lang->line('no_recent_activity'); ?></td></tr>
+            <?php else: foreach ($recent_activity as $ev): ?>
+                <tr>
+                    <td><strong><?php echo html_escape($ev['actor'] ?? ''); ?></strong></td>
+                    <td><?php echo html_escape($ev['action'] ?? ''); ?></td>
+                    <td><?php echo html_escape($ev['detail'] ?? ''); ?></td>
+                    <td><span class="badge-pill <?php echo html_escape($ev['module_class'] ?? 'info'); ?>"><?php echo html_escape($ev['module'] ?? ''); ?></span></td>
+                    <td class="num"><?php echo !empty($ev['amount']) ? $currency_symbol . ' ' . number_format((float)$ev['amount'], 0) : '—'; ?></td>
+                    <td class="num"><span class="meta-text"><?php echo html_escape($ev['time_ago'] ?? ''); ?></span></td>
+                </tr>
+            <?php endforeach; endif; ?>
+        </tbody>
+    </table>
+</div>
+<?php endif; ?>
+
+<!-- ═══════════ Staff & Attendance + Income by Module (2-col equal) ═══════════ -->
+<div class="dash-2col-equal">
+
+    <?php if ($this->rbac->hasPrivilege('staff_role_count_widget', 'can_view')) { ?>
+    <div class="dash-table-card">
+        <?php
+        $total_headcount = 0; $total_present = 0;
+        if (!empty($staff_attendance) && is_array($staff_attendance)) {
+            foreach ($staff_attendance as $sa) {
+                $total_headcount += (int)($sa['total'] ?? 0);
+                $total_present   += (int)($sa['present'] ?? 0);
+            }
+        } else if (!empty($roles)) {
+            foreach ($roles as $r) {
+                $total_headcount += (int)($r['count'] ?? 0);
+            }
+        }
+        $attend_pct = $total_headcount > 0 ? round(($total_present / $total_headcount) * 100) : 0;
+        ?>
+        <div class="dash-table-card-h">
+            <h3><?php echo $this->lang->line('staff_attendance'); ?></h3>
+            <span class="sub"><?php echo $total_present; ?> / <?php echo $total_headcount; ?> today · <?php echo $attend_pct; ?>%</span>
+        </div>
+        <table class="dash-tbl">
+            <thead><tr><th><?php echo $this->lang->line('role'); ?></th><th class="num"><?php echo $this->lang->line('total'); ?></th><th class="num"><?php echo $this->lang->line('present'); ?></th><th><?php echo $this->lang->line('attendance'); ?></th></tr></thead>
+            <tbody>
+                <?php if (!empty($staff_attendance)): foreach ($staff_attendance as $sa):
+                    $t = (int)($sa['total'] ?? 0);
+                    $p = (int)($sa['present'] ?? 0);
+                    $pct = $t > 0 ? round(($p / $t) * 100) : 0;
+                    $cls = $pct >= 85 ? 'ok' : ($pct >= 70 ? 'warn' : 'err');
+                    $bar = $pct >= 85 ? '' : ($pct >= 70 ? 'warn' : 'crit');
+                ?>
+                    <tr>
+                        <td><strong><?php echo html_escape($sa['name'] ?? ''); ?></strong></td>
+                        <td class="num"><?php echo $t; ?></td>
+                        <td class="num"><span class="badge-pill <?php echo $cls; ?>"><?php echo $p; ?></span></td>
+                        <td><span class="pbar <?php echo $bar; ?>"><span class="track <?php echo $bar; ?>"><i style="--w:<?php echo $pct; ?>%"></i></span><span class="pct"><?php echo $pct; ?>%</span></span></td>
+                    </tr>
+                <?php endforeach; elseif (!empty($roles)): foreach ($roles as $r): ?>
+                    <tr>
+                        <td><strong><?php echo html_escape($r['name'] ?? ''); ?></strong></td>
+                        <td class="num"><?php echo (int)($r['count'] ?? 0); ?></td>
+                        <td class="num"><span class="badge-pill muted">—</span></td>
+                        <td><span class="meta-text"><?php echo $this->lang->line('attendance_pending'); ?></span></td>
+                    </tr>
+                <?php endforeach; endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php } ?>
+
+    <?php if ($this->rbac->hasPrivilege('dash_income_by_module', 'can_view')): ?>
+    <div class="dash-table-card">
+        <?php
+        if (empty($module_income_breakdown)) {
+            $module_income_breakdown = array();
+            $income_modules = array(
+                array('key'=>'ipd',        'name'=>$this->lang->line('ipd'),        'icon'=>'fas fa-procedures',         'ic_class'=>'blue',   'value'=>$ipd_income,        'module'=>'ipd'),
+                array('key'=>'opd',        'name'=>$this->lang->line('opd'),        'icon'=>'fas fa-stethoscope',        'ic_class'=>'green',  'value'=>$opd_income,        'module'=>'opd'),
+                array('key'=>'pharmacy',   'name'=>$this->lang->line('pharmacy'),   'icon'=>'fas fa-mortar-pestle',      'ic_class'=>'teal',   'value'=>$pharmacy_income,   'module'=>'pharmacy'),
+                array('key'=>'radiology',  'name'=>$this->lang->line('radiology'),  'icon'=>'fas fa-microscope',         'ic_class'=>'amber',  'value'=>$radiology_income,  'module'=>'radiology'),
+                array('key'=>'pathology',  'name'=>$this->lang->line('pathology'),  'icon'=>'fas fa-flask',              'ic_class'=>'violet', 'value'=>$pathology_income,  'module'=>'pathology'),
+                array('key'=>'general',    'name'=>$this->lang->line('general'),    'icon'=>'fas fa-money-bill-wave',    'ic_class'=>'green',  'value'=>$general_income,    'module'=>'income'),
+                array('key'=>'blood_bank', 'name'=>$this->lang->line('blood_bank'), 'icon'=>'fas fa-tint',               'ic_class'=>'red',    'value'=>$blood_bank_income, 'module'=>'blood_bank'),
+                array('key'=>'ambulance',  'name'=>$this->lang->line('ambulance'),  'icon'=>'fas fa-ambulance',          'ic_class'=>'teal',   'value'=>$ambulance_income,  'module'=>'ambulance'),
+            );
+            $total = 0;
+            foreach ($income_modules as &$m) {
+                $m['value_num'] = (float)str_replace(array(',',$currency_symbol,' '), '', (string)$m['value']);
+                $total += $m['value_num'];
+            }
+            unset($m);
+            foreach ($income_modules as &$m) {
+                $m['share'] = $total > 0 ? round(($m['value_num'] / $total) * 100, 1) : 0;
+            }
+            unset($m);
+            $module_income_breakdown = $income_modules;
+        }
+        $total_month_income = 0;
+        foreach ($module_income_breakdown as $m) { $total_month_income += (float)($m['value_num'] ?? 0); }
+        ?>
+        <div class="dash-table-card-h">
+            <h3><?php echo $this->lang->line('income_by_module'); ?> · <?php echo date('M Y'); ?></h3>
+            <span class="sub"><?php echo $currency_symbol; ?> <?php echo number_format($total_month_income, 0); ?> <?php echo $this->lang->line('total'); ?></span>
+        </div>
+        <table class="dash-tbl">
+            <thead><tr><th><?php echo $this->lang->line('module'); ?></th><th class="num"><?php echo $this->lang->line('income'); ?></th><th class="num"><?php echo $this->lang->line('share'); ?></th><th class="num"><?php echo $this->lang->line('last_month'); ?></th></tr></thead>
+            <tbody>
+                <?php foreach ($module_income_breakdown as $m):
+                    if (!$this->module_lib->hasActive($m['module'])) continue;
+                    $lm_val = (float)($module_income_last[$m['key']] ?? 0);
+                ?>
+                    <tr>
+                        <td><span class="ic <?php echo html_escape($m['ic_class']); ?>"><i class="<?php echo html_escape($m['icon']); ?>"></i></span><strong><?php echo html_escape($m['name']); ?></strong></td>
+                        <td class="num"><?php echo $currency_symbol; ?> <?php echo $m['value']; ?></td>
+                        <td class="num"><?php echo $m['share']; ?>%</td>
+                        <td class="num"><?php echo $currency_symbol; ?> <?php echo number_format($lm_val, 0); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if ($this->module_lib->hasActive('expense') && isset($expences)): ?>
+                    <tr>
+                        <td><span class="ic red"><i class="fab fa-creative-commons-nc"></i></span><strong><?php echo $this->lang->line('expenses'); ?></strong></td>
+                        <td class="num neg bold">−<?php echo $currency_symbol; ?> <?php echo number_format((float)$expences, 0); ?></td>
+                        <td class="num"><span class="badge-pill muted">—</span></td>
+                        <td class="num neg">−<?php echo $currency_symbol; ?> <?php echo number_format($expences_last, 0); ?></td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+
+</div>
+
+<!-- ═══════════ Chart.js scripts (yearly line + monthly doughnut) ═══════════ -->
 <script src="<?php echo base_url() ?>backend/js/Chart.bundle.js"></script>
 <script src="<?php echo base_url() ?>backend/js/utils.js"></script>
 
 <script type="text/javascript">
-    $(document).ready(function (e) {
-        $('#newEventModal,#viewEventModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
-    });
-</script>    
-    
-<script type="text/javascript">
-    window.onload = function () {
-        var dataPointss = [];
-        var yearly_collection_array = <?php echo json_encode($yearly_collection) ?>;
-        var yearly_expense_array = <?php echo json_encode($yearly_expense) ?>;
-        var MONTHS = <?php echo json_encode($total_month) ?>;
-       
-        console.log("yearly_collection_array -> "+ yearly_collection_array);
-        console.log("yearly_expense_array -> "+yearly_expense_array);
-		
-        var config = {
+(function() {
+    function tok(name) {
+        return getComputedStyle(document.body).getPropertyValue('--' + name).trim();
+    }
+
+    var yearly_collection = <?php echo json_encode($yearly_collection); ?>;
+    var yearly_expense    = <?php echo json_encode($yearly_expense); ?>;
+    var MONTHS            = <?php echo json_encode($total_month); ?>;
+
+    <?php if ($this->rbac->hasPrivilege('yearly_income_expense_chart', 'can_view')) { ?>
+    var lineEl = document.getElementById('lineChart');
+    if (lineEl) {
+        var lineCtx = lineEl.getContext('2d');
+        new Chart(lineCtx, {
             type: 'line',
             data: {
                 labels: MONTHS,
                 datasets: [
-
-                    <?php if($this->module_lib->hasActive('income')){ ?>
+                    <?php if ($this->module_lib->hasActive('income')) { ?>
                     {
                         label: '<?php echo $this->lang->line('income'); ?>',
-                        fill: false,
-                        backgroundColor: '#66aa18',
-                        borderColor: '#66aa18',
-                        data: yearly_collection_array,
+                        data: yearly_collection,
+                        borderColor: tok('green'),
+                        backgroundColor: tok('green') + '22',
+                        fill: true,
+                        tension: 0.32,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: tok('green'),
+                        pointBorderColor: tok('surface'),
+                        pointBorderWidth: 1.5,
+                        borderWidth: 2.5
                     },
                     <?php } ?>
-                    <?php if($this->module_lib->hasActive('expense')){ ?>
+                    <?php if ($this->module_lib->hasActive('expense')) { ?>
                     {
-                        label: '<?php echo $this->lang->line('expenses') ;?>',
-                        backgroundColor: window.chartColors.red,
-                        borderColor: window.chartColors.red,
-                        data: yearly_expense_array,
+                        label: '<?php echo $this->lang->line('expenses'); ?>',
+                        data: yearly_expense,
+                        borderColor: tok('red'),
+                        backgroundColor: 'transparent',
                         fill: false,
+                        tension: 0.32,
+                        borderDash: [5, 4],
+                        pointRadius: 2.5,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: tok('red'),
+                        pointBorderColor: tok('surface'),
+                        pointBorderWidth: 1.5,
+                        borderWidth: 2
                     }
-                <?php } ?>
+                    <?php } ?>
                 ]
             },
             options: {
                 responsive: true,
-                title: {
-                    display: false,
-                    text: 'Chart Data'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                hover: {
-                    mode: 'nearest',
-                    intersect: true
-                },
+                maintainAspectRatio: false,
+                tooltips: { mode: 'index', intersect: false },
+                hover: { mode: 'nearest', intersect: true },
+                legend: { position: 'bottom', labels: { fontColor: tok('ink-2'), fontSize: 12 } },
                 scales: {
                     xAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: false,
-                                labelString: 'Month'
-                            }
-                        }],
+                        gridLines: { color: tok('border-light'), zeroLineColor: tok('border') },
+                        ticks: { fontColor: tok('muted'), fontSize: 11 }
+                    }],
                     yAxes: [{
-                            display: true,
-                            scaleLabel: {
-                                display: false,
-                                labelString: 'Value'
-                            },
-
-                        }]
+                        gridLines: { color: tok('border-light'), zeroLineColor: tok('border') },
+                        ticks: {
+                            fontColor: tok('muted'),
+                            fontSize: 11,
+                            beginAtZero: true,
+                            callback: function(v) { return '<?php echo $currency_symbol; ?> ' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v); }
+                        }
+                    }]
                 }
             }
-        };
-  <?php
-            if ($this->rbac->hasPrivilege('yearly_income_expense_chart', 'can_view')) {
-                ?>
-        var ctx = document.getElementById('lineChart').getContext('2d');
-        window.myLine = new Chart(ctx, config);
-    <?php } ?>       
+        });
+    }
+    <?php } ?>
 
-        /* Pie chart */
-        var ph = "pharmacy";
-        var dataPointss = [];
-        var color = ['#f56954', '#00a65a', '#f39c12', '#2f4074', '#00c0ef', '#3c8dbc', '#d2d6de', '#b7b83f'];
-        var datas = <?php echo json_encode($jsonarr) ?>;
-		
-        function addData(datap) {
-            for (var i = 0; i < datap.value.length; i++) {
-                lb = datap.label[i];
-
- 
-                dataPointss.push({
-                    label: lb,
-                    value: datap.value[i],
-                    color: color[i],
-                    highlight: color[i]
-                });
-            } 
-        }
-        addData(datas);
-        /* donut chart */
-        var config2 = {
+    <?php if ($this->rbac->hasPrivilege('monthly_income_expense_chart', 'can_view')) { ?>
+    var pieEl = document.getElementById('pieChart');
+    if (pieEl) {
+        var pieCtx = pieEl.getContext('2d');
+        var jsonarr = <?php echo json_encode($jsonarr); ?>;
+        var palette = [tok('blue'), tok('green'), tok('teal'), tok('amber'), tok('violet'), tok('purple'), tok('red'), tok('orange')];
+        new Chart(pieCtx, {
             type: 'doughnut',
             data: {
+                labels: (jsonarr && jsonarr.label) || [],
                 datasets: [{
-                        data: datas.value,                         
-                        backgroundColor: [
-                            '#715d20',
-                            window.chartColors.orange,
-                            window.chartColors.yellow,
-                            window.chartColors.green,
-                            window.chartColors.purple,
-                            window.chartColors.blue,
-                            window.chartColors.grey,
-                            '#42b782',
-                            '#66aa18',
-                        ],
-                        label: 'Dataset 1'
-                    }],
-                labels: datas.label,
+                    data: (jsonarr && jsonarr.value) || [],
+                    backgroundColor: palette,
+                    borderColor: tok('surface'),
+                    borderWidth: 2
+                }]
             },
             options: {
                 responsive: true,
-                circumference: Math.PI,
-                rotation: -Math.PI,
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: false,
-                    text: 'Chart.js Doughnut Chart'
-                },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true
-                }
+                maintainAspectRatio: false,
+                cutoutPercentage: 64,
+                legend: { display: false },
+                animation: { animateScale: true, animateRotate: true }
             }
-        }; 
- <?php
-            if ($this->rbac->hasPrivilege('monthly_income_expense_chart', 'can_view')) {
-                ?>
-        var ctx2 = document.getElementById('pieChart').getContext('2d');
-        window.myDoughnut = new Chart(ctx2, config2);
-    <?php }?>
-        
+        });
+    }
+    <?php } ?>
+})();
+</script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    if (window.bootstrap && bootstrap.Tooltip) {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
+            new bootstrap.Tooltip(el);
+        });
     }
 
-    $(document).ready(function () {
-        $(document).on('click', '.close_notice', function () {
-            var data = $(this).data();
-            $.ajax({
-                type: "POST",
-                url: base_url + "admin/notification/read",
-                data: {'notice': data.noticeid},
-                dataType: "json",
-                success: function (data) {
-                    if (data.status == "fail") {
-
-                        errorMsg(data.msg);
-                    } else {
-                        successMsg(data.msg);
-                    }
-
-                }
-            });
+    $(document).on('click', '.close_notice', function () {
+        var data = $(this).data();
+        $.ajax({
+            type: "POST",
+            url: base_url + "admin/notification/read",
+            data: { 'notice': data.noticeid },
+            dataType: "json",
+            success: function (data) {
+                if (data.status == "fail") { errorMsg(data.msg); }
+                else { successMsg(data.msg); }
+            }
         });
     });
+});
 </script>

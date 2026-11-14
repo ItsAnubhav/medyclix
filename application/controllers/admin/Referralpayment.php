@@ -46,30 +46,30 @@ class Referralpayment extends Admin_Controller
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $payment = array(
-                "referral_person_id" => $this->input->post("payee"),
-                "patient_id"         => $this->input->post("patient_id"),
-                "referral_type"      => $this->input->post("patient_type"),
-                "billing_id"         => $this->input->post("bill_no"),
-                "bill_amount"        => $this->input->post("bill_amount"),
-                "percentage"         => $this->input->post("percentage"),
-                "amount"             => $this->input->post("commission_amount"),
+                "referral_person_id" => $this->input->post("payee", TRUE),
+                "patient_id"         => $this->input->post("patient_id", TRUE),
+                "referral_type"      => $this->input->post("patient_type", TRUE),
+                "billing_id"         => $this->input->post("bill_no", TRUE),
+                "bill_amount"        => $this->input->post("bill_amount", TRUE),
+                "percentage"         => $this->input->post("percentage", TRUE),
+                "amount"             => $this->input->post("commission_amount", TRUE),
                 "date"               => date("Y-m-d H:i:s"),
             );
 
             $this->referral_payment_model->add($payment);
             $data = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
 
-            $referral_type   = $this->notificationsetting_model->getreferraltypeDetails($this->input->post("patient_type"));
-            $referral_person = $this->notificationsetting_model->getreferralpersonDetails($this->input->post("payee"));
+            $referral_type   = $this->notificationsetting_model->getreferraltypeDetails($this->input->post("patient_type", TRUE));
+            $referral_person = $this->notificationsetting_model->getreferralpersonDetails($this->input->post("payee", TRUE));
 
             $event_data = array(
-                'patient_id'            => $this->input->post("patient_id"),
+                'patient_id'            => $this->input->post("patient_id", TRUE),
                 'patient_type'          => $this->lang->line($referral_type['name']),
-                'bill_no'               => $this->customlib->getSessionPrefixByType($referral_type['prefixes_type']) . $this->input->post('bill_no'),
-                'patient_bill_amount'   => number_format((float) $this->input->post("bill_amount"), 2, '.', ''),
+                'bill_no'               => $this->customlib->getSessionPrefixByType($referral_type['prefixes_type']) . $this->input->post('bill_no', TRUE),
+                'patient_bill_amount'   => number_format((float) $this->input->post("bill_amount", TRUE), 2, '.', ''),
                 'payee'                 => $referral_person['name'],
-                'commission_percentage' => $this->input->post("percentage"),
-                'commission_amount'     => $this->input->post("commission_amount"),
+                'commission_percentage' => $this->input->post("percentage", TRUE),
+                'commission_amount'     => $this->input->post("commission_amount", TRUE),
             );
 
             $this->system_notification->send_system_notification('add_referral_payment', $event_data);
@@ -79,7 +79,7 @@ class Referralpayment extends Admin_Controller
 
     public function check_billid()
     {
-        $billing_id = $this->input->post('bill_no');
+        $billing_id = $this->input->post('bill_no', TRUE);
         $check      = $this->referral_payment_model->check_billid($billing_id);
         if ($check > 0) {
             $this->form_validation->set_message('check_billid', $this->lang->line('referral_payment_already_generated_for_this_bill_no'));
@@ -119,9 +119,9 @@ class Referralpayment extends Admin_Controller
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $payment = array(
-                "id"         => $this->input->post('paymentid'),
-                "percentage" => $this->input->post('commission_percentage'),
-                "amount"     => $this->input->post('commission_amount'),
+                "id"         => $this->input->post('paymentid', TRUE),
+                "percentage" => $this->input->post('commission_percentage', TRUE),
+                "amount"     => $this->input->post('commission_amount', TRUE),
             );
 
             $this->referral_payment_model->update($payment);
@@ -132,8 +132,8 @@ class Referralpayment extends Admin_Controller
 
     public function getCommission()
     {
-        $type       = $this->input->post("type");
-        $payee      = $this->input->post("payee");
+        $type       = $this->input->post("type", TRUE);
+        $payee      = $this->input->post("payee", TRUE);
         $percentage = $this->referral_payment_model->get_commission($payee, $type);
 		 
         echo $percentage;
@@ -141,8 +141,8 @@ class Referralpayment extends Admin_Controller
 
     public function getBillNo()
     {
-        $referral_type = $this->input->post('type');
-        $patient_id    = $this->input->post('patient_id');
+        $referral_type = $this->input->post('type', TRUE);
+        $patient_id    = $this->input->post('patient_id', TRUE);
         if ($referral_type == 1) {
             //opd
             $result = $this->referral_payment_model->get_opdBillNo($patient_id);
@@ -170,8 +170,8 @@ class Referralpayment extends Admin_Controller
 
     public function getBillAmount()
     {
-        $referral_type = $this->input->post('type');
-        $bill_no       = $this->input->post('bill_no');
+        $referral_type = $this->input->post('type', TRUE);
+        $bill_no       = $this->input->post('bill_no', TRUE);
         if ($referral_type == 1) {
             //opd
             $result = $this->referral_payment_model->get_opdBillAmount($bill_no);

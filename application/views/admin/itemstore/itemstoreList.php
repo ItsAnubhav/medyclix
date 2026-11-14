@@ -1,20 +1,9 @@
-<style type="text/css">
-    @media print
-    {
-        .no-print, .no-print *
-        {
-            display: none !important;
-        }
-    }
-</style>
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
 
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <ul class="tablists">
                         <?php if ($this->rbac->hasPrivilege('item_category', 'can_view')) { ?>
                         <li><a href="<?php echo base_url(); ?>admin/itemcategory" ><?php echo $this->lang->line('item_category'); ?></a></li>
@@ -28,24 +17,24 @@
             </div>
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary" id="exphead">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('item_store_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="exphead">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('item_store_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('store', 'can_add')) { ?>
-                            <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm itemstore"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_item_store'); ?></a> 
+                            <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm itemstore"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_item_store'); ?></a> 
                             <?php } ?>    
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
-                        <div class="table-responsive mailbox-messages overflow-visible-lg">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
+                        <div class="mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('item_store_list'); ?></div>
-                            <table class="table table-striped table-bordered table-hover example">
+                            <table class="table table-striped table-bordered table-hover example setup-itemstore-fixed">
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('item_store_name'); ?></th>
                                         <th><?php echo $this->lang->line('item_stock_code'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -57,12 +46,12 @@
                                         $count = 1;
                                         foreach ($itemstorelist as $store) {
                                             ?>
-                                            <tr>   
+                                            <tr>
                                                 <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover">
+                                                    <a href="#" data-bs-toggle="popover" class="detail_popover">
                                                         <?php echo $store['item_store'] ?>
                                                     </a>
-                                                    <div class="fee_detail_popover" style="display: none">
+                                                    <div class="fee_detail_popover d-none">
                                                         <?php
                                                         if ($store['description'] == "") {
                                                             ?>
@@ -76,19 +65,19 @@
                                                         ?>
                                                     </div>
                                                 </td>
-                                                <td class="mailbox-name">
-                                                    <?php echo $store['code'] ?>
-                                                </td>
-                                                <td class="mailbox-date pull-right noExport">
-                                                    <?php if ($this->rbac->hasPrivilege('store', 'can_edit')) { ?>
-                                                        <a data-target="#editmyModal" onclick="get(<?php echo $store['id']; ?>)"  class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
-                                                            <i class="fa fa-pencil"></i>
-                                                        </a>
-                                                    <?php } if ($this->rbac->hasPrivilege('store', 'can_delete')) { ?>
-                                                        <a  class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/itemstore/delete/<?php echo $store['id'] ?>', '<?php echo $this->lang->line('delete_confirm') ?>')">
-                                                            <i class="fa fa-trash"></i>
-                                                        </a>
-                                                    <?php } ?>
+                                                <td class="mailbox-name"><?php echo $store['code'] ?></td>
+                                                <td class="text-end">
+                                                    <div class="rowoptionview mt-mius0">
+                                                        <?php if ($this->rbac->hasPrivilege('store', 'can_edit')) { ?>
+                                                            <a data-bs-target="#editmyModal" onclick="get(<?php echo $store['id']; ?>)" class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                                <i class="fa fa-pencil"></i>
+                                                            </a>
+                                                        <?php } if ($this->rbac->hasPrivilege('store', 'can_delete')) { ?>
+                                                            <a class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/itemstore/delete/<?php echo $store['id'] ?>', '<?php echo $this->lang->line('delete_confirm') ?>')">
+                                                                <i class="fa fa-trash"></i>
+                                                            </a>
+                                                        <?php } ?>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             <?php
@@ -99,81 +88,101 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div>
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_item_store'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="addItemStoreLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemStoreLabel"><?php echo $this->lang->line('add_item_store'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formadd" action="<?php echo site_url('admin/itemstore/add') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data">
-                <div class="modal-body pt0 pb0">
-                    <div class="ptt10">
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('item_store_name'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="name" name="name" placeholder="" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
-                            <span class="text-danger"><?php echo form_error('name'); ?></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('item_stock_code'); ?></label>
-                            <input id="code" name="code" placeholder="" type="text" class="form-control" value="<?php echo set_value('code'); ?>" />
-                            <span class="text-danger"><?php echo form_error('code'); ?></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                            <textarea class="form-control" id="description" name="description" placeholder="" rows="3"><?php echo set_value('description'); ?></textarea>
-                            <span class="text-danger"><?php echo form_error('description'); ?></span>
+            <form id="formadd" action="<?php echo site_url('admin/itemstore/add') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('item_store'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('item_store_name'); ?></label><small class="req"> *</small>
+                                        <input autofocus="" id="name" name="name" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
+                                        <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                    </div>
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('item_stock_code'); ?></label>
+                                        <input id="code" name="code" type="text" class="form-control" value="<?php echo set_value('code'); ?>" />
+                                        <span class="text-danger"><?php echo form_error('code'); ?></span>
+                                    </div>
+                                    <div class="mb-0 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control" id="description" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
+                                        <span class="text-danger"><?php echo form_error('description'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div><!--./modal-->         
+                </div>
                 <div class="modal-footer">
-                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
-        </div><!--./row--> 
+        </div>
     </div>
 </div>
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_item_store'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editItemStoreLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editItemStoreLabel"><?php echo $this->lang->line('edit_item_store'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editformadd" action="<?php echo site_url('admin/itemstore/edit') ?>" name="employeeform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="modal-body pt0 pb0">
-                    <div class="ptt10">
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('item_store_name'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="name1" name="name" placeholder="" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
-                            <span class="text-danger"><?php echo form_error('name'); ?></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('item_stock_code'); ?></label>
-                            <input id="code1" name="code" placeholder="" type="text" class="form-control" value="<?php echo set_value('code'); ?>" />
-                            <span class="text-danger"><?php echo form_error('code'); ?></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                            <textarea class="form-control" id="description1" name="description" placeholder="" rows="3"><?php echo set_value('description'); ?></textarea>
-                            <input type="hidden" id="store_id" name="id" />
-                            <span class="text-danger"><?php echo form_error('description'); ?></span>
+            <form id="editformadd" action="<?php echo site_url('admin/itemstore/edit') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input type="hidden" id="store_id" name="id">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('item_store'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('item_store_name'); ?></label><small class="req"> *</small>
+                                        <input autofocus="" id="name1" name="name" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
+                                        <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                    </div>
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('item_stock_code'); ?></label>
+                                        <input id="code1" name="code" type="text" class="form-control" value="<?php echo set_value('code'); ?>" />
+                                        <span class="text-danger"><?php echo form_error('code'); ?></span>
+                                    </div>
+                                    <div class="mb-0 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control" id="description1" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
+                                        <span class="text-danger"><?php echo form_error('description'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div><!--./modal-->        
+                </div>
                 <div class="modal-footer">
-                    <button type="submit" id="editformaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="editformaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
-        </div><!--./row--> 
+        </div>
     </div>
 </div>
 
@@ -210,7 +219,7 @@
 
     $(document).ready(function (e) {
         $('#formadd').on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -231,7 +240,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -241,7 +250,7 @@
     });
 
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'json',
             url: '<?php echo base_url(); ?>admin/itemstore/get_data/' + id,
@@ -256,7 +265,7 @@
 
     $(document).ready(function (e) {
         $('#editformadd').on('submit', (function (e) {
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -277,7 +286,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('reset');
+                    $("#editformaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -291,10 +300,7 @@ $(".itemstore").click(function(){
 });
     
     $(document).ready(function (e) {
-        $('#myModal,#editmyModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
-    });    
+        modal_click_disabled('myModal');
+        modal_click_disabled('editmyModal');
+    });
 </script>

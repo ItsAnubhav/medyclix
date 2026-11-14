@@ -33,7 +33,7 @@
                     div_data += "<option '" + sel + "' value='" + obj.id + "'>" + obj.medicine_name + "</option>";
                 });
                 
-                $("#editsearch-query" + id).html("<option value=''>Select</option>");
+                $("#editsearch-query" + id).html("<option value=''><?= $this->lang->line('select') ?></option>");
                 $('#editsearch-query' + id).append(div_data);
                 $('#editsearch-query' + id).select2().select2("val", selectid);
                 
@@ -65,7 +65,7 @@
                     div_data += "<option '" + sel + "' value='" + obj.id + "'>" + obj.dosage + "</option>";
                     console.log(div_data);
                 });
-                $("#editsearch-dosage" + id).html("<option value=''>Select</option>");
+                $("#editsearch-dosage" + id).html("<option value=''><?= $this->lang->line('select') ?></option>");
                 $('#editsearch-dosage' + id).append(div_data);
                 $('#editsearch-dosage' + id).select2("val", selectid);
             }
@@ -80,7 +80,7 @@
                     <div class="ptt10">
                         <div class="row">
                              <div class="col-sm-12">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('header_note'); ?></label> 
                                     <textarea name="header_note" class="form-control editor" id="compose-textarea" style="height:50px"><?php echo strip_tags($prescription_note["header_note"]) ?></textarea>
                                     <input type="hidden" name="opd_id" value="<?php echo $opd_id ?>">
@@ -105,11 +105,11 @@
                                 <tr id="row<?php echo $i ?>">
                                     <td>      
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <?php if ($i == 0) { ?>
                                                     <label><?php echo $this->lang->line('medicine') . " " . $this->lang->line("category"); ?></label> <small class="req"> *</small>
                                                 <?php } ?>
-                                                <select class="form-control select2" style="width: 100%" name='medicine_cat[]' onchange="geteditMedicineName(0)"  id="editmedicine_cat<?php echo $i ?>">
+                                                <select class="form-control select2 w-100"  name='medicine_cat[]' onchange="geteditMedicineName(0)"  id="editmedicine_cat<?php echo $i ?>">
                                                     <option value="<?php echo set_value('medicine_category_id'); ?>"><?php echo $this->lang->line('select') ?>
                                                     </option>
                                                     <?php foreach ($medicineCategory as $dkey => $dvalue) {
@@ -125,13 +125,13 @@
                                             </div>
                                         </div>                              
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                     <?php if ($i == 0) { ?>
                                
              <label>
         <?php echo $this->lang->line('medicine'); ?></label>
     <?php } ?> 
-                                                <select class="form-control select2" style="width: 100%"  name="medicine[]" id="editsearch-query<?php echo $i ?>">
+                                                <select class="form-control select2 w-100"   name="medicine[]" id="editsearch-query<?php echo $i ?>">
                                                     <option value="l"><?php echo $this->lang->line('select') ?></option>
                                                 </select>
                                                 <script type="text/javascript">
@@ -142,17 +142,17 @@
                                             </div>
                                         </div>
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <?php if ($i == 0) { ?>                                                
                                                     <label><?php echo $this->lang->line('dosage'); ?></label> 
                                         <?php } ?>
-                                                <select   class="form-control select2" style="width: 100%"  name="dosage[]" id="editsearch-dosage<?php echo $i ?>">
+                                                <select   class="form-control select2 w-100"   name="dosage[]" id="editsearch-dosage<?php echo $i ?>">
                                                     <option value="l"><?php echo $this->lang->line('select') ?></option>
                                                 </select>                                      
                                             </div> 
                                         </div>
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
     <?php if ($i == 0) { ?>
                                                     <label><?php echo $this->lang->line('instruction'); ?></label>
     <?php }
@@ -163,7 +163,7 @@
                                     </td>
 
     <?php if (($i == 0) || (sizeof($prescription_list) == 1)) { ?>
-                                        <td><button type="button" onclick="edit_more()" style="color: #2196f3; margin-top: 9px;" class="modaltableclosebtn"><i class="fa fa-plus"></i></button>
+                                        <td><button type="button" onclick="edit_more()" style="color:var(--blue); margin-top: 9px;" class="modaltableclosebtn"><i class="fa fa-plus"></i></button>
                                         </td>
                                     <?php } else {
                                         
@@ -181,10 +181,10 @@
     <tr id="row0">
                                     <td>           
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label>
                                                     <?php echo $this->lang->line('medicine') . " " . $this->lang->line("category"); ?></label> <small class="req"> *</small>
-                                                <select class="form-control select2" style="width: 100%" name='medicine_cat[]' onchange="geteditMedicineName(0)"  id="editmedicine_cat0">
+                                                <select class="form-control select2 w-100"  name='medicine_cat[]' onchange="geteditMedicineName(0)"  id="editmedicine_cat0">
                                                     <option value="<?php echo set_value('medicine_category_id'); ?>"><?php echo $this->lang->line('select') ?>
                                                     </option>
                                                     <?php foreach ($medicineCategory as $dkey => $dvalue) {
@@ -196,37 +196,37 @@
                                             </div>
                                         </div>                     
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('medicine'); ?></label> 
-                                                <select class="form-control select2" style="width: 100%"  name="medicine[]" id="editsearch-query0">
+                                                <select class="form-control select2 w-100"   name="medicine[]" id="editsearch-query0">
                                                     <option value="l"><?php echo $this->lang->line('select') ?></option>
                                                 </select>
                                                 <div id="suggesstion-box0"></div>
                                             </div>
                                         </div>
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('dosage'); ?></label> 
-                                                <select class="form-control select2" style="width: 100%"  name="dosage[]" id="editsearch-dosage0">
+                                                <select class="form-control select2 w-100"   name="dosage[]" id="editsearch-dosage0">
                                                     <option value="l"><?php echo $this->lang->line('select') ?></option>
                                                 </select>
                                             </div> 
                                         </div>
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('instruction'); ?></label> 
                                                 <textarea name="instruction[]" style="height: 28px;" class="form-control" ></textarea>
                                             </div> 
                                         </div>
                                     </td>
-                                    <td><button type="button" onclick="edit_more()" style="color: #2196f3" class="modaltableclosebtn"><i class="fa fa-plus"></i></button></td>
+                                    <td><button type="button" onclick="edit_more()" style="color:var(--blue)" class="modaltableclosebtn"><i class="fa fa-plus"></i></button></td>
                                 </tr>
 <?php }
 ?>
                         </table>
                             <hr/>
                             <div class="col-sm-12">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('footer_note'); ?></label> 
                                     <textarea name="footer_note" class="form-control editor" id="compose-textareaold" style="height:50px"><?php echo strip_tags($prescription_note["footer_note"]) ?></textarea>
                                 </div> 
@@ -237,7 +237,7 @@
                 <div class="col-sm-4 col-md-4 col-lg-4">
                     <div class="ptt10">
                     <div class="col-sm-12">
-                        <div class="form-group">
+                        <div class="mb-3">
                         <label>
                              <?php echo $this->lang->line('pathology'); ?></label>
                                <?php 
@@ -246,7 +246,7 @@
                                     foreach($prescription_pathology as $pres_list_value){
                                         $prespatho_array[] = $pres_list_value;
                                     } $prespathoarray[] = $prespatho_array;  ?>  
-                             <select style="width: 100%" name='' multiple onchange=""  id="pathologyOptEdit">
+                             <select class="w-100" name='' multiple onchange=""  id="pathologyOptEdit">
                               <?php  foreach ($pathology as $dkey => $dvalue) {   ?>
                                     <option value="<?php echo $dvalue["id"]; ?>"<?php
                                         if ((isset($prescription_pathology)) && ( in_array($dvalue["id"], $prespathoarray[1])))                              
@@ -258,7 +258,7 @@
                         </div>
                     </div>
                     <div class="col-sm-12">
-                        <div class="form-group">
+                        <div class="mb-3">
                          <label><?php echo $this->lang->line('radiology'); ?></label>
                                <?php 
                                 $presradioarray[]='';
@@ -267,7 +267,7 @@
                                     $presradio_array[] = $pres_list_value;
                                 } $presradioarray[] = $presradio_array;  ?>  
 
-                            <select style="width: 100%" name='radiology[]' multiple onchange=""  id="radiologyOptEdit">
+                            <select class="w-100" name='radiology[]' multiple onchange=""  id="radiologyOptEdit">
                                 <?php  foreach ($radiology as $dkey => $dvalue) {   ?>
                                     <option value="<?php echo $dvalue["id"]; ?>"<?php
                                         if ((isset($prescription_radiology)) && ( in_array($dvalue["id"], $presradioarray[1])))                              
@@ -302,9 +302,9 @@
                 </div>
                 </div>  
                 </div> <!--./modal-body--> 
-            <div class="box-footer">
-                <div class="pull-right">
-                    <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+            <div class="card-footer">
+                <div class="float-end">
+                    <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                 </div>
             </div>
             </form>

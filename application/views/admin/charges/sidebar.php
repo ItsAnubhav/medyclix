@@ -7,7 +7,8 @@
     <?php }?>
     
     <?php if ($this->rbac->hasPrivilege('charge_type', 'can_view')) {?>
-        <li><a href="<?php echo base_url(); ?>admin/chargetype" class="<?php echo set_sidebar_Submenu('admin/chargetype/index'); ?>" ><?php echo $this->lang->line('charge_type'); ?></a></li>
+    <li><a href="<?php echo base_url(); ?>admin/chargetype" class="<?php echo set_sidebar_Submenu('admin/chargetype/index'); ?>" ><?php echo $this->lang->line('charge_type'); ?></a></li>
+    <li><a href="<?php echo base_url(); ?>admin/bedgroupchargetype" class="<?php echo set_sidebar_Submenu('admin/bedgroupchargetype/index'); ?>" ><?php echo $this->lang->line('bed_group_charge_type'); ?></a></li>
     <?php }?>
     <?php if ($this->rbac->hasPrivilege('tax_category', 'can_view')) {?>
         <li><a href="<?php echo base_url(); ?>admin/taxcategory" class="<?php echo set_sidebar_Submenu('admin/taxcategory/index'); ?>" ><?php echo $this->lang->line('tax_category'); ?></a></li>

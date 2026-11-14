@@ -2,6 +2,13 @@
 
 class Systemnotifications extends Patient_Controller
 {
+	public $appointment_status;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $payment_mode;
+	public $search_type;
+
     public $setting;
     public $payment_method;
     public $patient_data;
@@ -92,8 +99,44 @@ class Systemnotifications extends Patient_Controller
         $result = $this->notification_model->getUnreadNotification();
     }
 
+    public function pollNotifications()
+    {
+        if (!$this->input->is_ajax_request()) {
+            redirect('patient');
+            return;
+        }
+        $last_check_raw = $this->input->post('last_check', TRUE);
+        $since_datetime = '';
+        if (!empty($last_check_raw)) {
+            $ts = strtotime($last_check_raw);
+            if ($ts !== false) {
+                $since_datetime = date('Y-m-d H:i:s', $ts);
+            }
+        }
+        if (empty($since_datetime)) {
+            $since_datetime = date('Y-m-d H:i:s', time() - 60);
+        }
+
+        $new_notifications  = $this->notification_model->getNewPatientNotificationsSince($since_datetime);
+        $all_unread         = $this->notification_model->getPatientUnreadNotification();
+
+        // Append module icon class so the sh-bubble shows the same icons as admin (mirrors admin/Systemnotification::pollNotifications)
+        foreach ($new_notifications as &$_n) {
+            $_type = isset($_n['notification_type']) ? $_n['notification_type'] : '';
+            $_icon = ($_type !== '') ? @$this->customlib->notification_icon($_type) : '';
+            $_n['icon_class'] = $_icon ? $_icon : 'fa fa-bell';
+        }
+        unset($_n);
+
+        echo json_encode(array(
+            'status'            => 1,
+            'new_notifications' => $new_notifications,
+            'unread_count'      => count($all_unread),
+        ));
+    }
+
     public function deleteall()
-    {             
+    {
         $user_id=$this->customlib->getPatientSessionUserID();
         $this->notification_model->deleteByUser($user_id);
         $return = array('status' => 1, 'msg' => $this->lang->line('data_deleted_successfully'));

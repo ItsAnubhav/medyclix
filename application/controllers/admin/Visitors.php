@@ -6,12 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Visitors extends Admin_Controller
 {
+	public $visit_to;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->load->library('form_validation');
         $this->load->library('datatables');
+        $this->load->library('SaasValidation');
         $this->config->load("image_valid");
         $this->config->load("payroll");
         $this->visit_to = $this->config->item('visit_to');
@@ -25,35 +28,51 @@ class Visitors extends Admin_Controller
         }
         $this->session->set_userdata('top_menu', 'front_office');
         $this->session->set_userdata('sub_menu', 'admin/visitors');
-        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required');
-        $this->form_validation->set_rules('name',$this->lang->line('name'), 'required');
-        $this->form_validation->set_rules('date',$this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('contact',$this->lang->line('contact'),'numeric');
+        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required|xss_clean');
+        $this->form_validation->set_rules('name',$this->lang->line('name'), 'required|xss_clean');
+        $this->form_validation->set_rules('date',$this->lang->line('date'), 'required|xss_clean');
+        $this->form_validation->set_rules('contact',$this->lang->line('contact'),'numeric|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data['Purpose']  = $this->visitors_model->getPurpose();
             $data['visit_to'] = $this->visit_to;
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/visitorview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
-            $date     = $this->input->post('date');
+            $date     = $this->input->post('date', TRUE);
             $visitors = array(
-                'purpose'      => $this->input->post('purpose'),
-                'name'         => $this->input->post('name'),
-                'contact'      => $this->input->post('contact'),
-                'id_proof'     => $this->input->post('id_proof'),
-                'no_of_pepple' => $this->input->post('pepples'),
+                'purpose'      => $this->input->post('purpose', TRUE),
+                'name'         => $this->input->post('name', TRUE),
+                'contact'      => $this->input->post('contact', TRUE),
+                'id_proof'     => $this->input->post('id_proof', TRUE),
+                'no_of_pepple' => $this->input->post('pepples', TRUE),
                 'date'         => $this->customlib->dateFormatToYYYYMMDD($date),
-                'in_time'      => $this->input->post('time'),
-                'out_time'     => $this->input->post('out_time'),
-                'note'         => $this->input->post('note'),
+                'in_time'      => $this->input->post('time', TRUE),
+                'out_time'     => $this->input->post('out_time', TRUE),
+                'note'         => $this->input->post('note', TRUE),
             );
             $visitor_id = $this->visitors_model->add($visitors);
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $file_name = $this->media_storage->fileupload("file",'./uploads/front_office/visitors/');
                 $this->visitors_model->image_add($visitor_id, $file_name);
-            }   
+
+                // SaaS: add uploaded file size to the storage quota usage.
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    // Silent-failure capture: updateStorageLimit does not throw on API
+                    // rejection — it returns a JSON string with status:false instead.
+                    if (is_string($saas_quota_result)) {
+                        $saas_decoded = json_decode($saas_quota_result, true);
+                        if (isset($saas_decoded['status']) && $saas_decoded['status'] === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (visitors index add): ' . $saas_quota_result);
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (visitors index add): ' . $e->getMessage());
+                }
+            }
 
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('visitors_added_successfully') . '</div>');
             redirect('admin/visitors');
@@ -71,26 +90,25 @@ class Visitors extends Admin_Controller
                 $row = array();
                 //====================================
 
+               
+
+                $action .= "<a href='#' onclick=\"getRecord(" . $value->id . ")\" class='btn btn-sm btn-outline-secondary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('view') . "'><i class='fa fa-eye'></i></a>";
+
+                if ($this->rbac->hasPrivilege('visitor_book', 'can_edit')) {
+                    $action .= "<a href='#' onclick=\"get(" . $value->id . ")\" class='btn btn-sm btn-outline-primary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil btn btn-sm btn-outline-secondary'></i></a>";
+                }
+
                 if ($value->image !== "") {
-                    $action .= "<a href=" . base_url() . 'admin/visitors/download/' . $value->id . " class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title=''  data-original-title=" . $this->lang->line('download') . "><i class='fa fa-download' aria-hidden='true'></i></a>";
+                    $action .= "<a href='" . base_url() . 'admin/visitors/download/' . $value->id . "' class='btn btn-sm btn-outline-secondary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('visitor_book', 'can_delete')) {
-                    $delete_message = $this->lang->line("delete_message");
-                    $delete_message = str_replace(" ", "&nbsp;", $delete_message);
                     if ($value->image !== "") {
-                        $action .= "<a href='#' onclick=deletevisitorimage('" . $value->id . "') class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title=''  data-original-title=" . $this->lang->line('delete') . "><i class='fa fa-trash' aria-hidden='true'></i></a>";
+                        $action .= "<a href='#' onclick=\"deletevisitorimage('" . $value->id . "')\" class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     } else {
-                        $action .= "<a href='#' onclick=deletevisitor('" . $value->id . "') class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title=''  data-original-title=" . $this->lang->line('delete') . "><i class='fa fa-trash' aria-hidden='true'></i></a>";
+                        $action .= "<a href='#' onclick=\"deletevisitor('" . $value->id . "')\" class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     }
-
                 }
-                
-                if ($this->rbac->hasPrivilege('visitor_book', 'can_edit')) {
-                    $action .= "<a href='#'  class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title=" . $this->lang->line('edit') . " onclick=get(" . $value->id . ")><i class='fa fa-pencil' aria-hidden='true'></i></a>";
-                }
-                
-                $action .= "<a href='#' data-toggle='tooltip' class='btn btn-default btn-xs pull-right'  title='" . $this->lang->line('show') . "'    data-target='#visitordetails' data-original-title='" . $this->lang->line('view') . "' onclick='getRecord(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
                 
                 if($value->visit_to){
                     $visit_to   =   $this->lang->line($value->visit_to);
@@ -116,7 +134,7 @@ class Visitors extends Admin_Controller
                 $row[]     = $this->customlib->YYYYMMDDTodateFormat($value->date);
                 $row[]     = $value->in_time;
                 $row[]     = $value->out_time;
-                $row[]     = $action;
+                $row[]     = " <div class='d-inline-flex flex-wrap gap-1'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -129,14 +147,47 @@ class Visitors extends Admin_Controller
         echo json_encode($json_data);
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    /**
+     * SaaS: release a visitor's image from the storage quota. Returns the
+     * image filename so the caller can delete the physical file when the
+     * model does not (model->delete leaves it; model->image_delete unlinks it).
+     */
+    private function releaseVisitorImageQuota($id)
+    {
+        $existing  = $this->visitors_model->visitors_list($id);
+        $old_image = (!empty($existing['image'])) ? $existing['image'] : '';
+        if (!empty($old_image)) {
+            $kb = $this->media_storage->getUploadedFileSize($old_image, 'uploads/front_office/visitors');
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (visitors): ' . $e->getMessage());
+                }
+            }
+        }
+        return $old_image;
+    }
+
     public function add()
     {
-        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required');
-        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'numeric');
-        $this->form_validation->set_rules('name', $this->lang->line('name'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required|xss_clean');
+        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'numeric|xss_clean');
+        $this->form_validation->set_rules('name', $this->lang->line('name'), 'required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required|xss_clean');
         $this->form_validation->set_message('check_default', $this->lang->line('purpose'));
-        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'e1' => form_error('purpose'),
@@ -149,27 +200,42 @@ class Visitors extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $date     = $this->input->post('date');
+            $date     = $this->input->post('date', TRUE);
             $visitors = array(
-                'purpose'          => $this->input->post('purpose'),
-                'name'             => $this->input->post('name'),
-                'contact'          => $this->input->post('contact'),
-                'id_proof'         => $this->input->post('id_proof'),
-                'visit_to'         => $this->input->post('visit_to'),
-                'ipd_opd_staff_id' => $this->input->post('ipd_opd_staff'),
-                'related_to'       => $this->input->post('related_to'),
-                'no_of_pepple'     => $this->input->post('pepples'),
+                'purpose'          => $this->input->post('purpose', TRUE),
+                'name'             => $this->input->post('name', TRUE),
+                'contact'          => $this->input->post('contact', TRUE),
+                'id_proof'         => $this->input->post('id_proof', TRUE),
+                'visit_to'         => $this->input->post('visit_to', TRUE),
+                'ipd_opd_staff_id' => $this->input->post('ipd_opd_staff', TRUE),
+                'related_to'       => $this->input->post('related_to', TRUE),
+                'no_of_pepple'     => $this->input->post('pepples', TRUE),
                 'date'             => $this->customlib->dateFormatToYYYYMMDD($date),
-                'in_time'          => $this->input->post('time'),
-                'out_time'         => $this->input->post('out_time'),
-                'note'             => $this->input->post('note'),
+                'in_time'          => $this->input->post('time', TRUE),
+                'out_time'         => $this->input->post('out_time', TRUE),
+                'note'             => $this->input->post('note', TRUE),
             );
             $visitor_id = $this->visitors_model->add($visitors);
-            
+
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $file_name = $this->media_storage->fileupload("file", "./uploads/front_office/visitors/");
                 if (!IsNullOrEmptyString($file_name)) {
                     $this->visitors_model->image_add($visitor_id, $file_name);
+
+                    // SaaS: add uploaded file size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                        // Silent-failure capture: updateStorageLimit does not throw on API
+                        // rejection — it returns a JSON string with status:false instead.
+                        if (is_string($saas_quota_result)) {
+                            $saas_decoded = json_decode($saas_quota_result, true);
+                            if (isset($saas_decoded['status']) && $saas_decoded['status'] === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (visitors add): ' . $saas_quota_result);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (visitors add): ' . $e->getMessage());
+                    }
                 }
             }
 
@@ -184,12 +250,29 @@ class Visitors extends Admin_Controller
         if (!$this->rbac->hasPrivilege('visitor_book', 'can_delete')) {
             access_denied();
         }
+
+        // SaaS: release the image's storage and remove the physical file (model->delete leaves it).
+        $img = $this->releaseVisitorImageQuota($id);
+        if (!empty($img)) {
+            $this->media_storage->filedelete($img, 'uploads/front_office/visitors');
+        }
+
         $this->visitors_model->delete($id);
     }
 
     public function deletevisitor()
     {
+		if (!$this->rbac->hasPrivilege('visitor_book', 'can_delete')) {
+            access_denied();
+        }
         $id = $this->input->post('id');
+
+        // SaaS: release the image's storage and remove the physical file (model->delete leaves it).
+        $img = $this->releaseVisitorImageQuota($id);
+        if (!empty($img)) {
+            $this->media_storage->filedelete($img, 'uploads/front_office/visitors');
+        }
+
         $this->visitors_model->delete($id);
         $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         echo 1;
@@ -197,7 +280,14 @@ class Visitors extends Admin_Controller
 
     public function deletevisitorimage()
     {
+		if (!$this->rbac->hasPrivilege('visitor_book', 'can_delete')) {
+            access_denied();
+        }
         $id    = $this->input->post('id');
+
+        // SaaS: release the image's storage (model->image_delete removes the file itself).
+        $this->releaseVisitorImageQuota($id);
+
         $this->visitors_model->image_delete($id);
         $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         echo 1;
@@ -210,12 +300,12 @@ class Visitors extends Admin_Controller
         }
 
         $id = $this->input->post('id');
-        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required|callback_check_default');
-        $this->form_validation->set_rules('name', $this->lang->line('name'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('purpose', $this->lang->line('purpose'), 'required|callback_check_default|xss_clean');
+        $this->form_validation->set_rules('name', $this->lang->line('name'), 'required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required|xss_clean');
         $this->form_validation->set_message('check_default', $this->lang->line('the_purpose_field_requred'));
-        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload');
-        $this->form_validation->set_rules('contact',$this->lang->line('contact'),'numeric');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
+        $this->form_validation->set_rules('contact',$this->lang->line('contact'),'numeric|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -228,26 +318,48 @@ class Visitors extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $date     = $this->input->post('date');
+            $date     = $this->input->post('date', TRUE);
             $visitors = array(
-                'purpose'          => $this->input->post('purpose'),
-                'name'             => $this->input->post('name'),
-                'contact'          => $this->input->post('contact'),
-                'id_proof'         => $this->input->post('id_proof'),
-                'visit_to'         => $this->input->post('visit_to'),
-                'ipd_opd_staff_id' => $this->input->post('ipd_opd_staff'),
-                'related_to'       => $this->input->post('related_to'),
-                'no_of_pepple'     => $this->input->post('pepples'),
+                'purpose'          => $this->input->post('purpose', TRUE),
+                'name'             => $this->input->post('name', TRUE),
+                'contact'          => $this->input->post('contact', TRUE),
+                'id_proof'         => $this->input->post('id_proof', TRUE),
+                'visit_to'         => $this->input->post('visit_to', TRUE),
+                'ipd_opd_staff_id' => $this->input->post('ipd_opd_staff', TRUE),
+                'related_to'       => $this->input->post('related_to', TRUE),
+                'no_of_pepple'     => $this->input->post('pepples', TRUE),
                 'date'             => $this->customlib->dateFormatToYYYYMMDD($date),
-                'in_time'          => $this->input->post('time'),
-                'out_time'         => $this->input->post('out_time'),
-                'note'             => $this->input->post('note'),
+                'in_time'          => $this->input->post('time', TRUE),
+                'out_time'         => $this->input->post('out_time', TRUE),
+                'note'             => $this->input->post('note', TRUE),
             );
-            
+
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: capture the existing image for quota diff + cleanup.
+                $existing  = $this->visitors_model->visitors_list($id);
+                $old_image = (!empty($existing['image'])) ? $existing['image'] : '';
+                $old_kb    = (!empty($old_image)) ? $this->media_storage->getUploadedFileSize($old_image, 'uploads/front_office/visitors') : 0;
+
                 $file_name = $this->media_storage->fileupload("file",'./uploads/front_office/visitors/');
-                $this->visitors_model->image_update($id, $file_name);
-            }   
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($old_image)) {
+                        $this->media_storage->filedelete($old_image, 'uploads/front_office/visitors');
+                    }
+                    $this->visitors_model->image_update($id, $file_name);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('file');
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (visitors edit): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $this->visitors_model->update($id, $visitors);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -276,6 +388,10 @@ class Visitors extends Admin_Controller
         if (!$this->rbac->hasPrivilege('visitor_book', 'can_delete')) {
             access_denied();
         }
+
+        // SaaS: release the image's storage (model->image_delete removes the file itself).
+        $this->releaseVisitorImageQuota($id);
+
         $this->visitors_model->image_delete($id, $image);
     }
 
@@ -328,7 +444,7 @@ class Visitors extends Admin_Controller
 
     public function get_ipd_opd_staff_list()
     {
-        $visit_to = $this->input->get('visit_to');
+        $visit_to = $this->input->get('visit_to', TRUE);
         $result   = array();
         if ($visit_to == 'staff') {
             $result = $this->visitors_model->getstaff();

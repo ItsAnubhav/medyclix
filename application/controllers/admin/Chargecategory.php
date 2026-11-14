@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Chargecategory extends Admin_Controller
 {
+	public $charge_type;
+
 
     public function __construct()
     {
@@ -23,7 +25,7 @@ class Chargecategory extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/chargecategory/charges');
         $this->session->set_userdata('sub_menu', 'charges/index');
-        $chargecategoryid    = $this->input->post("chargecategoryid");
+        $chargecategoryid    = $this->input->post("chargecategoryid", TRUE);
         $data['charge_type'] = $this->chargetype_model->get();
         $this->load->view("layout/header");
         $this->load->view("admin/charges/chargeCategory", $data);
@@ -43,10 +45,10 @@ class Chargecategory extends Admin_Controller
                 if ($charge_value->is_default != "yes") {
                     if ($this->rbac->hasPrivilege('charge_category', 'can_edit')) {
 
-                        $action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_charge_modal' data-loading-text='" . $this->lang->line('please_wait') . "' data-toggle='tooltip' data-record-id=" . $charge_value->id . " title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                        $action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_charge_modal' data-loading-text='" . $this->lang->line('please_wait') . "' data-bs-toggle='tooltip' data-record-id=" . $charge_value->id . " title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                     }
                     if ($this->rbac->hasPrivilege('charge_category', 'can_delete')) {
-                        $action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_recordById(\"admin/chargecategory/delete/" . $charge_value->id . "\", \"" . $this->lang->line('delete_message') . "\")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
+                        $action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='Delete' onclick='delete_recordById(\"admin/chargecategory/delete/" . $charge_value->id . "\", \"" . $this->lang->line('delete_message') . "\")'> <i class='fa fa-trash'></i></a>";
                     }
                 }
                 $action .= "</div>";
@@ -72,12 +74,12 @@ class Chargecategory extends Admin_Controller
             access_denied();
         }
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->charge_category_model, 'valid_charge_category')),
             )
         );
-        $this->form_validation->set_rules('description', $this->lang->line('description'), 'required');
-        $this->form_validation->set_rules('charge_type', $this->lang->line('charge_type'), 'required');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('charge_type', $this->lang->line('charge_type'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name'        => form_error('name'),
@@ -86,10 +88,10 @@ class Chargecategory extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $name           = $this->input->post("name");
-            $description    = $this->input->post("description");
-            $charge_type_id = $this->input->post("charge_type");
-            $id             = $this->input->post("id");
+            $name           = $this->input->post("name", TRUE);
+            $description    = $this->input->post("description", TRUE);
+            $charge_type_id = $this->input->post("charge_type", TRUE);
+            $id             = $this->input->post("id", TRUE);
 
             $data = array(
                 'name'           => $name,
@@ -128,7 +130,7 @@ class Chargecategory extends Admin_Controller
 
     public function get_data()
     {
-        $id         = $this->input->post('id');
+        $id         = $this->input->post('id', TRUE);
         $result     = $this->charge_category_model->getChargeCategory($id);
         $json_array = array('status' => '1', 'error' => '', 'result' => $result);
         echo json_encode($json_array);

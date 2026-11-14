@@ -108,7 +108,7 @@ class Onlineappointment_model extends MY_Model
         $this->db->select("date");
         $this->db->where("doctor", $doctor_id);
         $this->db->where("doctor_shift_time_id", $shift_id);
-        $this->db->where("appointment_status", "approved");
+        $this->db->where_in("appointment_status", array("approved", "pending"));
         $this->db->where("date_format(date,'%Y-%m-%d')", $date);
         $query         = $this->db->get("appointment");
         return $result = $query->result();

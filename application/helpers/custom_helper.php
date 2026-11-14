@@ -64,8 +64,11 @@ function has_duplicate_array($array)
 function amountFormat($amount)
 {
 	if ($amount != "") {
-		$amount = round($amount, 2);
-		return number_format((float) $amount, 2, '.', '');	
+		// Cast to float before round(): PHP 8.x throws a fatal TypeError when a
+		// non-numeric string (e.g. bad data in a credit_limit/amount column) is
+		// passed to round(). (float) coerces such values to 0.0 instead of crashing.
+		$amount = round((float) $amount, 2);
+		return number_format((float) $amount, 2, '.', '');
 	}
 }
 
@@ -217,8 +220,8 @@ if (!function_exists('check_report_level_exceed')) {
     if(IsNullOrEmptyString($range_from)){
     
         $range=explode('-',$old_reference_range);
-        $range_from=trim($range[0]);
-        $range_to=trim($range[1]);
+        $range_from=trim($range[0] ?? '');
+        $range_to=trim($range[1] ?? '');
     }
 
     $range_to= IsNullOrEmptyString($range_to) ? $range_from : $range_to;
@@ -275,6 +278,34 @@ function getIP()
     }
 
     return $ip;
+}
+
+if (!function_exists('check_selected')) {
+    function check_selected($paymentlist) {
+        if (!is_array($paymentlist) && !is_object($paymentlist)) {
+            return 'none';
+        }
+        foreach ($paymentlist as $row) {
+            if (isset($row->is_active) && $row->is_active === 'yes') {
+                return $row->payment_type;
+            }
+        }
+        return 'none';
+    }
+}
+
+if (!function_exists('check_in_array')) {
+    function check_in_array($payment_type, $paymentlist) {
+        if (!is_array($paymentlist) && !is_object($paymentlist)) {
+            return false;
+        }
+        foreach ($paymentlist as $row) {
+            if (isset($row->payment_type) && $row->payment_type === $payment_type) {
+                return $row;
+            }
+        }
+        return false;
+    }
 }
 
 function getAgentDetail()

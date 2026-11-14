@@ -1,8 +1,6 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <ul class="tablists">
                         <li><a href="<?php echo site_url('admin/visitorspurpose') ?>"><?php echo $this->lang->line('purpose'); ?></a></li>
                         <li><a href="<?php echo site_url('admin/complainttype') ?>"><?php echo $this->lang->line('complain_type'); ?></a></li>
@@ -14,21 +12,21 @@
             <!-- left column -->
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('reference'); ?> <?php echo $this->lang->line('list'); ?></h3>
-                        <div class="box-tools pull-right">
-                            <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add'); ?> <?php echo $this->lang->line('reference'); ?></a>
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('reference'); ?> <?php echo $this->lang->line('list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                            <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add'); ?> <?php echo $this->lang->line('reference'); ?></a>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('reference'); ?> <?php echo $this->lang->line('list'); ?></div>
                         <div class="table-responsive mailbox-messages">
                             <table class="table table-hover table-striped table-bordered example">
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('reference'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -41,9 +39,9 @@ if (empty($reference_list)) {
         ?>
                                             <tr>
                                                 <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $value['reference'] ?></a>
+                                                    <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $value['reference'] ?></a>
 
-                                                    <div class="fee_detail_popover" style="display: none">
+                                                    <div class="fee_detail_popover d-none">
                                                         <?php
 if ($value['description'] == "") {
             ?>
@@ -58,13 +56,13 @@ if ($value['description'] == "") {
                                                     </div></td>
 
 
-                                                <td class="mailbox-date pull-right">
+                                                <td class="mailbox-date float-end">
                                                     <?php if ($this->rbac->hasPrivilege('setup_font_office', 'can_edit')) {?>
-                                                        <a data-target="#editmyModal" onclick="get(<?php echo $value['id']; ?>)"  class="btn btn-default btn-xs" data-toggle="tooltip"title="" data-original-title="<?php echo $this->lang->line('edit'); ?>">
+                                                        <a data-bs-target="#editmyModal" onclick="get(<?php echo $value['id']; ?>)"  class="btn btn-secondary btn-sm" data-bs-toggle="tooltip"title="" title="<?php echo $this->lang->line('edit'); ?>">
                                                             <i class="fa fa-pencil"></i>
                                                         </a>
                                                     <?php }if ($this->rbac->hasPrivilege('setup_font_office', 'can_delete')) {?>
-                                                        <a  class="btn btn-default btn-xs" data-toggle="tooltip" title="" onclick="delete_recordById('<?php echo base_url(); ?>admin/reference/delete/<?php echo $value['id']; ?>', '<?php echo $this->lang->line('delete_message') ?>')" data-original-title="<?php echo $this->lang->line('delete') ?>">
+                                                        <a  class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="" onclick="delete_recordById('<?php echo base_url(); ?>admin/reference/delete/<?php echo $value['id']; ?>', '<?php echo $this->lang->line('delete_message') ?>')" title="<?php echo $this->lang->line('delete') ?>">
                                                             <i class="fa fa-trash"></i>
                                                         </a>
                                                     <?php }?>
@@ -78,71 +76,70 @@ if ($value['description'] == "") {
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <!-- right column -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
-<!-- new END -->
-</div><!-- /.content-wrapper -->
+    
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"> <?php echo $this->lang->line('add'); ?>  <?php echo $this->lang->line('reference'); ?></h4>
+<!-- new END -->
+
+
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"> <?php echo $this->lang->line('add'); ?>  <?php echo $this->lang->line('reference'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formadd" action="<?php echo site_url('admin/reference/add') ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                <div class="modal-body pt0 pb0">
-                    <div class="box-body">
-                        <div class="form-group">
+                <div class="modal-body">
+                        <div class="mb-3">
                             <label for="pwd"><?php echo $this->lang->line('reference'); ?></label><small class="req"> *</small>
                             <input class="form-control" id="description" name="reference"  value="<?php echo set_value('reference'); ?>"/>
                             <span class="text-danger"><?php echo form_error('reference'); ?></span>
                         </div>
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label for="pwd"><?php echo $this->lang->line('description'); ?></label>
                             <textarea class="form-control" id="description" name="description"rows="3"><?php echo set_value('description'); ?></textarea>
                         </div>
                     </div>
-                </div>    
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div><!--./row-->
     </div>
 </div>
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"> <?php echo $this->lang->line('edit'); ?>  <?php echo $this->lang->line('reference'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editmyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editmyModalLabel"> <?php echo $this->lang->line('edit'); ?>  <?php echo $this->lang->line('reference'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0">
-                <form id="editformadd" action="<?php echo site_url('admin/reference/edit') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data">
-                    <div class="box-body">
-                        <div class="form-group">
+            <form id="editformadd" action="<?php echo site_url('admin/reference/edit') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data">
+                    <div class="modal-body">
+                    <div class="mb-3">
                             <label for="pwd"><?php echo $this->lang->line('reference'); ?></label><small class="req"> *</small>
                             <input class="form-control" id="reference" name="reference"  value="<?php echo set_value('reference'); ?>"/>
                             <span class="text-danger"><?php echo form_error('reference'); ?></span>
                         </div>
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label for="pwd"><?php echo $this->lang->line('description'); ?></label>
                             <textarea class="form-control" id="description1" name="description"rows="3"><?php echo set_value('description'); ?></textarea>
                             <input type="hidden" id="id" name="id">
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
-                    </div>
-                </form>
-            </div><!--./col-md-12-->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div><!--./row-->
     </div>
 </div>
@@ -185,7 +182,7 @@ if ($value['description'] == "") {
 
 
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'json',
             url: '<?php echo base_url(); ?>admin/reference/get_data/' + id,

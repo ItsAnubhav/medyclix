@@ -1,5 +1,5 @@
 <div class="col-md-2"> 
-    <div class="box border0">
+    <div class="card border0">
         <ul class="tablists">
             <?php if ($this->rbac->hasPrivilege('medicine_category', 'can_view')) { ?>
                 <li><a href="<?php echo base_url(); ?>admin/medicinecategory/medicine" class="<?php echo set_sidebar_Submenu('admin/medicinecategory/medicine'); ?>"><th><?php echo $this->lang->line('medicine_category'); ?></th></a></li>

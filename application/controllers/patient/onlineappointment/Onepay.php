@@ -4,6 +4,8 @@
 
 class Onepay extends Patient_Controller
 {
+	public $setting;
+
     public $pay_method = "";
 
     function __construct() {
@@ -87,7 +89,7 @@ class Onepay extends Patient_Controller
         'vpc_SHIP_Street01' => '',
         'vpc_TicketNo' => $_SERVER ['REMOTE_ADDR'],
         'vpc_Version' => '2');
-        $vpcURL="https://mtf.onepay.vn/paygate/vpcpay.op?";
+        $vpcURL="https://onepay.vn/paygate/vpcpay.op?";
 
         $md5HashData="";
         foreach($payment_data as $key => $value) {

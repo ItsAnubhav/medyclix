@@ -57,6 +57,7 @@ class Updater extends Admin_Controller
             }
         }
 
+        $data['module'] = 'setup';   
         $this->load->view('layout/header', $data);
         $this->load->view('admin/updater/index', $data);
         $this->load->view('layout/footer', $data);
@@ -77,8 +78,6 @@ class Updater extends Admin_Controller
 
             }
             $this->session->set_flashdata('message', $this->auth->messages());
-        } else {
-            $this->session->set_flashdata('error', $this->auth->error());
         }
         return json_encode(array('version' => $version));
     }

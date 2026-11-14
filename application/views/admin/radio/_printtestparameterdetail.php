@@ -1,156 +1,125 @@
-<div class="fixed-print-header">    
+<?php
+include(APPPATH . 'views/admin/shared/_print_css.php');
+?>
+
+<div class="fixed-print-header">
     <?php if (!empty($print_details[0]['print_header'])) { ?>
-                        <div>
-                            <img src="<?php
-                            if (!empty($print_details[0]['print_header'])) {
-                                echo $this->media_storage->getImageURL($print_details[0]['print_header']);
-                            }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
-                        </div>
-            <?php } ?>
-</div>    
+        <img src="<?php echo $this->media_storage->getImageURL($print_details[0]['print_header']); ?>"
+             class="img-fluid sh-avatar-cover" >
+    <?php } ?>
+</div>
+
 <table class="table-print-full" width="100%">
     <thead>
-        <tr>
-            <td><div class="header-space">&nbsp;</div></td>
-        </tr>
+        <tr><td><div class="header-space">&nbsp;</div></td></tr>
     </thead>
     <tbody>
-        <tr>
-            <td>
-      <div class="content-body">        
-<div class="print-area">
-<div class="row">
-        <div class="col-12">
-            
-            <div class="card">
-                <div class="card-body">  
-                    <div class="row">					
-                        <div class="col-md-12">
-                        <div class="col-md-6">  
-							<table class="noborder_table">
-                                <tr>
-                                    <th width="15%"><?php echo $this->lang->line('bill_no'); ?></th>
-                                    <td width="35%" ><?php echo $this->customlib->getSessionPrefixByType('radiology_billing').$head_result->id; ?></td>
-                                </tr>
-								<tr>
-                                    <th width="15%"><?php echo $this->lang->line('patient'); ?></th>
-                                    <td width="35%" ><?php echo composePatientName($head_result->patient_name,$head_result->patient_id); ?></td>
-                                </tr>
-								<tr>
-                                    <th width="15%"><?php echo $this->lang->line('age'); ?></th>
-                                    <td width="35%" ><?php  echo $this->customlib->get_patient_current_age($head_result->patient_id); ?></td>
-                                </tr>
-								<tr>
-                                    <th width="15%"><?php echo $this->lang->line('gender'); ?></th>
-                                    <td width="35%" ><?php echo $this->lang->line(strtolower($head_result->gender)); ?></td>
-                                </tr>
-							</table>                                              
-                        </div>
-                          <div class="col-md-6 text-right"> 
-							<table class="noborder_table">
-                                <tr>
-                                    <th width="15%"><?php echo $this->lang->line('date'); ?></th>
-                                    <td width="35%"><?php echo $this->customlib->YYYYMMDDHisTodateFormat($head_result->date, $this->customlib->getHospitalTimeFormat()); ?></td>
-                                </tr>
-								<tr>
-                                    <th width="15%"><?php echo $this->lang->line('case_id'); ?></th>
-                                    <td width="35%"><?php echo $head_result->case_reference_id; ?></td>
-                                </tr>
-								<tr>
-                                    <th width="15%"><?php echo $this->lang->line('doctor_name'); ?></th>
-                                    <td width="35%"><?php echo $head_result->doctor_name; ?></td>
-                                </tr>
-							</table>						 
-                        </div>					
-						</div>						
-                    </div>
-                    <?php if(!empty($result)){
-						foreach($result as $row){ ?>
-                    <div class="row">
-                        <div class="col-md-12">
-                        <div class="col-md-12">
-                           <h4 class="text-center">
-      <?php echo $row['test_name']; ?>       
-      <?php echo "(".$row['short_name'].")"; ?>
-</h4>
-                               <table class="print-table">
-                             <thead>
-                                <tr class="line">
-                                   <td>#</td>
-                                   <td class="text-left"><?php echo $this->lang->line('test_parameter_name'); ?></td>                
-                                   <td class="text-center"><?php echo $this->lang->line('reference_range'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('report_value'); ?></td>
-                                </tr>
-                             </thead>
-                             <tbody>
-                               <?php
-                          $row_counter=1;
-                            foreach ($result[$row['id']]['radiology_parameter'] as $parameter_key=> $parameter_value) {
-                                $row_cls="";
-                                $level_exceeded= check_report_level_exceed($parameter_value->radiology_report_value,$parameter_value->range_from,$parameter_value->range_to,$parameter_value->radiology_report_value);
-                                ($level_exceeded) ? $row_cls = 'bold' : " ";
-                              
-                                ?>                        
-                            <tr class="<?php echo $row_cls;?>">
-                                <td><?php echo $row_counter; ?></td>
-                                <td class="text-left">
-                                  <?php echo $parameter_value->parameter_name; ?><br/>
-                              <div class="bill_item_footer text-muted"><label><?php if($parameter_value->description !=''){ echo $this->lang->line('description').': ';} ?></label> <?php echo $parameter_value->description; ?></div>                                      
-                                  </td> 
-                                <td class="text-center">                                
-                              <?php echo $parameter_value->reference_range." ".$parameter_value->unit_name; ?>               
-                                  </td>                             
-                            <td class="text-right"><?php                            
-                                echo  ($level_exceeded) ? "<span class='text-danger'>".$parameter_value->radiology_report_value." ".$parameter_value->unit_name."</span>":(($parameter_value->radiology_report_value == "") ? "" :"<span>".$parameter_value->radiology_report_value." ".$parameter_value->unit_name."</span>");                         
-                            ?></td>
+        <tr><td>
+            <div class="content-body sh-px-12" >
+            <div class="print-area">
 
-                            </tr>  
-                            <?php
-                        $row_counter++;
-                            }
-                            ?>
-                            <?php if(!empty($parameter_value->radiology_result)){ if($parameter_value->radiology_result!=""){ ?> 
-                        <tr> <td colspan="4"><p><span class="font-bold"><?php echo $this->lang->line('result'); ?>: </span> <?php echo nl2br($parameter_value->radiology_result); ?></p></td></tr>                             
-                        <?php
-							}   } ?>                                
-                             </tbody>
-                          </table>
-                        </div>
-                        </div>
-                    </div>
-                  <?php } } ?>
+                <!-- ① Document title -->
+                <div class="sh-print-title"><?php echo $this->lang->line('radiology_report'); ?></div>
+
+                <!-- ② Patient / bill info block -->
+                <div class="sh-print-info-block">
+                    <table class="sh-print-info-table">
+                        <colgroup>
+                            <col style="width:16%"><col style="width:18%">
+                            <col style="width:16%"><col style="width:16%">
+                            <col style="width:16%"><col style="width:18%">
+                        </colgroup>
+                        <tr>
+                            <th><?php echo $this->lang->line('bill_no'); ?></th>
+                            <td><?php echo $this->customlib->getSessionPrefixByType('radiology_billing') . ($head_result->id ?: '-'); ?></td>
+                            <th><?php echo $this->lang->line('case_id'); ?></th>
+                            <td><?php echo ($head_result->case_reference_id ?: '-'); ?></td>
+                            <th><?php echo $this->lang->line('date'); ?></th>
+                            <td><?php echo ($head_result->date ? $this->customlib->YYYYMMDDHisTodateFormat($head_result->date, $this->customlib->getHospitalTimeFormat()) : '-'); ?></td>
+                        </tr>
+                        <tr>
+                            <th><?php echo $this->lang->line('patient'); ?></th>
+                            <td><?php echo (($head_result->patient_name || $head_result->patient_id) ? composePatientName($head_result->patient_name, $head_result->patient_id) : '-'); ?></td>
+                            <th><?php echo $this->lang->line('age'); ?></th>
+                            <td><?php echo ($this->customlib->get_patient_current_age($head_result->patient_id) ?: '-'); ?></td>
+                            <th><?php echo $this->lang->line('gender'); ?></th>
+                            <td><?php echo (isset($head_result->gender) ? $this->lang->line(strtolower($head_result->gender)) : '-'); ?></td>
+                        </tr>
+                        <tr>
+                            <th><?php echo $this->lang->line('doctor_name'); ?></th>
+                            <td colspan="5"><?php echo ($head_result->doctor_name ?: '-'); ?></td>
+                        </tr>
+                    </table>
                 </div>
+
+                <!-- Divider for clarity -->
+                <div class="sh-section-divider"></div>
+
+                <!-- ③ Loop over tests -->
+                <?php if (!empty($result)) { foreach ($result as $row) { ?>
+
+                <div class="sh-print-section-title"><?php echo html_escape($row['test_name']) . ' (' . html_escape($row['short_name']) . ')'; ?></div>
+
+                <?php if (!empty($result[$row['id']]['radiology_parameter'])) { ?>
+                <table class="sh-print-table">
+                    <thead>
+                        <tr>
+                            <th style="width:4%">#</th>
+                            <th><?php echo $this->lang->line('test_parameter_name'); ?></th>
+                            <th style="width:25%"><?php echo $this->lang->line('reference_range'); ?></th>
+                            <th style="width:20%"><?php echo $this->lang->line('report_value'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $row_counter = 1;
+                        foreach ($result[$row['id']]['radiology_parameter'] as $parameter_key => $parameter_value) {
+                            $level_exceeded = check_report_level_exceed($parameter_value->reference_range, $parameter_value->range_from, $parameter_value->range_to, $parameter_value->radiology_report_value);
+                        ?>
+                        <tr <?php if ($level_exceeded) echo 'style="font-weight:700;"'; ?>>
+                            <td><?php echo $row_counter; ?></td>
+                            <td>
+                                <?php echo $parameter_value->parameter_name; ?>
+                                <?php if ($parameter_value->description != '') { ?>
+                                <div class="sh-caption-xs"><?php echo $this->lang->line('description') . ': ' . $parameter_value->description; ?></div>
+                                <?php } ?>
+                            </td>
+                            <td><?php echo $parameter_value->reference_range . ' ' . $parameter_value->unit_name; ?></td>
+                            <td><?php echo ($level_exceeded)
+                                ? "<span style='color:#dc2626;'>" . $parameter_value->radiology_report_value . ' ' . $parameter_value->unit_name . "</span>"
+                                : (($parameter_value->radiology_report_value == '') ? '' : $parameter_value->radiology_report_value . ' ' . $parameter_value->unit_name);
+                            ?></td>
+                        </tr>
+                        <?php $row_counter++; } ?>
+                        <?php if (!empty($parameter_value->radiology_result)) { ?>
+                        <tr>
+                            <td colspan="4" class="sh-cell-sm">
+                                <span class="fw-semibold"><?php echo $this->lang->line('result'); ?>: </span><?php echo nl2br($parameter_value->radiology_result); ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+                <?php } ?>
+
+                <?php } } ?>
+
+
             </div>
-            <div class="divider mt-10 mb-10"></div>
-          
-        </div>
-    </div>
+            </div>
+        </td></tr>
+    </tbody>
+    <tfoot>
+        <tr><td>
+            <?php if (!empty($print_details[0]['print_footer'])) { ?>
+                <div class="footer-space">&nbsp;</div>
+            <?php } ?>
+        </td></tr>
+    </tfoot>
+</table>
+
+<?php if (!empty($print_details[0]['print_footer'])) { ?>
+<div class="footer-fixed">
+    <?php echo $print_details[0]['print_footer']; ?>
 </div>
-</div>
-</td></tr></tbody>
-    <tfoot><tr><td>
-
-    <?php
-                    if (!empty($print_details[0]['print_footer'])) {
-                        ?>
-       <div class="footer-space">&nbsp;</div>
-  <?php
-}
-?>
-
-
-
-    </td></tr></tfoot>
-  </table>
-  <?php
-                    if (!empty($print_details[0]['print_footer'])) {
-                        ?>
-  <div class="footer-fixed">
-  
-  <?php   echo $print_details[0]['print_footer'];?>
-                
-  </div>
-  <?php
-}
-?>
+<?php } ?>

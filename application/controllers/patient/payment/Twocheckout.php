@@ -4,6 +4,10 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 class Twocheckout extends Patient_Controller {
+	public $patient_data;
+	public $pay_method;
+	public $setting;
+
 
     public $api_config = "";
 

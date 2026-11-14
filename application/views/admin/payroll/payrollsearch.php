@@ -1,23 +1,20 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_human_resource');?>
-                  <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">                        
-                        <h3 class="box-title"><?php echo $this->lang->line('payroll_report'); ?></h3>
+                  <div class="card-header ptbnull"></div>
+                    <div class="card-header">                        
+                        <h3 class="card-title"><?php echo $this->lang->line('payroll_report'); ?></h3>
                     </div>
                     <form id="form1" action="" method="post">
-                        <div class="box-body">
+                        <div class="card-body pb-0">
                             <div class="row">
                                 <?php echo $this->customlib->getCSRF(); ?>
-                                <div class="col-sm-6 col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('search_type'); ?><small class="req"> *</small></label>
                                         <select class="form-control" name="search_type" onchange="showdate(this.value)">
                                             <option value=""><?php echo $this->lang->line("select"); ?></option>
@@ -33,28 +30,32 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         <span class="text-danger" id="error_search_type"><?php echo form_error('search_type'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-sm-6 col-md-4" id="fromdate" style="display: none">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3 d-none" id="fromdate">
+                                    <div class="mb-3">
                                         <label><?php echo "Date From" ?></label>
                                         <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                         <span class="text-danger"><?php echo form_error('date_from'); ?></span>
                                     </div>
                                 </div> 
-                                <div class="col-sm-6 col-md-4" id="todate" style="display: none">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3 d-none" id="todate">
+                                    <div class="mb-3">
                                         <label><?php echo "Date To" ?></label>
                                         <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                         <span class="text-danger"><?php echo form_error('date_to'); ?></span>
                                     </div>
                                 </div> 
-                                <div class="col-lg-12">
-                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                                <div class="col-sm-6 col-md-auto d-flex align-items-end ps-md-3">
+                                    <div class="mb-3">
+                                        <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                            <i class="fa fa-search"></i>
+                                            <?php echo $this->lang->line('search'); ?>
+                                        </button>
+                                    </div>
                                 </div>  
                             </div>        
                         </div>                        
                     </form>
-                    <div class="box-header ptbnull"></div>                 
-                    <div class="box-header">
+                    <div class="card-body pt-0">
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('payroll_report'); ?>">
                                 <thead>
@@ -66,12 +67,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         <th><?php echo $this->lang->line('year'); ?></th>
                                         <th><?php echo $this->lang->line('payment_date'); ?> </th>
                                         <th><?php echo $this->lang->line('payslip'); ?> #</th>
-                                        <th class="text text-right"><?php echo $this->lang->line('basic_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('earning'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('deduction'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('gross_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('tax'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('net_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('basic_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('earning'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('deduction'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('gross_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('tax'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
+                                        <th class="text text-end"><?php echo $this->lang->line('net_salary'); ?> <span><?php echo "(" . $currency_symbol . ")"; ?></span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -81,9 +82,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </div>
                 </div>
             </div>
-        </div>     
-    </section>
-</div>
+        </div>
 
 <script type="text/javascript">
     $(document).ready(function (e) {
@@ -103,11 +102,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>

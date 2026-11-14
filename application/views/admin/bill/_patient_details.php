@@ -1,133 +1,146 @@
-<?php 
+<?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-if(!empty($result)){
-?> 
-<div class="box-body pb0 clear">
-    <div class="col-lg-2 col-md-2 col-sm-3 text-center">
-        <?php
-        $image = $result['image'];
-        if ($image != '') {
-            $file = $result['image'];
-        } else {
-            $file = "uploads/patient_images/no_image.png";
-        }
-        ?>
-        <img width="115" height="115" class="" src="<?php echo $this->media_storage->getImageURL($file) ?>" alt="No Image">
-        <div class="editviewdelete-icon pt8">
-        </div> 
-        <div>
-            <button class="btn btn-primary btn-sm showbill" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Please wait..." data-case-id="<?php echo $case_id;?>"><?= $this->lang->line("bill_summary"); ?></button>
-        </div> 
-    </div>
-    <div class="col-md-10 col-lg-10 col-sm-9">
-        <div class="table-responsive">
-            <table class="table table-striped mb0 font13">
-                <tbody>
-                    <tr>
-                        <th class="bozerotop"><?php echo $this->lang->line('case_id'); ?></th>
-                        <td class="bozerotop"><?php echo $case_id;?></td>
-                        <th class="bozerotop"><?php echo $this->lang->line('appointment_date'); ?></th>
-                        <td class="bozerotop"><?php if($result['appointment_date'] !='' && $result['appointment_date']!='0000-00-00'){
-                            echo $this->customlib->YYYYMMDDHisTodateFormat($result['appointment_date'],$this->customlib->getHospitalTimeFormat());
-                        } ?>
-                        </td>
-                    </tr> 
-                    <tr>
-                        <th class="bozerotop"><?php echo $this->lang->line('name'); ?></th>
-                        <td class="bozerotop"><?php echo composePatientName($result['patient_name'],$result['patient_id']); ?></td>
-                        <th class="bozerotop"><?php echo $this->lang->line('guardian_name'); ?></th>
-                        <td class="bozerotop"><?php echo $result['guardian_name']; ?></td>
-                    </tr>
-                    <tr>
-                        <th class="bozerotop"><?php echo $this->lang->line('gender'); ?></th>
-                        <td class="bozerotop"><?php echo (isset($result['gender']) && $result['gender']!="") ? $this->lang->line(strtolower($result['gender'])) : "";
-                         ?></td>
-                        <th class="bozerotop"><?php echo $this->lang->line('age'); ?></th>
-                        <td class="bozerotop">
-                            <?php   
-                            echo $this->customlib->get_patient_current_age($result['patient_id']);                         
-                            
-                            ?>   
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="bozerotop"><?php echo $this->lang->line('phone'); ?></th>
-                        <td class="bozerotop"><?php echo $result['mobileno']; ?></td>
-                        <th class="bozerotop"><?php echo $this->lang->line('credit_limit') . " (" . $currency_symbol . ")";  ?></th>
-                        <td class="bozerotop"><?php if(!empty($result['credit_limit'])){ echo $result['credit_limit']; } ?>
-                        </td>
-                    </tr>
-                    <?php 
-                    if($result['ipdid']!='' && $result['ipdid']!=0){?>
-                    <tr>                      
-                        <th class="bozerotop"><?php echo $this->lang->line('ipd_no'); ?></th>
-                        <td class="bozerotop"><?php
-                            if($result['ipdid']!='' && $result['ipdid']!=0){
-                                echo $this->customlib->getSessionPrefixByType('ipd_no').$result['ipdid'];
-                            }                            
-                            if ($result['discharged'] == 'yes') {
-                                 echo " <span class='label label-warning'>" . $this->lang->line("discharged") . "</span>";
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                <?php } ?>
-                    <?php 
-                    if($result['opdid']!='' && $result['opdid']!=0){?>
-                    <tr>
-                        <th class="bozerotop"><?php echo $this->lang->line('opd_no'); ?></th>
-                        <td class="bozerotop"><?php
-                            if($result['opdid']!='' && $result['opdid']!=0){
-                                echo $this->customlib->getSessionPrefixByType('opd_no').$result['opdid'];
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                <?php } ?>
-                 <?php if($result['ipdid'] !='' && $result['ipdid'] !=0){?>
-                    <tr>
-                        <th class="bozerotop"><?php
-                            echo $this->lang->line('admission_date');                           
-                            ?></th>
-                        <td class="bozerotop"><?php if($result['date']!='' && $result['date']!='0000-00-00'){
-                            echo $this->customlib->YYYYMMDDTodateFormat($result['date']);
-                        } ?>
-                        </td>
-                        <th class="bozerotop"><?php
-                            echo $this->lang->line('bed');                          
-                            ?></th>
-                        <td class="bozerotop"><?php echo $result['bed_name'] . " - " . $result['bedgroup_name'] . " - " . $result['floor_name'] ?></td>
-                    </tr> 
-                    <tr>
-                     <?php } ?>  
-                    </tr>
-                    <tr>
-                   <?php $patient_id=$result['patient_id'];
-                    if(file_exists("./uploads/patient_id_card/barcodes/$patient_id.png") ){ ?>                    
-                    <th class="bozerotop">
-                    <?php echo $this->lang->line('barcode'); ?>
-                    </th>
-                    <td class="bozerotop">
-                        <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/$patient_id.png");?>" target="_blank">
-                        <img src='<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/$patient_id.png");?>' id="getbarcode" width="100" height="35" />
-                        </a>
-                    </td>                   
-                    <?php } ?>
-                    <?php $patient_id=$result['patient_id'];
-                    if(file_exists("./uploads/patient_id_card/qrcode/$patient_id.png") ){ ?>                    
-                    <th class="bozerotop">
-                    <?php echo $this->lang->line('qrcode'); ?>
-                    </th>
-                    <td class="bozerotop">
-                        <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/$patient_id.png");?>" target="_blank">
-                        <img src='<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/$patient_id.png");?>' id="getbarcode" width="50" height="50" />
-                        </a>
-                    </td>                   
-                    <?php } ?>
-                    </tr>
-                </tbody>
-            </table>
+if (!empty($result)) {
+    $patient_id  = $result['patient_id'];
+    $has_image   = !empty($result['image']) && strpos($result['image'], 'no_image') === false;
+    $file        = $has_image ? $result['image'] : 'uploads/patient_images/no_image.png';
+    $gender      = isset($result['gender']) ? strtolower(trim($result['gender'])) : '';
+    $gender_lbl  = $gender ? $this->lang->line($gender) : '';
+    $gender_cls  = ($gender === 'male') ? 'bill-badge-blue' : (($gender === 'female') ? 'bill-badge-pink' : '');
+    $clean_name  = preg_replace('/\s*\([^)]*\)\s*/', ' ', (string) $result['patient_name']);
+    $name_parts  = preg_split('/\s+/', trim($clean_name), -1, PREG_SPLIT_NO_EMPTY);
+    if (empty($name_parts)) {
+        $initials = '?';
+    } elseif (count($name_parts) === 1) {
+        $initials = mb_substr($name_parts[0], 0, 1);
+    } else {
+        $initials = mb_substr($name_parts[0], 0, 1) . mb_substr(end($name_parts), 0, 1);
+    }
+    $initials = mb_strtoupper($initials);
+?>
+<div class="bill-patient-panel">
+    <div class="d-flex align-items-start gap-4 flex-wrap">
+
+        <!-- ── Photo + summary ── -->
+        <div class="bill-patient-photo text-center flex-shrink-0">
+            <?php if ($has_image): ?>
+                <img class="bill-patient-avatar"
+                     src="<?php echo $this->media_storage->getImageURL($file); ?>" alt="">
+            <?php else: ?>
+                <div class="bill-patient-initials" aria-hidden="true"><?php echo html_escape($initials); ?></div>
+            <?php endif; ?>
+            <?php if ($gender_lbl): ?>
+            <div class="mt-1">
+                <span class="bill-gender-badge <?php echo $gender_cls; ?>"><?php echo $gender_lbl; ?></span>
+            </div>
+            <?php endif; ?>
+            <button class="btn bill-btn-summary w-100 showbill mt-2"
+                    data-case-id="<?php echo $case_id; ?>">
+                <i class="fa fa-file-text-o me-1"></i><?php echo $this->lang->line('bill_summary'); ?>
+            </button>
         </div>
-    </div>           
+
+        <!-- ── Info grid ── -->
+        <div class="flex-grow-1 min-w-0">
+            <div class="bill-info-grid">
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('case_id'); ?></div>
+                    <div class="bii-value bii-accent"><?php echo $case_id; ?></div>
+                </div>
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('name'); ?></div>
+                    <div class="bii-value"><?php echo composePatientName($result['patient_name'], $result['patient_id']); ?></div>
+                </div>
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('age'); ?></div>
+                    <div class="bii-value"><?php echo $this->customlib->get_patient_current_age($result['patient_id']); ?></div>
+                </div>
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('phone'); ?></div>
+                    <div class="bii-value"><?php echo $result['mobileno'] ?: '—'; ?></div>
+                </div>
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('guardian_name'); ?></div>
+                    <div class="bii-value"><?php echo $result['guardian_name'] ?: '—'; ?></div>
+                </div>
+
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('appointment_date'); ?></div>
+                    <div class="bii-value"><?php
+                        echo ($result['appointment_date'] != '' && $result['appointment_date'] != '0000-00-00')
+                            ? $this->customlib->YYYYMMDDHisTodateFormat($result['appointment_date'], $this->customlib->getHospitalTimeFormat())
+                            : '—';
+                    ?></div>
+                </div>
+
+                <?php if (!empty($result['credit_limit'])): ?>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('credit_limit') . ' (' . $currency_symbol . ')'; ?></div>
+                    <div class="bii-value"><?php echo $result['credit_limit']; ?></div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($result['opdid'] != '' && $result['opdid'] != 0): ?>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('opd_no'); ?></div>
+                    <div class="bii-value bii-accent"><?php echo $this->customlib->getSessionPrefixByType('opd_no') . $result['opdid']; ?></div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($result['ipdid'] != '' && $result['ipdid'] != 0): ?>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('ipd_no'); ?></div>
+                    <div class="bii-value bii-accent">
+                        <?php echo $this->customlib->getSessionPrefixByType('ipd_no') . $result['ipdid']; ?>
+                        <?php if ($result['discharged'] == 'yes'): ?>
+                            <span class="badge bg-warning text-dark ms-1 sh-badge-sm"><?php echo $this->lang->line('discharged'); ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('admission_date'); ?></div>
+                    <div class="bii-value"><?php
+                        echo ($result['date'] != '' && $result['date'] != '0000-00-00')
+                            ? $this->customlib->YYYYMMDDTodateFormat($result['date'])
+                            : '—';
+                    ?></div>
+                </div>
+                <div class="bii bii-wide">
+                    <div class="bii-label"><?php echo $this->lang->line('bed'); ?></div>
+                    <div class="bii-value"><?php echo $result['bed_name'] . ' · ' . $result['bedgroup_name'] . ' · ' . $result['floor_name']; ?></div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (file_exists("./uploads/patient_id_card/barcodes/$patient_id.png")): ?>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('barcode'); ?></div>
+                    <div class="bii-value">
+                        <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/$patient_id.png"); ?>" target="_blank">
+                            <img class="sh-qr-code" src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/$patient_id.png"); ?>" width="100" height="32">
+                        </a>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (file_exists("./uploads/patient_id_card/qrcode/$patient_id.png")): ?>
+                <div class="bii">
+                    <div class="bii-label"><?php echo $this->lang->line('qrcode'); ?></div>
+                    <div class="bii-value">
+                        <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/$patient_id.png"); ?>" target="_blank">
+                            <img class="sh-qr-code" src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/$patient_id.png"); ?>" width="44" height="44">
+                        </a>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+            </div>
+        </div>
+
+    </div>
 </div>
 <?php } ?>

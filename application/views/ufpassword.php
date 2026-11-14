@@ -1,185 +1,115 @@
+<?php
+$titleresult = $this->customlib->getTitleName();
+$logoresult  = $this->customlib->getLogoImage();
+$title_name  = !empty($titleresult["name"]) ? $titleresult["name"] : "Hospital Name";
+$mini_logo   = !empty($logoresult["mini_logo"]) ? "uploads/hospital_content/logo/" . $logoresult["mini_logo"] : "";
+?>
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#424242" />
-        <?php
-        $titleresult = $this->customlib->getTitleName();
-        if (!empty($titleresult["name"])) {
-            $title_name = $titleresult["name"];
-        } else {
-            $title_name = "Hospital Name Title";
-        }
-        ?>
-        <title><?php echo $title_name; ?></title>
-        <!--favican-->
-        <link href="<?php echo base_url(); ?>backend/images/s-favican.png" rel="shortcut icon" type="image/x-icon">
-        <!-- CSS -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,100,300,500">
-        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/usertemplate/assets/bootstrap/css/bootstrap.min.css">
-        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/usertemplate/assets/font-awesome/css/font-awesome.min.css">
-        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/usertemplate/assets/css/form-elements.css">
-        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/usertemplate/assets/css/style.css">
-        <style type="text/css">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?php echo $title_name; ?></title>
+<link rel="shortcut icon" href="<?php echo base_url(); ?>backend/images/s-favican.png" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="<?php echo base_url(); ?>backend/css/sh-tokens.css">
+<link rel="stylesheet" href="<?php echo base_url(); ?>backend/css/sh-login.css">
+<?php if (isset($sh_theme_tokens)) { echo theme_render_style_block($sh_theme_tokens); } ?>
+</head>
+<body class="variant-<?php echo isset($sh_theme_tokens) ? theme_preset_to_variant($sh_theme_tokens['theme_preset']) : (isset($sh_variant) ? htmlspecialchars($sh_variant) : 'a'); ?>" data-preset="<?php echo isset($sh_theme_tokens) ? htmlspecialchars($sh_theme_tokens['theme_preset']) : 'clinical'; ?>">
 
-            /* .inner-bg {padding: 10px 0 170px 0;}*/
-            body{background: #424242;}        
-            .discover{margin-top: -90px;position: relative;z-index: -1;}
-            .form-bottom {box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.35); padding-bottom: 15px !important}
-            .gradient{margin-top: 40px;text-align: right;padding: 10px;background: rgb(72,72,72);
-                      background: -moz-linear-gradient(left, rgba(72,72,72,1) 1%, rgba(73,73,73,1) 44%, rgba(73,73,73,1) 100%);
-                      background-image: linear-gradient(to right, rgba(72, 72, 72, 0.23) 1%, rgba(37, 37, 37, 0.64) 44%, rgba(73, 73, 73, 0) 100%);
-                      background-position-x: initial;
-                      background-position-y: initial;
-                      background-size: initial;
-                      background-repeat-x: initial;
-                      background-repeat-y: initial;
-                      background-attachment: initial;
-                      background-origin: initial;
-                      background-clip: initial;
-                      background-color: initial;
-                      background: -webkit-linear-gradient(left, rgba(72,72,72,1) 1%,rgb(73, 73, 73) 44%,rgba(73,73,73,1) 100%);
-                      background: linear-gradient(to right, rgba(72, 72, 72, 0.02) 1%,rgba(37, 37, 37, 0.67) 30%,rgba(73, 73, 73, 0) 100%);
-                      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#484848', endColorstr='#494949',GradientType=1 );}        
-            @media (min-width: 320px) and (max-width: 991px){
-                .width100{width: 100% !important;display: block !important;
-                          float: left !important; margin-bottom: 5px !important;
-                          border-radius: 2px !important;}
-                .width50{width: 50% !important;
-                         margin-bottom: 5px !important;
-                         display: block !important;
-                         border-radius:2px 0px 0px 2px !important;
-                         float: left !important;
-                         margin-left: 0px !important; }
-                .widthright50{width: 50% !important;
-                              display: block !important;
-                              margin-bottom: 5px !important;
-                              border-radius: 0px 2px 2px 0px !important;
-                              float: left !important;margin-left: 0px !important;} }
-            input[type="text"], input[type="password"], textarea, textarea.form-control {
-                height: 40px;border: 1px solid #999;}
+<!-- patient-layout: form panel gets order:-1 via CSS, placing it LEFT -->
+<div class="lp-wrap patient-layout">
 
-            input[type="text"]:focus, input[type="password"]:focus, textarea:focus, textarea.form-control:focus {border: 1px solid #424242;}
+  <!-- RIGHT: Brand / pitch (green patient variant) -->
+  <div class="lp-brand patient">
 
-            button.btn {height: 40px;line-height: 40px;}      
-            @media(max-width:767px){
-                .discover{margin-top: 10px}
-                .gradient {text-align: center;}
-                .logowidth{padding-right:0px;}     
-            }  
-            @media(min-width:768px) and (max-width:992px){
-                .discover{margin-top: 10px}
-                .logowidth{padding-right:0px;} 
-                .gradient {text-align: center;}  
-            }
+    <div class="lp-logo-row">
+      <div class="lp-logo-mark">
+        <?php if (!empty($mini_logo)): ?>
+          <img src="<?php echo $this->media_storage->getImageURL($mini_logo); ?>" alt="<?php echo $title_name; ?>">
+        <?php else: ?>
+          <?php echo strtoupper(substr($title_name, 0, 1)); ?>
+        <?php endif; ?>
+      </div>
+      <div class="lp-logo-name"><?php echo html_escape($title_name); ?></div>
+    </div>
 
-            .bgwhite{ background: #e4e5e7;
-                      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);overflow: auto;border-radius: 6px;}
+    <div class="lp-pitch">
+      <div class="lp-badge"><span class="dot"></span><?php echo $this->lang->line('patient_portal') ?: 'Patient Portal'; ?></div>
 
-
-            label.radio-inline{font-size: 14px; line-height: 30px;}
-            .radio-inline input[type=radio]{position: absolute; margin-top: 8px; outline: none;}
-            .backstretch{position: relative;}
-            .backstretch:after {
-                position: absolute;
-                z-index: 2;
-                width: 100%;
-                height: 100%;
-                display: block;
-                left: 0;
-                top: 0;
-                content: "";
-                background-color: rgba(16, 16, 16, 0.70);
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Top content -->
-        <div class="top-content">
-            <div class="inner-bg">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-8 col-sm-offset-2 text">
-                            <?php
-                            $logoresult = $this->customlib->getLogoImage();
-                            if (!empty($logoresult["image"])) {
-                                $logo_image = "uploads/hospital_content/logo/" . $logoresult["image"];
-                            } else {
-                                $logo_image = "uploads/hospital_content/logo/s_logo.png";
-                            }
-                            if (!empty($logoresult["mini_logo"])) {
-                                $mini_logo = "uploads/hospital_content/logo/" . $logoresult["mini_logo"];
-                            } else {
-                                $mini_logo = "uploads/hospital_content/logo/smalllogo.png";
-                            }
-                            ?>
-                            <div class="">
-                                <img src="<?php echo $this->media_storage->getImageURL($logo_image); ?>" class="logowidth">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6 col-sm-offset-3 form-box">
-                            <div class="loginbg">
-                                <div class="form-top">
-                                    <div class="form-top-left pt-20">
-                                        <h3 class="font-white mb-0 mt-0"><?php echo $this->lang->line('forgot_password'); ?></h3>
-
-                                    </div>
-                                    <div class="form-top-right">
-                                        <i class="fa fa-key"></i>
-                                    </div>
-                                </div>
-                                <div class="form-bottom">
-                                    <?php
-                                    if (isset($error_message)) {
-                                        echo "<div class='alert alert-danger'>" . $error_message . "</div>";
-                                    }
-                                    ?>
-                                    <form class="" action="<?php echo site_url('site/ufpassword') ?>" method="post">
-                                        <?php echo $this->customlib->getCSRF(); ?>
-                                        <div class="form-group">
-                                            <label class="sr-only" for="form-username"><?php echo $this->lang->line('username'); ?></label>
-                                            <input type="text" name="username" placeholder="<?php echo $this->lang->line('email'); ?>" class="form-username form-control" id="form-username">
-                                            <span class="text-danger"><?php echo form_error('username'); ?></span>
-                                        </div>
-                                    <input  name="user" type="hidden" value="patient">
-                                    <button type="submit" class="btn"><?php echo $this->lang->line('submit'); ?></button>
-                                    </form>
-                                    <a href="<?php echo site_url('site/userlogin') ?>" class="forgot"><i class="fa fa-key"></i> <?php echo $this->lang->line('user_login'); ?></a>
-                                </div>
-                            </div>  
-                        </div>
-                    </div>
-                </div>
+      <?php if (!empty($notice)): ?>
+        <div class="lp-news">
+          <div class="lp-news-label"><?php echo $this->lang->line('what_is_new_in'); ?> <?php echo html_escape($name); ?></div>
+          <?php foreach ($notice as $notice_value): ?>
+            <div class="lp-news-item">
+              <?php if (!empty($notice_value['created_at']) && strtotime($notice_value['created_at']) > 0): ?>
+                <div class="lp-news-meta"><?php echo date('d M Y', strtotime($notice_value['created_at'])); ?></div>
+              <?php endif; ?>
+              <h4><?php echo html_escape($notice_value['title']); ?></h4>
+              <?php
+              $string = strip_tags($notice_value['description']);
+              if (strlen($string) > 120) {
+                $stringCut = substr($string, 0, 120);
+                $endPoint  = strrpos($stringCut, ' ');
+                $string    = ($endPoint ? substr($stringCut, 0, $endPoint) : $stringCut);
+                $string    = html_escape($string) . '...';
+              } else {
+                $string = html_escape($string);
+              }
+              $read_more_url = html_escape(site_url('read/' . rawurlencode($notice_value['slug'])));
+              ?>
+              <p><?php echo $string; ?></p>
+              <a href="<?php echo $read_more_url; ?>" class="lp-news-read-more" target="_blank" rel="noopener">
+                <?php echo $this->lang->line('read_more'); ?>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4l4 4-4 4"/></svg>
+              </a>
             </div>
+          <?php endforeach; ?>
         </div>
-        <!-- Javascript -->
-        <script src="<?php echo base_url(); ?>backend/usertemplate/assets/js/jquery-1.11.1.min.js"></script>
-        <script src="<?php echo base_url(); ?>backend/usertemplate/assets/bootstrap/js/bootstrap.min.js"></script>
-        <script src="<?php echo base_url(); ?>backend/usertemplate/assets/js/jquery.backstretch.min.js"></script>
-    </body>
+      <?php endif; ?>
+    </div>
+
+    <div class="lp-tiny">© <?php echo date('Y'); ?> <?php echo html_escape($title_name); ?> · <?php echo $this->lang->line('patient_portal') ?: 'Patient Portal'; ?> · <?php echo $this->lang->line('all_rights_reserved') ?: 'All rights reserved'; ?></div>
+  </div>
+
+  <!-- LEFT (via order:-1): Forgot password form -->
+  <div class="lp-form-panel">
+    <div class="lp-card">
+      <h2><?php echo $this->lang->line('reset_your_password') ?: 'Reset your password'; ?></h2>
+
+      <?php if (isset($error_message)): ?>
+        <div class="alert alert-danger mt-3"><?php echo $error_message; ?></div>
+      <?php endif; ?>
+
+      <form action="<?php echo site_url('site/ufpassword'); ?>" method="post" class="lp-form">
+        <?php echo $this->customlib->getCSRF(); ?>
+
+        <div>
+          <label class="lp-label" for="uf-email"><?php echo $this->lang->line('email'); ?></label>
+          <input type="text" id="uf-email" name="username" class="lp-input" placeholder="patient@example.com" autocomplete="email">
+          <span class="text-danger"><?php echo form_error('username'); ?></span>
+        </div>
+
+        <input type="hidden" name="user" value="patient">
+
+        <button type="submit" class="lp-btn-submit"><?php echo $this->lang->line('submit'); ?></button>
+      </form>
+
+      <div class="lp-card-alt">
+        <a href="<?php echo site_url('site/userlogin'); ?>" class="lp-back-link">
+          <svg viewBox="0 0 16 16" width="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 4L6 8l4 4"/></svg>
+          <?php echo $this->lang->line('back_to_patient_login') ?: 'Back to Patient sign in'; ?>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
-<script type="text/javascript">
-    $(document).ready(function () {
-        var base_url = '<?php echo base_url(); ?>';
-        $.backstretch([
-            base_url + "backend/usertemplate/assets/img/backgrounds/user15.jpg"
-        ], {duration: 3000, fade: 750});
-        $('.login-form input[type="text"], .login-form input[type="password"], .login-form textarea').on('focus', function () {
-            $(this).removeClass('input-error');
-        });
-        $('.login-form').on('submit', function (e) {
-            $(this).find('input[type="text"], input[type="password"], textarea').each(function () {
-                if ($(this).val() == "") {
-                    e.preventDefault();
-                    $(this).addClass('input-error');
-                } else {
-                    $(this).removeClass('input-error');
-                }
-            });
-        });
-    });
-</script>

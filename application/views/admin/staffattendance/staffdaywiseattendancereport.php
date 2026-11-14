@@ -1,20 +1,17 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content">
-        <div class="row">   
+<div class="row">   
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_human_resource');?>
-                <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('staff_day_wise_attendance_report'); ?> </h3>
+                <div class="card-header ptbnull"></div>
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('staff_day_wise_attendance_report'); ?> </h3>
                     </div>
                     <form id='form1' action="<?php echo site_url('admin/staffattendance/staffdaywiseattendancereport') ?>" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body pb-0">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('role'); ?></label>
                                         <select  id="role" name="role" class="form-control" >
                                             <option value="select"><?php echo $this->lang->line('select'); ?></option>
@@ -34,8 +31,8 @@
                                         <span class="text-danger"><?php echo form_error('role'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
 										<label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?></label><small class="req"> *</small>
 
                                         <input name="date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly" />
@@ -43,8 +40,8 @@
                                         
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"> <?php echo $this->lang->line('source'); ?></label>
                                         <select id="attendance_mode" name="attendance_mode" class="form-control">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -55,16 +52,20 @@
                                         <span class="text-danger"><?php echo form_error('attendance_mode'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-lg-12">
-                                    <button type="submit" name="search" value="search" class="btn btn-primary btn-sm pull-right checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                                <div class="col-sm-6 col-md-3 d-flex align-items-end">
+                                    <div class="mb-3">
+                                        <button type="submit" name="search" value="search" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                            <i class="fa fa-search"></i>
+                                            <?php echo $this->lang->line('search'); ?>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div> 
                     </form>
                     
-                        <div class="box border0 clear" id="attendencelist">
-                            <div class="ptbnull"></div>
-                            <div class="table-responsive box-body">
+                        <div id="attendencelist">
+                            <div class="table-responsive card-body pt-0">
                                     <div class="download_label"><?php echo $this->lang->line('staff_day_wise_attendance_report'); ?></div>
                                     <table class="table table-hover table-striped example">
                                         <thead>
@@ -103,7 +104,7 @@
 													<?php
                                                         if (IsNullOrEmptyString($value['staff_attendance_type_id'])) {
                                                     ?>
-                                                    <span class="label label-danger"><?php echo $this->lang->line('n_a'); ?> </span>
+                                                    <span class="badge bg-danger"><?php echo $this->lang->line('n_a'); ?> </span>
                                                     <?php
                                                         } else {
                                                     ?>
@@ -179,15 +180,10 @@
                             </div>
                         </div>
 					</div>
-                </section>
-            </div>
             <script type="text/javascript">
                 $(document).ready(function () {
                     var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
-                    $('#date').datepicker({
-                        format: date_format,
-                        autoclose: true
-                    });
+                    /* #date init removed - auto-init via class + event delegation */
 
                     $('.detail_popover').popover({
                         placement: 'right',

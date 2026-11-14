@@ -9,7 +9,7 @@ $amount=0;
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive">
+                            ?>" class="img-fluid">
                         </div>
     <?php } ?>
 </div>    
@@ -48,19 +48,19 @@ $amount=0;
                              <thead>
                                 <tr class="line">
                                    <td>#</td>
-                                   <td class="text-left"><?php echo $this->lang->line('customer_type'); ?></td>
+                                   <td class="text-start"><?php echo $this->lang->line('customer_type'); ?></td>
                                    <td class="text-center"><?php echo $this->lang->line('operation_name'); ?></td>
                                    <td class="text-center"><?php echo $this->lang->line('date'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('operation_type'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('assistant_consultant').' 1'; ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('assistant_consultant').' 2'; ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('anesthetist'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('anaethesia_type'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('ot_technician'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('ot_assistant'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('result'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('remark'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('generated_by'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('operation_type'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('assistant_consultant').' 1'; ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('assistant_consultant').' 2'; ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('anesthetist'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('anaethesia_type'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('ot_technician'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('ot_assistant'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('result'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('remark'); ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('generated_by'); ?></td>
                                 </tr>
                              </thead>
                              <tbody>

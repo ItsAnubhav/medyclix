@@ -20,7 +20,7 @@ class Wardtype extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'bed');
         $data['wardtype_list'] = $this->Wardtype_Model->wardtype_list();
         $this->load->view('layout/header');
-        $this->load->view('setup/Wardtype', $data);
+        $this->load->view('setup/wardtype', $data);
         $this->load->view('layout/footer');
     }
 

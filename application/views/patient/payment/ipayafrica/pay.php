@@ -1,4 +1,4 @@
-
+﻿
 
 <form id="pay_form" action="https://payments.ipayafrica.com/v3/ke">
 <?php  

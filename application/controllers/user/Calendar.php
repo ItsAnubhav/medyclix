@@ -6,6 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Calendar extends Patient_Controller
 {
+	public $appointment_status;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $patient_data;
+	public $payment_method;
+	public $payment_mode;
+	public $search_type;
+
 
     public function __construct()
     {
@@ -64,8 +73,9 @@ class Calendar extends Patient_Controller
 
 	public function getevents(){
 
-        $userdata = $this->session->userdata('patient');
-        $result   = $this->calendar_model->getPatientEvents();
+        $userdata  = $this->session->userdata('patient');
+        $result    = $this->calendar_model->getPatientEvents();
+        $eventdata = [];
         if (!empty($result)) {
             foreach ($result as $key => $value) {
                 $event_type = $value["event_type"];
@@ -149,8 +159,8 @@ class Calendar extends Patient_Controller
             //holiday section end
             }
 
-            echo json_encode($eventdata);
         }
+        echo json_encode($eventdata);
     }
 
     public function addtodo()
@@ -216,7 +226,7 @@ class Calendar extends Patient_Controller
             $this->calendar_model->saveEvent($eventdata);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         } else {
-            $array = array('status' => 'fail', 'error' => '', 'message' => "Cannot Mark Complete this event.");
+            $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('cannot_mark_complete_this_event'));
         }
         echo json_encode($array);
     }
@@ -225,9 +235,9 @@ class Calendar extends Patient_Controller
     {
         if (!empty($id)) {
             $result = $this->calendar_model->deleteEvent($id);
-            $array  = array('status' => 'success', 'error' => '', 'message' => "Event Deleted Successfully.");
+            $array  = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('event_deleted_successfully'));
         } else {
-            $array = array('status' => 'fail', 'error' => '', 'message' => "Cannot Delete this event.");
+            $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('cannot_delete_this_event'));
         }
         echo json_encode($array);
     }

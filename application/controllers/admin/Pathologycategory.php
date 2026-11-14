@@ -11,19 +11,19 @@ class Pathologycategory extends Admin_Controller
     {
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addCategory/index');
-        $pathology_category_id = $this->input->post("pathology_category_id");
+        $pathology_category_id = $this->input->post("pathology_category_id", TRUE);
 
         $categoryName         = $this->pathology_category_model->getcategoryName();
         $data["categoryName"] = $categoryName;
         $this->form_validation->set_rules(
-            'category_name', $this->lang->line('category_name'), array('required',
+            'category_name', $this->lang->line('category_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_category_name')),
             )
         );
         $data["title"] = $this->lang->line('add_pathology_categories');
         if ($this->form_validation->run()) {
-            $categoryName          = $this->input->post("category_name");
-            $pathology_category_id = $this->input->post("id");
+            $categoryName          = $this->input->post("category_name", TRUE);
+            $pathology_category_id = $this->input->post("id", TRUE);
             if (empty($pathology_category_id)) {
 
                 if (!$this->rbac->hasPrivilege('pathology_category', 'can_add')) {
@@ -44,9 +44,10 @@ class Pathologycategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/pathologycategory/addCategory");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pathology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pathology/category", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -58,7 +59,7 @@ class Pathologycategory extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addCategory/index');
 
-        $pathology_parameter_id = $this->input->post("pathology_parameter_id");
+        $pathology_parameter_id = $this->input->post("pathology_parameter_id", TRUE);
 
         $parameterName         = $this->pathology_category_model->getpathoparameter();
         $data["parameterName"] = $parameterName;
@@ -66,15 +67,15 @@ class Pathologycategory extends Admin_Controller
         $data["unitname"]      = $unitname;
 
         $this->form_validation->set_rules(
-            'parameter_name', $this->lang->line('parameter_name'), array('required',
+            'parameter_name', $this->lang->line('parameter_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_parameter_name')),
             )
         );
         $data["title"] = "Add Pathology parameter";
         if ($this->form_validation->run()) {
-            $parameter_name = $this->input->post("parameter_name");
+            $parameter_name = $this->input->post("parameter_name", TRUE);
 
-            $pathology_parameter_id = $this->input->post("id");
+            $pathology_parameter_id = $this->input->post("id", TRUE);
             if (empty($pathology_category_id)) {
 
                 if (!$this->rbac->hasPrivilege('parameter_name', 'can_add')) {
@@ -96,9 +97,10 @@ class Pathologycategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/pathologycategory/addCategory");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pathology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pathology/pathoparameter", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -110,19 +112,19 @@ class Pathologycategory extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addCategory/index');
 
-        $unit_id = $this->input->post("unit_id");
+        $unit_id = $this->input->post("unit_id", TRUE);
 
         $unitname         = $this->pathology_category_model->getunit();
         $data["unitname"] = $unitname;
         $this->form_validation->set_rules(
-            'unit_name', $this->lang->line('unit_name'), array('required',
+            'unit_name', $this->lang->line('unit_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_unit_name')),
             )
         );
         $data["title"] = "Add Unit";
         if ($this->form_validation->run()) {
-            $unit_name = $this->input->post("unit_name");
-            $unit_id   = $this->input->post("id");
+            $unit_name = $this->input->post("unit_name", TRUE);
+            $unit_id   = $this->input->post("id", TRUE);
             if (empty($unit_id)) {
 
                 if (!$this->rbac->hasPrivilege('unit_name', 'can_add')) {
@@ -144,17 +146,18 @@ class Pathologycategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/pathologycategory/addCategory");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pathology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pathology/unit", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
     public function add()
     {
-        $pathology_category_id = $this->input->post("pathology_category_id");
+        $pathology_category_id = $this->input->post("pathology_category_id", TRUE);
         $this->form_validation->set_rules(
-            'category_name', $this->lang->line('category_name'), array('required',
+            'category_name', $this->lang->line('category_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_category_name')),
             )
         );
@@ -164,7 +167,7 @@ class Pathologycategory extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $categoryName = $this->input->post("category_name");
+            $categoryName = $this->input->post("category_name", TRUE);
             if (!empty($pathology_category_id)) {
                 if (!$this->rbac->hasPrivilege('pathology_category', 'can_edit')) {
                     access_denied();
@@ -188,16 +191,16 @@ class Pathologycategory extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_parameter', 'can_add')) {
             access_denied();
         }
-        $pathology_parameter_id = $this->input->post("pathology_parameter_id");
+        $pathology_parameter_id = $this->input->post("pathology_parameter_id", TRUE);
         $this->form_validation->set_rules(
-            'parameter_name', $this->lang->line('parameter_name'), array('required',
+            'parameter_name', $this->lang->line('parameter_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_parameter_name')),
             )
         );
-        
-        $this->form_validation->set_rules('from_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('from'), 'required');
-        $this->form_validation->set_rules('to_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('to'), 'required');
-        $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required');
+
+        $this->form_validation->set_rules('from_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('from'), 'required|xss_clean');
+        $this->form_validation->set_rules('to_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('to'), 'required|xss_clean');
+        $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required|xss_clean');
 		
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -208,12 +211,12 @@ class Pathologycategory extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $parametername          = $this->input->post("parameter_name");
-            $referencerange         = $this->input->post("from_reference_range").'-'.$this->input->post("to_reference_range");
-            $unit                   = $this->input->post("unit");
-            $description            = $this->input->post("description");
-            $from_reference_range   = $this->input->post("from_reference_range");
-            $to_reference_range     = $this->input->post("to_reference_range");
+            $parametername          = $this->input->post("parameter_name", TRUE);
+            $referencerange         = $this->input->post("from_reference_range", TRUE).'-'.$this->input->post("to_reference_range", TRUE);
+            $unit                   = $this->input->post("unit", TRUE);
+            $description            = $this->input->post("description", TRUE);
+            $from_reference_range   = $this->input->post("from_reference_range", TRUE);
+            $to_reference_range     = $this->input->post("to_reference_range", TRUE);
 
             if (!empty($pathology_parameter_id)) {
                 if (!$this->rbac->hasPrivilege('pathology_parameter', 'can_edit')) {
@@ -238,9 +241,9 @@ class Pathologycategory extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_unit', 'can_add')) {
             access_denied();
         }
-        $unit_id = $this->input->post("unit_id");
+        $unit_id = $this->input->post("unit_id", TRUE);
         $this->form_validation->set_rules(
-            'unit_name', $this->lang->line('unit_name'), array('required',
+            'unit_name', $this->lang->line('unit_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->pathology_category_model, 'valid_unit_name')),
             )
         );
@@ -250,7 +253,7 @@ class Pathologycategory extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $unitname = $this->input->post("unit_name");
+            $unitname = $this->input->post("unit_name", TRUE);
             $unittype = 'patho';
 
             if (!empty($unit_id)) {
@@ -291,9 +294,10 @@ class Pathologycategory extends Admin_Controller
         $data["title"]        = $this->lang->line('edit_category_name');
         $categoryName         = $this->pathology_category_model->getCategoryName();
         $data["categoryName"] = $categoryName;
-        $this->load->view("layout/header");
+        $data['module'] = 'pathology';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/pathology/category", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function editparameter($id)
@@ -306,9 +310,10 @@ class Pathologycategory extends Admin_Controller
         $data["title"]         = $this->lang->line('edit_parameter');
         $parameterName         = $this->pathology_category_model->getpathoparameter();
         $data["parameterName"] = $parameterName;
-        $this->load->view("layout/header");
+        $data['module'] = 'pathology';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/pathology/pathoparameter", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function delete($id)

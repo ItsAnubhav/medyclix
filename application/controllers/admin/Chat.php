@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Chat extends Admin_Controller
 {
+	public $sch_setting_detail;
+
 
     public function __construct()
     {
@@ -16,6 +18,7 @@ class Chat extends Admin_Controller
     public function unauthorized()
     {
         $data = array();
+        $data['module'] = 'communicate';
         $this->load->view('layout/header', $data);
         $this->load->view('unauthorized', $data);
         $this->load->view('layout/footer', $data);
@@ -34,17 +37,19 @@ class Chat extends Admin_Controller
         $data = array();
         $this->session->set_userdata('top_menu', 'Communicate');
         $this->session->set_userdata('sub_menu', 'Communicate/chat');
-        $this->load->view('layout/header');
+        $data['module'] = 'communicate';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/chat/chat', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function dashbord()
     {
         $data['start'] = "0";
-        $this->load->view('layout/header');
+        $data['module'] = 'communicate';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/chat/dashbord', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }    
 
     public function chatdemo()
@@ -55,9 +60,10 @@ class Chat extends Admin_Controller
         $data['title_list'] = $this->lang->line('audit_trail_list');
         $listaudit          = $this->audit_model->get();
         $data['resultlist'] = $listaudit;
-        $this->load->view('layout/header');
+        $data['module'] = 'communicate';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/chat/chatdemo', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function searchuser()
@@ -118,9 +124,9 @@ class Chat extends Admin_Controller
 
     public function newMessage()
     {
-        $chat_connection_id = $this->input->post('chat_connection_id');
-        $chat_to_user       = $this->input->post('chat_to_user');
-        $message            = $this->input->post('message');
+        $chat_connection_id = $this->input->post('chat_connection_id', TRUE);
+        $chat_to_user       = $this->input->post('chat_to_user', TRUE);
+        $message            = $this->input->post('message', TRUE);
         $time               = $this->input->post('time');
         $insert_record      = array(
             'chat_user_id'       => $chat_to_user,

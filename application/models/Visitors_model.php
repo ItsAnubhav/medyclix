@@ -118,11 +118,10 @@ class Visitors_model extends MY_Model
         $this->db->set('image', $image);
         $this->db->where($array);
         $this->db->update('visitors_book');
-
-        $insert_id = $this->db->insert_id();
-        $message   = INSERT_RECORD_CONSTANT . " On Visitors Book id " . $insert_id;
+        
+        $message   = UPDATE_RECORD_CONSTANT . " On Visitors Book id " . $visitor_id;
         $action    = "Insert";
-        $record_id = $insert_id;
+        $record_id = $visitor_id;
         $this->log($message, $record_id, $action);
         //======================Code End==============================
 
@@ -147,8 +146,10 @@ class Visitors_model extends MY_Model
         $this->db->set('image', $image);
         $this->db->where($array);
         $this->db->update('visitors_book');
-        $insert_id = $this->db->insert_id();
-        $message   = INSERT_RECORD_CONSTANT . " On Visitors Book id " . $insert_id;
+		
+        $insert_id = $visitor_id;
+		
+        $message   = UPDATE_RECORD_CONSTANT . " On Visitors Book id " . $insert_id;
         $action    = "Insert";
         $record_id = $insert_id;
         $this->log($message, $record_id, $action);

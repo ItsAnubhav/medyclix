@@ -4,6 +4,10 @@
 
 class Pesapal extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
     public $payment_method = array();
     public $pay_method     = array();
     public $patient_data;
@@ -68,7 +72,7 @@ class Pesapal extends Patient_Controller
             $consumer_secret  = $this->pay_method->api_secret_key;
             $signature_method = new OAuthSignatureMethod_HMAC_SHA1();
             $iframelink       = 'https://www.pesapal.com/API/PostPesapalDirectOrderV4';
-            $amount           = number_format($data['amount'], 2);
+            $amount           = number_format((float) $data['amount'], 2);
             $desc             = $this->lang->line('online_payment');
             $type             = 'MERCHANT';
             $reference        = time();

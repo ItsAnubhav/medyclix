@@ -1,18 +1,15 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content">
-        <div class="row">   
+<div class="row">   
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><i class="fa fa-search"></i> <?php echo $this->lang->line('select_criteria') ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fa fa-search"></i> <?php echo $this->lang->line('select_criteria') ?></h3>
                     </div>
                     <form id='form1' action="<?php echo site_url('admin/staffattendance/attendancereport') ?>" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('role'); ?></label>
                                         <select  id="role" name="role" class="form-control" >
                                             <option value="select"><?php echo $this->lang->line('select'); ?></option>
@@ -33,7 +30,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('name'); ?></label>
                                         <select  id="empname" name="empname" class="form-control" >
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -42,7 +39,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('year'); ?></label>
                                         <select  id="year" name="year" class="form-control" >
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -63,32 +60,32 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <button type="submit" name="search" value="search" class="btn btn-primary btn-sm pull-right checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" name="search" value="search" class="btn btn-primary btn-sm float-end checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
                         </div>
                     </form>
                 </div>
                 <?php
                 if (isset($resultlist)) {
                     ?>
-                    <div class="box box-info" id="attendencelist">
-                        <div class="box-header with-border">
+                    <div class="card" id="attendencelist">
+                        <div class="card-header">
                             <div class="row">
                                 <div class="col-md-4 col-sm-4">
-                                    <h3 class="box-title"><i class="fa fa-users"></i> <?php echo $this->lang->line('staff'); ?><?php echo $this->lang->line('attendance'); ?> <?php echo $this->lang->line('report'); ?></h3>
+                                    <h3 class="card-title"><i class="fa fa-users"></i> <?php echo $this->lang->line('staff'); ?><?php echo $this->lang->line('attendance'); ?> <?php echo $this->lang->line('report'); ?></h3>
                                 </div>
                                 <div class="col-md-8 col-sm-8">
-                                    <div class="pull-right">
+                                    <div class="float-end">
                                         <!-- right content -->
                                     </div>
                                 </div>
                             </div></div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <?php
                             if (!empty($resultlist)) {
                                 ?>
                                 <div class="mailbox-controls">
-                                    <div class="pull-right">
+                                    <div class="float-end">
                                     </div>
                                 </div>
                                 <div class="download_label"><?php echo $this->lang->line('staff'); ?> <?php echo $this->lang->line('attendance'); ?> <?php echo $this->lang->line('report'); ?></div>
@@ -139,16 +136,11 @@
                     <?php
                 }
                 ?>
-                </section>
-            </div>
 			
             <script type="text/javascript">
                 $(document).ready(function () {
                     var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
-                    $('#date').datepicker({
-                        format: date_format,
-                        autoclose: true
-                    });
+                    /* #date init removed - auto-init via class + event delegation */
 
                     $('.detail_popover').popover({
                         placement: 'right',

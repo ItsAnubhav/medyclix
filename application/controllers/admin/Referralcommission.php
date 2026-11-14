@@ -18,7 +18,7 @@ class Referralcommission extends Admin_Controller
     {
         $data = array();
         $this->form_validation->set_rules("category", $this->lang->line('category'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules("commission", $this->lang->line('commission'), 'numeric');
+        $this->form_validation->set_rules("commission", $this->lang->line('commission'), 'trim|numeric|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 "category"   => form_error('category'),
@@ -26,9 +26,9 @@ class Referralcommission extends Admin_Controller
             );
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $category_id       = $this->input->post('category');
-            $module_commission = $this->input->post('module_commission');
-            $referral_type_id  = $this->input->post('referral_type_id');
+            $category_id       = $this->input->post('category', TRUE);
+            $module_commission = $this->input->post('module_commission', TRUE);
+            $referral_type_id  = $this->input->post('referral_type_id', TRUE);
             $i                 = 0;
 
             $commission      = $this->referral_commission_model->get_type_by_category($category_id);

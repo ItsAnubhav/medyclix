@@ -24,19 +24,20 @@ class Roles extends Admin_Controller
         $this->session->set_userdata('inner_menu', 'admin/roles');
         $this->form_validation->set_rules(
             'name', $this->lang->line('name'), array(
-                'required',
+                'required', 'xss_clean',
                 array('check_exists', array($this->role_model, 'valid_check_exists')),
             )
         );
         if ($this->form_validation->run() == false) {
             $listroute         = $this->role_model->get();
             $data['listroute'] = $listroute;
-            $this->load->view('layout/header');
+            $data['module'] = 'setup';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/roles/create', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'name' => $this->input->post('name'),
+                'name' => $this->input->post('name', TRUE),
             );
             $this->role_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
@@ -46,6 +47,9 @@ class Roles extends Admin_Controller
 
     public function permission($id, $open_tab = 0)
     {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureServicePostingPermissions();
+
         $data['title']           = $this->lang->line('add_role');
         $data['id']              = $id;
         $role                    = $this->role_model->get($id);
@@ -54,18 +58,19 @@ class Roles extends Admin_Controller
         $data['open_tab']        = $open_tab;
         $role_permission         = $this->role_model->find($role['id']);
         $data['role_permission'] = $role_permission;
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/roles/allotmodule', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 	
 	public function savecheck()
     {
         $this->form_validation->set_error_delimiters('<p>', '</p>');
-        $this->form_validation->set_rules('action', $this->lang->line('class'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('per_cat', $this->lang->line('section'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('role_id', $this->lang->line('subject'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('add_remove', $this->lang->line('session'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('action', $this->lang->line('action'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('per_cat', $this->lang->line('permission_category'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('role_id', $this->lang->line('role'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('add_remove', $this->lang->line('add_remove'), 'required|trim|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data = array(
@@ -79,10 +84,10 @@ class Roles extends Admin_Controller
         } else {
 
                 $update_array=[
-                    'action'=>$this->input->post('action'),
-                    'perm_cat_id'=>$this->input->post('per_cat'),
-                    'role_id'=>$this->input->post('role_id'),
-                    'value'=>$this->input->post('add_remove')
+                    'action'=>$this->input->post('action', TRUE),
+                    'perm_cat_id'=>$this->input->post('per_cat', TRUE),
+                    'role_id'=>$this->input->post('role_id', TRUE),
+                    'value'=>$this->input->post('add_remove', TRUE)
                 ];
  
             $this->role_model->updatePermission($update_array);
@@ -101,20 +106,21 @@ class Roles extends Admin_Controller
 
         $this->form_validation->set_rules(
             'name', $this->lang->line('name'), array(
-                'required',
+                'required', 'xss_clean',
                 array('check_exists', array($this->role_model, 'valid_check_exists')),
             )
         );
         if ($this->form_validation->run() == false) {
             $listroute         = $this->role_model->get();
             $data['listroute'] = $listroute;
-            $this->load->view('layout/header');
+            $data['module'] = 'setup';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/roles/edit', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $data = array(
                 'id'   => $id,
-                'name' => $this->input->post('name'),
+                'name' => $this->input->post('name', TRUE),
             );
             $this->role_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');

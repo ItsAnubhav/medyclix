@@ -57,7 +57,7 @@ class Vehicle_model extends MY_Model
 
     public function get($id = null)
     {
-        $this->db->select()->from('vehicles');
+        $this->db->select('id, vehicle_no, vehicle_model, manufacture_year, vehicle_type, driver_name, driver_licence, driver_contact, note, created_at')->from('vehicles');
         if ($id != null) {
             $this->db->where('vehicles.id', $id);
         } else {
@@ -73,7 +73,7 @@ class Vehicle_model extends MY_Model
 
     public function getDetails($id)
     {
-        $query = $this->db->select('vehicles.*')->where('id', $id)->get('vehicles');
+        $query = $this->db->select('id, vehicle_no, vehicle_model, manufacture_year, vehicle_type, driver_name, driver_licence, driver_contact, note, created_at')->where('id', $id)->get('vehicles');
         return $query->row_array();
     }
 
@@ -96,7 +96,7 @@ class Vehicle_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            
+            return true;
         }
     }
 
@@ -225,7 +225,7 @@ class Vehicle_model extends MY_Model
         $field_variable = implode(',', $field_var_array);
         $query          = $this->db->select('ambulance_call.*,vehicles.vehicle_no,vehicles.vehicle_model,patients.patient_name as patient,patients.mobileno,patients.address as patient_address,staff.name,staff.surname,' . $field_variable)
             ->join('vehicles', 'vehicles.id = ambulance_call.vehicle_id')
-            ->join('patients', 'patients.id = ambulance_call.patient_name')
+            ->join('patients', 'patients.id = ambulance_call.patient_id')
             ->join('staff', 'staff.id = ambulance_call.generated_by')
             ->get('ambulance_call');
         return $query->result_array();
@@ -256,7 +256,7 @@ class Vehicle_model extends MY_Model
             ->join('staff', 'staff.id = ambulance_call.generated_by')	  
 			 
             ->searchable('ambulance_call.id,ambulance_call.case_reference_id,patients.patient_name,patients.id,vehicles.vehicle_no,vehicles.vehicle_model,ambulance_call.driver,patients.mobileno,patients.address,ambulance_call.date' . $custom_field_column . ',ambulance_call.discount,ambulance_call.discount_percentage,net_amount')
-            ->orderable('ambulance_call.id,ambulance_call.case_reference_id,patients.patient_name,patients.id,vehicles.vehicle_no,vehicles.vehicle_model,ambulance_call.driver,patients.mobileno,patients.address,ambulance_call.date' . $custom_field_column . ',ambulance_call.discount,tax_percentage,ambulance_call.discount_percentage,net_amount,paid_amount')	
+            ->orderable('ambulance_call.id,ambulance_call.case_reference_id,patients.patient_name,patients.id,vehicles.vehicle_no,vehicles.vehicle_model,ambulance_call.driver,patients.mobileno,patients.address,ambulance_call.date' . $custom_field_column . ',ambulance_call.discount,tax_percentage,ambulance_call.discount_percentage,net_amount,paid_amount,""')	
 			
             ->sort('ambulance_call.id', 'desc')
             ->from('ambulance_call');
@@ -267,8 +267,8 @@ class Vehicle_model extends MY_Model
     {
         $this->datatables
             ->select('vehicles.id,vehicles.vehicle_no,vehicles.vehicle_model,vehicles.manufacture_year,vehicles.vehicle_type,vehicles.driver_name,vehicles.driver_licence,vehicles.driver_contact,vehicles.note')
-            ->searchable('vehicles.vehicle_no,vehicles.Vehicle_model,vehicles.manufacture_year,vehicles.driver_name,vehicles.driver_licence,vehicles.driver_contact,vehicles.vehicle_type')
-            ->orderable('vehicles.vehicle_no,vehicles.Vehicle_model,vehicles.manufacture_year,vehicles.driver_name,vehicles.driver_licence,vehicles.driver_contact,vehicles.vehicle_type')
+            ->searchable('vehicles.vehicle_no,vehicles.Vehicle_model,vehicles.manufacture_year,vehicles.driver_name,vehicles.driver_licence,vehicles.driver_contact,vehicles.note,vehicles.vehicle_type')
+            ->orderable('vehicles.vehicle_no,vehicles.Vehicle_model,vehicles.manufacture_year,vehicles.driver_name,vehicles.driver_licence,vehicles.driver_contact,vehicles.note,vehicles.vehicle_type')
             ->sort('vehicles.id', 'desc')
             ->from('vehicles');
         return $this->datatables->generate('json');
@@ -353,7 +353,9 @@ class Vehicle_model extends MY_Model
         //=======================Code Start===========================
         $this->db->where('id', $id);
         $this->db->delete('ambulance_call');		
-		$this->db->delete("transactions", array("ambulance_call_id" => $id));		
+		if (!empty($id)) {
+			$this->db->delete("transactions", array("ambulance_call_id" => $id));
+		}
         $message   = DELETE_RECORD_CONSTANT . " Where Ambulance Call id " . $id;
         $action    = "Delete";
         $record_id = $id;

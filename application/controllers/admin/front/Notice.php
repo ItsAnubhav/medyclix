@@ -33,9 +33,10 @@ class Notice extends Admin_Controller
         $listResult     = $this->cms_program_model->getByCategory($notice_content);
 
         $data['listResult'] = $listResult;
-        $this->load->view('layout/header');
+        $data['module'] = 'front_cms';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/front/notice/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function create()
@@ -53,12 +54,13 @@ class Notice extends Admin_Controller
 
 
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/notice/create', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
-            $category = $this->input->post('content_category');
+            $category = $this->input->post('content_category', TRUE);
             if (isset($category)) {
                 $contents_category = $category;
             } else {
@@ -66,16 +68,15 @@ class Notice extends Admin_Controller
             }
 
             $data = array(
-                'title'            => $this->input->post('title'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'feature_image'    => $this->input->post('image'),
-                'date'             => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date')),
-                //'date'             => date('Y-m-d', $this->customlib->datetostrtotime($this->input->post('date'))),
-                'sidebar'          => $this->input->post('sidebar'),
+                'title'            => $this->input->post('title', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'date'             => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE)),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
                 'type'             => $this->config->item('ci_front_notice_content'),
-                'meta_description' => $this->input->post('meta_description'),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
 
             $data['slug'] = $this->slug->create_uri($data);
@@ -103,24 +104,25 @@ class Notice extends Admin_Controller
 
         if ($this->form_validation->run() == false) {
 
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/notice/edit', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'id'               => $this->input->post('id'),
-                'title'            => $this->input->post('title'),
-                'url'              => $this->config->item('ci_front_page_url') . $this->input->post('url'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'feature_image'    => $this->input->post('image'),
-                'date'             => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date')), 
-                'sidebar'          => $this->input->post('sidebar'),
-                'meta_description' => $this->input->post('meta_description'),
+                'id'               => $this->input->post('id', TRUE),
+                'title'            => $this->input->post('title', TRUE),
+                'url'              => $this->config->item('ci_front_page_url') . $this->input->post('url', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'date'             => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE)),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
 
-            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id'));
+            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id', TRUE));
             $this->cms_program_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/front/notice');

@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Datatables
 {
+	public $sss;
+
 
     /**
      * Global container variables for chained argument results

@@ -12,6 +12,7 @@ class Transaction extends Admin_Controller
         parent::__construct();
         $this->load->model(array('transaction_model'));
         $this->load->library("datatables");
+        $this->load->library('SaasValidation');
     }
 
     public function printTransaction()
@@ -28,6 +29,33 @@ class Transaction extends Admin_Controller
     public function deleteByID()
     {
         $id          = $this->input->post('id');
+
+        // SaaS: release the transaction's attachment from storage quota before deletion.
+        // Diagnostic INFO logs trace why quota does/doesn't change — check application/logs/.
+        if (!empty($id)) {
+            $saas_transaction = $this->transaction_model->getTransaction($id);
+            if (empty($saas_transaction)) {
+                log_message('info', 'SaaS deleteByID: transaction id=' . $id . ' not found in DB, no quota release.');
+            } elseif (empty($saas_transaction->attachment)) {
+                log_message('info', 'SaaS deleteByID: transaction id=' . $id . ' has NULL attachment (likely cash/non-cheque payment), no quota release.');
+            } else {
+                $doc_path = $saas_transaction->attachment;
+                $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                if ($kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        log_message('info', 'SaaS deleteByID: released ' . $kb . ' KB for transaction id=' . $id . ' attachment=' . $doc_path);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (transaction deleteByID id=' . $id . '): ' . $e->getMessage());
+                    }
+                } else {
+                    log_message('info', 'SaaS deleteByID: transaction id=' . $id . ' attachment=' . $doc_path . ' file missing on disk (size=0), no quota release.');
+                }
+                $this->media_storage->filedelete($doc_path, $dir);
+            }
+        }
+
         $transaction = $this->transaction_model->delete($id);
         $array       = array('status' => 'success', 'message' => $this->lang->line('delete_message'));
         echo json_encode($array);
@@ -104,6 +132,7 @@ class Transaction extends Admin_Controller
             $data['result'] = $dt_data;
         }
 
+        $data['module'] = 'reports';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/transaction/transactionreport', $data);
         $this->load->view('layout/footer', $data);
@@ -169,6 +198,7 @@ class Transaction extends Admin_Controller
             $data['result'] = $dt_data;
         }
 
+        $data['module'] = 'reports';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/transaction/processingtransactionreport', $data);
         $this->load->view('layout/footer', $data);

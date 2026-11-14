@@ -1,100 +1,92 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
+include(APPPATH . 'views/admin/shared/_print_css.php');
 ?>
-<html lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            /*.printablea4 p{margin-bottom: 0;}*/
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
-    <div class="fixed-print-header">
-        <?php if (!empty($print_details[0]['print_header'])) {
-        ?>
-                            <div class="pprinta4">
-                                <img src="<?php
-    if (!empty($print_details[0]['print_header'])) {
-            echo $this->media_storage->getImageURL($print_details[0]['print_header']);
-        }
-        ?>" class="img-responsive" style="height:100px; width: 100%;">
-                            </div>
-                        <?php }?>
-    </div>     
-    <table class="table-print-full" width="100%">
+
+<div class="fixed-print-header">
+    <?php if (!empty($print_details[0]['print_header'])) { ?>
+        <img src="<?php echo $this->media_storage->getImageURL($print_details[0]['print_header']); ?>"
+             class="img-fluid sh-avatar-cover" >
+    <?php } ?>
+</div>
+
+<table class="table-print-full" width="100%">
     <thead>
-        <tr>
-            <td><div class="header-space">&nbsp;</div></td>
-        </tr>
+        <tr><td><div class="header-space">&nbsp;</div></td></tr>
     </thead>
     <tbody>
-        <tr>
-            <td>
-      <div class="content-body">                  
-    <div id="html-2-pdfwrapper">
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-12">
-                <div>
-                    <table width="100%" class="printablea4">
-                        <tr>
-                            <td class="text-left rtl-text-right"><?php echo $this->lang->line('bill_no').": ".$this->customlib->getPatientSessionPrefixByType('blood_bank_billing').$result["id"] ?>
-                            </td>
-                            <td class="text-right rtl-text-left"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['date_of_issue'])) ?>
-                            </td>
-                        </tr>
-                    </table>
-                    <div class="divider mt-10 mb-10"></div>
-                    <table class="printablea4" cellspacing="0" cellpadding="0" width="100%">
-                        <tr>
-                            <th width="20%"><?php echo $this->lang->line('patient_name'); ?></th>
-                            <td width="25%"><?php echo composePatientName($result['patient_name'],$result['patient_id']); ?></td>
-                            <th width="25%"><?php echo $this->lang->line('donor_name'); ?></th>
-                            <td width="30%" class="text-left"><?php echo $result["donor_name"]; ?></td>
-                        </tr>
-                        <tr>
-                            <th width="20%"><?php echo $this->lang->line('blood_group'); ?></th>
-                            <td width="25%"><?php echo $result["blood_group"]; ?></td>
-                            <th width="25%"><?php echo $this->lang->line('bag_no'); ?></th>
-                            <td width="30%" class="text-left"><?php echo $result['bag_no']; ?></td>
-                        </tr>
-                    </table>
-                    <div class="divider mt-10 mb-10"></div>
-                    <table class="printablea4" id="testreport" width="100%">
-                        <tr>
-                            <th class="text-right"><?php echo $this->lang->line('amount'); ?></th>
-                        </tr>
-                        <tr>
-                            <td class="text-right"><?php echo $currency_symbol . " " . $result["net_amount"]; ?></td>
-                        </tr>
-                    </table> 
-                    <div class="divider mt-10 mb-10"></div>
-                  
+        <tr><td>
+            <div class="content-body sh-px-12" >
+            <div class="print-area">
+
+                <div class="sh-print-title"><?php echo $this->lang->line('blood_bank_billing'); ?></div>
+
+                <div class="sh-print-info-block">
+                    <div class="sh-flex-gap18">
+                        <table class="sh-print-info-table w-50" >
+                            <colgroup><col style="width:42%"><col style="width:58%"></colgroup>
+                            <tr>
+                                <th><?php echo $this->lang->line('bill_no'); ?></th>
+                                <td><?php echo $this->customlib->getPatientSessionPrefixByType('blood_bank_billing') . $result['id']; ?></td>
+                            </tr>
+                            <tr>
+                                <th><?php echo $this->lang->line('date'); ?></th>
+                                <td><?php echo (!empty($result['date_of_issue']) ? date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['date_of_issue'])) : '-'); ?></td>
+                            </tr>
+                            <tr>
+                                <th><?php echo $this->lang->line('patient_name'); ?></th>
+                                <td><?php echo composePatientName($result['patient_name'], $result['patient_id']); ?></td>
+                            </tr>
+                        </table>
+
+                        <table class="sh-print-info-table w-50" >
+                            <colgroup><col style="width:42%"><col style="width:58%"></colgroup>
+                            <tr>
+                                <th><?php echo $this->lang->line('donor_name'); ?></th>
+                                <td><?php echo ($result['donor_name'] ?: '-'); ?></td>
+                            </tr>
+                            <tr>
+                                <th><?php echo $this->lang->line('blood_group'); ?></th>
+                                <td><?php echo ($result['blood_group'] ?: '-'); ?></td>
+                            </tr>
+                            <tr>
+                                <th><?php echo $this->lang->line('bag_no'); ?></th>
+                                <td><?php echo ($result['bag_no'] ?: '-'); ?></td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
+
+                <div class="sh-section-divider"></div>
+
+                <div class="sh-print-section-title"><?php echo $this->lang->line('payment_details'); ?></div>
+                <table class="sh-print-table" style="width:50%; margin-left:auto;">
+                    <tbody>
+                        <tr class="sh-row-total">
+                            <td><?php echo $this->lang->line('net_amount') . ' (' . $currency_symbol . ')'; ?></td>
+                            <td class="sh-text-right"><?php echo $currency_symbol . amountFormat((float)$result['net_amount']); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
             </div>
-            <!--/.col (left) -->
-        </div>
-    </div>
-    </div>
-    </td></tr></tbody>
-    <tfoot><tr><td>
+            </div>
+        </td></tr>
+    </tbody>
+    <tfoot>
+        <tr><td>
+            <?php if (!empty($print_details[0]['print_footer'])) { ?>
+                <div class="footer-space">&nbsp;</div>
+            <?php } ?>
+        </td></tr>
+    </tfoot>
+</table>
 
-<?php if (!empty($print_details[0]['print_footer'])) {  ?>
-       <div class="footer-space">&nbsp;</div>
+<?php if (!empty($print_details[0]['print_footer'])) { ?>
+<div class="footer-fixed">
+    <?php echo $print_details[0]['print_footer']; ?>
+</div>
 <?php } ?>
-
-</td></tr></tfoot>
-  </table>
-  <?php
-    if (!empty($print_details[0]['print_footer'])) {  ?>
-  <div class="footer-fixed">
-  <?php   echo $print_details[0]['print_footer'];?>
-  </div>
-<?php } ?>
-</html>
 
 <script type="text/javascript">
     function printData(id) {
@@ -108,5 +100,4 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             }
         });
     }
-    
 </script>

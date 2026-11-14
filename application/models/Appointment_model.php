@@ -102,7 +102,10 @@ class Appointment_model extends MY_Model
             ->join('patients', 'appointment.patient_id = patients.id', "left")
             ->join('appoint_priority', 'appoint_priority.id = appointment.priority', "left")
             ->searchable('patients.patient_name,appointment_payment.paid_amount,appointment.id,appointment.date,patients.mobileno,patients.gender,staff.name,appointment.source,appoint_priority.appoint_priority,appointment.live_consult' . $custom_field_column)	 
-            ->orderable('patients.patient_name,appointment.id,appointment.date,patients.mobileno,patients.gender,staff.name,appointment.source,appoint_priority.appoint_priority,appointment.live_consult' . $custom_field_column . ',appointment_payment.standard_amount,appointment_payment.discount_percentage,appointment_payment.paid_amount,appointment.appointment_status')			
+          
+            ->orderable('patients.patient_name,appointment.id,appointment.date,patients.mobileno,patients.gender,staff.name,appointment.source,appoint_priority.appoint_priority,
+                "",appointment.live_consult' . $custom_field_column . ',appointment_payment.standard_amount,appointment_payment.discount_percentage,appointment_payment.paid_amount,
+                appointment.appointment_status')
             ->sort('appointment.date', 'desc')
             ->from('appointment');
         return $this->datatables->generate('json');
@@ -219,11 +222,20 @@ class Appointment_model extends MY_Model
         if (isset($data['id']) && $data['id'] != '') {
             $this->db->where('id', $data['id']);
             $this->db->update('appointment', $data);
-            $this->db->update("appointment_payment", $payment_data, array("appointment_id" => $payment_data['appointment_id']));
-            $this->db->update("transactions", $transaction_data, array("appointment_id" => $transaction_data['appointment_id']));
-            $this->db->update("opd_details", $opd_details, array("id" => $opd_details['id']));
-            $this->db->update("visit_details", $visit_details, array("id", $visit_details['id']));
-            $this->db->update("patient_charges", $charge, array("opd_id" => $opd_details['id']));
+
+            if (!empty($payment_data['appointment_id'])) {
+                $this->db->update("appointment_payment", $payment_data, array("appointment_id" => $payment_data['appointment_id']));
+            }
+            if (!empty($transaction_data['appointment_id'])) {
+                $this->db->update("transactions", $transaction_data, array("appointment_id" => $transaction_data['appointment_id']));
+            }
+            if (!empty($opd_details['id'])) {
+                $this->db->update("opd_details", $opd_details, array("id" => $opd_details['id']));
+                $this->db->update("patient_charges", $charge, array("opd_id" => $opd_details['id']));
+            }
+            if (!empty($visit_details['id'])) {
+                $this->db->update("visit_details", $visit_details, array("id" => $visit_details['id']));
+            }
             $message   = UPDATE_RECORD_CONSTANT . "On Appointment Updated " . $data['id'];
             $action    = "Update";
             $record_id = $data['id'];
@@ -270,18 +282,29 @@ class Appointment_model extends MY_Model
     }
 
 //=========================================================================================
-    public function delete($id, $visit_details_id, $opd_id)
+    public function delete($id, $visit_details_id = null, $opd_id = null)
     {
+        if (empty($id)) {
+            return false;
+        }
+
         $this->db->trans_start(); # Starting Transaction
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
-        $this->db->delete("appointment", array("id" => $id));        
-        $this->db->delete("appointment_payment", array("appointment_id", $id));        
-        $this->db->delete("visit_details", array("id" => $visit_details_id));        
-        $this->db->delete("transactions", array("appointment_id" => $id));        
-        $this->db->delete("patient_charges", array("opd_id" => $opd_id));        
-        $this->db->delete("opd_details", array("id" => $opd_id));
-        
+       
+        $this->db->delete("appointment", array("id" => $id));
+        $this->db->delete("appointment_payment", array("appointment_id" => $id));
+        $this->db->delete("transactions", array("appointment_id" => $id));
+
+        if (!empty($visit_details_id)) {
+            $this->db->delete("visit_details", array("id" => $visit_details_id));
+        }
+
+        if (!empty($opd_id)) {
+            $this->db->delete("patient_charges", array("opd_id" => $opd_id));
+            $this->db->delete("opd_details", array("id" => $opd_id));
+        }
+
         $message   = DELETE_RECORD_CONSTANT . " On Appointment Deleted id " . $id;
         $action    = "Delete";
         $record_id = $id;
@@ -332,6 +355,28 @@ class Appointment_model extends MY_Model
     {
         $query = $this->db->order_by('id', 'desc')->get('appointment');
         return $query->result_array();
+    }
+
+    /**
+     * Patient dashboard — returns upcoming appointments for a given patient.
+     * Used by patient/Dashboard::index() to render the Pulse-layout
+     * "Upcoming Appointments" mini-list. Read-only, no audit log needed.
+     */
+    public function getPatientUpcomingAppointments($patient_id, $limit = 3)
+    {
+        $this->db->select('appointment.id, appointment.date, appointment.priority, appointment.appointment_status, appointment.message, appointment.live_consult, appointment.source, staff.name as doctor_name, staff.surname as doctor_surname, department.department_name, appoint_priority.appoint_priority as priority_name, doctor_shift_time.start_time as shift_start, doctor_shift_time.end_time as shift_end, doctor_shift_time.day as shift_day, appointment_payment.payment_mode');
+        $this->db->from('appointment');
+        $this->db->join('staff', 'staff.id = appointment.doctor', 'left');
+        $this->db->join('department', 'department.id = staff.department_id', 'left');
+        $this->db->join('appoint_priority', 'appoint_priority.id = appointment.priority', 'left');
+        $this->db->join('doctor_shift_time', 'doctor_shift_time.id = appointment.doctor_shift_time_id', 'left');
+        $this->db->join('appointment_payment', 'appointment_payment.appointment_id = appointment.id', 'left');
+        $this->db->where('appointment.patient_id', $patient_id);
+        $this->db->where('appointment.date >=', date('Y-m-d H:i:s'));
+        $this->db->where_in('appointment.appointment_status', array('approved', 'pending'));
+        $this->db->order_by('appointment.date', 'asc');
+        $this->db->limit($limit);
+        return $this->db->get()->result_array();
     }
 
 //=========================================================================================
@@ -423,6 +468,9 @@ class Appointment_model extends MY_Model
 
     public function moveToOpd($opd_details, $visit_details, $charges, $appointment_id)
     {
+        if (empty($appointment_id)) {
+            return false;
+        }
         $this->db->trans_start();
         $this->db->trans_strict(false);
         $this->db->insert('case_references', array('id' => null));
@@ -463,26 +511,96 @@ class Appointment_model extends MY_Model
     }
 	
 	public function updateappointmentpayment($appointment_id, $data)
-    {             
+    {
+        if (empty($appointment_id)) {
+            return;
+        }
         $this->db->where('appointment_id', $appointment_id);
-        $this->db->update('appointment_payment', $data); 
-		
+        $this->db->update('appointment_payment', $data);
+
 		$transaction_data['amount'] = $data['paid_amount'];
-		$this->db->update("transactions", $transaction_data, array("appointment_id" => $appointment_id));             
+		$this->db->update("transactions", $transaction_data, array("appointment_id" => $appointment_id));
     }
 	
-	public function updateappointmentpatientcharges($data)
-    {             
-        $this->db->update("patient_charges", $data, array("opd_id" => $data['opd_id']));           
-    }	
+	public function updateappointmentpatientcharges($data, $opd_id = null)
+    {
+        // Backward-compat: callers used to stuff opd_id into the $data array.
+        // Always extract it explicitly and never let opd_id appear in the SET clause.
+        if ($opd_id === null && isset($data['opd_id'])) {
+            $opd_id = $data['opd_id'];
+        }
+        unset($data['opd_id']);
+
+        // Hard guard: a missing / non-numeric opd_id would collapse to
+        // WHERE opd_id IS NULL and overwrite every IPD patient_charges row.
+        if (empty($opd_id) || !is_numeric($opd_id) || (int)$opd_id <= 0) {
+            return false;
+        }
+
+        $this->db->update("patient_charges", $data, array("opd_id" => (int)$opd_id));
+        return true;
+    }
 	
 	public function getopdidbyappointmentid($appointment_id)
-    {		
+    {
 		$result = $this->db->select('transactions.opd_id')
             ->where("transactions.appointment_id", $appointment_id)
             ->get('transactions')
             ->row();
-        return $result;		
+        return $result;
     }
-	
+
+    /**
+     * Dashboard widget: today's appointments counted by status bucket.
+     * Returns: ['total'=>N, 'confirmed'=>N, 'pending'=>N, 'cancelled'=>N]
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getTodaySummary()
+    {
+        $today    = date('Y-m-d');
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+
+        $this->db->select('appointment_status, COUNT(*) as cnt', false);
+        $this->db->where('date >=', $today . ' 00:00:00');
+        $this->db->where('date <', $tomorrow . ' 00:00:00');
+        $this->db->group_by('appointment_status');
+        $result = $this->db->get('appointment')->result_array();
+
+        $summary = array('total' => 0, 'confirmed' => 0, 'pending' => 0, 'cancelled' => 0);
+        foreach ($result as $r) {
+            $cnt = (int)$r['cnt'];
+            $summary['total'] += $cnt;
+            $status = strtolower((string)$r['appointment_status']);
+            if (strpos($status, 'approve') !== false || strpos($status, 'confirm') !== false) {
+                $summary['confirmed'] += $cnt;
+            } elseif (strpos($status, 'cancel') !== false || strpos($status, 'reject') !== false) {
+                $summary['cancelled'] += $cnt;
+            } else {
+                $summary['pending'] += $cnt;
+            }
+        }
+        return $summary;
+    }
+
+    /**
+     * Dashboard widget: next N upcoming appointments (from now to end of today).
+     */
+    public function getNextAppointmentsDashboard($limit = 5)
+    {
+        // Use start-of-day so past appointments (already happened today) also appear
+        // in the widget — avoids the false "No appointment for today" when today's
+        // only appointment was earlier in the day.
+        $today_start = date('Y-m-d') . ' 00:00:00';
+        $eod         = date('Y-m-d') . ' 23:59:59';
+        return $this->db->select('appointment.date, appointment.appointment_status, patients.patient_name')
+            ->from('appointment')
+            ->join('patients', 'patients.id = appointment.patient_id', 'left')
+            ->where('appointment.date >=', $today_start)
+            ->where('appointment.date <=', $eod)
+            ->order_by('appointment.date', 'asc')
+            ->limit($limit)
+            ->get()
+            ->result_array();
+    }
+
 }

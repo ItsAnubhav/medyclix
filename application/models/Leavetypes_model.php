@@ -3,8 +3,14 @@
 class Leavetypes_model extends MY_model
 {
 
+    public $current_date;
+
     public function __construct()
     {
+        parent::__construct();
+        if (!isset($this->setting_model)) {
+            $this->load->model('setting_model');
+        }
         $this->current_date = $this->setting_model->getDateYmd();
     }
 

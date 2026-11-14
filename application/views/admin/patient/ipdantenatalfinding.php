@@ -1,181 +1,233 @@
-<?php
-$currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-?>
-<link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/sh-print.css">
-<html lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title><?php echo $this->lang->line('prescription'); ?></title>
-    </head>
-    <div id="html-2-pdfwrapper">
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-12">
-                <div class="pprinta4">
-                <?php  if (!empty($print_details['print_header'])) { ?>
-                    <img src="<?php
-                    if (!empty($print_details['print_header'])) {
-                        echo $this->media_storage->getImageURL($print_details['print_header']);
-                    }
-                    ?>" style="height:100px; width:100%;" class="img-responsive">
-                <?php }?>
-                    <div style="height: 10px; clear: both;"></div>
-                </div> 
-                <div>                    
-                    <table class="table mb0 table-striped table-bordered examples tablelr0space noborder">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line("ipd_no"); ?></th>
-                            <td width="25%"><?php echo $this->customlib->getSessionPrefixByType('ipd_no') .$result->ipdid ; ?></td> 
-							<th width="25%"><?php echo $this->lang->line("patient_name"); ?></th>
-                            <td width="25%"><?php echo $result->patient_name ?> (<?php echo $result->id ?>)</td> 
-                        </tr>                   
-                        <tr>  
-                            <th width="25%"><?php echo $this->lang->line("age"); ?></th>
-                            <td><?php
-                                echo $this->customlib->getPatientAge($result->age,$result->month,$result->day);
-                                ?></td>
-                             <th width="25%"><?php echo $this->lang->line("blood_group"); ?></th>
-                            <td><?php echo $result->blood_group; ?></td>
-                        </tr>
-                        <tr>
-                           <th width="25%"><?php echo $this->lang->line("gender"); ?></th>
-                            <td><?php echo $this->lang->line(strtolower($result->gender)) ?></td>
-							<th width="25%"><?php echo $this->lang->line("phone"); ?></th>
-                            <td width="25%"><?php echo $result->mobileno ?></td>                             
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line("email"); ?></th>
-                            <td width="25%"><?php echo $result->email ?></td>
-							<th width="25%"><?php echo $this->lang->line("known_allergies"); ?></th>
-                            <td><?php echo $result->known_allergies; ?></td>
-                        </tr>  
-                    </table>
-                    <hr> 
-                     <h4><?php echo $this->lang->line('primary_examine'); ?></h4>
-                     <table class="table mb0 table-striped table-bordered examples tablelr0space noborder">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('bleeding'); ?></th>
-                            <td width="25%"><?php echo $result->bleeding ; ?></td>
-                            <th width="25%"><?php echo $this->lang->line('headache'); ?></th>
-                            <td width="25%"><?php echo $result->headache ; ?></td>                        
-                        </tr>
-                        <tr> 
-                            <th width="25%"><?php echo $this->lang->line('pain'); ?></th>
-                            <td width="25%"><?php echo $result->pain ?></td>
-                            <th width="25%"><?php echo $this->lang->line('constipation'); ?></th>
-                            <td width="25%"><?php echo $result->constipation; ?></td> 
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('vomiting'); ?></th>
-                            <td width="25%"><?php echo $result->vomiting; ?> </td>
-                            <th width="25%"><?php echo $this->lang->line('cough'); ?></th>
-                            <td><?php  echo $result->cough;  ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('vaginal'); ?></th>
-                            <td><?php echo $result->vaginal ?></td>
-                            <th width="25%"><?php echo $this->lang->line("weight"); ?></th>
-                            <td><?php echo $result->antenatal_weight ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('height'); ?></th>
-                            <td><?php echo $result->antenatal_height ?></td>
-                            <th><?php echo $this->lang->line('date'); ?></th><td><?php  if ($result->antenatal_date!="" &&  $result->antenatal_date!='1970-01-01' && $result->antenatal_date!='0000-00-00') {
-                                    echo $this->customlib->YYYYMMDDHisTodateFormat($result->antenatal_date);
-                                } ?> </td>
-                        </tr>                       
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line("discharge"); ?></th>
-                            <td width="25%"><?php echo $result->discharge ?></td>   
-                            <th width="25%"><?php echo $this->lang->line("oedema"); ?></th>
-                            <td width="25%"><?php echo $result->oedema ?></td>
-                        </tr> 
-                        <tr>        
-                            <th><?php echo $this->lang->line('condition'); ?></th><td><?php echo $result->general_condition ; ?> </td>
-                        </tr>
-                        <tr><th><?php echo $this->lang->line('special_findings_and_remark'); ?></th><td><?php echo $result->finding_remark ; ?></td></tr>
-                        <tr>        
-                          <th><?php echo $this->lang->line('pelvic_examination'); ?></th><td><?php echo $result->pelvic_examination ; ?></td>
-                        </tr> 
-                        <tr>        
-                            <th><?php echo $this->lang->line('sp'); ?></th><td><?php echo $result->sp ; ?></td>                            
-                        </tr>                       
-                    </table>
-                    <hr/>
-                    <h4><?php echo $this->lang->line('antenatal_examine'); ?></h4>
-                    <table class="table mb0 table-striped table-bordered examples tablelr0space noborder">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('uter_size'); ?></th>
-                            <td width="25%"><?php echo $result->uter_size ; ?></td>
-                            <th width="25%"><?php echo $this->lang->line('uterus_size'); ?></th>
-                            <td width="25%"><?php echo $result->uterus_size ; ?></td>                        
-                        </tr>
-                        <tr> 
-                            <th width="25%"><?php echo $this->lang->line('presentation_position'); ?></th>
-                            <td width="25%"><?php echo $result->presentation_position ?></td>
-                            <th width="25%"><?php echo $this->lang->line('presenting_part_to_brim'); ?></th>
-                            <td width="25%"><?php echo $result->brim_presentation; ?></td> 
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('foeta_heart'); ?></th>
-                            <td width="25%"><?php echo $result->foeta_heart; ?> </td>
-                            <th width="25%"><?php echo $this->lang->line('blood_pressure'); ?></th>
-                            <td><?php echo $result->blood_pressure; ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('vaginal'); ?></th>
-                            <td><?php echo $result->vaginal ?></td>
-                            <th width="25%"><?php echo $this->lang->line('antenatal_weight'); ?></th>
-                            <td><?php echo $result->antenatal_weight ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('antenatal_oedema'); ?></th>
-                            <td><?php echo $result->antenatal_oedema ?></td>
-                            <th width="25%"><?php echo $this->lang->line('urine_sugar'); ?></th>
-                            <td><?php echo $result->urine_sugar ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('urine_aaibumen'); ?></th>
-                            <td><?php echo $result->urine; ?></td>
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('remark') ; ?></th>
-                            <td width="25%"><?php echo $result->remark ?></td> 
-                        </tr> 
-                         <tr>
-                            <th width="25%"><?php echo $this->lang->line('next_visit'); ?></th>
-                            <td width="25%"><?php echo $result->next_visit ?></td>
-                        </tr> 
-                    </table>
-                    <div class="divider mt-10 mb-10"></div>                 
-                </div>
+<div class="sh-form-card m-2 mb-3">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fa fa-user me-1"></i> <?php echo $this->lang->line('patient_details'); ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-user me-1"></i><?php echo $this->lang->line('patient_name'); ?></span>
+                <span class="sh-info-value highlight"><?php echo html_escape($result->patient_name); ?> <span class="text-muted fw-normal">(<?php echo html_escape($result->id); ?>)</span></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('ipd_no'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->ipdid); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('age'); ?></span>
+                <span class="sh-info-value"><?php echo $this->customlib->getPatientAge($result->age, $result->month, $result->day); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('gender'); ?></span>
+                <span class="sh-info-value"><?php echo $this->lang->line(strtolower($result->gender)); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('blood_group'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->blood_group); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-6 col-md-4 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('phone'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->mobileno); ?></span>
+            </div>
+            <div class="col-6 col-md-4 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('email'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->email); ?></span>
+            </div>
+            <div class="col-12 col-md-4 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('known_allergies'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->known_allergies); ?></span>
             </div>
         </div>
     </div>
-</html>
+</div>
 
-<script type="text/javascript">
-		$('#edit_printfinding').html("<a href='#'' onclick='printipdantenatalprescription(<?php echo $id;?>)'  data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a>");
+<div class="sh-form-card m-2 mb-3">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fas fa-baby me-1"></i> <?php echo $this->lang->line('history_of_present_pregnancy'); ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-6">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('bleeding'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->bleeding); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('headache'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->headache); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('pain'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->pain); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('constipation'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->constipation); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('urinary_symptoms'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->urinary_symptoms); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('vomiting'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->vomiting); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('cough'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->cough); ?></span>
+                </div>
+            </div>
+            <div class="col-6 border-start">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('vaginal'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->vaginal); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('discharge'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->discharge); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('oedema'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->oedema); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('haemoroids'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->haemoroids); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('weight'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->antenatal_weight); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('height'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->antenatal_height); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('date'); ?></span>
+                    <span class="sh-info-value"><?php if (!empty($result->antenatal_date) && $result->antenatal_date != '1970-01-01' && $result->antenatal_date != '0000-00-00') { echo $this->customlib->YYYYMMDDHisTodateFormat($result->antenatal_date); } ?></span>
+                </div>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('condition'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->general_condition); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('special_findings_and_remark'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->finding_remark); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('pelvic_examination'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->pelvic_examination); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('sp'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->sp); ?></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sh-form-card m-2">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fas fa-stethoscope me-1"></i> <?php echo $this->lang->line('antenatal_examination'); ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-6">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('uter_size'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->uter_size); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('uterus_size'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->uterus_size); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('presentation_position'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->presentation_position); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('presenting_part_to_brim'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->brim_presentation); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('foeta_heart'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->foeta_heart); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('blood_pressure'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->blood_pressure); ?></span>
+                </div>
+            </div>
+            <div class="col-6 border-start">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('antenatal_oedema'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->antenatal_oedema); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('urine_sugar'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->urine_sugar); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('urine_aaibumen'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->urine); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('antenatal_weight'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result->antenatal_weight); ?></span>
+                </div>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('remark'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->remark); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('next_visit'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result->next_visit); ?></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#edit_printfinding').html("<button class='btn btn-sm btn-light' onclick='printipdantenatalprescription(<?php echo $id; ?>)' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></button>");
     <?php if ($this->rbac->hasPrivilege('ipd_antenatal', 'can_edit')) { ?>
-        $('#edit_editfinding').html("<a href='#'' onclick='edit_ipdantenatalprescription(<?php echo $id;?>)' data-target='#edit_prescription' data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a>");
+    $('#edit_editfinding').html("<button class='btn btn-sm btn-light' onclick='edit_ipdantenatalprescription(<?php echo $id; ?>)' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></button>");
     <?php } ?>
     <?php if ($this->rbac->hasPrivilege('ipd_antenatal', 'can_delete')) { ?>
-        $('#edit_deletefinding').html("<a onclick='delete_ipdantenatal(<?php echo $id;?>)'  href='#'  data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a>");
-    <?php } ?> 
- 
-    function delete_ipdantenatal(id) {  
+    $('#edit_deletefinding').html("<button class='btn btn-sm btn-light text-danger' onclick='delete_ipdantenatal(<?php echo $id; ?>)' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></button>");
+    <?php } ?>
+
+    $('#edit_printfinding [data-bs-toggle="tooltip"], #edit_editfinding [data-bs-toggle="tooltip"], #edit_deletefinding [data-bs-toggle="tooltip"]').each(function() { new bootstrap.Tooltip(this); });
+
+    function delete_ipdantenatal(id) {
         var msg = '<?php echo $this->lang->line("are_you_sure"); ?>';
         if (confirm(msg)) {
             $.ajax({
-            url: '<?php echo base_url(); ?>admin/antenatal/deleteipdantenatal/'+id,
+                url: '<?php echo base_url(); ?>admin/antenatal/deleteipdantenatal/' + id,
                 success: function (res) {
-                      successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
-                  window.location.reload(true);
+                    successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
+                    window.location.reload(true);
                 },
                 error: function () {
-                    alert("Fail")
+                    alert("Fail");
                 }
             });
         }
-    }    
+    }
 </script>

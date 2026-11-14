@@ -25,6 +25,7 @@ class Admin extends Admin_Controller
     public function unauthorized()
     {
         $data = array();
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('unauthorized', $data);
         $this->load->view('layout/footer', $data);
@@ -38,37 +39,59 @@ class Admin extends Admin_Controller
 
     public function updatePurchaseCode()
     {
-        $this->form_validation->set_rules('email', $this->lang->line('email'), 'required|valid_email|trim|xss_clean');
-        $this->form_validation->set_rules('envato_market_purchase_code', $this->lang->line('purchase_code'), 'required|trim|xss_clean');
+       
+        $this->form_validation->set_rules('purchase_code', $this->lang->line('purchase_code'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('signing_key','Signing Key', 'required|trim|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data = array(
-                'email'                       => form_error('email'),
-                'envato_market_purchase_code' => form_error('envato_market_purchase_code'),
+        
+                'purchase_code'                       => form_error('purchase_code'),
+                'signing_key'                       => form_error('signing_key'),
             );
             $array = array('status' => '2', 'error' => $data);
+
             return $this->output
                 ->set_content_type('application/json')
                 ->set_status_header(200)
                 ->set_output(json_encode($array));
         } else {
-
+            //==================
             $response = $this->auth->app_update();
         }
     }
 
-    public function updateaddon()
+	public function updateaddon()
     {
-        $this->form_validation->set_rules('app-email', 'Email', 'required|valid_email|trim|xss_clean');
-        $this->form_validation->set_rules('app-envato_market_purchase_code', 'Purchase Code', 'required|trim|xss_clean');
+        // Addon registration is gated on the main Smart School (SSLK) license — same as the
+        // Android app (see updateandappCode): the .system.dat file must hold an SSLK block
+        // whose status is ACTIVE, and a live verify must pass before an addon can register.
+        $shlk = $this->license_service->loadLicense();
+        if (!is_array($shlk)
+            || empty($shlk['licenseKey']) || empty($shlk['signingKey']) || empty($shlk['productCode'])
+            || !isset($shlk['lic_status']) || $shlk['lic_status'] !== 'ACTIVE'
+            || !$this->check_license(true)
+        ) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(403)
+                ->set_output(json_encode(array(
+                    'response' => 'Please register and activate your Smart School license before registering the addon.',
+                )));
+        }
+
+		$this->form_validation->set_rules('signing_key', 'Signing Key', 'required|trim|xss_clean');
+        $this->form_validation->set_rules('app-envato_market_purchase_code', $this->lang->line('purchase_code'), 'required|trim|xss_clean');
+
+
 
         if ($this->form_validation->run() == false) {
 
             $data = array(
-                'app-email'                       => form_error('app-email'),
+                'signing_key'                       => form_error('signing_key'),
                 'app-envato_market_purchase_code' => form_error('app-envato_market_purchase_code'),
             );
-            
+
             $array = array('status' => '2', 'error' => $data);
 
             return $this->output
@@ -91,7 +114,7 @@ class Admin extends Admin_Controller
         $this->session->set_userdata('inner_menu', 'admin/backup');
         $data['title'] = $this->lang->line('backup_history');
         if ($this->input->server('REQUEST_METHOD') == "POST") {
-            if ($this->input->post('backup') == "upload") {
+            if ($this->input->post('backup', TRUE) == "upload") {
                 $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
                 if ($this->form_validation->run() == false) {
 
@@ -135,7 +158,7 @@ class Admin extends Admin_Controller
                     }
                 }
             }
-            if ($this->input->post('backup') == "backup") {
+            if ($this->input->post('backup', TRUE) == "backup") {
                 $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
                 $this->load->helper('download');
                 $this->load->dbutil();
@@ -154,11 +177,11 @@ class Admin extends Admin_Controller
                 write_file('./backup/database_backup/' . $filename, $backup);
                 redirect('admin/admin/backup');
                 force_download($filename, $backup);
-                $this->session->set_flashdata('feedback', $this->lang->line('success_message_for_client_to_see'));
+                $this->session->set_flashdata('feedback', $this->lang->line('success_message'));
                 redirect('admin/admin/backup');
-            } else if ($this->input->post('backup') == "restore") {
+            } else if ($this->input->post('backup', TRUE) == "restore") {
                 $folder_name  = 'database_backup';
-                $file_name    = $this->input->post('filename');
+                $file_name    = $this->input->post('filename', TRUE);
                 $path         = './backup/';
                 $filePath     = $path . $folder_name . '/' . $file_name;
                 $file_restore = $this->load->file($path . $folder_name . '/' . $file_name, true);
@@ -206,6 +229,7 @@ class Admin extends Admin_Controller
         $data['dbfileList']  = $result;
         $setting_result      = $this->setting_model->get();
         $data['settinglist'] = $setting_result;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/backup', $data);
         $this->load->view('layout/footer', $data);
@@ -223,6 +247,7 @@ class Admin extends Admin_Controller
             $sessionData            = $this->session->userdata('hospitaladmin');
             $this->data['id']       = $sessionData['id'];
             $this->data['username'] = $sessionData['username'];
+            $data['module'] = 'system_settings';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/change_password', $data);
             $this->load->view('layout/footer', $data);
@@ -249,12 +274,14 @@ class Admin extends Admin_Controller
                     $query2 = $this->staff_model->add($newdata);
                     if ($query2) {
                         $data['error_message'] = "<div class='alert alert-success'>" . $this->lang->line('password_changed_successfully') . "</div>";
+                        $data['module'] = 'system_settings';
                         $this->load->view('layout/header', $data);
                         $this->load->view('admin/change_password', $data);
                         $this->load->view('layout/footer', $data);
                     }
                 } else {
                     $data['error_message'] = "<div class='alert alert-danger'>" . $this->lang->line('invalid_current_password') . "</div>";
+                    $data['module'] = 'system_settings';
                     $this->load->view('layout/header', $data);
                     $this->load->view('admin/change_password', $data);
                     $this->load->view('layout/footer', $data);
@@ -262,6 +289,7 @@ class Admin extends Admin_Controller
             } else {
 
                 $data['error_message'] = "<div class='alert alert-danger'>" . $this->lang->line('invalid_current_password') . "</div>";
+                $data['module'] = 'system_settings';
                 $this->load->view('layout/header', $data);
                 $this->load->view('admin/change_password', $data);
                 $this->load->view('layout/footer', $data);
@@ -293,6 +321,7 @@ class Admin extends Admin_Controller
         $userdata           = $this->customlib->getUserData();
         $data['fields']     = $this->customfield_model->get_custom_fields('patient', 1);
         $data["bloodgroup"] = $this->bloodbankstatus_model->get_product(null, 1);
+        $data['module'] = 'patient';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/searchdisablepatient', $data);
         $this->load->view('layout/footer', $data);
@@ -306,7 +335,7 @@ class Admin extends Admin_Controller
 
         $this->session->set_userdata('top_menu', 'patient');
         $data['title']       = 'Search';
-        $search_text         = $this->input->post('search_text');
+        $search_text         = $this->input->post('search_text', TRUE);
         $data['search_text'] = '';
         if($search_text){
             $data['search_text'] = trim($search_text);
@@ -315,6 +344,7 @@ class Admin extends Admin_Controller
         $data["bloodgroup"]  = $this->bloodbankstatus_model->get_product(null, 1);
         $data['fields']      = $this->customfield_model->get_custom_fields('patient', 1);
         $userdata            = $this->customlib->getUserData();
+        $data['module'] = 'patient';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/search', $data);
         $this->load->view('layout/footer', $data);
@@ -326,7 +356,7 @@ class Admin extends Admin_Controller
 
     public function getpatientdatatable()
     {
-        $search_text = $this->input->post('search_text');
+        $search_text = $this->input->post('search_text', TRUE);
         $dt_response = $this->patient_model->searchDataTablePatientRecord($search_text);
    
         $fields      = $this->customfield_model->get_custom_fields('patient', 1);
@@ -388,20 +418,23 @@ class Admin extends Admin_Controller
                     $month = ", " . " 0 " . $this->lang->line("month");
                 }
 
-                $action = "<a href='#' onclick='getpatientData(" . $value->id . ")' class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' data-original-title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action = "<div class='d-flex align-items-center justify-content-end gap-1'>";
+             
 
-                $action .= "<div class='btn-group' style='margin-left:2px;'>";
                 if (!empty($result[$key]['info'])) {
-                    $action .= "<a href='#' style='width: 20px;border-radius: 2px;' class='btn btn-default btn-xs'  data-toggle='dropdown' title='" . $this->lang->line('show') . "'><i class='fa fa-ellipsis-v'></i></a>";
+                    $action .= "<div class='btn-group' data-bs-toggle='tooltip' data-bs-trigger='hover focus' title='" . $this->lang->line('show') . "'>";
+                    $action .= "<a href='#' class='btn btn-sm btn-light' data-bs-toggle='dropdown'><i class='fa fa-ellipsis-v'></i></a>";
                     $action .= "<ul class='dropdown-menu dropdown-menu2' role='menu'>";
-
                     foreach ($result[$key]['info'] as $pkey => $pvalue) {
-                        $action .= "<li>" . "<a href='" . $result[$key]['url'][$pkey] . "' class='btn btn-default btn-xs'  data-toggle='' title=''>" . $pvalue . "</a>" . "</li>";
+                        $action .= "<li><a href='" . $result[$key]['url'][$pkey] . "' class='dropdown-item'>" . $pvalue . "</a></li>";
                     }
                     $action .= "</ul>";
+                    $action .= "</div>";
                 }
-                $action .= "</div>";
-                $first_action = "<a href='#'  class='btn btn-default btn-xs'  data-toggle='modal' title=''>";
+
+                   $action .= "<a href='javascript:void(0)' onclick='getpatientData(" . $value->id . ")' class='btn btn-sm btn-light' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "</div>";			
+				
                 $checkbox     = "<input  class='chk2 enable_delete' type='checkbox' name='patient[]' value='" . $value->id . "'>";
 
                 if($value->gender){
@@ -411,12 +444,13 @@ class Admin extends Admin_Controller
                 }
                 //==============================
                 $row[] = $checkbox;
-                $row[] = $first_action . composePatientName($value->patient_name, $value->id) . "</a>";
+                $row[] = html_escape(!empty($value->patient_unique_id) ? $value->patient_unique_id : '-');
+                $row[] = html_escape($value->patient_name);
                 $row[] = $this->customlib->get_patient_current_age($value->id);                
                 $row[] = $gender;                
-                $row[] = $value->mobileno;
-                $row[] = $value->guardian_name;
-                $row[] = $value->address;
+                $row[] = html_escape($value->mobileno);
+                $row[] = html_escape($value->guardian_name);
+                $row[] = html_escape($value->address);
                 if ($value->is_dead == 'yes') {
                     $row[] = $this->lang->line('yes');
                 } else {
@@ -428,8 +462,9 @@ class Admin extends Admin_Controller
                     foreach ($fields as $fields_key => $fields_value) {
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
-
+                            $display_field = "<a href=\"" . html_escape($value->{"$fields_value->name"}) . "\" target='_blank'>" . html_escape($value->{"$fields_value->name"}) . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
@@ -471,22 +506,21 @@ class Admin extends Admin_Controller
 
                 $age = $this->customlib->get_patient_current_age($value->id);
 
-                $action = "<a href='#' onclick='getpatientData(" . $value->id . ")' class='btn btn-default btn-xs pull-right'  data-toggle='modal' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action = "<a href='javascript:void(0)' onclick='getpatientData(" . $value->id . ")' class='btn btn-default btn-xs pull-right'  data-bs-toggle='modal' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
 				
                 $action .= "<div class='btn-group' style='margin-left:2px;'>";
                 if (!empty($result[$key]['info'])) {
-                    $action .= "<a href='#' style='width: 20px;border-radius: 2px;' class='btn btn-default btn-xs'  data-toggle='dropdown' title='" . $this->lang->line('show') . "'><i class='fa fa-ellipsis-v'></i></a>";
+                    $action .= "<a href='#' style='width: 20px;border-radius: 2px;' class='btn btn-default btn-xs'  data-bs-toggle='dropdown' title='" . $this->lang->line('show') . "'><i class='fa fa-ellipsis-v'></i></a>";
                     $action .= "<ul class='dropdown-menu dropdown-menu2' role='menu'>";
 
                     foreach ($result[$key]['info'] as $pkey => $pvalue) {
-                        $action .= "<li>" . "<a href='" . $result[$key]['url'][$pkey] . "' class='btn btn-default btn-xs'  data-toggle='' title=''>" . $pvalue . "</a>" . "</li>";
+                        $action .= "<li>" . "<a href='" . $result[$key]['url'][$pkey] . "' class='btn btn-default btn-xs'  data-bs-toggle='' title=''>" . $pvalue . "</a>" . "</li>";
                     }
                     $action .= "</ul>";
                 }
                 $action .= "</div>";
-                $first_action = "<a href='#' onclick='getpatientData(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='modal' title=''>";
 
-                $row[] = $first_action . composePatientName($value->patient_name, $value->id) . "</a>";
+                $row[] = composePatientName($value->patient_name, $value->id);
                 $row[] = $age;
                 
                 if($value->gender){
@@ -495,15 +529,16 @@ class Admin extends Admin_Controller
                     $row[] =    '';
                 }
                 
-                $row[] = $value->mobileno;
-                $row[] = $value->guardian_name;
-                $row[] = $value->address;
+                $row[] = html_escape($value->mobileno);
+                $row[] = html_escape($value->guardian_name);
+                $row[] = html_escape($value->address);
                 if (!empty($fields)) {
                     foreach ($fields as $fields_key => $fields_value) {
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
-
+                            $display_field = "<a href=\"" . html_escape($value->{"$fields_value->name"}) . "\" target='_blank'>" . html_escape($value->{"$fields_value->name"}) . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
@@ -721,8 +756,11 @@ class Admin extends Admin_Controller
             } else {
                 $s[] = "0.00";
             }
-            $where_condition = array('date >=' => $month_start, 'date <=' => $month_end);
-            $expense_monthly = $this->expense_model->getTotalExpenseBwdate($month_start, $month_end);
+            // getTotalExpenseBwdate uses SQL BETWEEN (inclusive both ends). Passing the next
+            // month's 1st as the end double-counts expenses dated on the 1st (they fall in two
+            // buckets). Use this month's last day instead. (Income above uses '<' so it's fine.)
+            $expense_month_end = date("Y-m-t", $start_month);
+            $expense_monthly = $this->expense_model->getTotalExpenseBwdate($month_start, $expense_month_end);
             if (!empty($expense_monthly)) {
                 $amt  = 0;
                 $ex[] = $amt + $expense_monthly->amount;
@@ -732,8 +770,7 @@ class Admin extends Admin_Controller
         $data['yearly_collection'] = $s;
         $data['yearly_expense']    = $ex;
         $data['total_month']       = $total_month;
-        $event_colors              = array("#03a9f4", "#c53da9", "#757575", "#8e24aa", "#d81b60", "#7cb342", "#fb8c00", "#fb3b3b");
-        $data["event_colors"]      = $event_colors;
+        // Calendar removed 2026-05-15 — Variant B dashboard. Backup: dashboard_legacy_20260515.php
         $userdata                  = $this->customlib->getUserData();
         $data["role"]              = $userdata["user_type"];
 
@@ -763,12 +800,34 @@ class Admin extends Admin_Controller
         $search_ambulance_income    = array('payment_date >=' => date('Y-m-01'), 'payment_date <' => date("Y-m-01", strtotime('+1 month')),'ambulance_call_id !='=>null);       
         $data['ambulance_income']   = $this->transaction_model->get_monthTransaction($search_ambulance_income);
          
-        $month_expences             = $this->expense_model->getTotalExpenseBwdate(date('Y-m-01'), date("Y-m-01", strtotime('+1 month')));
+        // BETWEEN is inclusive; use this month's last day (not next month's 1st) to avoid
+        // counting expenses dated on the 1st of next month.
+        $month_expences             = $this->expense_model->getTotalExpenseBwdate(date('Y-m-01'), date('Y-m-t'));
         $data['expences']           = $month_expences->amount;
         
         $where_date                 = array('date >=' => date('Y-m-01'), 'date <' => date("Y-m-01", strtotime('+1 month')));
         $data['general_income']     = $this->income_model->getTotal($where_date);
-        
+
+        // ── Last month per-module income + expense (for the "Last Month" column) ──
+        $lm_start   = date('Y-m-01', strtotime('first day of last month'));
+        $lm_end     = date('Y-m-01'); // first of this month (exclusive, same as current-month income)
+        $lm_exp_end = date('Y-m-t', strtotime('first day of last month'));
+        $lm_base    = array('payment_date >=' => $lm_start, 'payment_date <' => $lm_end);
+        $lm_blood   = $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('blood_issue_id !=' => null)))
+                    + $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('blood_donor_cycle_id !=' => null)));
+        $data['module_income_last'] = array(
+            'opd'        => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('opd_id !=' => null))),
+            'ipd'        => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('ipd_id !=' => null))),
+            'pharmacy'   => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('pharmacy_bill_basic_id !=' => null))),
+            'pathology'  => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('pathology_billing_id !=' => null))),
+            'radiology'  => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('radiology_billing_id !=' => null))),
+            'blood_bank' => $lm_blood,
+            'ambulance'  => $this->transaction_model->get_monthTransaction(array_merge($lm_base, array('ambulance_call_id !=' => null))),
+            'general'    => $this->income_model->getTotal(array('date >=' => $lm_start, 'date <' => $lm_end)),
+        );
+        $lm_expense_obj           = $this->expense_model->getTotalExpenseBwdate($lm_start, $lm_exp_end);
+        $data['expences_last']    = isset($lm_expense_obj->amount) ? (float)$lm_expense_obj->amount : 0;
+
         $parameter              = array(
             'opd'        => $data['opd_income'],
             'ipd'        => $data['ipd_income'],
@@ -784,6 +843,11 @@ class Admin extends Admin_Controller
         $module = array('opd', 'ipd', 'pharmacy', 'pathology', 'radiology', 'blood_bank', 'ambulance', 'income');
 
         $tot_data = array_sum($parameter);
+
+        // KPI: total revenue MTD (used by Variant B hero KPI tile)
+        $data['kpi_total_revenue'] = $tot_data;
+        // TODO: compute kpi_revenue_delta (vs last month) — requires previous-month sum query
+
         $jsonarr  = array();
         $i        = 0;
 
@@ -814,6 +878,135 @@ class Admin extends Admin_Controller
         $data['mysqlVersion'] = $this->setting_model->getMysqlVersion();
         $data['sqlMode']      = $this->setting_model->getSqlMode();
         $data['jsonarr']      = $jsonarr;
+
+        // ─── Variant B dashboard widgets (added 2026-05-15) ────────────────
+        // Bed occupancy
+        $this->load->model('bed_model');
+        $bed_stats = $this->bed_model->getBedOccupancyStats();
+        $data['bed_occupancy_total']     = $bed_stats['total'];
+        $data['bed_occupancy_occupied']  = $bed_stats['occupied'];
+        $data['bed_occupancy_available'] = $bed_stats['available'];
+        $data['bed_occupancy_unused']    = $bed_stats['unused'];
+
+        // Today's appointments
+        $this->load->model('appointment_model');
+        $appt_summary = $this->appointment_model->getTodaySummary();
+        $data['today_appointments_count']  = $appt_summary['total'];
+        $data['today_appointments_status'] = array(
+            'confirmed' => $appt_summary['confirmed'],
+            'pending'   => $appt_summary['pending'],
+            'cancelled' => $appt_summary['cancelled'],
+        );
+
+        // Next upcoming appointments today (for Next Appointments ops card)
+        $next_raw  = $this->appointment_model->getNextAppointmentsDashboard(4);
+        $next_list = array();
+        foreach ($next_raw as $a) {
+            $status = strtolower((string)($a['appointment_status'] ?? ''));
+            if (strpos($status, 'cancel') !== false) {
+                $badge = 'err';
+            } elseif (strpos($status, 'approve') !== false || strpos($status, 'confirm') !== false) {
+                $badge = 'ok';
+            } else {
+                $badge = 'warn';
+            }
+            $next_list[] = array(
+                'time'        => date('H:i', strtotime($a['date'])),
+                'name'        => isset($a['patient_name']) ? $a['patient_name'] : '—',
+                'type'        => $status ? ucwords(str_replace('_', ' ', $status)) : 'Pending',
+                'badge_class' => $badge,
+            );
+        }
+        $data['next_appointments'] = $next_list;
+
+        // Blood bank stock by group
+        $this->load->model('bloodbankstatus_model');
+        $data['blood_bank_stock'] = $this->bloodbankstatus_model->getStockByGroup();
+
+        // Staff attendance per role for today
+        $this->load->model('staffattendancemodel');
+        $data['staff_attendance'] = $this->staffattendancemodel->getDashboardAttendanceByRole();
+
+        // Outstanding bills (Chunk 4)
+        $this->load->model('bill_model');
+        $outstanding = $this->bill_model->getOutstandingTotal();
+        $data['outstanding_amount']  = $outstanding['total_balance'];
+        $data['outstanding_count']   = $outstanding['bill_count'];
+        $data['outstanding_overdue'] = $outstanding['overdue_count'];
+
+        // Pharmacy low-stock summary (Chunk 4)
+        $this->load->model('pharmacy_model');
+        $low_stock = $this->pharmacy_model->getLowStockSummary();
+        $data['low_stock_count']          = $low_stock['count'];
+        $data['low_stock_critical_count'] = $low_stock['critical_count'];
+        $data['low_stock_critical_names'] = $low_stock['critical_names'];
+
+        // Medicines with in-stock batches expiring within the next 30 days
+        $data['medicine_expiring_days'] = 30;
+        $data['medicine_expiring_soon'] = $this->pharmacy_model->getExpiringSoonCount(30);
+
+        // Blood bank flow — issued today / this week (Chunk 4)
+        $this->load->model('bloodissue_model');
+        $bb_flow = $this->bloodissue_model->getDashboardFlow();
+        $data['bb_issued_today'] = $bb_flow['today'];
+        $data['bb_issued_week']  = $bb_flow['week'];
+        // Note: expiring + cross-match deferred — blood_issue schema has no expiry/cross_match columns yet
+
+        // Recent activity feed (Chunk 4) — UNION across patients, transactions, appointment
+        $activity_rows = $this->transaction_model->getRecentActivity(10);
+        $activity      = array();
+        foreach ($activity_rows as $r) {
+            $ts = !empty($r['sort_at']) ? strtotime($r['sort_at']) : false;
+            if ($ts === false) {
+                $time_ago = '';
+            } else {
+                $diff = time() - $ts;
+                if ($diff < 0)        { $time_ago = $this->lang->line('just_now'); }   // future timestamp — never show "-Ns ago"
+                elseif ($diff < 60)   { $time_ago = $diff . $this->lang->line('sec_ago'); }
+                elseif ($diff < 3600) { $time_ago = floor($diff / 60) . $this->lang->line('min_ago'); }
+                elseif ($diff < 86400){ $time_ago = floor($diff / 3600) . $this->lang->line('hr_ago'); }
+                elseif ($diff < 2592000){ $time_ago = floor($diff / 86400) . $this->lang->line('day_ago'); }
+                else                  { $time_ago = date('M j', $ts); }
+            }
+            // Show the name with its type, e.g. "Nitin (Patient)" / "Nitin (Staff)".
+            $actor = $r['subject'] ?: '—';
+            if ($actor !== '—' && !empty($r['subject_type'])) {
+                $type_label = ($r['subject_type'] === 'staff') ? $this->lang->line('staff') : $this->lang->line('patient');
+                $actor     .= ' (' . $type_label . ')';
+            }
+            // Translatable action text + module label, derived from the row source.
+            $source = isset($r['source']) ? $r['source'] : '';
+            if ($source === 'patient') {
+                $action_text = $this->lang->line('registered_new_patient');
+                $module_lbl  = $this->lang->line('opd');
+            } elseif ($source === 'appointment') {
+                $status     = strtolower(trim(str_replace('appointment', '', (string)$r['action_text'])));
+                if ($status === '') { $status = 'booked'; }
+                $status_lbl = $this->lang->line($status);
+                if (!$status_lbl) { $status_lbl = ucfirst($status); }
+                $action_text = $this->lang->line('appointment') . ' ' . $status_lbl;
+                $module_lbl  = $this->lang->line('appointment');
+            } elseif ($source === 'transaction') {
+                $action_text = $this->lang->line('posted_bill_payment');
+                $module_lbl  = $r['module']; // payment mode (e.g. CASH) — user data, not translatable
+            } else {
+                $action_text = $r['action_text'];
+                $module_lbl  = $r['module'];
+            }
+            $activity[] = array(
+                'actor'        => $actor,
+                'action'       => $action_text,
+                'detail'       => $r['detail'],
+                'module'       => $module_lbl,
+                'module_class' => $r['module_class'] ?: 'info',
+                'amount'       => $r['amount'],
+                'time_ago'     => $time_ago,
+            );
+        }
+        $data['recent_activity'] = $activity;
+        // ────────────────────────────────────────────────────────────────────
+
+        $data['module']       = 'dashboard';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/dashboard', $data);
         $this->load->view('layout/footer', $data);
@@ -821,13 +1014,33 @@ class Admin extends Admin_Controller
 
     public function updateandappCode()
     {
-        $this->form_validation->set_rules('app-email', $this->lang->line('email'), 'required|valid_email|trim|xss_clean');
-        $this->form_validation->set_rules('app-envato_market_purchase_code', $this->lang->line('purchase_code'), 'required|trim|xss_clean');
+        // Android app registration is gated on the main Smart School (SSLK) license:
+        // the .system.dat file must hold an SSLK block whose status is ACTIVE, and a
+        // live verify must pass before we let the Android app be registered.
+        $shlk = $this->license_service->loadLicense();
+		
+        if (!is_array($shlk)
+            || empty($shlk['licenseKey']) || empty($shlk['signingKey']) || empty($shlk['productCode'])
+            || !isset($shlk['lic_status']) || $shlk['lic_status'] !== 'ACTIVE'
+            || !$this->check_license(true)
+        ) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(403)
+                ->set_output(json_encode(array(
+                    'response' => 'Please register and activate your Smart School license before registering the Android app.',
+                )));
+        }
+
+        $this->form_validation->set_rules('purchase_code', $this->lang->line('purchase_code'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('signing_key','Signing Key', 'required|trim|xss_clean');
+
+
 
         if ($this->form_validation->run() == false) {
             $data = array(
-                'app-email'                       => form_error('app-email'),
-                'app-envato_market_purchase_code' => form_error('app-envato_market_purchase_code'),
+                'purchase_code' => form_error('purchase_code'),
+                'signing_key'   => form_error('signing_key'),
             );
             $array = array('status' => '2', 'error' => $data);
 
@@ -836,7 +1049,7 @@ class Admin extends Admin_Controller
                 ->set_status_header(200)
                 ->set_output(json_encode($array));
         } else {
-            //==================
+								
             $response = $this->auth->andapp_update();
         }
     }

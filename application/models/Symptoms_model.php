@@ -33,7 +33,8 @@ class Symptoms_model extends MY_Model
 
     public function getSymptomCountbyPatients($patient_id,$finding)
     {
-		$sql= "SELECT  count(*) as `total_count` FROM (SELECT visit_details.id FROM visit_details INNER JOIN opd_details on opd_details.id=visit_details.opd_details_id WHERE symptoms LIKE '%".$finding."%' and opd_details.patient_id= ".$this->db->escape($patient_id)." Union SELECT ipd_details.id FROM ipd_details WHERE symptoms LIKE '%".$finding."%' AND ipd_details.patient_id =".$this->db->escape($patient_id).") as a";  
+		$f   = $this->db->escape_str($finding);
+	$sql = "SELECT count(*) as `total_count` FROM (SELECT visit_details.id FROM visit_details INNER JOIN opd_details on opd_details.id=visit_details.opd_details_id WHERE symptoms LIKE '%".$f."%' and opd_details.patient_id= ".$this->db->escape($patient_id)." UNION SELECT ipd_details.id FROM ipd_details WHERE symptoms LIKE '%".$f."%' AND ipd_details.patient_id =".$this->db->escape($patient_id).") as a";  
         $query = $this->db->query($sql);
         $result= $query->row();
         return $result->total_count;

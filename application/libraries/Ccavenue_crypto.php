@@ -5,6 +5,8 @@ if (!defined('BASEPATH'))
 
 class Ccavenue_crypto {
 
+    public $CI;
+
     function __construct() {
         $this->CI = & get_instance();
     }

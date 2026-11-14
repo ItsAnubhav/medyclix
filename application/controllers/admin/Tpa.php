@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Tpa extends Admin_Controller
 {
+	public $charge_type;
+
 
     public function __construct()
     {
@@ -20,19 +22,25 @@ class Tpa extends Admin_Controller
         if (!$this->rbac->hasPrivilege('tpa_charges', 'can_view')) {
             access_denied();
         }
+        // Highlight only the TPA Management top menu; clear any stale
+        // report sub-menu so Reports > TPA does not stay selected.
+        $this->session->set_userdata('top_menu', 'tpa_management');
+        $this->session->unset_userdata('sub_menu');
+        $this->session->unset_userdata('subsub_menu');
         $data["charge_type"] = $this->setting_model->getChargeMaster();;
         $data['result'] = $this->organisation_model->get($id);
         $data['title']  = $this->lang->line('tpa_master');
-        $this->load->view('layout/header');
+        $data['module'] = 'tpa_management';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/tpamanagement/tpamasters', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
         $param = array(
-            'charge_type'           => $this->input->post('charge_type'),
-            'charge_type_master_id' => $this->input->post('charge_type_master_id'),
+            'charge_type'           => $this->input->post('charge_type', TRUE),
+            'charge_type_master_id' => $this->input->post('charge_type_master_id', TRUE),
         );
 
         $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -41,8 +49,8 @@ class Tpa extends Admin_Controller
 
     public function tpadetails()
     {
-        $charge_type_master_id = $this->input->post('charge_type_master_id');
-        $charge_type_id        = $this->input->post('charge_type');
+        $charge_type_master_id = $this->input->post('charge_type_master_id', TRUE);
+        $charge_type_id        = $this->input->post('charge_type', TRUE);
         $reportdata            = $this->tpa_model->org_chargedatatable($charge_type_master_id, $charge_type_id);
 
         $reportdata = json_decode($reportdata);
@@ -51,21 +59,22 @@ class Tpa extends Admin_Controller
         if (!empty($reportdata->data)) {
             foreach ($reportdata->data as $key => $value) {
 
-                $action = "<div class='rowoptionview rowview-btn-top'>";
+                $action = "<div class='d-flex gap-1 justify-content-end'>";
                 if ($this->rbac->hasPrivilege('tpa_charges', 'can_edit')) {
-                    $action .= '<a class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('edit') . '" onclick="get_org_charge(' . $value->id . ')" ><i class="fa fa-pencil"></i></a>';
+                    $action .= '<a class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="' . $this->lang->line('edit') . '" onclick="get_org_charge(' . $value->id . ')"><i class="fa fa-pencil"></i></a>';
                 }
                 if ($this->rbac->hasPrivilege('tpa_charges', 'can_delete')) {
-                    $action .= '<a class="btn btn-default btn-xs"  onclick="delete_orgById(' . $value->id . ')" data-toggle="tooltip" title="' . $this->lang->line('delete') . '" ><i class="fa fa-trash"></i></a>';
+                    $action .= '<a class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="' . $this->lang->line('delete') . '" onclick="delete_orgById(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
                 }
                 $action .= "</div>";
                 $row       = array();
-                $row[]     = $value->charge_type . $action;
-                $row[]     = $value->charge_category;
-                $row[]     = $value->charge_name;
-                $row[]     = $value->description;
-                $row[]     = $value->standard_charge;
-                $row[]     = $value->org_charge;
+                $row[]     = html_escape($value->charge_type);
+                $row[]     = html_escape($value->charge_category);
+                $row[]     = html_escape($value->charge_name);
+                $row[]     = html_escape($value->description);
+                $row[]     = html_escape($value->standard_charge);
+                $row[]     = html_escape($value->org_charge);
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -86,19 +95,21 @@ class Tpa extends Admin_Controller
         }
         $check_value = 0;
 
-        $Charge_type = $this->input->post('charge_type');
-        if (isset($_POST['other_charge'])) {
-            foreach ($_POST['other_charge'] as $key => $value) {
+        $Charge_type  = $this->input->post('charge_type', TRUE);
+        $other_charge = $this->input->post('other_charge', TRUE);
+        if (isset($other_charge)) {
+            foreach ($other_charge as $key => $value) {
+                $charge_id   = (int)$value;
                 $check_value = 1;
-                if (empty($_POST['org_othcharge_' . $value])) {
-                    $msg['e' . $value] = "The Organisation Charge Field  " . $value . " Required";
-                    $array             = array('status' => 'fail', 'error' => $msg, 'message' => '');
+                if (empty($this->input->post('org_othcharge_' . $charge_id, TRUE))) {
+                    $msg['e' . $charge_id] = "The Organisation Charge Field  " . $charge_id . " Required";
+                    $array                 = array('status' => 'fail', 'error' => $msg, 'message' => '');
                 } else {
-                    $charge        = $value;
-                    $org_othcharge = $_POST['org_othcharge_' . $value];
+                    $charge        = $charge_id;
+                    $org_othcharge = $this->input->post('org_othcharge_' . $charge_id, TRUE);
                     $data          = array('org_id' => $id, 'charge_type' => $Charge_type, 'charge_id' => $charge, 'org_charge' => $org_othcharge);
                     $data_array[]  = $data;
-                    $array         = array('status' => 'success', 'error' => '', 'message' => 'Successfully Inserted');
+                    $array         = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('successfully_inserted'));
                 }
             }
         }

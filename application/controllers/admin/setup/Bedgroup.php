@@ -17,7 +17,7 @@ class Bedgroup extends Admin_Controller
     {
 
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->bedgroup_model, 'valid_bed_group')),
             )
         );
@@ -30,10 +30,10 @@ class Bedgroup extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $bed = array(
-                'name'        => $this->input->post('name'),
-                'color'       => $this->input->post('color'),
-                'description' => $this->input->post('description'),
-                'floor'       => $this->input->post('floor'),
+                'name'        => $this->input->post('name', TRUE),
+                'color'       => $this->input->post('color', TRUE),
+                'description' => $this->input->post('description', TRUE),
+                'floor'       => $this->input->post('floor', TRUE),
             );
 
             $this->bedgroup_model->add_bed_group($bed);
@@ -76,11 +76,11 @@ class Bedgroup extends Admin_Controller
         } else {
 
             $bed = array(
-                'id'          => $this->input->post('id'),
-                'name'        => $this->input->post('name'),
-                'color'       => $this->input->post('color'),
-                'floor'       => $this->input->post('floor'),
-                'description' => $this->input->post('description'),
+                'id'          => $this->input->post('id', TRUE),
+                'name'        => $this->input->post('name', TRUE),
+                'color'       => $this->input->post('color', TRUE),
+                'floor'       => $this->input->post('floor', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $this->bedgroup_model->add_bed_group($bed);

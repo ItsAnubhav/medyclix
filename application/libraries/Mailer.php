@@ -16,6 +16,7 @@ class Mailer
 
     public $mail_config;
     private $sch_setting;
+    public $CI;
 
     public function __construct()
     {

@@ -32,10 +32,10 @@ class Chargetype extends Admin_Controller
         if (!$this->rbac->hasPrivilege('charge_type', 'can_add')) {
             access_denied();
         }
-        $this->form_validation->set_rules('charge_type', $this->lang->line('charge_type'), 'required');
-        $charge_modules = $this->input->post("charge_module");
+        $this->form_validation->set_rules('charge_type', $this->lang->line('charge_type'), 'trim|required|xss_clean');
+        $charge_modules = $this->input->post("charge_module", TRUE);
         if(empty($charge_modules) || $charge_modules == ""){
-            $this->form_validation->set_rules('charge_module', $this->lang->line('module'), 'required');
+            $this->form_validation->set_rules('charge_module', $this->lang->line('module'), 'trim|required|xss_clean');
         }
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -45,13 +45,13 @@ class Chargetype extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $data = array(
-                'charge_type' => $this->input->post('charge_type'),
+                'charge_type' => $this->input->post('charge_type', TRUE),
                 'is_default'  => 'no',
                 'is_active'   => 'yes',
             );
 
             $insert_id  = $this->chargetype_model->add($data);
-            $charge_modules = $this->input->post("charge_module");
+            $charge_modules = $this->input->post("charge_module", TRUE);
             foreach($charge_modules as $module_shortcode){
                 $module_data = array(
                     "charge_type_master_id" => $insert_id,
@@ -69,7 +69,7 @@ class Chargetype extends Admin_Controller
         if (!$this->rbac->hasPrivilege('charge_type', 'can_add')) {
             access_denied();
         }
-        $this->form_validation->set_rules('editchargetype', $this->lang->line('charge_type'), 'required');
+        $this->form_validation->set_rules('editchargetype', $this->lang->line('charge_type'), 'trim|required|xss_clean');
         
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -78,9 +78,9 @@ class Chargetype extends Admin_Controller
             );
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id= $this->input->post('editchargeid') ;
+            $id= $this->input->post('editchargeid', TRUE);
             $data = array(
-                'charge_type' => $this->input->post('editchargetype'),
+                'charge_type' => $this->input->post('editchargetype', TRUE),
                 'is_active'   => 'yes',
                 
             );
@@ -103,8 +103,8 @@ class Chargetype extends Admin_Controller
     }
 
     public function updateChargeTypeModule(){
-        $charge_type = $this->input->post("charge_type");
-        $module_shortcode = $this->input->post("module_shortcode");
+        $charge_type = $this->input->post("charge_type", TRUE);
+        $module_shortcode = $this->input->post("module_shortcode", TRUE);
 
         $module_data = array(
             "charge_type_master_id" => $charge_type,
@@ -116,7 +116,7 @@ class Chargetype extends Admin_Controller
 
     public function getchargetype()
     {
-         $id         = $this->input->post('id');
+         $id         = $this->input->post('id', TRUE);
          $result     = $this->chargetype_model->get($id);
          $json_array = array('status' => '1', 'error' => '', 'result' => $result);
          echo json_encode($json_array);

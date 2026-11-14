@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Issueitem extends Admin_Controller
 {
+	public $search_type;
+
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class Issueitem extends Admin_Controller
         $data['roles']       = $roles;
         $itemcategory        = $this->itemcategory_model->get();
         $data['itemcatlist'] = $itemcategory;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/issueitem/issueitemList', $data);
         $this->load->view('layout/footer', $data);
@@ -52,32 +55,30 @@ class Issueitem extends Admin_Controller
                     $return_date = $this->customlib->YYYYMMDDTodateFormat($value->return_date);
                 }
 
-                $action = "<div class='rowoptionview rowview-mt-19'>";
-                $link   = "<a href='#' class='detail_popover'  data-toggle='popover' title=''>";
+                $action = "";
+                $link   = "<a href='#' class='detail_popover'  data-bs-toggle='popover' title=''>";
                 $div    = "<div class='fee_detail_popover' style='display: none'>";
 
-                
-
                 if ($value->is_returned == 1) {
-                    $status = "<span  class='label label-danger item_remove'  data-item='" . $value->id . "' data-category='" . $value->item_category . "' data-item_name='" . $value->item_name . "' data-quantity='" . $value->quantity . "' data-toggle='modal' data-target='#confirm-delete' title=''>" . $this->lang->line('click_to_return') . "</span>";
+                    $status = "<button type='button' class='btn btn-sm btn-info text-nowrap item_remove' data-item='" . $value->id . "' data-category='" . $value->item_category . "' data-item_name='" . $value->item_name . "' data-quantity='" . $value->quantity . "' data-bs-toggle='modal' data-bs-target='#confirm-delete'><i class='fa fa-undo me-1'></i>" . $this->lang->line('click_to_return') . "</button>";
                 } else {
-                    $status = "<span class='label label-success'>" . $this->lang->line('returned') . "</span>";
+                    $status = "<span class='badge bg-success'>" . $this->lang->line('returned') . "</span>";
                 }
 
                 if ($this->rbac->hasPrivilege('issue_item', 'can_delete')) {
-                    $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action = "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-sm btn-light' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 //==============================
-                $row[]     = $link . $value->item_name . '</a>' . $div . "</div>" . $action;
+                $row[]     = $link . $value->item_name . '</a>' . $div . "</div>";
                 $row[]     = $value->item_category;
                 $row[]     = $this->customlib->YYYYMMDDTodateFormat($value->issue_date) . ' - ' . $this->customlib->YYYYMMDDTodateFormat($value->return_date);
                 $row[]     = $value->name . " " . $value->docname . " " . $value->docsurname . " (" . $value->employee_id . ")";
                 $row[]     = $value->issue_by;
                 $row[]     = $value->quantity;
                 $row[]     = $value->note;
-                $row[]     = $status;                
-                $row[]     = "";
+                $row[]     = $status;
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -100,6 +101,7 @@ class Issueitem extends Admin_Controller
         $data['roles']       = $roles;
         $itemcategory        = $this->itemcategory_model->get();
         $data['itemcatlist'] = $itemcategory;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/issueitem/issueitemCreate', $data);
         $this->load->view('layout/footer', $data);
@@ -128,21 +130,21 @@ class Issueitem extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $data);
         } else {
             $return_date = "";
-            $date        = $this->input->post('return_date');
-            $issue_date  = $this->input->post('issue_date');
-            if (($this->input->post('return_date')) != "") {
+            $date        = $this->input->post('return_date', TRUE);
+            $issue_date  = $this->input->post('issue_date', TRUE);
+            if (($this->input->post('return_date', TRUE)) != "") {
                 $return_date = $this->customlib->dateFormatToYYYYMMDD($date);
             }
             $data = array(
-                'issue_to'         => $this->input->post('issue_to'),
-                'issue_by'         => $this->input->post('issue_by'),
+                'issue_to'         => $this->input->post('issue_to', TRUE),
+                'issue_by'         => $this->input->post('issue_by', TRUE),
                 'issue_date'       => $this->customlib->dateFormatToYYYYMMDD($issue_date),
                 'return_date'      => $return_date,
-                'note'             => $this->input->post('note'),
-                'quantity'         => $this->input->post('quantity'),
-                'issue_type'       => $this->input->post('account_type'),
-                'item_category_id' => $this->input->post('item_category_id'),
-                'item_id'          => $this->input->post('item_id'),
+                'note'             => $this->input->post('note', TRUE),
+                'quantity'         => $this->input->post('quantity', TRUE),
+                'issue_type'       => $this->input->post('account_type', TRUE),
+                'item_category_id' => $this->input->post('item_category_id', TRUE),
+                'item_id'          => $this->input->post('item_id', TRUE),
             );
 
             $this->itemissue_model->add($data);
@@ -153,9 +155,9 @@ class Issueitem extends Admin_Controller
 
     public function check_available_quantity()
     {
-        $item_category_id = $this->input->post('item_category_id');
-        $item_id          = $this->input->post('item_id');
-        $quantity         = $this->input->post('quantity');
+        $item_category_id = $this->input->post('item_category_id', TRUE);
+        $item_id          = $this->input->post('item_id', TRUE);
+        $quantity         = $this->input->post('quantity', TRUE);
         if ($quantity != "" && $item_category_id != "" && $item_id != "") {
             $data      = $this->item_model->getItemAvailable($item_id);
             $available = ($data['added_stock'] - $data['issued']);
@@ -178,7 +180,7 @@ class Issueitem extends Admin_Controller
     public function getUser()
     {
 
-        $usertype     = $this->input->post('usertype');
+        $usertype     = $this->input->post('usertype', TRUE);
         $result_final = array();
         $result       = array();
         if ($usertype != "") {
@@ -191,7 +193,7 @@ class Issueitem extends Admin_Controller
 
     public function returnItem()
     {
-        $issue_id = $this->input->post('item_issue_id');
+        $issue_id = $this->input->post('item_issue_id', TRUE);
         if ($issue_id != "") {
             $data = array(
                 'id'          => $issue_id,
@@ -202,7 +204,7 @@ class Issueitem extends Admin_Controller
             $this->itemissue_model->add($data);
         }
 
-        $result_final = array('status' => 'pass', 'message' => "Item retrun successfully");
+        $result_final = array('status' => 'pass', 'message' => $this->lang->line('item_retrun_successfully'));
         echo json_encode($result_final);
     }
 
@@ -213,14 +215,15 @@ class Issueitem extends Admin_Controller
         $this->session->set_userdata('subsub_menu', 'reports/inventory/issueinventoryreport');
 
         $data["searchlist"] = $this->search_type;
-        $this->load->view('layout/header');
+        $data['module'] = 'inventory';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/issueitem/issueinventoryreport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
@@ -230,10 +233,9 @@ class Issueitem extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type' => $this->input->post('search_type'),
-
-                'date_from'   => $this->input->post('date_from'),
-                'date_to'     => $this->input->post('date_to'),
+                'search_type' => $this->input->post('search_type', TRUE),
+                'date_from'   => $this->input->post('date_from', TRUE),
+                'date_to'     => $this->input->post('date_to', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -243,9 +245,9 @@ class Issueitem extends Admin_Controller
 
     public function issueinventoryreports()
     {
-        $search['search_type'] = $this->input->post('search_type');
-        $search['date_from']   = $this->input->post('date_from');
-        $search['date_to']     = $this->input->post('date_to');
+        $search['search_type'] = $this->input->post('search_type', TRUE);
+        $search['date_from']   = $this->input->post('date_from', TRUE);
+        $search['date_to']     = $this->input->post('date_to', TRUE);
         $start_date            = '';
         $end_date              = '';
 

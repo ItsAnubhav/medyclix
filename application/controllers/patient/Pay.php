@@ -5,6 +5,11 @@ if (!defined('BASEPATH')) {
 }
 
 class Pay extends Patient_Controller {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+	public $payment_tables;
+
 
     public $payment_method = array();
     public $pay_method = array();
@@ -181,6 +186,7 @@ class Pay extends Patient_Controller {
     }
 
     public function successinvoice() {
+        $this->session->set_userdata('top_menu', 'profile');
         $data['title'] = 'Invoice';
         $setting_result = $this->setting_model->get();
         $data['settinglist'] = $setting_result;      

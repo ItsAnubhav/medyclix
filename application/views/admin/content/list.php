@@ -1,17 +1,14 @@
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">            
+<div class="row">            
             <div class="col-md-12">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"> <?php echo  $this->lang->line('content_share_list'); ?></h3>
-                        <div class="box-tools pull-right">
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="box-body">                       
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"> <?php echo  $this->lang->line('content_share_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                        </div><!-- /.ms-auto d-flex gap-1 -->
+                    </div><!-- /.card-header -->
+                    <div class="card-body">                       
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
                                  <table class="table table-striped table-bordered table-hover content-list" data-export-title="<?php echo  $this->lang->line('content_share_list'); ?>">
                                 <thead>
@@ -22,46 +19,61 @@
                                         <th><?php echo $this->lang->line('valid_upto'); ?></th>
                                         <th><?php echo $this->lang->line('shared_by'); ?></th>
                                         <th><?php echo $this->lang->line('description'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) --> 
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
 
-<div id="linkModal" class="modal fade modalmark" role="dialog" aria-hidden="true" style="display: none;">
-    <div class="modal-dialog modal-md">
-        <!-- Modal content-->
-        <div class="modal-content mx-2">
-            <div class="modal-header minh45">
-                <button type="button" class="close" data-dismiss="modal" autocomplete="off">×</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('link'); ?></h4>
+
+<div id="linkModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="linkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkModalLabel"><?php echo $this->lang->line('link'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body minheight199">  
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control share_link" readonly>
+                        <button type="button" class="btn btn-outline-secondary share_copy_btn"
+                                data-bs-toggle="tooltip" title="<?php echo $this->lang->line('copy'); ?>"
+                                onclick="copylink()"><i class="fa fa-copy"></i></button>
+                        <a href="#" target="_blank" class="btn btn-outline-secondary share_open_btn"
+                           data-bs-toggle="tooltip" title="<?php echo $this->lang->line('open_in_new_tab'); ?>"><i class="fa fa-external-link"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="viewShareModal" class="modal fade modalmark" role="dialog" aria-hidden="true" style="display: none;">
-    <div class="modal-dialog modal-xl-lg-80 modal-sm-100">
-        <!-- Modal content-->
-        <div class="modal-content mx-2">
-            <div class="modal-header minh45">
-                <button type="button" class="close" data-dismiss="modal" autocomplete="off">×</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('shared_contents'); ?></h4>
+<div id="viewShareModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="viewShareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewShareModalLabel"><?php echo $this->lang->line('shared_contents'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body minheight260"> 
-                <div class="modal_loader_div" style="display: none;"></div>
-                <div class="modal-body-inner">
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="modal_loader_div" style="display: none;"></div>
+                    <div class="modal-body-inner"></div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
@@ -100,55 +112,34 @@ $("#viewShareModal").on("show.bs.modal", function(e) {
     'use strict';
     $(document).ready(function () {
 
-        $('#viewShareModal,#linkModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('viewShareModal', 'linkModal');
 
         initDatatable('content-list','admin/content/getsharelist',[],[],100,
             [
                 { "bSortable": true, "aTargets": [ -2 ] ,'sClass': 'dt-body-left', "width": "20%"},
                  { "bSortable": false, "aTargets": [ -1 ] ,'sClass': 'dt-body-right'}
             ]);
+
+        $('#content-list').on('draw.dt', function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
     });
 } ( jQuery ) )
 
     $("#linkModal").on('hidden.bs.modal', function () {
-    $('#linkModal .modal-body').html("");
+    $('#linkModal .share_link').val('');
 });
 
 $('#linkModal').on('show.bs.modal', function (event) {
-    var filtre=$(event.relatedTarget).data();
-    var link_model= $('<a/>', 
-                    {
-                        class:'share_link pr5 word-break-all',
-                    href:filtre.link,
-                    target:"_blank"
-                    }).text(filtre.link);
-
-                    var span =$('<span/>', 
-                    {
-                          class:"btn btn-xs btn-info overflow-visible-all",
-                          onclick:"copylink()",
-                          id:"basic-addon1",  
-                         'data-toggle': 'tooltip',
-                         "data-original-title":"<?php echo $this->lang->line('copy'); ?>"
-                    }).append($('<i/>',{class:"fa fa-copy"
-
-                    }));
-
- 
-var sss=$('<div class="d-flex align-items-center"/>').append(link_model).append(span);
-    $('.modal-body',this).html(sss);
+    var filtre = $(event.relatedTarget).data();
+    $(this).find('.share_link').val(filtre.link);
+    $(this).find('.share_open_btn').attr('href', filtre.link);
 });
 
-function copylink(){
-var $temp = $("<input>");
-$("body").append($temp);
-$temp.val($('a.share_link').text()).select();
-document.execCommand("copy");
-$temp.remove();
+function copylink() {
+    var $inp = $('.share_link');
+    $inp[0].select();
+    document.execCommand("copy");
 }
 
 </script>

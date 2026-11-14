@@ -63,8 +63,10 @@ class Finding_model extends MY_Model
     }
 
     public function getFindingCountbyPatients($patient_id,$finding)
-    {      
-		$sql=  "Select count(*) as `total_count` from (SELECT ipd_prescription_basic.id FROM `ipd_prescription_basic`  JOIN `ipd_details` ON `ipd_details`.`id` = `ipd_prescription_basic`.`ipd_id` AND ipd_details.patient_id=  ".$patient_id."  WHERE `finding_description` LIKE  '%".$finding."%' UNION SELECT ipd_prescription_basic.id FROM `ipd_prescription_basic` JOIN `visit_details` ON `visit_details`.`id` = `ipd_prescription_basic`.`visit_details_id` JOIN opd_details on opd_details.id=visit_details.opd_details_id and opd_details.patient_id= ".$patient_id." WHERE `finding_description` LIKE  '%".$finding."%') as a";
+    {
+        $patient_id      = (int) $patient_id;
+        $finding_escaped = $this->db->escape_like_str($finding);
+		$sql=  "Select count(*) as `total_count` from (SELECT ipd_prescription_basic.id FROM `ipd_prescription_basic`  JOIN `ipd_details` ON `ipd_details`.`id` = `ipd_prescription_basic`.`ipd_id` AND ipd_details.patient_id=  ".$patient_id."  WHERE `finding_description` LIKE  '%".$finding_escaped."%' UNION SELECT ipd_prescription_basic.id FROM `ipd_prescription_basic` JOIN `visit_details` ON `visit_details`.`id` = `ipd_prescription_basic`.`visit_details_id` JOIN opd_details on opd_details.id=visit_details.opd_details_id and opd_details.patient_id= ".$patient_id." WHERE `finding_description` LIKE  '%".$finding_escaped."%') as a";
         $query = $this->db->query($sql);
         $result= $query->row();
         return $result->total_count;

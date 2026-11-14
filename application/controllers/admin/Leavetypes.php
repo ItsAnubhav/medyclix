@@ -22,24 +22,25 @@ class Leavetypes extends Admin_Controller
         $data["title"]     = $this->lang->line('add_leave_type');
         $LeaveTypes        = $this->leavetypes_model->getLeaveType();
         $data["leavetype"] = $LeaveTypes;
-        $this->load->view("layout/header");
+        $data['module'] = 'human_resource';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/staff/leavetypes", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function createLeaveType()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('name'), array('required',
+            'type', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->leavetypes_model, 'valid_leave_type')),
             )
         );
         $data["title"] = $this->lang->line('add_leave_type');
         if ($this->form_validation->run()) {
 
-            $type        = $this->input->post("type");
-            $leavetypeid = $this->input->post("leavetypeid");
-            $status      = $this->input->post("status");
+            $type        = $this->input->post("type", TRUE);
+            $leavetypeid = $this->input->post("leavetypeid", TRUE);
+            $status      = $this->input->post("status", TRUE);
             if (empty($leavetypeid)) {
                 if (!$this->rbac->hasPrivilege('leave_types', 'can_add')) {
                     access_denied();
@@ -80,15 +81,15 @@ class Leavetypes extends Admin_Controller
                 //====================================
                 if ($this->rbac->hasPrivilege('leave_types', 'can_edit')) {
 
-                    $action .= "<a href='#' data-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='#' data-bs-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('leave_types', 'can_delete')) {
 
-                     $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                     $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
                 //==============================
                 $row[] = $value->type;
-                $row[] = $action;
+                $row[] = "<div class='rowoptionview mt-mius0'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -103,7 +104,7 @@ class Leavetypes extends Admin_Controller
     public function leaveedit()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('leave_type'), array('required',
+            'type', $this->lang->line('leave_type'), array('required', 'xss_clean',
                 array('check_exists', array($this->leavetypes_model, 'valid_leave_type')),
             )
         );
@@ -115,9 +116,9 @@ class Leavetypes extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $type        = $this->input->post("type");
-            $leavetypeid = $this->input->post("leavetypeid");
-            $status      = $this->input->post("status");
+            $type        = $this->input->post("type", TRUE);
+            $leavetypeid = $this->input->post("leavetypeid", TRUE);
+            $status      = $this->input->post("status", TRUE);
             if (empty($leavetypeid)) {
                 if (!$this->rbac->hasPrivilege('leave_types', 'can_add')) {
                     access_denied();

@@ -33,7 +33,6 @@ class Dispatch_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
         return $insert_id;
     }
@@ -72,7 +71,7 @@ class Dispatch_model extends MY_Model
         $this->db->from('dispatch_receive');
         $this->db->order_by('id', 'desc');
         $query = $this->db->get();
-        return $query->result();
+        return $query->result_array();
     }
 
     public function getAlldispatchRecord()
@@ -94,7 +93,7 @@ class Dispatch_model extends MY_Model
         $this->db->order_by('id', 'desc');
         $this->db->from('dispatch_receive');
         $query = $this->db->get();
-        return $query->result();
+        return $query->result_array();
     }
 
     public function getAllreceiveRecord()

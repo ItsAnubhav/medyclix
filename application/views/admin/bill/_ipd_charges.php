@@ -1,14 +1,18 @@
 <?php 
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-if (!empty($charges_detail)) {
+$case_ref = !empty($charges_detail) ? $charges_detail[0]["case_reference_id"] : (isset($case_id) ? $case_id : '');
+$ipd_id = !empty($charges_detail) ? $charges_detail[0]["ipd_id"] : '';
+if (!empty($charges_detail) || (!empty($case_ref) && $this->rbac->hasPrivilege('charges', 'can_add'))) {
 ?> 
- <div class="box-tools pull-right box-miustop">
-     <?php if ($this->rbac->hasPrivilege('ipd_billing_payment', 'can_add')) {?>
-        <a href="javascript:void(0);" data-loading-text='' data-caseid='<?php echo $charges_detail[0]["case_reference_id"]; ?>' data-module='ipd' data-totalamount='' data-record-id='<?php echo $charges_detail[0]["ipd_id"]; ?>'  data-toggle='tooltip' title=''    class="btn btn-primary btn-sm add_payment"  ><i class="fa fa-money"></i> <?php echo $this->lang->line('add_payment'); ?></a>
-         <?php } if ($this->rbac->hasPrivilege('ipd_billing_payment', 'can_view')) {?>
-         <a href="javascript:void(0);" data-loading-text='' data-case_id='<?php echo $charges_detail[0]["case_reference_id"]; ?>' data-module_type='ipd_id' data-record-id='<?php echo $charges_detail[0]["ipd_id"]; ?>'  data-toggle='tooltip' title=''    class="btn btn-primary btn-sm view_payment"  ><i class="fa fa-money"></i> <?php echo $this->lang->line('view_payments'); ?></a> 
-          <?php }if ($this->rbac->hasPrivilege('generate_bill', 'can_view')) {?>
-        <a href="javascript:void(0);"   class="btn btn-primary btn-sm text-right view_generate_bill"  data-toggle="tooltip" title="" data-module_type='ipd_opd' data-case_id='<?php echo $charges_detail[0]["case_reference_id"]; ?>'><i class="fas fa-exchange-alt"></i> <?php echo $this->lang->line('generate_bill'); ?></a>
+ <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end mb-2 box-miustop">
+     <?php if (($this->rbac->hasPrivilege('charges', 'can_add') || $this->rbac->hasPrivilege('ipd_billing', 'can_edit') || $this->rbac->hasPrivilege('ipd_billing', 'can_add')) && !empty($case_ref)) { ?>
+        <a href="javascript:void(0);" class="btn btn-primary btn-sm add_final_bill_item" data-module="ipd" data-case-id="<?php echo $case_ref; ?>"><i class="fa fa-plus me-1"></i><?php echo $this->lang->line('add_charges'); ?></a>
+     <?php } if (!empty($charges_detail) && $this->rbac->hasPrivilege('ipd_billing_payment', 'can_add')) {?>
+        <a href="javascript:void(0);" data-loading-text='' data-caseid='<?php echo $case_ref; ?>' data-module='ipd' data-totalamount='' data-record-id='<?php echo $ipd_id; ?>'  data-bs-toggle='tooltip' title=''    class="btn btn-primary btn-sm add_payment"  ><i class="fa fa-credit-card me-1"></i><?php echo $this->lang->line('add_payment'); ?></a>
+         <?php } if (!empty($charges_detail) && $this->rbac->hasPrivilege('ipd_billing_payment', 'can_view')) {?>
+         <a href="javascript:void(0);" data-loading-text='' data-case_id='<?php echo $case_ref; ?>' data-module_type='ipd_id' data-record-id='<?php echo $ipd_id; ?>'  data-bs-toggle='tooltip' title=''    class="btn btn-primary btn-sm view_payment"  ><i class="fa fa-history me-1"></i><?php echo $this->lang->line('view_payments'); ?></a> 
+          <?php }if (!empty($charges_detail) && $this->rbac->hasPrivilege('generate_bill', 'can_view')) {?>
+        <a href="javascript:void(0);"   class="btn btn-primary btn-sm text-end view_generate_bill"  data-bs-toggle="tooltip" title="" data-module_type='ipd_opd' data-case_id='<?php echo $case_ref; ?>'><i class="fas fa-exchange-alt"></i> <?php echo $this->lang->line('generate_bill'); ?></a>
     <?php }?>
  </div><!--./impbtnview20-->
  <?php } ?>
@@ -21,13 +25,13 @@ if (!empty($charges_detail)) {
                                         <th><?php echo $this->lang->line('charge_type'); ?></th>
                                         <th><?php echo $this->lang->line('charge_category'); ?></th>
                                         <th><?php echo $this->lang->line('qty'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tpa_charge') . ' (' . $currency_symbol . ')';?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('discount') . ' (' . $currency_symbol . ')';?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tax'); ?></th>                      
-                                        <th class="text-right"><?php echo $this->lang->line('amount'). ' (' . $currency_symbol . ')'; ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('action') ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('tpa_charge') . ' (' . $currency_symbol . ')';?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('discount') . ' (' . $currency_symbol . ')';?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('tax'); ?></th>                      
+                                        <th class="text-end"><?php echo $this->lang->line('amount'). ' (' . $currency_symbol . ')'; ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('action') ?></th>
                                         </thead>
                                         <tbody>
                                          <?php 
@@ -53,13 +57,16 @@ if (!empty($charges_detail)) {
                                                         <td class="text-capitalize"><?php echo $charges_value["charge_type"] ?></td>
                                                         <td class="text-capitalize"><?php echo $charges_value["charge_category_name"] ?></td>
                                                         <td class="text-capitalize"><?php echo $charges_value['qty']." ".$charges_value["unit"]; ?></td>		   
-                                                        <td class="text-right"><?php echo $charges_value["standard_charge"] ?></td>
-                                                        <td class="text-right"><?php echo number_format($charges_value["apply_charge"], 2) ?></td>
-                                                        <td class="text-right"><?php echo $charges_value["tpa_charge"] ?></td>
-                                                        <td class="text-right"><?php echo $discount_amount." (".$charges_value["discount_percentage"]."%) "; ?></td>				
-                                                        <td class="text-right"><?php echo amountFormat($tax)." (".$charges_value["tax"]."%)"; ?></td>
-                                                        <td class="text-right"><?php echo amountFormat($charges_value["amount"]) ?></td>
-                                                        <td class="text-right"><a href="javascript:void(0);" class="btn btn-default btn-xs print_charge" data-toggle="tooltip" title="" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"  data-record-id="<?php echo $charges_value['id']; ?>" data-moduletype='ipd'  data-original-title="<?php echo $this->lang->line('print'); ?>"><i class="fa fa-print"></i></a>                                                    
+                                                        <td class="text-end"><?php echo $charges_value["standard_charge"] ?></td>
+                                                        <td class="text-end"><?php echo number_format($charges_value["apply_charge"], 2) ?></td>
+                                                        <td class="text-end"><?php echo $charges_value["tpa_charge"] ?></td>
+                                                        <td class="text-end"><?php echo $discount_amount." (".$charges_value["discount_percentage"]."%) "; ?></td>				
+                                                        <td class="text-end"><?php echo amountFormat($tax)." (".$charges_value["tax"]."%)"; ?></td>
+                                                        <td class="text-end"><?php echo amountFormat($charges_value["amount"]) ?></td>
+                                                        <td class="text-end white-space-nowrap" style="min-width:110px;">
+                                                            <a href="javascript:void(0);" class="btn btn-primary btn-sm edit_final_bill_item me-1" data-module="ipd" data-id="<?php echo $charges_value['id']; ?>" data-show-qty="1" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>"><i class="fas fa-pencil-alt"></i></a>
+                                                            <a href="javascript:void(0);" class="btn btn-danger btn-sm delete_final_bill_item me-1" data-module="ipd" data-id="<?php echo $charges_value['id']; ?>" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>"><i class="fas fa-trash"></i></a>
+                                                            <a href="javascript:void(0);" class="btn btn-secondary btn-sm print_charge" data-bs-toggle="tooltip" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"  data-record-id="<?php echo $charges_value['id']; ?>" data-moduletype='ipd'  title="<?php echo $this->lang->line('print'); ?>"><i class="fa fa-print"></i></a>
                                                         </td>                                                      
                                                     </tr>
                                                     <?php
@@ -70,18 +77,18 @@ if (!empty($charges_detail)) {
 
                                         </tbody>
                                          <?php if (!empty($charges_detail)) { ?>
-                                        <tr class="box box-solid total-bg"> 
-                                            <td colspan='8' class="text-right">                                  
+                                        <tr class="total-bg fw-bold"> 
+                                            <td colspan='8' class="text-end">                                  
                                             </td>                                           
                                             <td></td>                                
                                             <td></td>
-                                            <td class="text-right"><?php echo $this->lang->line('total') . " : " . $currency_symbol . "" . amountFormat($amount) ?></td>
+                                            <td class="text-end"><?php echo $this->lang->line('total') . " : " . $currency_symbol . "" . amountFormat($amount) ?></td>
 											<td></td>  
                                         </tr> 
                                         <?php }else{ ?>
                                             <tr > 
-                                            <td colspan='12' class="text-center"><div class="alert alert-danger"><?php echo $this->lang->line('no_record_found'); ?></div> </td>
+                                            <td colspan='12' class="text-center"><div class="text text-danger"><?php echo $this->lang->line('no_record_found'); ?></div> </td>
                                             </tr>
                                          <?php  } ?>
                                     </table>
-                                </div>                                
+                                </div>

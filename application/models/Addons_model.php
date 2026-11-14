@@ -27,7 +27,15 @@ class Addons_model extends MY_Model
         return $query->row();
     }
 
-
+	public function getByShortName($short_name)
+    {
+        $this->db->select()->from('addons');
+        $this->db->where('short_name', $short_name);
+        $query = $this->db->get();
+        return $query->row();
+    }
+	
+	
     public function getAddonWithVersion($product_id)
     {
         $this->db->select()->from('addons');
@@ -44,8 +52,10 @@ class Addons_model extends MY_Model
 
     public function getAddonVersions($addon_id, $current_version)
     {
-        $sql = "SELECT * FROM addon_versions WHERE addon_id = " . $addon_id . "   AND version_order > ( SELECT version_order FROM addon_versions WHERE addon_id =  " . $addon_id . " AND version = '" . $current_version . "' LIMIT 1)";
-        $query = $this->db->query($sql);
+        $addon_id        = (int) $addon_id;
+        $current_version = $this->db->escape($current_version);
+        $sql             = "SELECT * FROM addon_versions WHERE addon_id = " . $addon_id . "   AND version_order > ( SELECT version_order FROM addon_versions WHERE addon_id =  " . $addon_id . " AND version = " . $current_version . " LIMIT 1)";
+        $query           = $this->db->query($sql);
         return $query->result();
     }
 
@@ -115,8 +125,11 @@ class Addons_model extends MY_Model
 
         $this->db->trans_start(); # Starting Transaction
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
-        $product = $this->getByProductID($addon_Array['product_id']);
+        $product = $this->getByShortName($addon_Array['short_name']);
 
+        if (!$product) {
+            return false;
+        }
         $update_addon['name'] = $addon_Array["name"];
         $update_addon['description'] = $addon_Array["description"];
         $update_addon['last_update'] = date('Y-m-d H:i:s');

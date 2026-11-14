@@ -14,11 +14,225 @@ class Addons extends Admin_Controller
         $this->load->model('addons_model');
     }
 
+    public function addonUpdateCheck()
+    {
+        $results = [];
+
+        foreach ($this->license_service->listAddons() as $product_id => $block) {
+            $addon_info = $this->addons_model->getByProductID($block['productCode']);
+
+
+            if (!$addon_info || IsNullOrEmptyString($addon_info->current_version)) {
+                continue;
+            }
+            $currentVersion = $addon_info->current_version;
+            $domain = base_url();
+            $domain = preg_replace('/^https?:\/\//i', '', $domain);
+            $domain = rtrim($domain, '/');
+            $domain = strtolower($domain);
+            $payload = [
+                'licenseKeyHash' => $block['licenseKey'],
+                'productCode'    => $block['productCode'],
+                'domain'         => $domain,
+                'currentVersion' => $currentVersion,
+                'signingKey'     => $block['signingKey'],
+            ];
+
+            $response = $this->auth->addon_update_check($payload);
+            $httpcode = isset($response['httpcode']) ? $response['httpcode'] : 0;
+            $body     = isset($response['body']) ? $response['body'] : null;
+
+            $entry = [
+                'product_id'      => $product_id,
+                'name'            => $addon_info ? $addon_info->name : '',
+                'currentVersion'  => $currentVersion,
+                'updateAvailable' => false,
+                'checked'         => false,
+            ];
+
+            if ($httpcode == 200 && is_array($body)) {
+                $entry['checked']         = true;
+                $entry['updateAvailable'] = !empty($body['updateAvailable']);
+
+                if ($entry['updateAvailable']) {
+                    $entry['latestVersion'] = isset($body['latestVersion']) ? $body['latestVersion'] : '';
+                    $entry['releaseNotes']  = isset($body['releaseNotes']) ? $body['releaseNotes'] : '';
+                    $entry['downloadUrl']   = isset($body['downloadUrl']) ? $body['downloadUrl'] : '';
+                    $entry['source']        = 'online';
+                }
+            } else {
+
+                $entry['error'] = is_array($body) && isset($body['message'])
+                    ? $body['message']
+                    : 'Update check failed (HTTP ' . $httpcode . ').';
+            }
+
+            if (!$entry['updateAvailable']) {
+                $localVersions = $this->addons_model->getAddonVersions($addon_info->id, $currentVersion);
+                if (!empty($localVersions)) {
+                    $latestLocal = end($localVersions); // ordered by version_order ASC
+                    $entry['updateAvailable'] = true;
+                    $entry['latestVersion']   = $latestLocal->version;
+                    $entry['source']          = 'local';
+                }
+            }
+
+            $results[] = $entry;
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode([
+                'status'  => 1,
+                'addons'  => $results,
+            ]));
+    }
+
+
+    public function downloadUpdate()
+    {
+        $product_id   = $this->input->post('product_id');
+        $addon_folder = $this->input->post('addon');
+		
+		$domain = base_url();
+        $domain = preg_replace('/^https?:\/\//i', '', $domain);
+        $domain = rtrim($domain, '/');
+        $domain = strtolower($domain);
+			
+			
+        if (empty($product_id) || empty($addon_folder)) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Missing update parameters.']);
+        }
+
+        // The addon must be installed (current_version set) and licensed.
+        $addon_info = $this->addons_model->getByProductID($product_id);
+        if (!$addon_info || IsNullOrEmptyString($addon_info->current_version)) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Addon is not installed.']);
+        }
+
+        $block = $this->license_service->loadAddonLicense($product_id);
+        if (!is_array($block) || empty($block['licenseKey']) || empty($block['signingKey'])) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Addon license not found. Please register again.']);
+        }
+
+        // Re-check for an update server-side to obtain the (fresh) download URL.
+        $check = $this->auth->addon_update_check([
+            'licenseKeyHash' => $block['licenseKey'],
+            'productCode'    => isset($block['productCode']) ? $block['productCode'] : $product_id,
+            'domain'         => $domain,
+            'currentVersion' => $addon_info->current_version,
+            'signingKey'     => $block['signingKey'],
+        ]);
+
+        $checkBody = isset($check['body']) ? $check['body'] : null;
+        if (!isset($check['httpcode']) || $check['httpcode'] != 200 || !is_array($checkBody)) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Could not check for updates. Please try again.']);
+        }
+        if (empty($checkBody['updateAvailable'])) {
+            return $this->jsonOut(['status' => 0, 'uptodate' => 1, 'msg' => 'This addon is already up to date.']);
+        }
+
+        $download_url = isset($checkBody['downloadUrl']) ? $checkBody['downloadUrl'] : '';
+        if (empty($download_url)) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Update is available but no download file was provided by the server.']);
+        }
+
+        $base = 'https://apigt.webfeb.com';
+        $url  = (stripos($download_url, 'http') === 0) ? $download_url : $base . $download_url;
+
+        logMessage("//================= Online update download for " . $addon_folder . " started =================//");
+
+        // 1. Download the zip.
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        $zip_data     = curl_exec($ch);
+        $httpcode     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpcode != 200 || empty($zip_data)) {
+            logMessage("Online update download failed (HTTP " . $httpcode . ").");
+            return $this->jsonOut(['status' => 0, 'msg' => 'Failed to download the update package.']);
+        }
+        // A JSON body means the server returned an error instead of a zip.
+        if (stripos($content_type, 'json') !== false) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Update server returned an error.']);
+        }
+
+        // 2. Save under ./addons/<directory>.zip so the unzip folder matches the addon.
+        $addons_path = FCPATH . "./addons/";
+        if (!is_dir($addons_path)) {
+            mkdir($addons_path, 0755, true);
+        }
+        $zip_path = $addons_path . $addon_folder . ".zip";
+        if (file_put_contents($zip_path, $zip_data) === false) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Could not write the update package to disk.']);
+        }
+
+        $folder_name = strtolower($addon_folder);
+
+        // 3. Validate the package in a temp dir (must be an 'updater' for an already-installed addon).
+        $zip = new ZipArchive;
+        if ($zip->open($zip_path) !== TRUE) {
+            unlink($zip_path);
+            return $this->jsonOut(['status' => 0, 'msg' => 'Downloaded update package is not a valid zip.']);
+        }
+        $extract_to_temp_path = $addons_path . "temp/" . $folder_name;
+        rmTempDir($extract_to_temp_path);
+        $zip->extractTo($extract_to_temp_path);
+        $zip->close();
+
+        $list_details     = listInnerFolders($extract_to_temp_path);
+        $installer_exists = is_dir($addons_path . $folder_name . "/installer");
+
+        if (!is_array($list_details) || !in_array('updater', $list_details) || !$installer_exists) {
+            rmTempDir($extract_to_temp_path);
+            unlink($zip_path);
+            return $this->jsonOut(['status' => 0, 'msg' => 'Update package is not a valid updater for this addon.']);
+        }
+
+        // 4. Extract into ./addons/<folder> and register the new versions.
+        $zip2 = new ZipArchive;
+        if ($zip2->open($zip_path) === TRUE) {
+            $zip2->extractTo($addons_path . $folder_name);
+            $zip2->close();
+        }
+        $return_json = read_json($addons_path . $folder_name . "/addon_info.json");
+        $this->addons_model->addAddonSetupDetails($return_json);
+
+        rmTempDir($extract_to_temp_path);
+        if (file_exists($zip_path)) {
+            unlink($zip_path);
+        }
+
+        // 5. Apply the update (installed addon -> updateVersion path).
+        $addon_details = $this->addons_model->getAddonWithVersion($product_id);
+        if (!$addon_details) {
+            return $this->jsonOut(['status' => 0, 'msg' => 'Addon not found after download.']);
+        }
+
+        logMessage("//================= Online update applying for " . $addon_folder . " =================//");
+        return $this->updateVersion($addon_details);
+    }
+
+    private function jsonOut($data)
+    {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode($data));
+    }	 
     public function index()
     {
         
-        $this->session->set_userdata('top_menu', 'addons');
-        $this->session->set_userdata('sub_menu', 'admin/addons/index');
+        $this->session->set_userdata('top_menu', 'setup');
+        $this->session->set_userdata('sub_menu', 'schsettings/index');
         $this->session->set_userdata('inner_menu', 'admin/addons/index');
         $data['title']      = 'Addons';
         
@@ -92,6 +306,7 @@ class Addons extends Admin_Controller
 
 
 
+        $data['module'] = 'addons';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/addons/index', $data);
         $this->load->view('layout/footer', $data);
@@ -135,8 +350,8 @@ class Addons extends Admin_Controller
     {
         $copy_folder = false;
         $install_sql = false;
-        $addon_folder = $this->input->post('addon');
-        $product_id = $this->input->post('product_id');
+        $addon_folder = $this->input->post('addon', TRUE);
+        $product_id = $this->input->post('product_id', TRUE);
         $addon_details = $this->addons_model->getAddonWithVersion($product_id);
 
         if (IsNullOrEmptyString($addon_details->current_version)) {
@@ -150,8 +365,8 @@ class Addons extends Admin_Controller
     {
         $copy_folder = false;
         $install_sql = false;
-        $addon_folder = $this->input->post('addon');
-        $product_id = $this->input->post('product_id');
+        $addon_folder = $this->input->post('addon', TRUE);
+        $product_id = $this->input->post('product_id', TRUE);
         $addon_details = $this->addons_model->getAddonWithVersion($product_id);
 
         logMessage("*************************************************************************************************************");
@@ -436,18 +651,12 @@ class Addons extends Admin_Controller
 
     public function handle_upload()
     {
-        $image_validate = $this->config->item('file_validate');
-        $result         = $this->filetype_model->get();
         if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
 
             $file_type         = $_FILES["file"]['type'];
             $file_size         = $_FILES["file"]["size"];
             $file_name         = $_FILES["file"]["name"];
-			
-			$allowed_extension = $image_validate["allowed_extension"];
-            $allowed_mime_type = $image_validate["allowed_mime_type"];
-			
-			
+
             $allowed_extension = ["zip"];
             $allowed_mime_type =  ['application/x-zip', 'application/zip', 'application/x-zip-compressed', 'application/s-compressed', 'multipart/x-zip'];
 			

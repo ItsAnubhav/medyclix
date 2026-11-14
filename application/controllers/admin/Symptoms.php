@@ -24,6 +24,7 @@ class Symptoms extends Admin_Controller
         $data['symptomsresult']     = $symptoms_result;
         $symptomsresult             = $this->symptoms_model->getsymtype();
         $data['symptomsresulttype'] = $symptomsresult;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/symptoms/symptomsList', $data);
         $this->load->view('layout/footer', $data);
@@ -40,6 +41,7 @@ class Symptoms extends Admin_Controller
         $data['title']          = $this->lang->line('symptoms_type_list');
         $symptoms_result        = $this->symptoms_model->getsymtype();
         $data['symptomsresult'] = $symptoms_result;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/symptoms/symptomstypeList', $data);
         $this->load->view('layout/footer', $data);
@@ -51,6 +53,7 @@ class Symptoms extends Admin_Controller
         $data['title']    = $this->lang->line('symptoms_head_list');
         $category         = $this->symptoms_model->get($id);
         $data['category'] = $category;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/symptoms/symptomsShow', $data);
         $this->load->view('layout/footer', $data);
@@ -84,13 +87,14 @@ class Symptoms extends Admin_Controller
         $data['categorylist'] = $category_result;
         $this->form_validation->set_rules('symptoms', $this->lang->line('symptoms_head'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'setup';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/symptoms/symptomsList', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'symptoms_title' => $this->input->post('symptoms_title'),
-                'description'    => $this->input->post('description'),
+                'symptoms_title' => $this->input->post('symptoms_title', TRUE),
+                'description'    => $this->input->post('description', TRUE),
             );
             $this->symptoms_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('income_head_added_successfully') . '</div>');
@@ -112,9 +116,9 @@ class Symptoms extends Admin_Controller
         } else {
 
             $data = array(
-                'symptoms_title' => $this->input->post('symptoms_title'),
-                'type'           => $this->input->post('type'),
-                'description'    => $this->input->post('description'),
+                'symptoms_title' => $this->input->post('symptoms_title', TRUE),
+                'type'           => $this->input->post('type', TRUE),
+                'description'    => $this->input->post('description', TRUE),
             );
             $this->symptoms_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('new_income_head_successfully_inserted'));
@@ -130,7 +134,7 @@ class Symptoms extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('symptoms_type_'.$row_value, $this->lang->line('symptoms_type'), 'trim|required');        
+                $this->form_validation->set_rules('symptoms_type_'.$row_value, $this->lang->line('symptoms_type'), 'trim|required|xss_clean');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -146,7 +150,7 @@ class Symptoms extends Admin_Controller
             // save the multiple data 
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                 
-                $data  = array('symptoms_type' => $this->input->post('symptoms_type_'.$row_values));
+                $data  = array('symptoms_type' => $this->input->post('symptoms_type_'.$row_values, TRUE));
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
                 $this->symptoms_model->addsymtype($data);
             }
@@ -179,9 +183,9 @@ class Symptoms extends Admin_Controller
         } else {
             $data = array(
                 'id'             => $id,
-                'symptoms_title' => $this->input->post('symptoms_title'),
-                'type'           => $this->input->post('type'),
-                'description'    => $this->input->post('description'),
+                'symptoms_title' => $this->input->post('symptoms_title', TRUE),
+                'type'           => $this->input->post('type', TRUE),
+                'description'    => $this->input->post('description', TRUE),
             );
             $this->symptoms_model->add($data);
 
@@ -198,7 +202,7 @@ class Symptoms extends Admin_Controller
         }
 
         $id = $this->input->post('symptoms_id');
-        $this->form_validation->set_rules('symptoms_id', $this->lang->line('symptoms_id'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('symptoms_id', $this->lang->line('symptoms_head'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('symptoms_type', $this->lang->line('symptoms_type'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -211,7 +215,7 @@ class Symptoms extends Admin_Controller
 
             $data = array(
                 'id'            => $id,
-                'symptoms_type' => $this->input->post('symptoms_type'),
+                'symptoms_type' => $this->input->post('symptoms_type', TRUE),
             );
             $this->symptoms_model->addsymtype($data);
 

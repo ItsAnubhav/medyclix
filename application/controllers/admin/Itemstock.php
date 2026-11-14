@@ -12,6 +12,7 @@ class Itemstock extends Admin_Controller
         parent::__construct();
         $this->load->helper('form');
         $this->load->library('datatables');
+        $this->load->library('SaasValidation');
         $this->config->load('image_valid');
     }
 
@@ -19,34 +20,39 @@ class Itemstock extends Admin_Controller
     {        
         $this->session->set_userdata('top_menu', 'Inventory');
         $this->session->set_userdata('sub_menu', 'Itemstock/index');
-        $data['title']      = $this->input->post('add_item');
-        $data['title_list'] = $this->input->post('recent_items');
+        $data['title']      = $this->input->post('add_item', TRUE);
+        $data['title_list'] = $this->input->post('recent_items', TRUE);
         $this->form_validation->set_rules('item_id', $this->input->post('item'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('quantity', $this->input->post('quantity'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('item_category_id', $this->input->post('item_category'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('item_photo', $this->lang->line('photo'), 'callback_handle_upload');
+        $this->form_validation->set_rules('item_photo', $this->lang->line('photo'), 'callback_handle_upload|callback_validateCanUploadFile[item_photo]');
         if ($this->form_validation->run() == false) {
 
         } else {
-            $date     = $this->input->post('date');
-            $store_id = ($this->input->post('store_id')) ? $this->input->post('store_id') : null;
+            $date     = $this->input->post('date', TRUE);
+            $store_id = ($this->input->post('store_id', TRUE)) ? $this->input->post('store_id', TRUE) : null;
             $data     = array(
-                'item_id'     => $this->input->post('item_id'),
-                'symbol'      => $this->input->post('symbol'),
-                'supplier_id' => $this->input->post('supplier_id'),
+                'item_id'     => $this->input->post('item_id', TRUE),
+                'symbol'      => $this->input->post('symbol', TRUE),
+                'supplier_id' => $this->input->post('supplier_id', TRUE),
                 'store_id'    => $store_id,
-                'quantity'    => $this->input->post('symbol') . $this->input->post('quantity'),
+                'quantity'    => $this->input->post('symbol', TRUE) . $this->input->post('quantity', TRUE),
                 'date'        => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $insert_id = $this->itemstock_model->add($data);
             if (isset($_FILES["item_photo"]) && !empty($_FILES['item_photo']['name'])) {
-                $fileInfo = pathinfo($_FILES["item_photo"]["name"]);
-                $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["item_photo"]["tmp_name"], "./uploads/inventory_items/" . $img_name);
-                $data_img = array('id' => $insert_id, 'attachment' => 'uploads/inventory_items/' . $img_name);
-                $this->itemstock_model->add($data_img);
+                $file_name = $this->media_storage->fileupload("item_photo", './uploads/inventory_items/');
+                if (!IsNullOrEmptyString($file_name)) {
+                    $data_img = array('id' => $insert_id, 'attachment' => 'uploads/inventory_items/' . $file_name);
+                    $this->itemstock_model->add($data_img);
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['item_photo']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (itemstock index add): ' . $e->getMessage());
+                    }
+                }
             }
 
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('item_added_successfully') . '</div>');
@@ -58,6 +64,7 @@ class Itemstock extends Admin_Controller
         $data['itemsupplier'] = $itemsupplier;
         $itemstore            = $this->itemstore_model->get();
         $data['itemstore']    = $itemstore;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/itemstock/itemList', $data);
         $this->load->view('layout/footer', $data);
@@ -71,40 +78,39 @@ class Itemstock extends Admin_Controller
         if (!empty($dt_response->data)) {
             foreach ($dt_response->data as $key => $value) {
 
-                $row = array();
+                $row         = array();
                 //====================================
-                $action = "<div class='rowoptionview rowview-mt-19'>";
-                $link   = "<a href='#' class='detail_popover'  data-toggle='popover' title=''>";
-                $div    = "<div class='fee_detail_popover' style='display: none'>";
-                
+                $column_first  = "<a href='#' class='detail_popover' data-bs-toggle='popover' title=''>" . html_escape($value->name) . "</a>";
+                $column_first .= "<div class='fee_detail_popover' style='display: none'></div>";
 
+                $action = '';
                 if ($value->attachment) {
-                    $action .= "<a href=" . base_url() . 'admin/itemstock/download/' . $value->id . " onclick='' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
+                    $action .= "<a href='" . base_url() . 'admin/itemstock/download/' . $value->id . "' class='btn btn-sm btn-outline-secondary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('item_stock', 'can_edit')) {
-                    $action .= "<a href='#' onclick='get_data(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='#' onclick='get_data(" . $value->id . ")' class='btn btn-sm btn-outline-primary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('item_stock', 'can_delete')) {
-                    $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 //==============================
-                $row[] = $link . $value->name . '</a>' . $div .  "</div>" . $action;
-                $row[] = $value->item_category;
-                $row[] = $value->item_supplier;
-                $row[] = $value->item_store;
+                $row[] = $column_first;
+                $row[] = html_escape($value->item_category);
+                $row[] = html_escape($value->item_supplier);
+                $row[] = html_escape($value->item_store);
                 if($value->date){
                 $row[] = $this->customlib->YYYYMMDDTodateFormat($value->date);
                 }else{
                 $row[] = '';
                 }
-                $row[] = $value->description;
-                $row[] = $value->quantity;
+                $row[] = html_escape($value->description);
+                $row[] = html_escape($value->quantity);
 				$row[] = composeStaffNameByString($value->generated_byname, $value->generated_bysurname, $value->generated_byemployee_id);
                 $row[]     = $value->purchase_price;
-               
+                $row[]     = "<div class='white-space-nowrap'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -124,7 +130,7 @@ class Itemstock extends Admin_Controller
         $this->form_validation->set_rules('quantity', $this->lang->line('quantity'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('item_category_id', $this->lang->line('item_category'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('supplier_id', $this->lang->line('supplier'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload');
+        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload|callback_validateCanUploadFile[item_photo]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -138,17 +144,17 @@ class Itemstock extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date'));
-            $store_id = ($this->input->post('store_id')) ? $this->input->post('store_id') : null;
+            $date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE));
+            $store_id = ($this->input->post('store_id', TRUE)) ? $this->input->post('store_id', TRUE) : null;
             $data     = array(
-                'item_id'        => $this->input->post('item_id'),
-                'symbol'         => $this->input->post('symbol'),
-                'supplier_id'    => $this->input->post('supplier_id'),
-                'purchase_price' => $this->input->post('purchase_price'),
+                'item_id'        => $this->input->post('item_id', TRUE),
+                'symbol'         => $this->input->post('symbol', TRUE),
+                'supplier_id'    => $this->input->post('supplier_id', TRUE),
+                'purchase_price' => $this->input->post('purchase_price', TRUE),
                 'store_id'       => $store_id,
-                'quantity'       => $this->input->post('symbol') . $this->input->post('quantity'),
+                'quantity'       => $this->input->post('symbol', TRUE) . $this->input->post('quantity', TRUE),
                 'date'           => $date,
-                'description'    => $this->input->post('description'),
+                'description'    => $this->input->post('description', TRUE),
                 'generated_by'    => $this->customlib->getLoggedInUserID(),
             );
 
@@ -156,9 +162,18 @@ class Itemstock extends Admin_Controller
 
             if (isset($_FILES["item_photo"]) && !empty($_FILES['item_photo']['name'])) {
                 $file_name = $this->media_storage->fileupload("item_photo",'./uploads/inventory_items/');
-                $data_img = array('id' => $insert_id, 'attachment' => 'uploads/inventory_items/' . $file_name);
-                $this->itemstock_model->add($data_img);
-            }   
+                if (!IsNullOrEmptyString($file_name)) {
+                    $data_img = array('id' => $insert_id, 'attachment' => 'uploads/inventory_items/' . $file_name);
+                    $this->itemstock_model->add($data_img);
+
+                    // SaaS: add the uploaded photo's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['item_photo']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (itemstock add): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -173,7 +188,7 @@ class Itemstock extends Admin_Controller
         $this->form_validation->set_rules('item_category_id', $this->lang->line('item_category'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('supplier_id', $this->lang->line('supplier'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('purchase_price', $this->lang->line('purchase_price'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload');
+        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload|callback_validateCanUploadFile[item_photo]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'e1'             => form_error('item_id'),
@@ -186,28 +201,51 @@ class Itemstock extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $store_id = ($this->input->post('store_id')) ? $this->input->post('store_id') : null;
-            $updateid = $this->input->post("itemstockid");
-            $date     = $this->input->post('date');
+            $store_id = ($this->input->post('store_id', TRUE)) ? $this->input->post('store_id', TRUE) : null;
+            $updateid = $this->input->post("itemstockid", TRUE);
+            $date     = $this->input->post('date', TRUE);
             $data     = array(
                 'id'             => $updateid,
-                'item_id'        => $this->input->post('item_id'),
-                'symbol'         => $this->input->post('symbol'),
-                'supplier_id'    => $this->input->post('supplier_id'),
+                'item_id'        => $this->input->post('item_id', TRUE),
+                'symbol'         => $this->input->post('symbol', TRUE),
+                'supplier_id'    => $this->input->post('supplier_id', TRUE),
                 'store_id'       => $store_id,
-                'quantity'       => $this->input->post('symbol') . $this->input->post('quantity'),
-                'purchase_price' => $this->input->post('purchase_price'),
+                'quantity'       => $this->input->post('symbol', TRUE) . $this->input->post('quantity', TRUE),
+                'purchase_price' => $this->input->post('purchase_price', TRUE),
                 'date'           => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description'    => $this->input->post('description'),
+                'description'    => $this->input->post('description', TRUE),
             );
 
             $insert_id = $this->itemstock_model->add($data);
            
             if (isset($_FILES["item_photo"]) && !empty($_FILES['item_photo']['name'])) {
+                // Size of the photo being replaced, for quota diff calculation.
+                $existing     = $this->itemstock_model->get($updateid);
+                $prev_size_kb = (!empty($existing['attachment'])) ? $this->media_storage->getUploadedFileSize($existing['attachment']) : 0;
+
                 $file_name = $this->media_storage->fileupload("item_photo",'./uploads/inventory_items/');
-                $data_img = array('id' => $updateid, 'attachment' => 'uploads/inventory_items/' . $file_name);
-                $this->itemstock_model->add($data_img);
-            }   
+                if (!IsNullOrEmptyString($file_name)) {
+                    // Remove the old physical file that is being replaced.
+                    if (!empty($existing['attachment'])) {
+                        $this->media_storage->filedelete($existing['attachment'], '');
+                    }
+
+                    $data_img = array('id' => $updateid, 'attachment' => 'uploads/inventory_items/' . $file_name);
+                    $this->itemstock_model->add($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_size_kb = $this->media_storage->getTmpFileSize('item_photo');
+                        if ($prev_size_kb > $new_size_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $prev_size_kb - $new_size_kb);
+                        } elseif ($new_size_kb > $prev_size_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_size_kb - $prev_size_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (itemstock update): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -223,14 +261,14 @@ class Itemstock extends Admin_Controller
 
     public function getItemByCategory()
     {
-        $item_category_id = $this->input->get('item_category_id');
+        $item_category_id = $this->input->get('item_category_id', TRUE);
         $data             = $this->item_model->getItemByCategory($item_category_id);
         echo json_encode($data);
     }
 
     public function getItemunit()
     {
-        $id   = $this->input->get('id');
+        $id   = $this->input->get('id', TRUE);
         $data = $this->item_model->getItemunit($id);
         echo json_encode($data);
     }
@@ -241,8 +279,34 @@ class Itemstock extends Admin_Controller
             access_denied();
         }
         $data['title'] = $this->lang->line('fees_master_list');
+
+        // SaaS: release the photo's storage from the quota and remove the file.
+        $row = $this->itemstock_model->get($id);
+        if (!empty($row['attachment'])) {
+            $file_size_kb = $this->media_storage->getUploadedFileSize($row['attachment']);
+            if ($file_size_kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $file_size_kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (itemstock delete): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($row['attachment'], '');
+        }
+
         $this->itemstock_model->remove($id);
         redirect('admin/itemstock/index');
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function handle_upload()
@@ -301,36 +365,54 @@ class Itemstock extends Admin_Controller
         $this->form_validation->set_rules('quantity', $this->lang->line('quantity'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('item_id', $this->lang->line('item'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('item_category_id', $this->lang->line('item_category'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload|callback_validateCanUploadFile[item_photo]');
         if ($this->form_validation->run() == false) {
             $msg = array(
-                'e1' => form_error('item_id'),
-                'e2' => form_error('item_category_id'),
-                'e3' => form_error('quantity'),
+                'e1'         => form_error('item_id'),
+                'e2'         => form_error('item_category_id'),
+                'e3'         => form_error('quantity'),
+                'item_photo' => form_error('item_photo'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $store_id = ($this->input->post('store_id')) ? $this->input->post('store_id') : null;
-            $date     = $this->input->post('date');
+            $store_id = ($this->input->post('store_id', TRUE)) ? $this->input->post('store_id', TRUE) : null;
+            $date     = $this->input->post('date', TRUE);
             $data     = array(
                 'id'          => $id,
-                'item_id'     => $this->input->post('item_id'),
-                'symbol'      => $this->input->post('symbol'),
-                'supplier_id' => $this->input->post('supplier_id'),
+                'item_id'     => $this->input->post('item_id', TRUE),
+                'symbol'      => $this->input->post('symbol', TRUE),
+                'supplier_id' => $this->input->post('supplier_id', TRUE),
                 'store_id'    => $store_id,
-                'quantity'    => $this->input->post('symbol') . $this->input->post('quantity'),
+                'quantity'    => $this->input->post('symbol', TRUE) . $this->input->post('quantity', TRUE),
                 'date'        => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $this->itemstock_model->add($data);
 
             if (isset($_FILES["item_photo"]) && !empty($_FILES['item_photo']['name'])) {
-                $fileInfo = pathinfo($_FILES["item_photo"]["name"]);
-                $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["item_photo"]["tmp_name"], "./uploads/inventory_items/" . $img_name);
-                $data_img = array('id' => $id, 'attachment' => 'uploads/inventory_items/' . $img_name);
-                $this->itemstock_model->add($data_img);
+                $existing     = $this->itemstock_model->get($id);
+                $prev_size_kb = (!empty($existing['attachment'])) ? $this->media_storage->getUploadedFileSize($existing['attachment']) : 0;
+
+                $file_name = $this->media_storage->fileupload("item_photo", './uploads/inventory_items/');
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($existing['attachment'])) {
+                        $this->media_storage->filedelete($existing['attachment'], '');
+                    }
+                    $data_img = array('id' => $id, 'attachment' => 'uploads/inventory_items/' . $file_name);
+                    $this->itemstock_model->add($data_img);
+                    try {
+                        $new_size_kb = $this->media_storage->getTmpFileSize('item_photo');
+                        if ($prev_size_kb > $new_size_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $prev_size_kb - $new_size_kb);
+                        } elseif ($new_size_kb > $prev_size_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_size_kb - $prev_size_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (itemstock save_edit): ' . $e->getMessage());
+                    }
+                }
             }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -359,33 +441,51 @@ class Itemstock extends Admin_Controller
         $data['itemstore']    = $itemstore;
         $this->form_validation->set_rules('item_id', $this->lang->line('item'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('item_category_id', $this->lang->line('item_category'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('item_photo', $this->lang->line('item_photo'), 'callback_handle_upload|callback_validateCanUploadFile[item_photo]');
 
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'inventory';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/itemstock/itemEdit', $data);
             $this->load->view('layout/footer', $data);
         } else {
-            $store_id = ($this->input->post('store_id')) ? $this->input->post('store_id') : null;
-            $date     = $this->input->post('date');
+            $store_id = ($this->input->post('store_id', TRUE)) ? $this->input->post('store_id', TRUE) : null;
+            $date     = $this->input->post('date', TRUE);
             $data     = array(
                 'id'          => $id,
-                'item_id'     => $this->input->post('item_id'),
-                'symbol'      => $this->input->post('symbol'),
-                'supplier_id' => $this->input->post('supplier_id'),
+                'item_id'     => $this->input->post('item_id', TRUE),
+                'symbol'      => $this->input->post('symbol', TRUE),
+                'supplier_id' => $this->input->post('supplier_id', TRUE),
                 'store_id'    => $store_id,
-                'quantity'    => $this->input->post('symbol') . $this->input->post('quantity'),
+                'quantity'    => $this->input->post('symbol', TRUE) . $this->input->post('quantity', TRUE),
                 'date'        => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $this->itemstock_model->add($data);
 
             if (isset($_FILES["item_photo"]) && !empty($_FILES['item_photo']['name'])) {
-                $fileInfo = pathinfo($_FILES["item_photo"]["name"]);
-                $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["item_photo"]["tmp_name"], "./uploads/inventory_items/" . $img_name);
-                $data_img = array('id' => $id, 'attachment' => 'uploads/inventory_items/' . $img_name);
-                $this->itemstock_model->add($data_img);
+                $existing     = $this->itemstock_model->get($id);
+                $prev_size_kb = (!empty($existing['attachment'])) ? $this->media_storage->getUploadedFileSize($existing['attachment']) : 0;
+
+                $file_name = $this->media_storage->fileupload("item_photo", './uploads/inventory_items/');
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($existing['attachment'])) {
+                        $this->media_storage->filedelete($existing['attachment'], '');
+                    }
+                    $data_img = array('id' => $id, 'attachment' => 'uploads/inventory_items/' . $file_name);
+                    $this->itemstock_model->add($data_img);
+                    try {
+                        $new_size_kb = $this->media_storage->getTmpFileSize('item_photo');
+                        if ($prev_size_kb > $new_size_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $prev_size_kb - $new_size_kb);
+                        } elseif ($new_size_kb > $prev_size_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_size_kb - $prev_size_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (itemstock edit_new): ' . $e->getMessage());
+                    }
+                }
             }
 
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('item_stock_updated_successfully') . '</div>');

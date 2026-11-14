@@ -5,6 +5,8 @@ if (!defined('BASEPATH')) {
 
 class Generatestaffidcard extends Admin_Controller
 {
+	public $sch_setting_detail;
+
 
     public function __construct()
     {
@@ -28,9 +30,10 @@ class Generatestaffidcard extends Admin_Controller
         $data['idcardlist']    = $idcardlist;
         $staffRole             = $this->staff_model->getStaffRole();
         $data['staffRolelist'] = $staffRole;
-        $this->load->view('layout/header');
+        $data['module'] = 'certificate';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/generatestaffidcard/generatestaffidcardview', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function search()
@@ -41,31 +44,33 @@ class Generatestaffidcard extends Admin_Controller
         $data['staffRolelist'] = $staffRole;
         $idcardlist            = $this->Generatestaffidcard_model->getstaffidcard();
         $data['idcardlist']    = $idcardlist;
-        $search                = $this->input->post('search');
+        $search                = $this->input->post('search', TRUE);
         if ($this->input->server('REQUEST_METHOD') == "GET") {
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/generatestaffidcard/generatestaffidcardview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
-            $role = $this->input->post('role_id');
+            $role = $this->input->post('role_id', TRUE);
             if (isset($search)) {
                 $this->form_validation->set_rules('role_id', $this->lang->line('role'), 'trim|required|xss_clean');
                 $this->form_validation->set_rules('id_card', $this->lang->line('id_card_template'), 'trim|required|xss_clean');
                 if ($this->form_validation->run() == false) {
                 } else {
-                    $data['staffrole'] = $this->input->post('role_id');
-                    $data['idcard']    = $this->input->post('id_card');
+                    $data['staffrole'] = $this->input->post('role_id', TRUE);
+                    $data['idcard']    = $this->input->post('id_card', TRUE);
                 }
             }
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/generatestaffidcard/generatestaffidcardview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         }
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('role_id', $this->lang->line('role'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('id_card', $this->lang->line('id_card_template'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
@@ -76,8 +81,8 @@ class Generatestaffidcard extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'role_id' => $this->input->post('role_id'),
-                'id_card' => $this->input->post('id_card'),
+                'role_id' => $this->input->post('role_id', TRUE),
+                'id_card' => $this->input->post('id_card', TRUE),
 
             );
 
@@ -89,8 +94,8 @@ class Generatestaffidcard extends Admin_Controller
     public function getstafflistdatatable()
     {       
 
-        $role   = $this->input->post('role_id');
-        $idcard = $this->input->post('id_card');
+        $role   = $this->input->post('role_id', TRUE);
+        $idcard = $this->input->post('id_card', TRUE);
 
         $idcardresult = $this->Generatestaffidcard_model->getidcardbyid($idcard);
         $dt_response  = $this->staff_model->getstaffbyroleidforidcard($role, 1);
@@ -140,9 +145,9 @@ class Generatestaffidcard extends Admin_Controller
 
     public function generatemultiple()
     {
-        $staffid                =   $this->input->post('data');
+        $staffid                =   $this->input->post('data', TRUE);
         $staff_array            =   json_decode($staffid);
-        $idcard                 =   $this->input->post('id_card');
+        $idcard                 =   $this->input->post('id_card', TRUE);
         $staffid_arr            =   array();
         $data['sch_setting']    =   $this->setting_model->get();
         $data['id_card']        =   $this->Generatestaffidcard_model->getidcardbyid($idcard);

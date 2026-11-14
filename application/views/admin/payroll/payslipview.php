@@ -1,177 +1,124 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/sh-print.css">
-<html lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title><?php echo $this->lang->line('payslip'); ?></title>
-    </head>
-    <div class="fixed-print-header">
-        <div>
-                        <?php if (!empty($print_details[0]['print_header'])) { ?>
-                            <img src="<?php
-                            if (!empty($print_details[0]['print_header'])) {
-                                echo $this->media_storage->getImageURL($print_details[0]['print_header']);
-                            }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
-                             <?php } ?>
-        </div>
-    </div> 
-    <table class="table-print-full" width="100%">
-    <thead>
-        <tr>
-            <td><div class="header-space">&nbsp;</div></td>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-      <div class="content-body">  
-    <div id="html-2-pdfwrapper">
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-12">
-                <div class="">
-                    
-                    <table width="100%">
-                        <tr>
-                            <td class="text-center"><h3 class="mb0 mt0"><?php echo $this->lang->line('payslip_for_the_period_of'); ?> <?php echo $this->lang->line($result["month"]); ?> <?php echo $result["year"] ?></h3></td>
-                        </tr>
-                    </table>
-                    <table width="100%" class="paytable2">
-                        <tr>
-                            <th><?php echo $this->lang->line('payslip'); ?> #<?php echo $result["id"] ?></th> <td></td>
-                            <th class="text-right"></th> 
-                            <th class="text-right rtl-text-left"><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('date'); ?>: <?php
-                                if (!empty($result['payment_date'])) {
-                                    echo $this->customlib->YYYYMMDDTodateFormat($result['payment_date']);
-                                }
-                                ?></th>
-                        </tr>
-                    </table>
-                    <hr/>
-                    <table width="100%" class="paytable2">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('staff_id'); ?></th>
-                            <td width="25%"><?php echo $result["employee_id"] ?></td>
-                            <th width="25%"><?php echo $this->lang->line("name"); ?></th>
-                            <td width="25%"><?php echo $result["name"] . " " . $result["surname"] ?></td>
-                        </tr>
-                        <tr>
-                            <th><?php echo $this->lang->line('department'); ?></th>
-                            <td><?php echo $result["department"] ?></td>
-                            <th><?php echo $this->lang->line('designation'); ?></th>
-                            <td><?php echo $result["designation"] ?></td>
-                        </tr>
-                    </table>
-                    <br/>
-                    <table width="100%" class="earntable table table-striped table-responsive">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('earning'); ?></th> 
-                            <th width="25%" class="pttright reborder"><?php echo $this->lang->line('amount'); ?>(<?php echo $currency_symbol; ?>)</th>
-                            <th width="25%" class="pttleft"><?php echo $this->lang->line('deduction'); ?></th>
-                            <th width="25%" class="text-right"><?php echo $this->lang->line('amount'); ?>(<?php echo $currency_symbol; ?>)</th>
-                        </tr>
-                        <?php
-                        $j = 0;
-                        foreach ($allowance as $key => $value) {
-                            ?>
-                            <tr>
-                                <?php if (array_key_exists($j, $positive_allowance)) { ?>
-                                    <td><?php echo $positive_allowance[$j]["allowance_type"]; ?></td>
-                                    <td class="pttright reborder"><?php echo amountFormat($positive_allowance[$j]["amount"]); ?></td>
-                                <?php } ?>
-                                <?php if (array_key_exists($j, $negative_allowance)) { ?>
-                                    <td class="pttleft"><?php echo $negative_allowance[$j]["allowance_type"]; ?></td>
-                                    <td class="text-right"><?php echo amountFormat($negative_allowance[$j]["amount"]); ?></td>
-                                <?php } ?>
-                            </tr>
-                            <?php
-                            $j++;
-                        }
-                        ?>
-                        <tr>
-                            <th><?php echo $this->lang->line('total'); ?> <?php echo $this->lang->line('earning'); ?></th>
-                            <th class="pttright reborder"><?php echo $result["total_allowance"] ?></th>
-                            <th class="pttleft"><?php echo $this->lang->line('total'); ?> <?php echo $this->lang->line('deduction'); ?></th>
-                            <th class="text-right"><?php echo amountFormat($result["total_deduction"]); ?></th>
-                        </tr>  
-                    </table>
-					<br>
-                    <table class="noborder_table">
-                        <tr>
-                            <th width="70%" class="text-right"><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('mode'); ?></th> 
-                            <td class="text-right">
-                           <?php
-                                if (!empty($result["payment_mode"])) {
-                                    echo $payment_mode[$result["payment_mode"]];
-                                }
-                                ?>
-                                <?php if($result["payment_mode"]=='Cheque'){ 
-                                     echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" ."<b>Cheque No.&nbsp; </b>" .$result["cheque_no"]; 
-                                     echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;". "<b>Cheque Date.</b> &nbsp; " .$this->customlib->YYYYMMDDTodateFormat($result["cheque_date"])."&nbsp;"; 
+<div class="sh-payslip" id="html-2-pdfwrapper">
 
-                                    if ($result["attachment"]!="") { ?>
-                                    <a  href="<?php echo base_url()."admin/payroll/download/".$result["id"]; ?>" class="btn btn-default btn-xs no-print " title="Download"><i class="fa fa-download"></i></a>
-                                 <?php } ?>
-                               <?php } ?>
-                           </td>
-                        </tr>
-                        <tr>
-                            <th width="70%" class="text-right"><?php echo $this->lang->line('basic_salary'); ?>(<?php echo $currency_symbol; ?>)</th> 
-                            <td class="text-right"><?php echo $result["basic"] ?></td>
-                        </tr>
-                        <tr>
-                            <th width="70%" class="text-right"><?php echo $this->lang->line('gross_salary'); ?>(<?php echo $currency_symbol; ?>)</th> 
-                            <td class="text-right"><?php echo amountFormat($result["basic"] + $result["total_allowance"]-$result["total_deduction"]); ?></td>
-                        </tr>
-                        <?php if (!empty($result["tax"])) { ?>
-                            <tr>
-                                <th width="70%" class="text-right"><?php 
-                                $gross = $result["basic"] + $result["total_allowance"]-$result["total_deduction"];
-                                $tax_amount= ($gross * $result["tax"])/100 ;
-                                echo $this->lang->line('tax'); ?>(<?php echo $currency_symbol; ?>)</th> 
-                                <td class="text-right"><?php echo amountFormat($tax_amount)." (". $result["tax"]."% )"; ?></td>
-                            </tr>
-                        <?php }
-                        ?>
-                        <tr>
-                            <th width="70%" class="text-right"><?php echo $this->lang->line('net_salary'); ?>(<?php echo $currency_symbol; ?>)</th> 
-                            <td class="text-right"><?php echo $result["net_salary"] ?></td>
-                        </tr>
-                    </table> 
-                 
-                </div>
+    <?php if (!empty($print_details[0]['print_header'])) { ?>
+    <div class="sh-payslip-header">
+        <img src="<?php
+            if (!empty($print_details[0]['print_header'])) {
+                echo $this->media_storage->getImageURL($print_details[0]['print_header']);
+            }
+        ?>" class="img-fluid sh-avatar-cover" >
+    </div>
+    <?php } ?>
+
+    <div class="sh-payslip-period">
+        <?php echo $this->lang->line('payslip_for_the_period_of'); ?> <?php echo $this->lang->line($result["month"]); ?> <?php echo $result["year"]; ?>
+    </div>
+
+    <div class="sh-payslip-meta">
+        <span class="sh-payslip-meta-num"><?php echo $this->lang->line('payslip'); ?> #<?php echo $result["id"]; ?></span>
+        <span class="sh-payslip-meta-date">
+            <?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('date'); ?>:
+            <?php if (!empty($result['payment_date'])) { echo $this->customlib->YYYYMMDDTodateFormat($result['payment_date']); } ?>
+        </span>
+    </div>
+
+    <div class="sh-payslip-empinfo">
+        <div class="sh-payslip-ei-grid">
+            <div class="sh-payslip-ei-item">
+                <span class="sh-payslip-ei-label"><?php echo $this->lang->line('staff_id'); ?></span>
+                <span class="sh-payslip-ei-value"><?php echo $result["employee_id"]; ?></span>
             </div>
-            <!--/.col (left) -->
+            <div class="sh-payslip-ei-item">
+                <span class="sh-payslip-ei-label"><?php echo $this->lang->line("name"); ?></span>
+                <span class="sh-payslip-ei-value"><?php echo $result["name"] . " " . $result["surname"]; ?></span>
+            </div>
+            <div class="sh-payslip-ei-item">
+                <span class="sh-payslip-ei-label"><?php echo $this->lang->line('department'); ?></span>
+                <span class="sh-payslip-ei-value"><?php echo $result["department"]; ?></span>
+            </div>
+            <div class="sh-payslip-ei-item">
+                <span class="sh-payslip-ei-label"><?php echo $this->lang->line('designation'); ?></span>
+                <span class="sh-payslip-ei-value"><?php echo $result["designation"]; ?></span>
+            </div>
         </div>
     </div>
+
+    <div class="sh-payslip-body">
+        <table class="sh-payslip-table">
+            <thead>
+                <tr>
+                    <th><?php echo $this->lang->line('earning'); ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount'); ?> (<?php echo $currency_symbol; ?>)</th>
+                    <th><?php echo $this->lang->line('deduction'); ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount'); ?> (<?php echo $currency_symbol; ?>)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $j = 0;
+                foreach ($allowance as $key => $value) { ?>
+                <tr>
+                    <?php if (array_key_exists($j, $positive_allowance)) { ?>
+                        <td><?php echo $positive_allowance[$j]["allowance_type"]; ?></td>
+                        <td class="text-end"><?php echo amountFormat($positive_allowance[$j]["amount"]); ?></td>
+                    <?php } else { ?><td></td><td></td><?php } ?>
+                    <?php if (array_key_exists($j, $negative_allowance)) { ?>
+                        <td><?php echo $negative_allowance[$j]["allowance_type"]; ?></td>
+                        <td class="text-end"><?php echo amountFormat($negative_allowance[$j]["amount"]); ?></td>
+                    <?php } else { ?><td></td><td></td><?php } ?>
+                </tr>
+                <?php $j++; } ?>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th><?php echo $this->lang->line('total'); ?> <?php echo $this->lang->line('earning'); ?></th>
+                    <th class="text-end"><?php echo $result["total_allowance"]; ?></th>
+                    <th><?php echo $this->lang->line('total'); ?> <?php echo $this->lang->line('deduction'); ?></th>
+                    <th class="text-end"><?php echo amountFormat($result["total_deduction"]); ?></th>
+                </tr>
+            </tfoot>
+        </table>
     </div>
-    </td></tr></tbody>
-    <tfoot><tr><td>
 
-<?php
-                if (!empty($print_details[0]['print_footer'])) {
-                    ?>
-   <div class="footer-space">&nbsp;</div>
-<?php
-}
-?>
+    <div class="sh-payslip-summary">
+        <?php if (!empty($result["payment_mode"])) { ?>
+        <div class="sh-payslip-sum-row">
+            <span><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('mode'); ?></span>
+            <span>
+                <?php echo $payment_mode[$result["payment_mode"]]; ?>
+                <?php if ($result["payment_mode"] == 'Cheque') {
+                    echo "&nbsp;&nbsp;<b>Cheque No.&nbsp;</b>" . $result["cheque_no"];
+                    echo "&nbsp;&nbsp;<b>Cheque Date.</b>&nbsp;" . $this->customlib->YYYYMMDDTodateFormat($result["cheque_date"]);
+                    if ($result["attachment"] != "") { ?>
+                        <a href="<?php echo base_url() . "admin/payroll/download/" . $result["id"]; ?>" class="btn btn-secondary btn-sm ms-1" title="<?= $this->lang->line('download') ?>"><i class="fa fa-download"></i></a>
+                    <?php }
+                } ?>
+            </span>
+        </div>
+        <?php } ?>
+        <div class="sh-payslip-sum-row">
+            <span><?php echo $this->lang->line('basic_salary'); ?> (<?php echo $currency_symbol; ?>)</span>
+            <span><?php echo $result["basic"]; ?></span>
+        </div>
+        <div class="sh-payslip-sum-row">
+            <span><?php echo $this->lang->line('gross_salary'); ?> (<?php echo $currency_symbol; ?>)</span>
+            <span><?php echo amountFormat($result["basic"] + $result["total_allowance"] - $result["total_deduction"]); ?></span>
+        </div>
+        <?php if (!empty($result["tax"])) {
+            $gross = $result["basic"] + $result["total_allowance"] - $result["total_deduction"];
+            $tax_amount = ($gross * $result["tax"]) / 100; ?>
+        <div class="sh-payslip-sum-row">
+            <span><?php echo $this->lang->line('tax'); ?> (<?php echo $currency_symbol; ?>)</span>
+            <span><?php echo amountFormat($tax_amount) . " (" . $result["tax"] . "% )"; ?></span>
+        </div>
+        <?php } ?>
+        <div class="sh-payslip-sum-row sh-payslip-net">
+            <span><?php echo $this->lang->line('net_salary'); ?> (<?php echo $currency_symbol; ?>)</span>
+            <span><?php echo $result["net_salary"]; ?></span>
+        </div>
+    </div>
 
-
-
-</td></tr></tfoot>
-</table>
-<?php
-                if (!empty($print_details[0]['print_footer'])) {
-                    ?>
-<div class="footer-fixed">
-
-<?php   echo $print_details[0]['print_footer'];?>
-            
 </div>
-<?php
-}
-?>
-</html>

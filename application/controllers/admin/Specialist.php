@@ -25,16 +25,16 @@ class Specialist extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'hr/index');
         $this->form_validation->set_rules(
-            'type', $this->lang->line('specialist_name'), array('required',
+            'type', $this->lang->line('specialist_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->specialist_model, 'valid_specialist')),
             )
         );
 
         $data["title"] = $this->lang->line('add_specialist');
         if ($this->form_validation->run()) {
-            $type             = $this->input->post("type");
-            $specialisttypeid = $this->input->post("specialisttypeid");
-            $status           = $this->input->post("status");
+            $type             = $this->input->post("type", TRUE);
+            $specialisttypeid = $this->input->post("specialisttypeid", TRUE);
+            $status           = $this->input->post("status", TRUE);
             if (empty($specialisttypeid)) {
                 if (!$this->rbac->hasPrivilege('specialist', 'can_add')) {
                     access_denied();
@@ -62,7 +62,7 @@ class Specialist extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('specialist_name'), array('required',
+            'type', $this->lang->line('specialist_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->specialist_model, 'valid_specialist')),
             )
         );
@@ -73,7 +73,7 @@ class Specialist extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $type      = $this->input->post("type");
+            $type      = $this->input->post("type", TRUE);
             $data      = array('specialist_name' => $type, 'is_active' => 'yes');
             $insert_id = $this->specialist_model->addspecialistType($data);
             $array     = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -100,15 +100,15 @@ class Specialist extends Admin_Controller
                 //====================================
                 if ($this->rbac->hasPrivilege('specialist', 'can_edit')) {
 
-                    $action = "<a href='#' data-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action = "<a href='#' data-bs-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('specialist', 'can_delete')) {
 
-                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
                 //==============================
                 $row[]     = $value->specialist_name;
-                $row[]     = $action;
+                $row[]     = "<div class='rowoptionview mt-mius0'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -130,7 +130,7 @@ class Specialist extends Admin_Controller
     public function edit()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('specialist_name'), array('required',
+            'type', $this->lang->line('specialist_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->specialist_model, 'valid_specialist')),
             )
         );
@@ -141,8 +141,8 @@ class Specialist extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $specialisttypeid = $this->input->post("specialisttypeid");
-            $type             = $this->input->post("type");
+            $specialisttypeid = $this->input->post("specialisttypeid", TRUE);
+            $type             = $this->input->post("type", TRUE);
             $data             = array('specialist_name' => $type, 'is_active' => 'yes', 'id' => $specialisttypeid);
             $this->specialist_model->addspecialistType($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));

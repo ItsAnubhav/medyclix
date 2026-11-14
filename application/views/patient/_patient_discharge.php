@@ -60,7 +60,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </div>
                             </div>
                             
-                          <div class="row death_status_div" style="display: none;">
+                          <div class="row death_status_div d-none" >
                                     
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -92,7 +92,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </div>
                                 
                                 </div>
-                                 <div class="row reffer_div" style="display: none;">
+                                 <div class="row reffer_div d-none" >
                            
                                      <div class="col-md-4">
                                     <div class="form-group">
@@ -117,10 +117,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </div>
                                 
                                 </div>
-                <div class="row">                
+                <div class="row">
                     <div class="box-footer col-md-12">
-                        <div class="pull-right">
-                          <input id="add_paymentbtn" type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" value="<?php echo $this->lang->line('save'); ?>" class="btn btn-info pull-right printsavebtn" id="saveprint">
+                        <div class="float-end">
+                          <input id="add_paymentbtn" type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" value="<?php echo $this->lang->line('save'); ?>" class="btn btn-info float-end printsavebtn" id="saveprint">
                         </div>
                     </div>
                 </div>

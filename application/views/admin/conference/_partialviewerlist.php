@@ -7,7 +7,7 @@ if (!empty($viewerDetail)) {
                         <thead>
                             <tr>
                              <th><?php echo $this->lang->line('staff'); ?></th>
-                             <th class="text-right"><?php echo $this->lang->line('last_join'); ?></th>
+                             <th class="text-end"><?php echo $this->lang->line('last_join'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -15,9 +15,9 @@ if (!empty($viewerDetail)) {
                   foreach ($viewerDetail as $viewer_key => $viewer_value) { ?>
                   <tr>
                       <td> <?php
-                              echo $viewer_value->create_for_name . " " . $viewer_value->create_for_surname . " (" . $viewer_value->role_name . ": " . $viewer_value->employee_id . ")";
+                              echo html_escape($viewer_value->create_for_name) . " " . html_escape($viewer_value->create_for_surname) . " (" . html_escape($viewer_value->role_name) . ": " . html_escape($viewer_value->employee_id) . ")";
                               ?></td>
-                      <td class="pull-right">
+                      <td class="float-end">
                           <?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($viewer_value->created_at)) ?>
                       </td>
                   </tr>
@@ -44,9 +44,9 @@ if (!empty($viewerDetail)) {
 foreach ($viewerDetail as $viewer_key => $viewer_value) {
             ?>
               <tr>
-                  <td><?php echo $viewer_value->patient_unique_id; ?></td>
-                    <td><?php echo $viewer_value->patient_name; ?></td>
-                    <td><?php echo $viewer_value->mobileno; ?></td>
+                  <td><?php echo html_escape($viewer_value->patient_unique_id); ?></td>
+                    <td><?php echo html_escape($viewer_value->patient_name); ?></td>
+                    <td><?php echo html_escape($viewer_value->mobileno); ?></td>
                     <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($viewer_value->created_at)); ?></td>
               </tr>
 <?php

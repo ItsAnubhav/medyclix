@@ -1,13 +1,11 @@
-<div class="content-wrapper" style="min-height: 946px;">
-    <section class="content">
-        <div class="box box-primary">
+<div class="card">
             <div class="row">
                 <div class="col-md-4">
                     <div class="chatleftside">
                         <div class="custom-search-input">
                             <div class="input-group col-md-11">
-                                <input type="text" class="  search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
-                                <button class="btn btn-default" type="button">
+                                <input type="text" class="search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
+                                <button class="btn btn-secondary" type="button">
                                     <i class="fa fa-search"></i>
                                 </button>
                                 <button type="button" class="chataddbtn" onclick="new_message()" ><i class="fa fa-plus"></i></button>
@@ -105,7 +103,7 @@ if ($value['status'] == '0') {
 
                 echo $value['message'];
             }
-            ?><a style="color:white" onclick="delete_message('<?php echo $value['id']; ?>', '<?php echo $sender_id; ?>', '<?php echo $value['receiver_id'] ?>', '<?php echo $type; ?>')"><i class="fa fa-trash"></i></a>
+            ?><a class="text-white" onclick="delete_message('<?php echo $value['id']; ?>', '<?php echo $sender_id; ?>', '<?php echo $value['receiver_id'] ?>', '<?php echo $type; ?>')"><i class="fa fa-trash"></i></a>
                                                         <br>
             <?php echo date('h:i:s', strtotime($value['created_at'])); ?>
                                                     </div>
@@ -137,13 +135,13 @@ if ($value['status'] == '0') {
                                 </div>
                             </div>
                             <div class="row reply">
-                                <div class="col-sm-1 col-xs-1 reply-emojis">
+                                <div class="col-sm-1 col-1 reply-emojis">
                                     <i class="fa fa-smile-o"></i>
                                 </div>
-                                <div class="col-sm-10 col-xs-9 reply-main">
+                                <div class="col-sm-10 col-9 reply-main">
                                     <textarea class="form-control" rows="1" id="message"></textarea>
                                 </div>
-                                <div class="col-sm-1 col-xs-1 reply-send">
+                                <div class="col-sm-1 col-1 reply-send">
                                     <i class="fa fa-send fa-2x" id="reply_message12" onclick="reply_message('<?php echo $sender_id; ?>', '<?php echo $receiver_id; ?>', '<?php echo $type; ?>')" aria-hidden="true"></i>
                                 </div>
                             </div>
@@ -170,16 +168,14 @@ if ($value['status'] == '0') {
                 </div><!--./col-md-8-->
             </div><!--./row-->
         </div><!--./box box-primary-->
-    </section>
-</div>
 
 <div class="modal" id="message_model">
     <div class="modal-dialog">
         <div class="modal-content mx-2">
             <!-- Modal Header -->
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('new_message'); ?></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><?php echo $this->lang->line('new_message'); ?></h5>
             </div>    
                 <form id="form1" name="employeeform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
                     <div class="modal-body">
@@ -187,7 +183,7 @@ if ($value['status'] == '0') {
                             <div id="upload_documents_hide_show">
                                 <h4></h4>
                                 <div class="col-md-12">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('serach') ?><small class="req"> *</small></label>
                                         <input id="user_name" onkeyup="get_user()" name="first_title" placeholder="" type="text" class="form-control" value="" autocomplete="off">
                                         <span class="text-danger"></span>
@@ -199,7 +195,7 @@ if ($value['status'] == '0') {
                             </div>
                         </div>    
                         <div class="modal-footer">
-                             <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                             <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>
                 </form>
         </div>
@@ -208,11 +204,7 @@ if ($value['status'] == '0') {
 <script>
 
     function new_message() {
-        $('#message_model').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('message_model'),{backdrop:'static',keyboard:false}).show();
     }
 
 

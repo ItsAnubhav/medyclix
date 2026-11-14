@@ -1,125 +1,106 @@
+<?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); ?>
 
-<?php
-$currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-?>
- <div class="fixed-print-header">
-    <div>
-                <?php  if (!empty($print_details['print_header'])) { ?>
-                    <img src="<?php
-                    if (!empty($print_details['print_header'])) {
-                        echo $this->media_storage->getImageURL($print_details['print_header']);
-                    }
-                    ?>" style="height:100px; width:100%;" class="img-responsive">
-                <?php }?>
-                </div> 
- </div>
- <table class="table-print-full" width="100%">
-    <thead>
-        <tr>
-            <td><div class="header-space">&nbsp;</div></td>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-      <div class="content-body">
-<div class="print-area">
-    <div id="html-2-pdfwrapper" class="p-1">
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-12">
-                <div>
-                    <table width="100%" class="printablea4">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line("patient_name"); ?></th>
-                            <td width="25%"><?php echo $result['patient_name'] ?> (<?php echo $result['patient_unique_id'] ?>)</td>
-                            <th width="25%"><?php echo $this->lang->line("age"); ?></th>
-                            <td><?php
-                                echo $this->customlib->getPatientAge($result['age'],$result['month'],$result['day']);
-                                ?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line("gender"); ?></th>
-                            <td><?php echo $this->lang->line(strtolower($result['gender'])) ?></td>
-                            <th width="25%"><?php echo $this->lang->line("blood_group"); ?></th>
-                            <td><?php echo $result['blood_group']; ?></td>
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line("phone"); ?></th>
-                            <td width="25%"><?php echo $result['mobileno']; ?></td>   
-                            <th width="25%"><?php echo $this->lang->line("email"); ?></th>
-                            <td width="25%"><?php echo $result['email'] ?></td>
-                        </tr> 
-                    </table>
-                    <div class="divider"></div>
-                     <h4><?php echo $this->lang->line('previous_obstetric_history'); ?> </h4>
-                     <table width="100%" class="printablea4">
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('place_of_delivery'); ?></th>
-                            <td width="25%"><?php echo $result['place_of_delivery'] ; ?></td>
-                            <th width="25%"><?php echo $this->lang->line('duration_of_pregnancy');; ?></th>
-                            <td width="25%"><?php echo $result['pregnancy_duration'] ; ?></td>                        
-                        </tr>
-                        <tr> 
-                            <th width="25%"><?php echo $this->lang->line('complication_in_pregnancy_or_puerperium'); ?></th>
-                            <td width="25%"><?php echo $result['pregnancy_complications'] ?></td>
-                            <th width="25%"><?php echo $this->lang->line('birth_weight'); ?></th>
-                            <td width="25%"><?php echo $result['birth_weight']; ?></td>
-                        </tr>
-                        <tr>
-                            <th width="25%"><?php echo $this->lang->line('gender'); ?></th>
-                            <td width="25%"><?php echo $this->lang->line(strtolower($result['obstetric_gender'])); ?> </td>
-                            <th width="25%"><?php echo $this->lang->line('infant_feeding'); ?></th>
-                            <td><?php echo $result['infant_feeding'];?></td>
-                        </tr>
-                        <tr>                            
-                            <th width="25%"><?php echo $this->lang->line('birth_status'); ?></th>
-                            <td><?php echo $this->lang->line(strtolower($result['alive_dead'])) ?></td>
-                        </tr>
-                        <?php if($result['alive_dead']=='dead'){ ?>
-                            <tr>
-                                <th width="25%"><?php echo $this->lang->line('alive'); ?> / <?php echo $this->lang->line('dead'); ?> <?php echo $this->lang->line('date'); ?></th>
-                                <td width="25%"><?php echo $this->customlib->YYYYMMDDTodateFormat($result['date']); ?> </td>
-                                <th width="25%"><?php echo $this->lang->line('death_cause'); ?></th>
-                                <td><?php echo $result['death_cause'];?></td>
-                            </tr>
-                       <?php } ?>
-                        <tr><td colspan="4"><div class="divider"></div></td></tr>
-                        <tr>
-                            <th><?php echo $this->lang->line('previous_medical_history'); ?></th>
-                            <td colspan="3"><?php echo $result['previous_medical_history'] ?></td>
-                        </tr>
-                        <tr>
-                            <th><?php echo $this->lang->line('special_instruction'); ?></th>
-                            <td colspan="3"><?php echo $result['special_instruction'] ?></td>
-                        </tr>
-                    </table>
-                </div>
+<div class="sh-form-card m-2 mb-3">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fa fa-user me-1"></i> <?php echo $this->lang->line('patient_details'); ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-user me-1"></i><?php echo $this->lang->line('patient_name'); ?></span>
+                <span class="sh-info-value highlight"><?php echo html_escape($result['patient_name']); ?> <span class="text-muted fw-normal">(<?php echo html_escape($result['patient_unique_id']); ?>)</span></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-hourglass-half me-1"></i><?php echo $this->lang->line('age'); ?></span>
+                <span class="sh-info-value"><?php echo $this->customlib->getPatientAge($result['age'], $result['month'], $result['day']); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-venus-mars me-1"></i><?php echo $this->lang->line('gender'); ?></span>
+                <span class="sh-info-value"><?php echo $this->lang->line(strtolower($result['gender'])); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-tint me-1"></i><?php echo $this->lang->line('blood_group'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result['blood_group']); ?></span>
+            </div>
+            <div class="col-6 col-md-3 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-phone me-1"></i><?php echo $this->lang->line('phone'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result['mobileno']); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><i class="fa fa-envelope me-1"></i><?php echo $this->lang->line('email'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result['email']); ?></span>
             </div>
         </div>
     </div>
 </div>
-</div>
-<tfoot>
-<tr>
-<td>
 
-<?php
-if (!empty($print_details[0]['print_footer'])) { ?>
-   <div class="footer-space">&nbsp;</div>
-<?php
-}
-?>
-
-</td>
-</tr>
-</tfoot>
-</table>
-<?php
- if (!empty($print_details[0]['print_footer'])) { ?>
-<div class="footer-fixed">
-<?php  echo $print_details[0]['print_footer'];?>
+<div class="sh-form-card m-2">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fas fa-history me-1"></i> <?php echo $this->lang->line('previous_obstetric_history'); ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-6">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('place_of_delivery'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['place_of_delivery']); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('complication_in_pregnancy_or_puerperium'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['pregnancy_complications']); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('gender'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->lang->line(strtolower($result['obstetric_gender'])); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('birth_status'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->lang->line(strtolower($result['alive_dead'])); ?></span>
+                </div>
+                <?php if ($result['alive_dead'] == 'dead') { ?>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('alive'); ?> / <?php echo $this->lang->line('dead'); ?> <?php echo $this->lang->line('date'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->customlib->YYYYMMDDTodateFormat($result['date']); ?></span>
+                </div>
+                <?php } ?>
+            </div>
+            <div class="col-6 border-start">
+                <div class="sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('duration_of_pregnancy'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['pregnancy_duration']); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('birth_weight'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['birth_weight']); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('infant_feeding'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['infant_feeding']); ?></span>
+                </div>
+                <div class="sh-info-item sh-row-divider"></div>
+                <?php if ($result['alive_dead'] == 'dead') { ?>
+                <div class="sh-info-item sh-row-divider">
+                    <span class="sh-info-label"><?php echo $this->lang->line('death_cause'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape($result['death_cause']); ?></span>
+                </div>
+                <?php } ?>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('previous_medical_history'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result['previous_medical_history']); ?></span>
+            </div>
+        </div>
+        <div class="row g-0 sh-row-divider">
+            <div class="col-12 sh-info-item">
+                <span class="sh-info-label"><?php echo $this->lang->line('special_instruction'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($result['special_instruction']); ?></span>
+            </div>
+        </div>
+    </div>
 </div>
-<?php
-}
-?>   

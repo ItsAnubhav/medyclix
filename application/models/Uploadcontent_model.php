@@ -146,7 +146,6 @@ class Uploadcontent_model extends MY_Model
                 $this->db->trans_rollback();
                 return false;
             } else {
-                //return $return_value;
             }
         } else {
             $this->db->insert('upload_contents', $data);

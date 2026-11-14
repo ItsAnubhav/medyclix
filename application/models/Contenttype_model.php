@@ -57,7 +57,7 @@ class Contenttype_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            
+            return true;
         }
     }
 

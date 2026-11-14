@@ -25,7 +25,7 @@ class Birthordeath_model extends MY_Model
         }
         $field_variable = implode(',', $field_var_array);
         $this->db->select('birth_report.*,patients.patient_name,patients.id as patient_id,' . $field_variable);
-        $this->db->join('patients', 'patients.id = birth_report.patient_id', 'inner');
+        $this->db->join('patients', 'patients.id = birth_report.patient_id', 'left');
         $this->db->where('birth_report.id', $id);
         $query = $this->db->get('birth_report');
         return $query->row_array();
@@ -40,7 +40,7 @@ class Birthordeath_model extends MY_Model
     {
         $this->db->order_by('id', 'desc');
         $this->db->select('birth_report.*,patients.patient_name');
-        $this->db->join('patients', 'patients.id=birth_report.mother_name');
+        $this->db->join('patients', 'patients.id=birth_report.patient_id');
         $query = $this->db->get("birth_report");
         return $query->result_array();
     }
@@ -170,6 +170,14 @@ class Birthordeath_model extends MY_Model
         return $query->row_array();
     }
 
+    // Lightweight getter for SaaS quota diff on edit/delete — returns only the
+    // death record's stored attachment (filename) without the heavy joins in
+    // getDeDetails(). attachment stores a bare filename under uploads/death_image.
+    public function getDeathBasicById($id)
+    {
+        return $this->db->select('id, attachment')->where('id', $id)->get('death_report')->row_array();
+    }
+
     public function delete($id)
     {
         $this->db->trans_start(); # Starting Transaction
@@ -190,7 +198,6 @@ class Birthordeath_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
     }
 
@@ -215,7 +222,7 @@ class Birthordeath_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            return $return_value;
+            return $record_id;
         }
     }
 
@@ -239,7 +246,7 @@ class Birthordeath_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
+            return $record_id;
         }
     }
 
@@ -273,7 +280,7 @@ class Birthordeath_model extends MY_Model
     {
         $this->db->order_by('id', 'desc');
         $this->db->select('death_report.*,patients.patient_name,patients.gender');
-        $this->db->join('patients', 'patients.id = death_report.patient');
+        $this->db->join('patients', 'patients.id = death_report.patient_id');
         $query = $this->db->get("death_report");
         return $query->result_array();
     }
@@ -315,7 +322,6 @@ class Birthordeath_model extends MY_Model
                 $this->db->trans_rollback();
                 return false;
             } else {
-                //return $return_value;
             }
             return $insert_id;
         }
@@ -358,7 +364,6 @@ class Birthordeath_model extends MY_Model
                 $this->db->trans_rollback();
                 return false;
             } else {
-                //return $return_value;
             }
             return $insert_id;
         }

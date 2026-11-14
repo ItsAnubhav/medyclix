@@ -19,8 +19,10 @@ class Tpa_model extends MY_Model
 
     public function charge($org_id, $ch_type)
     {
-        $sql   = "SELECT * FROM charges WHERE id not in (SELECT charge_id from `organisations_charges` WHERE organisations_charges.org_id = " . $org_id . " ) and charges.charge_type = '" . $ch_type . "'";
-        $query = $this->db->query($sql);
+        $org_id  = (int) $org_id;
+        $ch_type = $this->db->escape($ch_type);
+        $sql     = "SELECT * FROM charges WHERE id not in (SELECT charge_id from `organisations_charges` WHERE organisations_charges.org_id = " . $org_id . " ) and charges.charge_type = " . $ch_type;
+        $query   = $this->db->query($sql);
         return $query->result_array();
     }
 

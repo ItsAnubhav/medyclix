@@ -7,7 +7,7 @@
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive">
+                            ?>" class="img-fluid">
                         </div>
         <?php } ?>
 </div>
@@ -31,7 +31,7 @@
                               <p><?php echo $this->lang->line('patient'); ?> : <?php echo composePatientName($patient['patient_name'],$patient['patient_id']); ?></p>
                               <p><?php echo $this->lang->line('case_id'); ?> : <?php echo $case_id; ?></p>
                           </div>
-                          <div class="col-md-6 text-right text-rtl-left">
+                          <div class="col-md-6 text-end text-rtl-left">
                             <?php 
                             if($patient['date']!==''){
                               ?>
@@ -51,7 +51,7 @@
                                 	<td><?php echo $this->lang->line('qty'); ?></td>
                                     <td><?php echo $this->lang->line('discount'); ?></td>
                                 	<td><?php echo $this->lang->line('tax'); ?></td>
-                                   <td class="text-right"><?php echo $this->lang->line('amount'). "(". $currency_symbol.")";?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('amount'). "(". $currency_symbol.")";?></td>
                                 </tr>
                              </thead>
                              <tbody> 
@@ -80,7 +80,7 @@
                                         $total_discount+=amountFormat((($value['apply_charge']*$value['discount_percentage'])/100));
                                     ?></td>
                                     <td ><?php echo amountFormat($tax).' ('.$value['tax'].'%)'; ?></td>
-                                   <td class="text-right"><?php echo amountFormat($value['amount']) ?></td> 
+                                   <td class="text-end"><?php echo amountFormat($value['amount']) ?></td> 
                                 </tr> 
                             <?php
                             $apply_charge+=$value['apply_charge'];
@@ -88,28 +88,42 @@
                             $total_tax+=$tax;
                              } ?>
                               <tr>                                    
-                                   <td colspan="5" class="text-right thick-line"><?php echo $this->lang->line('net_amount'); ?></td>
-                                   <td class="text-right thick-line"><?php echo $currency_symbol.amountFormat($apply_charge);?></td>
+                                   <td colspan="5" class="text-end thick-line"><?php echo $this->lang->line('net_amount'); ?></td>
+                                   <td class="text-end thick-line"><?php echo $currency_symbol.amountFormat($apply_charge);?></td>
                                 </tr>  
                                 <tr> 
-                                       <td colspan="5" class="text-right no-line text-rtl-left"><?php echo $this->lang->line('discount'); ?></td>
-                                       <td class="text-right no-line text-rtl-left"> <?php echo $currency_symbol.amountFormat($total_discount) .' ('.$value['discount_percentage'].'%)'; ; ?></td>
+                                       <td colspan="5" class="text-end no-line text-rtl-left"><?php echo $this->lang->line('discount'); ?></td>
+                                       <td class="text-end no-line text-rtl-left"> <?php echo $currency_symbol.amountFormat($total_discount) .' ('.$value['discount_percentage'].'%)'; ; ?></td>
                                     </tr>                              
                                  <tr>
-                                   <td colspan="5" class="text-right no-line"><?php echo $this->lang->line('tax'); ?></td>
-                                   <td class="text-right no-line"><?php echo $currency_symbol.amountFormat($total_tax).' ('.$value['tax'].'%)'; ; ?></td>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('tax'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol.amountFormat($total_tax).' ('.$value['tax'].'%)'; ; ?></td>
                                 </tr>
                                 <tr>                                 
-                                   <td colspan="5" class="text-right no-line"><?php echo $this->lang->line('total'); ?></td>
-                                   <td class="text-right"><?php echo $currency_symbol.amountFormat($amount);?></td>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('total'); ?></td>
+                                   <td class="text-end"><?php echo $currency_symbol.amountFormat($amount);?></td>
                                 </tr>
+                                 <?php
+                                 $advance_adjusted = isset($advance_amount) ? (float) $advance_amount : 0;
+                                 $other_paid = (float) $paid_amount['total_pay'] - $advance_adjusted;
+                                 if ($other_paid < 0) { $other_paid = 0; }
+                                 if ($advance_adjusted > 0) { ?>
+                                 <tr>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('advance_adjusted'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol.amountFormat($advance_adjusted); ?></td>
+                                 </tr>
+                                 <tr>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('other_payments'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol.amountFormat($other_paid); ?></td>
+                                 </tr>
+                                 <?php } ?>
                                  <tr> 
-                                   <td colspan="5" class="text-right no-line"><?php echo $this->lang->line('paid'); ?></td>
-                                   <td class="text-right no-line"><?php echo $currency_symbol.amountFormat($paid_amount['total_pay'])?></td>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('paid'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol.amountFormat($paid_amount['total_pay'])?></td>
                                 </tr>
                                  <tr>
-                                    <td colspan="5" class="text-right no-line"><?php echo $this->lang->line('due'); ?></td>
-                                    <td class="text-right "><?php 
+                                    <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('due'); ?></td>
+                                    <td class="text-end "><?php 
                                     if($refund>0){
                                          echo $balance=amountFormat($refund+($amount-$paid_amount['total_pay']));
                                     }else{
@@ -120,8 +134,8 @@
                                 <?php if(($paid_amount['total_pay']>$amount) || ($refund>0)){
                                   ?>
                                   <tr>
-                                   <td colspan="5" class="text-right no-line"><?php echo $this->lang->line('refund'); ?>:</td>
-                                   <td class="text-right"><?php if($refund>0){  echo $currency_symbol.amountFormat($refund); } ?></td>
+                                   <td colspan="5" class="text-end no-line"><?php echo $this->lang->line('refund'); ?>:</td>
+                                   <td class="text-end"><?php if($refund>0){  echo $currency_symbol.amountFormat($refund); } ?></td>
                                 </tr>
                               <?php } ?>
                              </tbody>

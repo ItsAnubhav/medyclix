@@ -6,6 +6,17 @@ if (!defined('BASEPATH')) {
 
 class Operationtheatre extends Admin_Controller
 {
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $notification;
+	public $notificationurl;
+	public $patient_login_prefix;
+	public $patient_notificationurl;
+	public $payment_mode;
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -53,6 +64,7 @@ class Operationtheatre extends Admin_Controller
     public function unauthorized()
     {
         $data = array();
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('unauthorized', $data);
         $this->load->view('layout/footer', $data);
@@ -80,19 +92,19 @@ class Operationtheatre extends Admin_Controller
 
             $patient_id   = $check_patient_id + 1;
             $patient_data = array(
-                'patient_name'      => $this->input->post('name'),
-                'mobileno'          => $this->input->post('contact'),
-                'marital_status'    => $this->input->post('marital_status'),
-                'email'             => $this->input->post('email'),
-                'gender'            => $this->input->post('gender'),
-                'guardian_name'     => $this->input->post('guardian_name'),
-                'blood_group'       => $this->input->post('blood_group'),
-                'address'           => $this->input->post('address'),
-                'known_allergies'   => $this->input->post('known_allergies'),
+                'patient_name'      => $this->input->post('name', TRUE),
+                'mobileno'          => $this->input->post('contact', TRUE),
+                'marital_status'    => $this->input->post('marital_status', TRUE),
+                'email'             => $this->input->post('email', TRUE),
+                'gender'            => $this->input->post('gender', TRUE),
+                'guardian_name'     => $this->input->post('guardian_name', TRUE),
+                'blood_group'       => $this->input->post('blood_group', TRUE),
+                'address'           => $this->input->post('address', TRUE),
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
                 'patient_unique_id' => $patient_id,
-                'note'              => $this->input->post('note'),
-                'age'               => $this->input->post('age'),
-                'month'             => $this->input->post('month'),
+                'note'              => $this->input->post('note', TRUE),
+                'age'               => $this->input->post('age', TRUE),
+                'month'             => $this->input->post('month', TRUE),
                 'is_active'         => 'yes',
             );
             $insert_id          = $this->patient_model->add_patient($patient_data);
@@ -159,13 +171,13 @@ class Operationtheatre extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
-        $this->form_validation->set_rules('date', $this->lang->line('operation_date'), 'required');
-        $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'required');
-        $this->form_validation->set_rules('operation_category', $this->lang->line('operation_category'), 'required');
-        $this->form_validation->set_rules('operation_name', $this->lang->line('operation_name'), 'required');
+        $this->form_validation->set_rules('date', $this->lang->line('operation_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('operation_category', $this->lang->line('operation_category'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('operation_name', $this->lang->line('operation_name'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -192,25 +204,25 @@ class Operationtheatre extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $patientname          = $this->input->post('patientname');
-            $opd_ipd_patient_type = $this->input->post('opd_ipd_patient_type');
-            $custom_field_post    = $this->input->post("custom_fields[operationtheatre]");
-            $opd_id               = $this->input->post('opdid');
-            $date                 = $this->input->post("date");
+            $patientname          = $this->input->post('patientname', TRUE);
+            $opd_ipd_patient_type = $this->input->post('opd_ipd_patient_type', TRUE);
+            $custom_field_post    = $this->input->post("custom_fields[operationtheatre]", TRUE);
+            $opd_id               = $this->input->post('opdid', TRUE);
+            $date                 = $this->input->post("date", TRUE);
             $operation_detail     = array(
                 'opd_details_id'    => $opd_id,
-                'operation_id'      => $this->input->post('operation_name'),
+                'operation_id'      => $this->input->post('operation_name', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
-                'ass_consultant_1'  => $this->input->post('ass_consultant_1'),
-                'ass_consultant_2'  => $this->input->post('ass_consultant_2'),
-                'anesthetist'       => $this->input->post('anesthetist'),
-                'anaethesia_type'   => $this->input->post('anaethesia_type'),
-                'ot_technician'     => $this->input->post('ot_technician'),
-                'ot_assistant'      => $this->input->post('ot_assistant'),
-                'remark'            => $this->input->post('ot_remark'),
-                'result'            => $this->input->post('ot_result'),
-                'operation_type'    => $this->input->post('operation_type'),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
+                'ass_consultant_1'  => $this->input->post('ass_consultant_1', TRUE),
+                'ass_consultant_2'  => $this->input->post('ass_consultant_2', TRUE),
+                'anesthetist'       => $this->input->post('anesthetist', TRUE),
+                'anaethesia_type'   => $this->input->post('anaethesia_type', TRUE),
+                'ot_technician'     => $this->input->post('ot_technician', TRUE),
+                'ot_assistant'      => $this->input->post('ot_assistant', TRUE),
+                'remark'            => $this->input->post('ot_remark', TRUE),
+                'result'            => $this->input->post('ot_result', TRUE),
+                'operation_type'    => $this->input->post('operation_type', TRUE),
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
             );
 
@@ -219,7 +231,7 @@ class Operationtheatre extends Admin_Controller
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -239,14 +251,14 @@ class Operationtheatre extends Admin_Controller
             $operation_details = $this->operationtheatre_model->otdetails($insert_id);
             $patient_details   = $this->patient_model->get_patientidbyopdid($opd_id);
 
-            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor'));
+            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor', TRUE));
             $event_data     = array(
                 'patient_id'     => $patient_details['patient_id'],
                 'opd_no'         => $this->customlib->getSessionPrefixByType('opd_no') . $opd_id,
                 'case_id'        => $patient_details['case_reference_id'],
                 'operation_name' => $operation_details->operation,
                 'operation_date' => $date,                
-				'doctor_id'      => $this->input->post('consultant_doctor'),
+				'doctor_id'      => $this->input->post('consultant_doctor', TRUE),
                 'doctor_name'    => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
             );
 
@@ -262,14 +274,14 @@ class Operationtheatre extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
 
-        $this->form_validation->set_rules('date', $this->lang->line('operation_date'), 'required');
-        $this->form_validation->set_rules('consultant_doctor', $this->lang->line("consultant_doctor"), 'trim|required');
-        $this->form_validation->set_rules('operation_name', $this->lang->line('operation_name'), 'required');
-        $this->form_validation->set_rules('operation_category', $this->lang->line('operation_category'), 'required');
+        $this->form_validation->set_rules('date', $this->lang->line('operation_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('consultant_doctor', $this->lang->line("consultant_doctor"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('operation_name', $this->lang->line('operation_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('operation_category', $this->lang->line('operation_category'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'operation_category' => form_error("operation_category"),
@@ -295,27 +307,27 @@ class Operationtheatre extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $patientname          = $this->input->post('patientname');
-            $opd_ipd_patient_type = $this->input->post('opd_ipd_patient_type');
-            $custom_field_post    = $this->input->post("custom_fields[operationtheatre]");
-            $ipd_id               = $this->input->post('ipdid');
-            $date                 = $this->input->post("date");
+            $patientname          = $this->input->post('patientname', TRUE);
+            $opd_ipd_patient_type = $this->input->post('opd_ipd_patient_type', TRUE);
+            $custom_field_post    = $this->input->post("custom_fields[operationtheatre]", TRUE);
+            $ipd_id               = $this->input->post('ipdid', TRUE);
+            $date                 = $this->input->post("date", TRUE);
 
             $operation_detail = array(
                 'ipd_details_id'    => $ipd_id,
-                'operation_id'      => $this->input->post('operation_name'),
+                'operation_id'      => $this->input->post('operation_name', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
-                'operation_type'    => $this->input->post('operation_type'),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
-                'ass_consultant_1'  => $this->input->post('ass_consultant_1'),
-                'ass_consultant_2'  => $this->input->post('ass_consultant_2'),
-                'anesthetist'       => $this->input->post('anesthetist'),
-                'anaethesia_type'   => $this->input->post('anaethesia_type'),
-                'ot_technician'     => $this->input->post('ot_technician'),
-                'ot_assistant'      => $this->input->post('ot_assistant'),
+                'operation_type'    => $this->input->post('operation_type', TRUE),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
+                'ass_consultant_1'  => $this->input->post('ass_consultant_1', TRUE),
+                'ass_consultant_2'  => $this->input->post('ass_consultant_2', TRUE),
+                'anesthetist'       => $this->input->post('anesthetist', TRUE),
+                'anaethesia_type'   => $this->input->post('anaethesia_type', TRUE),
+                'ot_technician'     => $this->input->post('ot_technician', TRUE),
+                'ot_assistant'      => $this->input->post('ot_assistant', TRUE),
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
-                'remark'            => $this->input->post('ot_remark'),
-                'result'            => $this->input->post('ot_result'),
+                'remark'            => $this->input->post('ot_remark', TRUE),
+                'result'            => $this->input->post('ot_result', TRUE),
             );
 
             $insert_id = $this->operationtheatre_model->operation_detail($operation_detail);
@@ -324,7 +336,7 @@ class Operationtheatre extends Admin_Controller
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -343,10 +355,10 @@ class Operationtheatre extends Admin_Controller
             $operation_details = $this->operationtheatre_model->otdetails($insert_id);
             $patient_details   = $this->patient_model->get_patientidbyIpdId($ipd_id);
 
-            $doctor_details    = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor'));
+            $doctor_details    = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor', TRUE));
             $consultant_doctor = $this->patient_model->get_patientidbyIpdId($ipd_id);
 
-            $consultant_doctorarray[] = array('consult_doctor' => $this->input->post('consultant_doctor'), 'name' => $doctor_details['name'] . " " . $doctor_details['surname'] . "(" . $doctor_details['employee_id'] . ")");
+            $consultant_doctorarray[] = array('consult_doctor' => $this->input->post('consultant_doctor', TRUE), 'name' => $doctor_details['name'] . " " . $doctor_details['surname'] . "(" . $doctor_details['employee_id'] . ")");
 
             $consultant_doctorarray[] = array('consult_doctor' => $consultant_doctor['cons_doctor'], 'name' => $consultant_doctor['doctor_name'] . " " . $consultant_doctor['doctor_surname'] . "(" . $consultant_doctor['doctor_employee_id'] . ")");
             foreach ($doctor_list as $key => $value) {
@@ -359,7 +371,7 @@ class Operationtheatre extends Admin_Controller
             $event_data = array(
                 'patient_id'     => $patient_details['patient_id'],
                 'ipd_no'         => $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id,
-                'case_id'        => $this->input->post('case_id'),
+                'case_id'        => $this->input->post('case_id', TRUE),
                 'operation_name' => $operation_details->operation,
                 'operation_date' => $this->customlib->YYYYMMDDHisTodateFormat($date, $this->customlib->getHospitalTimeFormat()),                             
                 'doctor_name'    => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
@@ -418,9 +430,10 @@ class Operationtheatre extends Admin_Controller
         $data['charge_category'] = $this->operationtheatre_model->getChargeCategory();
         $data['organisation']    = $this->organisation_model->get();
         $data['fields']          = $this->customfield_model->get_custom_fields('operationtheatre', 1);
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/operationtheatre/otsearch', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getotDatatable()
@@ -439,20 +452,20 @@ class Operationtheatre extends Admin_Controller
                 //====================================
                 $action = "<div class='rowoptionview'>";
                 if ($this->rbac->hasPrivilege('ot_consultant_instruction', 'can_add')) {
-                    $action .= "<a href='#' onclick='add_instruction(" . $value->id . "," . $value->pid . "),refreshmodal()' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('consultant_instruction') . "'><i class='fa fa-user-md'></i></a>";
+                    $action .= "<a href='#' onclick='add_instruction(" . $value->id . "," . $value->pid . "),refreshmodal()' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('consultant_instruction') . "'><i class='fa fa-user-md'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('ot_patient', 'can_view')) {
                     $action .= "<a href='#' onclick='viewDetail(" . $value->pid . "," . $value->id . ")'
-                   class='btn btn-default btn-xs'  data-toggle='tooltip'  title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                   class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('ot_patient', 'can_view')) {
-                    $action .= "<a href='#'  onclick='viewDetailBill(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip'  title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                    $action .= "<a href='#'  onclick='viewDetailBill(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
                 }
 
                 $action .= "</div>";
-                $first_action = "<a href='#'   onclick='viewDetail(" . $value->pid . ")' data-toggle='tooltip' title='" . $this->lang->line('details') . "'  href=''>";
+                $first_action = "<a href='#'   onclick='viewDetail(" . $value->pid . ")' data-bs-toggle='tooltip' title='" . $this->lang->line('details') . "'  href=''>";
                 //==============================
                 $row[] = $this->customlib->getSessionPrefixByType('operation_theater_billing') . $value->id . $action;
                 $row[] = $first_action . $value->patient_name . "</a>";
@@ -493,8 +506,8 @@ class Operationtheatre extends Admin_Controller
         if (!$this->rbac->hasPrivilege('ot_patient', 'can_view')) {
             access_denied();
         }
-        $id     = $this->input->post("patient_id");
-        $ot_id  = $this->input->post("ot_id");
+        $id     = $this->input->post("patient_id", TRUE);
+        $ot_id  = $this->input->post("ot_id", TRUE);
         $result = $this->operationtheatre_model->getDetails($id);
         if ($result['symptoms']) {
             $result['symptoms'] = nl2br($result['symptoms']);
@@ -526,7 +539,7 @@ class Operationtheatre extends Admin_Controller
         if (!$this->rbac->hasPrivilege('ot_patient', 'can_view')) {
             access_denied();
         }
-        $id                       = $this->input->post("id");
+        $id                       = $this->input->post("id", TRUE);
         $result                   = $this->operationtheatre_model->getOtPatientDetails($id);
         $result['admission_date'] = date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['admission_date']));
         $result['date']           = $this->customlib->YYYYMMDDHisTodateFormat($result['date'], $this->time_format);
@@ -545,16 +558,16 @@ class Operationtheatre extends Admin_Controller
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
 
-                    $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[operationtheatre][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
 
                 }
             }
         }
 
-        $this->form_validation->set_rules('eoperation_category', $this->lang->line('operation_category'), 'required');
-        $this->form_validation->set_rules('eoperation_name', $this->lang->line('operation_name'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'required');
+        $this->form_validation->set_rules('eoperation_category', $this->lang->line('operation_category'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('eoperation_name', $this->lang->line('operation_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -581,23 +594,23 @@ class Operationtheatre extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $date = $this->input->post("date");
+            $date = $this->input->post("date", TRUE);
 
-            $otid              = $this->input->post('otid');
-            $custom_field_post = $this->input->post("custom_fields[operationtheatre]");
+            $otid              = $this->input->post('otid', TRUE);
+            $custom_field_post = $this->input->post("custom_fields[operationtheatre]", TRUE);
             $operation_detail  = array(
                 'id'                => $otid,
-                'operation_id'      => $this->input->post('eoperation_name'),
+                'operation_id'      => $this->input->post('eoperation_name', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
-                'ass_consultant_1'  => $this->input->post('ass_consultant_1'),
-                'ass_consultant_2'  => $this->input->post('ass_consultant_2'),
-                'anesthetist'       => $this->input->post('anesthetist'),
-                'anaethesia_type'   => $this->input->post('anaethesia_type'),
-                'ot_technician'     => $this->input->post('ot_technician'),
-                'ot_assistant'      => $this->input->post('ot_assistant'),
-                'result'            => $this->input->post('eot_result'),
-                'remark'            => $this->input->post('eot_remark'),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
+                'ass_consultant_1'  => $this->input->post('ass_consultant_1', TRUE),
+                'ass_consultant_2'  => $this->input->post('ass_consultant_2', TRUE),
+                'anesthetist'       => $this->input->post('anesthetist', TRUE),
+                'anaethesia_type'   => $this->input->post('anaethesia_type', TRUE),
+                'ot_technician'     => $this->input->post('ot_technician', TRUE),
+                'ot_assistant'      => $this->input->post('ot_assistant', TRUE),
+                'result'            => $this->input->post('eot_result', TRUE),
+                'remark'            => $this->input->post('eot_remark', TRUE),
 
             );
 
@@ -605,7 +618,7 @@ class Operationtheatre extends Admin_Controller
 
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[operationtheatre][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $otid,
@@ -643,7 +656,7 @@ class Operationtheatre extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[otconsultinstruction][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[otconsultinstruction][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
 
@@ -675,11 +688,11 @@ class Operationtheatre extends Admin_Controller
             }
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $date        = $this->input->post('date');
-            $ins_date    = $this->input->post('insdate');
-            $patient_id  = $this->input->post('patient_id');
-            $doctor      = $this->input->post('doctor');
-            $instruction = $this->input->post('instruction');
+            $date        = $this->input->post('date', TRUE);
+            $ins_date    = $this->input->post('insdate', TRUE);
+            $patient_id  = $this->input->post('patient_id', TRUE);
+            $doctor      = $this->input->post('doctor', TRUE);
+            $instruction = $this->input->post('instruction', TRUE);
             $data_array  = array(
                 'date'        => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
                 'patient_id'  => $patient_id,
@@ -689,11 +702,11 @@ class Operationtheatre extends Admin_Controller
             );
 
             $insert_id          = $this->operationtheatre_model->add_ot_consultantInstruction($data_array);
-            $custom_field_post  = $this->input->post("custom_fields[otconsultinstruction]");
+            $custom_field_post  = $this->input->post("custom_fields[otconsultinstruction]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[otconsultinstruction][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[otconsultinstruction][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -714,7 +727,7 @@ class Operationtheatre extends Admin_Controller
 
     public function getConsultantBatch()
     {
-        $id             = $this->input->post("patient_id");
+        $id             = $this->input->post("patient_id", TRUE);
         $data["id"]     = $id;
         $result         = $this->operationtheatre_model->getConsultantBatch($id);
         $data["result"] = $result;
@@ -739,9 +752,10 @@ class Operationtheatre extends Admin_Controller
         $data['fields']         = $this->customfield_model->get_custom_fields('operationtheatre', '', '', 1);
         $data['operation_list'] = $this->operationtheatre_model->operation_list();
         $data['categorylist']   = $this->operationtheatre_model->category_list();
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/operationtheatre/otReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
@@ -755,12 +769,12 @@ class Operationtheatre extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'        => $this->input->post('search_type'),
-                'consultant_doctor'      => $this->input->post('consultant_doctor'),
-                'date_from'          => $this->input->post('date_from'),
-                'date_to'            => $this->input->post('date_to'),
-                'operation_category' => $this->input->post('operation_category'),
-                'operation_name'     => $this->input->post('operation_name'),
+                'search_type'        => $this->input->post('search_type', TRUE),
+                'consultant_doctor'  => $this->input->post('consultant_doctor', TRUE),
+                'date_from'          => $this->input->post('date_from', TRUE),
+                'date_to'            => $this->input->post('date_to', TRUE),
+                'operation_category' => $this->input->post('operation_category', TRUE),
+                'operation_name'     => $this->input->post('operation_name', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -770,13 +784,13 @@ class Operationtheatre extends Admin_Controller
 
     public function otreports()
     {
-        $search['search_type']   = $this->input->post('search_type');
-        $search['consultant_doctor'] = $this->input->post('consultant_doctor');
-        $search['date_from']     = $this->input->post('date_from');
-        $search['date_to']       = $this->input->post('date_to');
-        $condition['consultant_doctor']      = $this->input->post('consultant_doctor');
-        $condition['operation_category'] = $this->input->post('operation_category');
-        $condition['operation_name']     = $this->input->post('operation_name');
+        $search['search_type']        = $this->input->post('search_type', TRUE);
+        $search['consultant_doctor']  = $this->input->post('consultant_doctor', TRUE);
+        $search['date_from']          = $this->input->post('date_from', TRUE);
+        $search['date_to']            = $this->input->post('date_to', TRUE);
+        $condition['consultant_doctor']   = $this->input->post('consultant_doctor', TRUE);
+        $condition['operation_category']  = $this->input->post('operation_category', TRUE);
+        $condition['operation_name']      = $this->input->post('operation_name', TRUE);
         $start_date                      = '';
         $end_date                        = '';
         if ($search['search_type'] == 'period') {
@@ -875,39 +889,41 @@ class Operationtheatre extends Admin_Controller
 
     public function otdetails()
     {
-        $ot_id                                  = $this->input->post("ot_id");
+        $ot_id                                  = $this->input->post("ot_id", TRUE);
         $data['otdetails']                      = $this->operationtheatre_model->otdetails($ot_id);
         $data['fields']                         = $this->customfield_model->get_custom_fields('operationtheatre');
         $data['operation_theater_reference_no'] = $this->customlib->getSessionPrefixByType('operation_theater_reference_no');
         $page                                   = $this->load->view("admin/operationtheatre/_otdetails", $data, true);
 
-        $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_ot_bill'  data-toggle='tooltip' data-record-id=\"" . $ot_id . "\"   data-original-title='" . $this->lang->line('print') . "'><i class='fa fa-print'></i></a>";
+        $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_ot_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $ot_id . "\" title='" . $this->lang->line('print') . "'><i class='fa fa-print'></i></a>";
 
         echo json_encode(array('status' => 1, 'page' => $page, 'actions' => $actions));
     }
 
     /* Function to list operation name */
     public function index()
-    {  	
+    {
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'operation_theatre/index');
-		$this->session->set_userdata('sub_sidebar_menu', 'admin/operationtheatre/index');	
+		$this->session->set_userdata('sub_sidebar_menu', 'admin/operationtheatre/index');
+        $this->session->set_userdata('subsub_menu', 'admin/operationtheatre/index');
         $data['category_list']  = $this->operationtheatre_model->category_list();
         $data['operation_list'] = $this->operationtheatre_model->operation_list();
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/operationtheatre/operation', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     /* this funtion is used to save multiple add_multiple_addoperation */
-    public function add_multiple_addoperation() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+    public function add_multiple_addoperation() {
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('operation_name_'.$row_value, $this->lang->line('operation_name'), 'trim|required');        
-                $this->form_validation->set_rules('category_'.$row_value, $this->lang->line('category'), 'trim|required');        
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('operation_name_'.$row_value, $this->lang->line('operation_name'), 'trim|xss_clean|required');
+                $this->form_validation->set_rules('category_'.$row_value, $this->lang->line('category'), 'trim|xss_clean|required');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -921,13 +937,13 @@ class Operationtheatre extends Admin_Controller
             } 
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
-            foreach ($total_rows as $row_key => $row_values) {                 
-              
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            foreach ($total_rows as $row_key => $row_values) {
+
             $data = array(
-                'operation'   => $this->input->post('operation_name_'.$row_values),
-                'category_id' => $this->input->post('category_'.$row_values),
+                'operation'   => $this->input->post('operation_name_'.$row_values, TRUE),
+                'category_id' => $this->input->post('category_'.$row_values, TRUE),
                 'is_active'   => 'yes',
                 'created_at'  => date('Y-m-d'),
             );
@@ -956,16 +972,16 @@ class Operationtheatre extends Admin_Controller
 
     public function getoperationbycategory()
     {
-        $id     = $this->input->post('id');
+        $id     = $this->input->post('id', TRUE);
         $result = $this->operationtheatre_model->getoperationbycategory($id);
         echo json_encode($result);
     }
 
     public function edit()
     {
-        $this->form_validation->set_rules('edit_operation_name', $this->lang->line('operation_name'), 'required');
-        $this->form_validation->set_rules('edit_category', $this->lang->line('category'), 'required');
-        $id = $this->input->post('id');
+        $this->form_validation->set_rules('edit_operation_name', $this->lang->line('operation_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('edit_category', $this->lang->line('category'), 'trim|required|xss_clean');
+        $id = $this->input->post('id', TRUE);
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -977,8 +993,8 @@ class Operationtheatre extends Admin_Controller
         } else {
 
             $operation = array(
-                'operation'   => $this->input->post('edit_operation_name'),
-                'category_id' => $this->input->post('edit_category'),
+                'operation'   => $this->input->post('edit_operation_name', TRUE),
+                'category_id' => $this->input->post('edit_category', TRUE),
             );
 
             $this->operationtheatre_model->updateoperation($id, $operation);
@@ -990,7 +1006,7 @@ class Operationtheatre extends Admin_Controller
 
     public function deleteoperation()
     {
-        $id = $_REQUEST['id'];
+        $id = $this->input->post('id', TRUE);
         $this->operationtheatre_model->delete_operation($id);
     }
 
@@ -998,11 +1014,11 @@ class Operationtheatre extends Admin_Controller
     {
         $print_details         = $this->printing_model->get('', 'ot');
         $data['print_details'] = $print_details;
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
         $data['otdetails']     = $this->operationtheatre_model->otdetailsforprint($id);
         $data['fields']        = $this->customfield_model->get_custom_fields('operationtheatre', '', 1);
         $type                  = "operationtheatre";
-        $action                = '<a href="javascript:void(0);" class=" print_dischargecard" data-toggle="tooltip" title="" data-module_type="' . $type . '"  data-recordId="' . $id . '" data-original-title=""><i class="fa fa-print"></i> </a>';
+        $action                = '<a href="javascript:void(0);" class=" print_dischargecard" data-bs-toggle="tooltip" title="" data-module_type="' . $type . '"  data-recordId="' . $id . '" data-original-title=""><i class="fa fa-print"></i> </a>';
         $page                  = $this->load->view('admin/operationtheatre/_printotdetails', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page, 'action' => $action));
     }
@@ -1019,9 +1035,10 @@ class Operationtheatre extends Admin_Controller
 		$this->session->set_userdata('sub_sidebar_menu', 'admin/operationtheatre/category');
 
         $data['category_list'] = $this->operationtheatre_model->category_list();
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/operationtheatre/category', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
 
     }
    
@@ -1033,19 +1050,19 @@ class Operationtheatre extends Admin_Controller
 
     public function deletecategory()
     {
-        $id = $_REQUEST['id'];
+        $id = $this->input->post('id', TRUE);
         $this->operationtheatre_model->delete_category($id);
     }
 
 
     /* Function is used to add operation name */
-    public function addmultiplecategory() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+    public function addmultiplecategory() {
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('category_'.$row_value, $this->lang->line('operation_category'), 'trim|required');        
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('category_'.$row_value, $this->lang->line('operation_category'), 'trim|xss_clean|required');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -1058,11 +1075,11 @@ class Operationtheatre extends Admin_Controller
             } 
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
-            foreach ($total_rows as $row_key => $row_values) {                   
-                $id   =  $this->input->post('id_' . $row_values) ;     
-                $data = array('category' =>  $this->input->post('category_' . $row_values), 'is_active' => 'yes', 'created_at' => date('Y-m-d'));
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            foreach ($total_rows as $row_key => $row_values) {
+                $id   =  $this->input->post('id_' . $row_values, TRUE);
+                $data = array('category' =>  $this->input->post('category_' . $row_values, TRUE), 'is_active' => 'yes', 'created_at' => date('Y-m-d'));
                 $this->operationtheatre_model->insert($data, 'operation_category', $id);
             }
             // save the multiple data 
@@ -1081,8 +1098,8 @@ class Operationtheatre extends Admin_Controller
     /* Function is used to add operation name */
     public function editcategory()
     {
-        $this->form_validation->set_rules('category_name', $this->lang->line('operation_category'), 'required');
-        $id = $this->input->post('id');
+        $this->form_validation->set_rules('category_name', $this->lang->line('operation_category'), 'trim|required|xss_clean');
+        $id = $this->input->post('id', TRUE);
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('category_name'),
@@ -1092,9 +1109,9 @@ class Operationtheatre extends Admin_Controller
         } else {
 
             if ($id != "") {
-                $data = array('category' => $this->input->post('category_name'));
+                $data = array('category' => $this->input->post('category_name', TRUE));
             } else {
-                $data = array('category' => $this->input->post('category_name'), 'is_active' => 'yes', 'created_at' => date('Y-m-d'));
+                $data = array('category' => $this->input->post('category_name', TRUE), 'is_active' => 'yes', 'created_at' => date('Y-m-d'));
             }
 
             $this->operationtheatre_model->insert($data, 'operation_category', $id);

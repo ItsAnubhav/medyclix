@@ -107,7 +107,7 @@ class Certificate_model extends MY_Model
     {
         $this->db->select('*');
         $this->db->from('certificates');
-        $this->db->where('created_for = 2');
+        $this->db->where('created_for', 2);
         $query = $this->db->get();
         return $query->result();
     }

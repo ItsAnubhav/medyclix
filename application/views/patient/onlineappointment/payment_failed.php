@@ -6,7 +6,7 @@
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <meta http-equiv="Cache-control" content="no-cache">
   <meta name="theme-color" content="#424242" />
-  <link rel="stylesheet" href="<?php echo base_url(); ?>backend/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="<?php echo base_url(); ?>backend/bootstrap5/css/bootstrap.min.css">
   <link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/style-main.css">
   <link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/font-awesome.min.css">
 </head>
@@ -14,7 +14,7 @@
      <div class="payment-main">
        <div class="container">
         <div class="row">
-          <div class="col-lg-6 col-lg-offset-3">
+          <div class="col-lg-6 offset-lg-3">
             <div class="failedpayment">
             <div class="failed-circle">
               <div class="successpayment-icon"><i class="fa fa-close"></i></div>

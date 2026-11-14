@@ -11,6 +11,7 @@ class Content extends Admin_Controller
     {
         parent::__construct();
         $this->load->library('datatables');
+        $this->load->library('SaasValidation');
         $this->config->load("image_valid");
     }
 
@@ -31,9 +32,10 @@ class Content extends Admin_Controller
         $content_types                  = $this->contenttype_model->get();
         $data['content_types']          = $content_types;
         $data['superadmin_restriction'] = "";
-        $this->load->view('layout/header');
+        $data['module'] = 'download_center';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/content/list', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getsharelist()
@@ -61,7 +63,7 @@ class Content extends Admin_Controller
                 $deletebtn  = '';
                 $share_link = '';
 
-                $title = $value->title;
+                $title = html_escape($value->title);
 
                 $row   = array();
                 $row[] = $title;
@@ -70,13 +72,13 @@ class Content extends Admin_Controller
                     $url_key         = $this->enc_lib->encrypt($value->id);
                     $shared_url_link = base_url().'site/share/' . $url_key;
 
-                    $share_link = "<button type='button' class='btn btn-default btn-xs' data-recordid=" . $value->id . " data-link=" . $shared_url_link . " data-toggle='modal' data-target='#linkModal' title=" . $this->lang->line('link') . " ><i class='fa fa-link'></i></button>";
+                    $share_link = "<span data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('link') . "'><button type='button' class='btn btn-sm btn-light' data-recordid='" . (int)$value->id . "' data-link='" . html_escape($shared_url_link) . "' data-bs-toggle='modal' data-bs-target='#linkModal'><i class='fa fa-link'></i></button></span>";
                 }
 
-                $editbtn = "<button type='button' class='btn btn-default btn-xs' data-recordid=" . $value->id . " data-toggle='modal' data-target='#viewShareModal' title=" . $this->lang->line('view') . " ><i class='fa fa-eye'></i></button>";
-                
+                $editbtn = "<span data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('view') . "'><button type='button' class='btn btn-sm btn-light' data-recordid='" . (int)$value->id . "' data-bs-toggle='modal' data-bs-target='#viewShareModal'><i class='fa fa-eye'></i></button></span>";
+
                 if ($this->rbac->hasPrivilege('content_share_list', 'can_delete')) {
-                    $deletebtn = "<a onclick='return confirm(" . '"' . $this->lang->line('delete_confirm') . '"' . "  )' href='" . base_url() . "admin/content/delete_content/" . $value->id . "' class='btn btn-default btn-xs' title='" . $this->lang->line('delete') . "' data-toggle='tooltip'><i class='fa fa-trash'></i></a>";
+                    $deletebtn = "<a onclick='return confirm(" . '"' . $this->lang->line('delete_confirm') . '"' . ")' href='" . base_url() . "admin/content/delete_content/" . (int)$value->id . "' class='btn btn-sm btn-light' title='" . $this->lang->line('delete') . "' data-bs-toggle='tooltip' data-bs-placement='top'><i class='fa fa-trash'></i></a>";
                 }else{
                     $deletebtn = "";
                 }
@@ -99,9 +101,9 @@ class Content extends Admin_Controller
                 if ($value->description == "") {
                     $row[] = $this->lang->line('no_description');
                 } else {
-                    $row[] = $value->description;
+                    $row[] = html_escape($value->description);
                 }
-                $row[]     = $share_link . ' ' . $editbtn . ' ' . $deletebtn;
+                $row[]     = "<div class='white-space-nowrap'>" . $share_link . ' ' . $editbtn . ' ' . $deletebtn . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -115,17 +117,24 @@ class Content extends Admin_Controller
         echo json_encode($json_data);
     }
 
-
     public function delete_content($id)
     {
+		if (!$this->rbac->hasPrivilege('content_share_list', 'can_delete')) {
+            access_denied();
+        }
+		
         $is_removed = $this->sharecontent_model->remove($id);
         redirect('admin/content/list');
     }
 
     public function getsharedcontents()
     {
+		if (!$this->rbac->hasPrivilege('content_share_list', 'can_view')) {
+            access_denied();
+        }
+		
         $response                    = array();
-        $share_content_id            = $this->input->post('share_content_id');
+        $share_content_id            = $this->input->post('share_content_id', TRUE);
         $response['shared_contents'] = $this->sharecontent_model->getShareContentWithDocuments($share_content_id);
         $response['sch_setting']     = $this->setting_model->getSetting();
         $response['result_array']    = $this->sharecontent_model->getSharedUserBySharedID($share_content_id);
@@ -133,54 +142,8 @@ class Content extends Admin_Controller
         $array                       = array('status' => '1', 'error' => '', 'page' => $response_page);
         echo json_encode($array);
     }
-
-    public function index()
-    {
-        if (!$this->rbac->hasPrivilege('upload_content', 'can_view')) {
-            access_denied();
-        }        
-
-        $this->session->set_userdata('top_menu', 'Download Center');
-        $this->session->set_userdata('sub_menu', 'admin/content/index');
-        
-        $this->form_validation->set_rules('content_title', $this->lang->line('content_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('content_available[]', $this->lang->line('available_for'), 'trim|required|xss_clean');
-        $post_data = $this->input->post();
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
-        if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
-            $this->load->view('admin/content/createcontent');
-            $this->load->view('layout/footer');
-        } else {
-
-            $data = array(
-                'title' => $this->input->post('content_title'),
-                'type'  => $this->input->post('content_type'),
-                'note'  => $this->input->post('note'),
-                'file'  => $this->input->post('file'),
-            );
-
-            $upload_date = $this->input->post('upload_date');
-            if (!empty($upload_date)) {
-                $data['date'] = $this->customlib->dateFormatToYYYYMMDD($this->input->post('upload_date'));
-            } else {
-                $data['date'] = null;
-            }
-
-            $insert_id = $this->content_model->add($data);
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-                $fileInfo = pathinfo($_FILES["file"]["name"]);
-                $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/hospital_content/material/" . $img_name);
-                $data_img = array('id' => $insert_id, 'file' => 'uploads/hospital_content/material/' . $img_name);
-                $this->content_model->add($data_img);
-            }
-            $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('content_added_successfully') . ' </div>');
-            redirect('admin/content');
-        }
-    }
-     public function upload()
+	
+	public function upload()
     {
         if (!$this->rbac->hasPrivilege('upload_share_content', 'can_view')) {
             access_denied();
@@ -198,9 +161,10 @@ class Content extends Admin_Controller
         $data['content_types']          = $content_types;
         
         $data['roles'] = $this->role_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'download_center';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/content/upload', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
 	public function share()
@@ -208,18 +172,18 @@ class Content extends Admin_Controller
         $this->form_validation->set_rules('title', $this->lang->line('title'), 'required|trim|xss_clean');
         $this->form_validation->set_rules('share_date', $this->lang->line('share_date'), 'required|trim|xss_clean');
         $this->form_validation->set_rules('send_to', $this->lang->line('send_to'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('selected_contents[]', $this->lang->line('contents'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('selected_contents[]', $this->lang->line('content'), 'required|trim|xss_clean');
 
         $data    = array();
-        $send_to = $this->input->post('send_to');
+        $send_to = $this->input->post('send_to', TRUE);
 
         if ($send_to == "group") {
-            $groups = $this->input->post('user');
+            $groups = $this->input->post('user', TRUE);
             if (!isset($groups)) {
                 $this->form_validation->set_rules('groups', $this->lang->line('group'), 'required|trim|xss_clean');
             }
         } elseif ($send_to == "individual") {
-            $users_array = $this->input->post('user_list');
+            $users_array = $this->input->post('user_list', TRUE);
             if (!isset($users_array)) {
                 $this->form_validation->set_rules('users_array', $this->lang->line('users'), 'required|trim|xss_clean');
             } else {
@@ -243,7 +207,7 @@ class Content extends Admin_Controller
             echo json_encode($array);
         } else {
             $upload_content    = array();
-            $selected_contents = $this->input->post('selected_contents');
+            $selected_contents = $this->input->post('selected_contents', TRUE);
 
             foreach ($selected_contents as $selected_content_key => $selected_content_value) {
                 $upload_content[] = array(
@@ -253,16 +217,16 @@ class Content extends Admin_Controller
             }
 
             $insert_data                = array();
-            $insert_data['title']       = $this->input->post('title');
-            $insert_data['share_date']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('share_date'));
-            $insert_data['valid_upto']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('valid_upto'));
-            $insert_data['description'] = $this->input->post('description');
+            $insert_data['title']       = $this->input->post('title', TRUE);
+            $insert_data['share_date']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('share_date', TRUE));
+            $insert_data['valid_upto']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('valid_upto', TRUE));
+            $insert_data['description'] = $this->input->post('description', TRUE);
             $insert_data['created_by'] = $this->customlib->getStaffID();
-            $insert_data['send_to']    = $this->input->post('send_to');
+            $insert_data['send_to']    = $this->input->post('send_to', TRUE);
             $insert_content_for        = array();
 
             if ($insert_data['send_to'] == "group") {
-                $groups = $this->input->post('user');
+                $groups = $this->input->post('user', TRUE);
                 foreach ($groups as $group_key => $group_value) {
                     $insert_content_for[] = array(
                         'group_id'         => $group_value,
@@ -308,9 +272,10 @@ class Content extends Admin_Controller
         $pag_content    = '';
         $pag_navigation = '';
 
-        if (isset($_POST['data']['page'])) {
+        $post_data = $this->input->post('data', TRUE);
+        if (isset($post_data['page'])) {
 
-            $page = $_POST['data']['page']; /* The page we are currently at */
+            $page = (int)$post_data['page']; /* The page we are currently at */
 
             $cur_page = $page;
             $page -= 1;
@@ -323,12 +288,12 @@ class Content extends Admin_Controller
 
             $where_search = array();
 
-            /* Check if there is a string inputted on the search box */
-            if (!empty($_POST['data']['search'])) {
-                $where_search['search'] = $_POST['data']['search'];
+            if (!empty($post_data['search'])) {
+                $where_search['search'] = $post_data['search'];
             }
-            $data['grid_view'] = $_POST['data']['grid'];
-            /* Retrieve all the posts */ 
+
+            $data['grid_view'] = !empty($post_data['grid']);
+            
             $contents = $this->uploadcontent_model->getlimitwithsearch($staff_id, $per_page, $start, $where_search);
 
             $data['all_contents'] = $contents['total_rows'];
@@ -369,9 +334,9 @@ class Content extends Admin_Controller
 
             if ($previous_btn && $cur_page > 1) {
                 $pre = $cur_page - 1;
-                $pag_navigation .= "<li p='$pre' class='page-item unactive'><a class='page-link' href='javascript:void(0);'>  ". $this->lang->line('previous') ."</a></li>";
+                $pag_navigation .= "<li p='$pre' class='page-item unactive'><a class='page-link' href='javascript:void(0);'><i class='fa fa-angle-left'></i></a></li>";
             } else if ($previous_btn) {
-                $pag_navigation .= "<li class='page-item disabled'><a class='page-link' href='javascript:void(0);'>". $this->lang->line('previous') ."</a></li>";
+                $pag_navigation .= "<li class='page-item disabled'><a class='page-link' href='javascript:void(0);'><i class='fa fa-angle-left'></i></a></li>";
             }
             for ($i = $start_loop; $i <= $end_loop; $i++) {
 
@@ -384,9 +349,9 @@ class Content extends Admin_Controller
 
             if ($next_btn && $cur_page < $no_of_paginations) {
                 $nex = $cur_page + 1;
-                $pag_navigation .= "<li p='$nex' class='page-item unactive'><a class='page-link' href='javascript:void(0);'>". $this->lang->line('next') ." </a></li>";
+                $pag_navigation .= "<li p='$nex' class='page-item unactive'><a class='page-link' href='javascript:void(0);'><i class='fa fa-angle-right'></i></a></li>";
             } else if ($next_btn) {
-                $pag_navigation .= "<li class='page-item disabled'><a class='page-link' href='javascript:void(0);'>". $this->lang->line('next') ."</a></li>";
+                $pag_navigation .= "<li class='page-item disabled'><a class='page-link' href='javascript:void(0);'><i class='fa fa-angle-right'></i></a></li>";
             }
 
             if ($last_btn && $cur_page < $no_of_paginations) {
@@ -430,9 +395,9 @@ class Content extends Admin_Controller
             } elseif (!in_array($ext, $allowed_extension) || !in_array($file_type, $allowed_mime_type)) {
                 $this->form_validation->set_message('handle_upload_file', $this->lang->line('file_type_not_allowed'));
                 return false;
-            } elseif ($file_size > 2097152) {
+            } elseif ($file_size > $image_validate["upload_size"]) {
                 $this->form_validation->set_message('handle_upload_file', $this->lang->line('file_size_shoud_be_less_than') .
-                    number_format(2097152 / 1048576, 2) . ' MB');
+                    number_format($image_validate["upload_size"] / 1048576, 2) . ' MB');
                 return false;
             }
 
@@ -440,395 +405,255 @@ class Content extends Admin_Controller
         }
         $this->form_validation->set_message('handle_upload_file', $this->lang->line('please_choose_a_file_or_enter_youtube_video_link'));
         return false;
-    }    
+    }  
+
+	/**
+	 * SaaS storage pre-check (form_validation callback).
+	 * Returns false (blocking the save) when the upload would push the
+	 * tenant over its storage quota. SaasValidation sets the error message.
+	 */
+	public function validateCanUploadFile($str, $params_string)
+	{
+		$storage_array = array_map('trim', explode(',', $params_string));
+		return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+	}
+
+	public function ajaxupload()
+	{
+		if (!$this->rbac->hasPrivilege('upload_share_content', 'can_add')) {
+			access_denied();
+		}
+
+		$this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'required|trim|xss_clean');
+
+		$url = $this->input->post('url', TRUE);
+
+		// ❗ FIX 1: Block file + URL together
+		if (!empty($_FILES['upload']['name'][0]) && !empty($url)) {
+			echo json_encode([
+				'status' => 0,
+				'error' => ['file' => 'Upload either file OR URL, not both']
+			]);
+			return;
+		}
+
+		// Validation rules
+		if (!empty($_FILES['upload']['name'][0])) {
+			$this->form_validation->set_rules(
+				'file',
+				$this->lang->line('file'),
+				"callback_handle_upload_file[upload]|callback_validateCanUploadFile[upload]|trim|xss_clean"
+			);
+		} else {
+			$this->form_validation->set_rules(
+				'url',
+				$this->lang->line('url'),
+				'required|trim|xss_clean'
+			);
+		}
+
+		if ($this->form_validation->run() == false) {
+			echo json_encode([
+				'status' => 0,
+				'error' => [
+					'title' => form_error('title'),
+					'content_type' => form_error('content_type'),
+					'file' => form_error('file'),
+					'url' => form_error('url'),
+				]
+			]);
+			return;
+		}
+
+		// ================= FILE UPLOAD =================
+		if (!empty($_FILES['upload']['name'][0]) && $_FILES['upload']['error'][0] == UPLOAD_ERR_OK) {
+
+			// ❗ FIX 2: STRICT FILE VALIDATION (ANTI-HACK)
+			// Use the allowed types from config (image_valid.php -> file_validate)
+			// so PDF/Word/Excel/CSV/ZIP are accepted, not only images.
+			$file_validate = $this->config->item('file_validate');
+			$allowed_ext   = $file_validate['allowed_extension'];
+			$allowed_mime  = $file_validate['allowed_mime_type'];
+
+			$finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+			foreach ($_FILES['upload']['name'] as $key => $name) {
+
+				$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+				if (!in_array($ext, $allowed_ext)) {
+					echo json_encode(['status'=>0,'error'=>['file'=>'Invalid file extension']]);
+					return;
+				}
+
+				$mime = finfo_file($finfo, $_FILES['upload']['tmp_name'][$key]);
+				if (!in_array($mime, $allowed_mime)) {
+					echo json_encode(['status'=>0,'error'=>['file'=>'Invalid file content']]);
+					return;
+				}
+			}
+
+			finfo_close($finfo);
+
+			// Safe to process
+			$dir_path   = "uploads/hospital_content/material/media/";
+			$thumb_path = "uploads/hospital_content/material/media/thumb/";
+
+			$config = [
+				'thumb_path' => $thumb_path,
+				'dir_path' => $dir_path,
+				'thumb_width' => 100,
+				'thumb_height' => 100
+			];
+
+			$this->load->library('imageResize', $config);
+			$responses = $this->imageresize->resize($_FILES["upload"]);
+
+			if ($responses) {
+				foreach ($responses['images'] as $value) {
+
+					$data = [
+						'real_name'       => $value['name'],
+						'img_name'        => $value['store_name'],
+						'mime_type'       => $value['file_type'],
+						'file_type'       => find_file_type($value['file_type']),
+						'file_size'       => $value['file_size'],
+						'thumb_name'      => $value['thumb_name'],
+						'thumb_path'      => $value['thumb_path'],
+						'dir_path'        => $value['dir_path'],
+						'content_type_id' => $this->input->post('content_type', TRUE),
+						'upload_by'       => $this->customlib->getStaffID(),
+						'created_at'      => date('Y-m-d H:i:s'),
+					];
+
+					$this->uploadcontent_model->add($data);
+				}
+
+				// SaaS: add the total stored (resized) file size to the storage quota
+				// usage. file_size from imageResize is the saved file's byte size.
+				try {
+					$uploaded_bytes = 0;
+					foreach ($responses['images'] as $img) {
+						$uploaded_bytes += (int) $img['file_size'];
+					}
+					$kb = $this->media_storage->convertBytesToKB($uploaded_bytes);
+					if ($kb > 0) {
+						$this->saasvalidation->updateResouceQuota('storage', $kb);
+					}
+				} catch (Exception $e) {
+					log_message('error', 'SaaS storage quota update failed (content file add): ' . $e->getMessage());
+				}
+
+				$staff_id = $this->customlib->getStaffID();
+				$count = $this->uploadcontent_model->total_record($staff_id);
+
+				echo json_encode([
+					'status' => 1,
+					'msg' => $this->lang->line('success_message'),
+					'file_count' => $count->number,
+					'file_size' => format_file_size($count->file_size)
+				]);
+			} else {
+				echo json_encode(['status'=>0,'error'=>['file'=>'Something went wrong']]);
+			}
+
+		} else {
+			// ================= URL UPLOAD =================
+
+			$youtube = "https://www.youtube.com/oembed?url=" . $url . "&format=json";
+
+			$curl = curl_init($youtube);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+			$return = curl_exec($curl);
+			$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+			curl_close($curl);
+
+			if ($httpcode == 200) {
+
+				$this->load->library('imageResize', [
+					'thumb_path' => "uploads/hospital_content/material/media/thumb/",
+					'dir_path' => "uploads/hospital_content/material/media/",
+					'thumb_width' => 100,
+					'thumb_height' => 100
+				]);
+
+				$upload_response = $this->imageresize->resizeVideoImg($return);
+
+				if ($upload_response) {
+
+					$upload_response = json_decode($upload_response);
+
+					// resizeVideoImg() returns file_size=0 for the YouTube thumbnail it
+					// downloads. Read actual on-disk bytes so the DB record and quota are
+					// both accurate — delete() reads file_size from DB to release quota.
+					$_main_path  = './' . $upload_response->dir_path . $upload_response->store_name;
+					$_thumb_full = './' . $upload_response->thumb_path . $upload_response->thumb_name;
+					$actual_bytes = 0;
+					if (file_exists($_main_path)) {
+						$actual_bytes += (int) filesize($_main_path);
+					}
+					if (!empty($upload_response->thumb_name) && file_exists($_thumb_full)) {
+						$actual_bytes += (int) filesize($_thumb_full);
+					}
+
+					$data = [
+						'real_name'       => $upload_response->vid_title,
+						'vid_url'         => $url,
+						'vid_title'       => $upload_response->vid_title,
+						'img_name'        => $upload_response->store_name,
+						'file_type'       => $upload_response->file_type,
+						'file_size'       => $actual_bytes,
+						'thumb_name'      => $upload_response->thumb_name,
+						'thumb_path'      => $upload_response->thumb_path,
+						'dir_path'        => $upload_response->dir_path,
+						'content_type_id' => $this->input->post('content_type', TRUE),
+						'upload_by'       => $this->customlib->getStaffID(),
+						'created_at'      => date('Y-m-d H:i:s'),
+					];
+
+					$this->uploadcontent_model->add($data);
+
+					// SaaS: add the actual stored bytes to the quota.
+					try {
+						$kb = $this->media_storage->convertBytesToKB($actual_bytes);
+						if ($kb > 0) {
+							$this->saasvalidation->updateResouceQuota('storage', $kb);
+						}
+					} catch (Exception $e) {
+						log_message('error', 'SaaS storage quota update failed (content url add): ' . $e->getMessage());
+					}
+
+					$staff_id = $this->customlib->getStaffID();
+					$count = $this->uploadcontent_model->total_record($staff_id);
+
+					echo json_encode([
+						'status' => 1,
+						'msg' => $this->lang->line('file_upload_successfully'),
+						'file_count' => $count->number,
+						'file_size' => format_file_size($count->file_size)
+					]);
+
+				} else {
+					echo json_encode(['status'=>0,'error'=>['file'=>'Something went wrong']]);
+				}
+
+			} else {
+				echo json_encode(['status'=>0,'error'=>['file'=>'Invalid URL']]);
+			}
+		}
+	}
 	
-    public function ajaxupload()
-    {        
-        $this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'required|trim|xss_clean');
-        $url = $this->input->post('url');
-        if (isset($_FILES['upload']) && $url == "") {
-            $this->form_validation->set_rules('file', $this->lang->line('file'), "callback_handle_upload_file[upload]|trim|xss_clean");
-        } else {
-            $this->form_validation->set_rules('url', $this->lang->line('url'), 'required|trim|xss_clean');
-        }
-
-        $data = array();
-
-        if ($this->form_validation->run() == false) {
-            $data = array(
-                'title'        => form_error('title'),
-                'content_type' => form_error('content_type'),
-                'file'         => form_error('file'),
-                'url'          => form_error('url'),
-            );
-            $array = array('status' => 0, 'error' => $data);
-            echo json_encode($array);
-        } else {
-
-            if (isset($_FILES['upload']) && !empty($_FILES['upload']) && $_FILES['upload']['error'][0] == UPLOAD_ERR_OK) {
-
-                $dir_path   = "uploads/hospital_content/material/media/";
-                $thumb_path = "uploads/hospital_content/material/media/thumb/";
-
-                $config['thumb_path']   = $thumb_path;
-                $config['dir_path']     = $dir_path;
-                $config['thumb_width']  = 100;
-                $config['thumb_height'] = 100;
-                $this->load->library('imageResize', $config);
-                $responses = $this->imageresize->resize($_FILES["upload"]);
-
-                $response_array = array();
-                if ($responses) {
-                    $img_array  = array();
-                    $validation = 1;
-
-                    if ($validation == 1) {
-                        foreach ($responses['images'] as $key => $value) {
-                            $data = array(
-                                'real_name'       => $value['name'],
-                                'img_name'        => $value['store_name'],
-                                'mime_type'       => $value['file_type'],
-                                'file_type'       => find_file_type($value['file_type']),
-                                'file_size'       => $value['file_size'],
-                                'thumb_name'      => $value['thumb_name'],
-                                'thumb_path'      => $value['thumb_path'],
-                                'dir_path'        => $value['dir_path'],
-                                'content_type_id' => $this->input->post('content_type'),
-                                'upload_by'       => $this->customlib->getStaffID(),
-                                'created_at'      => date('Y-m-d H:i:s'),
-                            );
-
-                            $insert_id         = $this->uploadcontent_model->add($data);
-                            $data['record_id'] = $insert_id;
-                            $img_array[]       = $data;
-                        }
-                        $staff_id = $this->customlib->getStaffID();
-                        $count    = $this->uploadcontent_model->total_record($staff_id);
-
-                        $response_array['status']     = 1;
-                        $response_array['file_count'] = $count->number;
-                        $response_array['file_size']  = format_file_size($count->file_size);
-                        $response_array['msg']        = $this->lang->line('success_message');
-
-                    } else {
-                        $response_array['status'] = 0;
-                        $response_array['error']  = array('file' => $this->lang->line('extension_not_allowed'));
-                    }
-
-                } else {
-                    $response_array['status'] = 0;
-                    $response_array['error']  = array('file' => $this->lang->line('something_went_wrong'));
-                }
-                echo json_encode($response_array);
-
-            } else {
-               
-                $url     = $this->input->post('url');
-                $youtube = "https://www.youtube.com/oembed?url=" . $url . "&format=json";
-                $curl    = curl_init($youtube);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-                $return   = curl_exec($curl);
-                $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                curl_close($curl);
-                if ($httpcode == 200) {
-                    $img_array = array();
-
-                    $dir_path   = "uploads/hospital_content/material/media/";
-                    $thumb_path = "uploads/hospital_content/material/media/thumb/";
-
-                    $config['thumb_path']   = $thumb_path;
-                    $config['dir_path']     = $dir_path;
-                    $config['thumb_width']  = 100;
-                    $config['thumb_height'] = 100;
-                    $this->load->library('imageResize', $config);
-
-                    $upload_response = $this->imageresize->resizeVideoImg($return);
-
-                    if ($upload_response) {
-                        $upload_response = json_decode($upload_response);
-                        $data            = array(
-                            'real_name'       => $upload_response->vid_title,
-                            'vid_url'         => $url,
-                            'vid_title'       => $upload_response->vid_title,
-                            'img_name'        => $upload_response->store_name,
-                            'file_type'       => $upload_response->file_type,
-                            'file_size'       => $upload_response->file_size,
-                            'thumb_name'      => $upload_response->thumb_name,
-                            'thumb_path'      => $upload_response->thumb_path,
-                            'dir_path'        => $upload_response->dir_path,
-                            'content_type_id' => $this->input->post('content_type'),
-                            'upload_by'       => $this->customlib->getStaffID(),
-                            'created_at'      => date('Y-m-d H:i:s'),
-                        );
-
-                        $insert_id = $this->uploadcontent_model->add($data);
-                        $staff_id  = $this->customlib->getStaffID();
-                        $count     = $this->uploadcontent_model->total_record($staff_id);
-
-                        echo json_encode(array('status' => 1, 'msg'=> $this->lang->line('file_upload_successfully'), 'file_count' => $count->number,
-                            'file_size'=> format_file_size($count->file_size), 'error' => ''));
-                    } else {
-                        echo json_encode(array('status' => 0, 'error' => array('file' => $this->lang->line('something_went_wrong'))));
-                    }
-                } else {
-                    echo json_encode(array('status' => 0, 'error' => array('file' => $this->lang->line('invalid_url_or_try_again'))));
-                }              
-            }
-        }
-    }
-	
-    public function getcontentdatatable()
-    {
-        $dt_response = $this->content_model->getAllcontentRecord();
-        $dt_response = json_decode($dt_response);
-        $dt_data     = array();
-        if (!empty($dt_response->data)) {
-            foreach ($dt_response->data as $key => $value) {
-
-                $row = array();
-                //====================================
-
-                $action = "<a href=" . base_url() . 'admin/content/download/' . $value->file . " onclick='' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
-
-                if ($this->rbac->hasPrivilege('upload_content', 'can_delete')) {
-                    $action .= "<a href='#' onclick=delete_recordById('admin/content/delete/" . $value->id . "')  class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
-                }
-
-                //==============================
-                $row[] = $value->title;
-                $row[] = $value->type;
-                if ($value->date) {                    
-                    $row[] = $this->customlib->YYYYMMDDTodateFormat($value->date);
-                } else {
-                    $row[] = " ";
-                }
-                $row[]     = $value->note;
-                $row[]     = $action;
-                $dt_data[] = $row;
-            }
-        }
-        $json_data = array(
-            "draw"            => intval($dt_response->draw),
-            "recordsTotal"    => intval($dt_response->recordsTotal),
-            "recordsFiltered" => intval($dt_response->recordsFiltered),
-            "data"            => $dt_data,
-        );
-        echo json_encode($json_data);
-    }
-
-    public function add()
-    {
-        $this->form_validation->set_rules('content_title', $this->lang->line('content_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
-        if ($this->form_validation->run() == false) {
-            $msg = array(
-                'content_title' => form_error('content_title'),
-                'content_type'  => form_error('content_type'),
-                'file'          => form_error('file'),
-            );
-
-            $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
-        } else {
-            $data = array(
-                'title' => $this->input->post('content_title'),
-                'type'  => $this->input->post('content_type'),
-                'note'  => $this->input->post('note'),
-            );
-            $upload_date = $this->input->post('upload_date');
-            if (!empty($upload_date)) {
-                $data['date'] = $this->customlib->dateFormatToYYYYMMDD($this->input->post('upload_date'));
-            } else {
-                $data['date'] = null;
-            }
-            $insert_id = $this->content_model->add($data);
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {			
-				
-				$img_name                  = $this->media_storage->fileupload("content", "./uploads/hospital_content/material/");			
-				$data_img = array('id' => $insert_id, 'file' => 'uploads/hospital_content/material/' . $img_name);
-                $this->content_model->add($data_img);				
-				
-            }
-            $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
-        }
-
-        echo json_encode($array);
-    }
-
-    public function index1()
-    {
-        $this->customlib->getStaffRole();
-        $data['title']             = 'Upload Content';
-        $data['title_list']        = 'Upload Content List';
-        $data['content_available'] = $this->customlib->contentAvailabelFor();
-        $ght                       = $this->customlib->getcontenttype();
-        $list                      = $this->content_model->get();
-        $class                     = $this->class_model->get();
-        $data['list']              = $list;
-        $data['classlist']         = $class;
-        $data['ght']               = $ght;
-        $this->form_validation->set_rules('content_title', $this->lang->line('content_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('content_available[]', $this->lang->line('available_for'), 'trim|required|xss_clean');
-        $post_data = $this->input->post();
-
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
-        if ($this->form_validation->run() == false) {
-			
-            $this->load->view('layout/header');
-            $this->load->view('admin/content/createcontent', $data);
-            $this->load->view('layout/footer');
-			
-        } else {
-
-            $data = array(
-                'title'      => $this->input->post('content_title'),
-                'type'       => $this->input->post('content_type'),
-                'note'       => $this->input->post('note'),
-                'class_id'   => $classes,
-                'cls_sec_id' => $section_id,
-                'date'       => $this->customlib->dateFormatToYYYYMMDD($this->input->post('upload_date')),
-                'file'       => $this->input->post('file'),
-                'is_public'  => $visibility,
-            );
-
-            $insert_id = $this->content_model->add($data, $content_for);
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-                $fileInfo = pathinfo($_FILES["file"]["name"]);
-                $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/hospital_content/material/" . $img_name);
-                $data_img = array('id' => $insert_id, 'file' => 'uploads/hospital_content/material/' . $img_name);
-                $this->content_model->add($data_img);
-            }
-            $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
-            redirect('admin/content');
-        }
-    }
-
-    public function handle_upload()
-    {
-        if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-            $allowedExts = array('jpg', 'jpeg', 'png', "pdf", "doc", "docx", "rar", "zip");
-            $temp        = explode(".", $_FILES["file"]["name"]);
-            $extension   = end($temp);
-            if ($_FILES["file"]["error"] > 0) {
-                $error .= $this->lang->line('error_opening_the_file') . "<br />";
-            }
-            if (($_FILES["file"]["type"] != "application/pdf") && ($_FILES["file"]["type"] != "image/gif") && ($_FILES["file"]["type"] != "image/jpeg") && ($_FILES["file"]["type"] != "image/jpg") && ($_FILES["file"]["type"] != "application/vnd.openxmlformats-officedocument.wordprocessingml.document") && ($_FILES["file"]["type"] != "application/vnd.openxmlformats-officedocument.wordprocessingml.document") && ($_FILES["file"]["type"] != "image/pjpeg") && ($_FILES["file"]["type"] != "image/x-png") && ($_FILES["file"]["type"] != "application/x-rar-compressed") && ($_FILES["file"]["type"] != "application/octet-stream") && ($_FILES["file"]["type"] != "application/zip") && ($_FILES["file"]["type"] != "application/octet-stream") && ($_FILES["file"]["type"] != "image/png")) {
-                $this->form_validation->set_message('handle_upload', $this->lang->line('file_type_not_allowed'));
-                return false;
-            }
-            if (!in_array(strtolower($extension), $allowedExts)) {
-                $this->form_validation->set_message('handle_upload', $this->lang->line('file_extension_not_allowed'));
-                return false;
-            }
-            return true;
-        } else {
-            $this->form_validation->set_message('handle_upload', $this->lang->line('the_file_field_is_required'));
-            return false;
-        }
-    }
-
-    public function download($file)
-    {
-        $this->load->helper('download');
-        $filepath = "./uploads/hospital_content/material/" . $this->uri->segment(7);
-        $data     = file_get_contents($filepath);
-        $name     = $this->uri->segment(7);
-        force_download($name, $data);
-    }
-
-    public function edit($id)
-    {
-        if (!$this->rbac->hasPrivilege('upload_content', 'can_edit')) {
-            access_denied();
-        }
-        $data['title']     = 'Add Content';
-        $data['id']        = $id;
-        $editpost          = $this->content_model->get($id);
-        $data['editpost']  = $editpost;
-        $ght               = $this->customlib->getcontenttype();
-        $data['ght']       = $ght;
-        $class             = $this->class_model->get();
-        $data['classlist'] = $class;
-        $this->form_validation->set_rules('content_title', $this->lang->line('content_title'), 'trim|required|xss_clean');
-        if ($this->form_validation->run() == false) {
-            $listpost         = $this->content_model->get();
-            $data['listpost'] = $listpost;
-            $this->load->view('layout/header');
-            $this->load->view('admin/content/editpost', $data);
-            $this->load->view('layout/footer');
-        } else {
-            $data = array(
-                'id'            => $this->input->post('id'),
-                'content_title' => $this->input->post('content_title'),
-                'content_type'  => $this->input->post('content_type'),
-                'class_id'      => $this->input->post('class_id'),
-                'date'          => $this->customlib->dateFormatToYYYYMMDD($this->input->post('upload_date')),
-                'file_uploaded' => $this->input->file['file']['name'],
-            );
-            $this->content_model->addcontentpost($data);
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-                $fileInfo = pathinfo($_FILES["file"]["name"]);
-                $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $id, 'file_uploaded' => 'uploads/patient_images/' . $img_name);
-                $this->content_model->addcontentpost($data_img);
-            }
-            $this->session->set_flashdata('msg', '<div class="alert alert-success text-center">' . $this->lang->line('success_message') . '</div>');
-            redirect('admin/content/createcontent/index');
-        }
-    }
-
-    public function search()
-    {
-        $text                = $_GET['content'];
-        $data['title']       = 'Fees Master List';
-        $contentlist         = $this->content_model->search_by_content_type($text);
-        $data['contentlist'] = $contentlist;
-        $this->load->view('layout/header');
-        $this->load->view('admin/content/search', $data);
-        $this->load->view('layout/footer');
-    }
-	
-    public function download_content($id)
+	public function download_content($id)
     {
         $this->load->helper('file'); // Load file helper
         $content = $this->uploadcontent_model->get($id);
         $this->media_storage->filedownload($content->img_name, $content->dir_path);
     }
-
-    public function ajaxupdate()
-    {
-        $this->form_validation->set_rules('content_type', $this->lang->line('content_type'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('name', $this->lang->line('file_name'), 'required|trim|xss_clean');   
-
-        $data = array();
-
-        if ($this->form_validation->run() == false) {
-
-            $data = array(
-                'content_type'               => form_error('content_type'),
-                'name'          => form_error('name')
-            );
-            $array = array('status' => 0, 'error' => $data);
-            echo json_encode($array);
-        } else {
-        $update = array(
-            'id'              => $this->input->post('id'),
-            'real_name'       => $this->input->post('name'),
-            'content_type_id' => $this->input->post('content_type'),
-        );
-        $this->uploadcontent_model->add($update);
-        echo json_encode(array('status' => 1, 'msg' => $this->lang->line('success_message')));
-        }     
-    }
-    
+	
     public function generate_url()
     {
         $this->form_validation->set_rules('title', $this->lang->line('title'), 'required|trim|xss_clean');
         $this->form_validation->set_rules('share_date', $this->lang->line('share_date'), 'required|trim|xss_clean');
-        $this->form_validation->set_rules('selected_contents[]', $this->lang->line('contents'), 'required|trim|xss_clean');
+        $this->form_validation->set_rules('selected_contents[]', $this->lang->line('content'), 'required|trim|xss_clean');
 
         $data = array();
 
@@ -843,7 +668,7 @@ class Content extends Admin_Controller
             echo json_encode($array);
         } else {
             $upload_content    = array();
-            $selected_contents = $this->input->post('selected_contents');
+            $selected_contents = $this->input->post('selected_contents', TRUE);
 
             foreach ($selected_contents as $selected_content_key => $selected_content_value) {
                 $upload_content[] = array(
@@ -853,11 +678,11 @@ class Content extends Admin_Controller
             }
 
             $insert_data                = array();
-            $insert_data['title']       = $this->input->post('title');
+            $insert_data['title']       = $this->input->post('title', TRUE);
             $insert_data['send_to']     = 'public';
-            $insert_data['share_date']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('share_date'));
-            $insert_data['valid_upto']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('valid_upto'));
-            $insert_data['description'] = $this->input->post('description');
+            $insert_data['share_date']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('share_date', TRUE));
+            $insert_data['valid_upto']  = $this->customlib->dateFormatToYYYYMMDD($this->input->post('valid_upto', TRUE));
+            $insert_data['description'] = $this->input->post('description', TRUE);
             $insert_data['created_by']  = $this->customlib->getStaffID();
             $insert_content_for         = array();
 
@@ -869,16 +694,33 @@ class Content extends Admin_Controller
     
     public function delete_array()
     {
-        $id_array     = $this->input->post('id');
+		if (!$this->rbac->hasPrivilege('upload_share_content', 'can_delete')) {
+            access_denied();
+        }
+		
+		
+        $id_array     = $this->input->post('id', TRUE);
         $removed_data = $this->uploadcontent_model->getByIdArray($id_array);
 
         $is_removed = $this->uploadcontent_model->remove_array($id_array);
         if ($is_removed) {
+            $released_bytes = 0;
             if (!empty($removed_data)) {
                 foreach ($removed_data as $remove_data_key => $remove_data_value) {
+                    $released_bytes += (int) $remove_data_value->file_size;
                     $this->media_storage->filedelete($remove_data_value->img_name, $remove_data_value->dir_path);
                     $this->media_storage->filedelete($remove_data_value->thumb_name, $remove_data_value->thumb_path);
                 }
+            }
+
+            // SaaS: release the freed storage from the quota.
+            try {
+                $kb = $this->media_storage->convertBytesToKB($released_bytes);
+                if ($kb > 0) {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                }
+            } catch (Exception $e) {
+                log_message('error', 'SaaS storage quota release failed (content delete_array): ' . $e->getMessage());
             }
 
             echo json_encode(array('status' => 1, 'msg' => $this->lang->line('success_message')));
@@ -889,12 +731,25 @@ class Content extends Admin_Controller
 	
 	public function delete()
     {
-        $id                  = $this->input->post('id');
+		if (!$this->rbac->hasPrivilege('upload_share_content', 'can_delete')) {
+            access_denied();
+        }
+		
+        $id                  = $this->input->post('id', TRUE);
         $upload_content_data = $this->uploadcontent_model->get($id);
      
         $is_removed = $this->uploadcontent_model->remove($id);
 		
         if ($is_removed) {
+            // SaaS: release the freed storage from the quota.
+            try {
+                $kb = $this->media_storage->convertBytesToKB((int) $upload_content_data->file_size);
+                if ($kb > 0) {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                }
+            } catch (Exception $e) {
+                log_message('error', 'SaaS storage quota release failed (content delete): ' . $e->getMessage());
+            }
             $this->media_storage->filedelete($upload_content_data->img_name, $upload_content_data->dir_path);
             $this->media_storage->filedelete($upload_content_data->thumb_name, $upload_content_data->thumb_path);            
                      

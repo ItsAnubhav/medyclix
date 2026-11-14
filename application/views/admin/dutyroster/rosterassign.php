@@ -2,21 +2,18 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
- <!-- Main content -->
- <section class="content">
-  <div class="row">
+<div class="row">
    <div class="col-md-12">
-    <div class="box box-primary">
-     <div class="box-header with-border">
-      <h3 class="box-title titlefix"><?php echo $this->lang->line('assign_roster'); ?></h3>
-      <div class="box-tools pull-right">
+    <div class="card">
+     <div class="card-header ptbnull">
+      <h3 class="card-title titlefix"><?php echo $this->lang->line('assign_roster'); ?></h3>
+      <div class="d-flex gap-2 align-items-center flex-wrap float-end">
 	  <?php if ($this->rbac->hasPrivilege('roster_assign', 'can_add')) {?>
-       <a data-toggle="modal" onclick="holdModal('myModal')" id="add_assign_roster" class="btn btn-primary btn-sm vital"><i class="fa fa-plus"></i> <?php echo $this->lang->line('assign_roster'); ?></a>
+       <a onclick="shModal('myModal').show()" id="add_assign_roster" class="btn btn-primary btn-sm vital"><i class="fa fa-plus"></i> <?php echo $this->lang->line('assign_roster'); ?></a>
 	  <?php } ?>
       </div>
-     </div><!-- /.box-header -->
-     <div class="box-body">
+     </div><!-- /.card-header -->
+     <div class="card-body">
       <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('assign_roster'); ?>">
        <thead>
         <tr>
@@ -27,7 +24,7 @@ $genderList      = $this->customlib->getGender();
          <th><?php echo $this->lang->line('start_date'); ?> - <?php echo $this->lang->line('end_date'); ?></th>
          <th><?php echo $this->lang->line('shift_start'); ?> - <?php echo $this->lang->line('shift_end'); ?></th>
           <th><?php echo $this->lang->line('generated_by'); ?></th>
-         <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+         <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
         </tr>
        </thead>
        <tbody>
@@ -37,90 +34,76 @@ $genderList      = $this->customlib->getGender();
     </div>
    </div>
   </div>
- </section>
-</div>
-<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
- <div class="modal-dialog modal-mid" role="document">
-  <div class="modal-content modal-media-content mx-2">
-   <div class="modal-header modal-media-header">
-    <button type="button" class="close" data-dismiss="modal">&times;</button>
-    <h4 class="modal-title">
-     <div id="modal_title"></div>
-    </h4>
-   </div>
-   <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
-    <div class="modal-body pt0 pb0">
-     <div class="form-group">
-      <div class="row">
-		<div class="col-sm-12">
-			<div class="form-group">
-			<label> <?php echo $this->lang->line('shift'); ?></label>
-				<ul class="stepradiolist row gy-0">
-				<?php foreach($shift_list as $key => $shift_value){ ?>
-				<li class="col-sm-4"><label><input type="radio" id="radio_<?php echo $shift_value['id']; ?>" name="shift_id" value="<?php echo $shift_value['id']; ?>" /><div class="stepimage"><?php echo $shift_value['shift_name']; ?><br><?php echo $this->customlib->getHospitalTime_Format($shift_value['shift_start']); ?> - <?php echo $this->customlib->getHospitalTime_Format($shift_value['shift_end']); ?></div></label></li>
-				<?php } ?>
-				</ul>
-			</div>
-       </div>	  
-	  <div class="col-sm-12">
-        <div class="form-group">
-         <label> <?php echo $this->lang->line('shift_date'); ?></label>
-         <small class="req"> *</small>
-         <select class="form-control" id="duty_roster_list_id" name="duty_roster_list_id">
-          <option value=""><?php echo $this->lang->line('select'); ?> </option>         
-         </select>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><i class="fa fa-users me-2"></i><span id="modal_title"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <input type="hidden" name="edit_code" id="edit_code">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('shift'); ?></label>
+                                        <ul class="stepradiolist stepradiolist-tiles row gy-2">
+                                        <?php foreach($shift_list as $key => $shift_value){ ?>
+                                        <li class="col-sm-4"><label><input type="radio" id="radio_<?php echo $shift_value['id']; ?>" name="shift_id" value="<?php echo $shift_value['id']; ?>" /><div class="stepimage"><?php echo $shift_value['shift_name']; ?><br><?php echo $this->customlib->getHospitalTime_Format($shift_value['shift_start']); ?> - <?php echo $this->customlib->getHospitalTime_Format($shift_value['shift_end']); ?></div></label></li>
+                                        <?php } ?>
+                                        </ul>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('shift_date'); ?> <small class="req">*</small></label>
+                                        <select class="form-select form-select-sm" id="duty_roster_list_id" name="duty_roster_list_id">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('staff'); ?> <small class="req">*</small></label>
+                                        <select class="form-select form-select-sm select2" id="duty_roster_staff" name="duty_roster_staff">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach($resultlist as $key=>$value){ ?>
+                                            <option value="<?php echo $value['id'];?>"><?php echo $value['name']." ".$value['surname']." (".$value['employee_id'].")";?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('floor'); ?></label>
+                                        <select class="form-select form-select-sm" id="duty_roster_floor" name="duty_roster_floor">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach($floor as $key=>$value){ ?>
+                                            <option value="<?php echo $value['id'];?>"><?php echo $value['name'];?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('department'); ?></label>
+                                        <select class="form-select form-select-sm" id="duty_roster_department" name="duty_roster_department">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach($department_list as $key=>$department_list_value){ ?>
+                                            <option value="<?php echo $department_list_value['id'];?>"><?php echo $department_list_value['department_name'];?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
-       </div>
-       <div class="col-sm-12">
-        <div class="form-group">
-         <label> <?php echo $this->lang->line('staff'); ?></label>
-         <small class="req"> *</small>
-          <div class="p-2 select2-full-width">
-          <select class="form-control select2" id="duty_roster_staff" name="duty_roster_staff" >
-          <option value=""><?php echo $this->lang->line('select'); ?> </option>
-          <?php foreach($resultlist as $key=>$value){ ?>
-          <option value="<?php echo $value['id'];?>"><?php echo $value['name']." ".$value['surname']." (".$value['employee_id'].")";?></option>
-          <?php } ?>
-         </select>
-         </div>
-        </div>
-       </div>
-	   <div class="col-sm-6">
-        <input type="hidden" name="edit_code" id="edit_code">
-        <div class="form-group">
-         <label> <?php echo $this->lang->line('floor'); ?></label>         
-         <select class="form-control" id="duty_roster_floor" name="duty_roster_floor">
-          <option value=""><?php echo $this->lang->line('select'); ?></option>
-          <?php foreach($floor as $key=>$value){ ?>
-          <option value="<?php echo $value['id'];?>"><?php echo $value['name'];?></option>
-          <?php } ?>
-         </select>
-         </select>
-        </div>
-       </div>
-       <div class="col-sm-6">
-        <div class="form-group">
-         <label> <?php echo $this->lang->line('department'); ?></label>        
-         <select class="form-control" id="duty_roster_department" name="duty_roster_department">
-          <option value=""><?php echo $this->lang->line('select'); ?></option>
-          <?php foreach($department_list as $key=>$department_list_value){ ?>
-          <option value="<?php echo $department_list_value['id'];?>"><?php echo $department_list_value['department_name'];?></option>
-          <?php } ?>
-         </select>
-         </select>
-        </div>
-       </div>
-      </div>
-     </div>
     </div>
-    <div class="modal-footer">
-     <div class="pull-right">
-      <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-     </div>
-    </div>
-   </form>
-  </div>
- </div>
 </div>
 
 <script type="text/javascript">
@@ -190,14 +173,7 @@ $genderList      = $this->customlib->getGender();
         $('.select2').select2();    
     })
 	
-function holdModal(modalId) {
-     $('#' + modalId).modal({
-         backdrop: 'static',
-         keyboard: false,
-         show: true
-     });
- }
- 
+
  $("#add_assign_roster").click(function(){
      $('#formadd').trigger("reset");
      $('#duty_roster_staff').trigger("change");
@@ -235,7 +211,7 @@ function holdModal(modalId) {
                          successMsg(data.message);
                        window.location.reload(true);
                      }
-                     $("#formaddbtn").button('reset');
+                     $("#formaddbtn").btnReset();
                  },
                  error: function () {
                  }
@@ -271,7 +247,7 @@ function holdModal(modalId) {
              data: {id: record_id},
              dataType: 'json',
              beforeSend: function(){
-                  btn.button('loading');
+                  btn.btnLoading();
              },
              success: function (data) {
                       if (data.status == 0) {                     
@@ -285,15 +261,15 @@ function holdModal(modalId) {
 						 $('#duty_roster_staff').select2("val", data.result.staff_id);
 						
                          $('#duty_roster_list_id').val(data.result.duty_roster_list_id);
-                         $('#myModal').modal('show');
+                         shModal('myModal').show();
                      }
-                              btn.button('reset');
+                              btn.btnReset();
                          }, 
                          error: function () {
-                            btn.button('reset');
+                            btn.btnReset();
                              },
                              complete: function(){
-                              btn.button('reset');
+                              btn.btnReset();
                 }
                      });                    
                       });    

@@ -136,6 +136,18 @@ class Checkout extends Patient_Controller
         );
         $visit_details = $this->appointment_model->moveToOpd($opd_details,$visit_details,$charge,$appointment_id);
 
+        // SaaS: count the OPD only on the FIRST payment->OPD conversion. $appointment_details was
+        // loaded (line ~106) BEFORE moveToOpd, so an empty visit_details_id means no OPD existed yet
+        // — this guards a page-refresh re-run from double-counting. moveToOpd itself is left untouched.
+        if ($visit_details && empty($appointment_details['visit_details_id'])) {
+            $this->load->library('SaasValidation');
+            try {
+                $this->saasvalidation->updateResouceQuota('no_of_opd', 1);
+            } catch (Exception $e) {
+                log_message('error', 'SaaS no_of_opd quota increment failed (online appointment payment->opd): ' . $e->getMessage());
+            }
+        }
+
 	if($visit_details){
 
     // ===============

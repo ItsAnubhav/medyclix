@@ -2,30 +2,28 @@
 <script src="<?php echo base_url(); ?>backend/plugins/ckeditor/ckeditor.js"></script>
 
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
 
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <!-- left column -->
             <div class="col-md-12">
                 <!-- general form elements -->
-                <div class="box box-primary" id="holist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('event_list'); ?></h3>
+                <div class="card" id="holist">
+                    <div class="card-header ptbnull d-flex align-items-center">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('event_list'); ?></h3>
                         <?php
 if ($this->rbac->hasPrivilege('event', 'can_add')) {
-    ?> <div class="box-tools pull-right">
+    ?> <div class="ms-auto d-flex gap-1">
                                 <a href="<?php echo site_url('admin/front/events/create'); ?>" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></a>
 
                             </div>
                         <?php }?>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="mailbox-controls">
-                            <div class="pull-right">
-                            </div><!-- /.pull-right -->
+                            <div class="float-end">
+                            </div><!-- /.float-end -->
                         </div>                            <div class="download_label"><?php echo $this->lang->line('event_list'); ?></div>
 
                         <div class="table-responsive mailbox-messages">
@@ -40,7 +38,7 @@ if ($this->rbac->hasPrivilege('event', 'can_add')) {
                                         <th><?php echo $this->lang->line('title'); ?></th>
                                         <th><?php echo $this->lang->line('date'); ?></th>
                                         <th><?php echo $this->lang->line('venue'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -54,9 +52,9 @@ if ($this->rbac->hasPrivilege('event', 'can_add')) {
         ?>
                                             <tr>
                                                 <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $event['title'] ?></a>
+                                                    <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo html_escape($event['title']) ?></a>
 
-                                                    <div class="fee_detail_popover" style="display: none">
+                                                    <div class="fee_detail_popover d-none" >
                                                         <?php
 if ($event['description'] == "") {
             ?>
@@ -84,13 +82,13 @@ if ($event['description'] == "") {
         }
         ?></td>
 
-                                                <td class="mailbox-name"> <?php echo $event['event_venue'] ?></td>
+                                                <td class="mailbox-name"> <?php echo html_escape($event['event_venue']) ?></td>
 
-                                                <td class="mailbox-date pull-right no-print">
+                                                <td class="mailbox-date text-end no-print">
                                                     <?php
 if ($this->rbac->hasPrivilege('event', 'can_edit')) {
             ?>
-                                                        <a href="<?php echo site_url('admin/front/events/edit/' . $event['slug']); ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                        <a href="<?php echo site_url('admin/front/events/edit/' . $event['slug']); ?>" class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                             <i class="fa fa-pencil"></i>
                                                         </a>
 
@@ -98,7 +96,7 @@ if ($this->rbac->hasPrivilege('event', 'can_edit')) {
 }
         if ($this->rbac->hasPrivilege('event', 'can_delete')) {
             ?>
-             <a class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/front/events/delete/<?php echo $event['id']; ?>', '<?php echo $this->lang->line('delete_message'); ?>')">
+             <a class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/front/events/delete/<?php echo (int)$event['id']; ?>', '<?php echo $this->lang->line('delete_message'); ?>')">
                                                             <i class="fa fa-remove"></i>
                                                         </a>
                                                     <?php }?>
@@ -112,7 +110,7 @@ if ($this->rbac->hasPrivilege('event', 'can_edit')) {
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
         </div>
@@ -120,5 +118,4 @@ if ($this->rbac->hasPrivilege('event', 'can_edit')) {
             <div class="col-md-12">
             </div><!--/.col (right) -->
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    

@@ -27,9 +27,10 @@ class Consultcharges extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'charges/index');
         $data['resultlist'] = $this->charge_model->get_chargedoctorfee();
         $data['schedule']   = $this->organisation_model->get();
-        $this->load->view("layout/header");
+        $data['module'] = 'setup';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/consultcharges/charge", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function rolekey_exists($key)

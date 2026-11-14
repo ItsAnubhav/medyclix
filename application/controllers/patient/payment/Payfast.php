@@ -4,6 +4,9 @@
 
 class Payfast extends Patient_Controller
 {
+	public $patient_data;
+	public $setting;
+
 
     public $pay_method = "";
     public $amount = 0;
@@ -98,7 +101,7 @@ class Payfast extends Patient_Controller
 
             $this->session->set_userdata("payfast_payment_id",$payfast_data['m_payment_id']);
             // If in testing mode make use of either sandbox.payfast.co.za or www.payfast.co.za
-            $testingMode = true;
+            $testingMode = false;
             $pfHost = $testingMode ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
             
             $htmlForm = '<form action="https://'.$pfHost.'/eng/process" method="post" name="pay_now">';

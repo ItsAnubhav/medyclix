@@ -1,13 +1,7 @@
- <style type="text/css">
-    .reportlists {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}</style>
-<div class="box-header with-border">
-    <h3 class="box-title"><?php echo $this->lang->line('ipd'); ?></h3>
+<div class="card-header">
+    <h3 class="card-title"><?php echo $this->lang->line('ipd'); ?></h3>
 </div>
-<div class="box-body row">
+<div class="card-body row">
     <ul class="reportlists">
     <?php
          if ($this->module_lib->hasActive('ipd')) {

@@ -2,7 +2,7 @@
 <table class="table table-striped table-bordered table-hover example" id="testreport" cellspacing="0" width="100%">
     <thead>
         <tr>
-            <th><?php echo $this->lang->line('applied') . " " . $this->lang->line('date'); ?></th>
+            <th><?php echo $this->lang->line('applied_date') ; ?></th>
             <th><?php echo $this->lang->line('instruction') . " " . $this->lang->line('date'); ?></th>
             <th><?php echo $this->lang->line('consultant') . " " . $this->lang->line('doctor'); ?></th>
             <th><?php echo $this->lang->line('instruction'); ?></th>
@@ -11,7 +11,7 @@
                  ?>
                 <th><?php echo ucfirst($fields_value->name); ?></th>
             <?php } } ?>
-            <th class="text-right"><?php echo $this->lang->line('action'); ?></th>
+            <th class="text-end"><?php echo $this->lang->line('action'); ?></th>
         </tr>
     </thead>
     <tbody>
@@ -33,9 +33,9 @@
                         $display_field= "<a href=". $detail->$name ." target='_blank'>". $detail->$name ."</a>"; } ?>
                         <td><?php echo $display_field; ?></td>
                 <?php } } ?>
-                <td class="text-right">
+                <td class="text-end">
                     <?php if ($detail->consultant == 'yes') { if ($this->rbac->hasPrivilege('ot_consultant_instruction','can_delete')){  ?>
-                        <a href="#" data-toggle="tooltip" class="btn btn-default btn-xs" title="<?php echo $this->lang->line('delete'); ?>" onclick="deleteRecord('<?php echo $detail->id ?>')"><i class="fa fa-trash"></i></a>
+                        <a href="#" data-bs-toggle="tooltip" class="btn btn-secondary btn-sm" title="<?php echo $this->lang->line('delete'); ?>" onclick="deleteRecord('<?php echo $detail->id ?>')"><i class="fa fa-trash"></i></a>
                         <?php } }?>
                 </td>
             </tr>

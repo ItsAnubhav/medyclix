@@ -2,22 +2,19 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_blood_bank');?>
-                 <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('blood_donor_report'); ?></h3>
+                 <div class="card-header ptbnull"></div>
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('blood_donor_report'); ?></h3>
                     </div>
                     <form id="form1" action="" method="post">
-                        <div class="box-body row">
+                        <div class="card-body row pb-0">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="col-sm-6 col-md-4" >
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('search_type'); ?></label><small class="req"> *</small>
                                     <select class="form-control" name="search_type" onchange="showdate(this.value)">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option> 
@@ -34,15 +31,15 @@ if ((isset($search_type)) && ($search_type == $key)) {
                                 </div>
                             </div>
                             
-                            <div class="col-sm-6 col-md-4" id="fromdate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-4 d-none" id="fromdate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_from'); ?></label>
                                     <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_from'); ?></span>
                                 </div>
                             </div>
-                            <div class="col-sm-6 col-md-4" id="todate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-4 d-none" id="todate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_to'); ?></label>
                                     <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_to'); ?></span>
@@ -50,9 +47,9 @@ if ((isset($search_type)) && ($search_type == $key)) {
                             </div>
 
                             <div class="col-sm-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label> <?php echo $this->lang->line('blood_group'); ?></label>
-                                    <select  style="width: 100%" class="form-control select2 blood_group"  name="blood_group"  id="blood_group" >
+                                    <select class="form-control select2 blood_group w-100" name="blood_group" id="blood_group">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php
 
@@ -67,26 +64,27 @@ if ((isset($search_type)) && ($search_type == $key)) {
                            </div>
 
                            <div class="col-sm-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label> <?php echo $this->lang->line('blood_donor'); ?></label>
-                                    <select  style="width: 100%" class="form-control select2 blood_donor"  name="blood_donor" id="blood_donor">
+                                    <select class="form-control select2 blood_donor w-100" name="blood_donor" id="blood_donor">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                     </select> 
                                 </div>
                            </div>
 
-                            <div class="form-group">
-                                <div class="col-sm-12">
-                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                            <div class="col-sm-6 col-md-auto d-flex align-items-end ps-md-3">
+                                <div class="mb-3">
+                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                        <i class="fa fa-search"></i>
+                                        <?php echo $this->lang->line('search'); ?>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </form>
-                    <div class="box border0 clear">
-                        <div class="box-header ptbnull"></div>
-                        <div class="box-body">
-                            <div class="download_label"><?php echo $this->lang->line('blood_donor_report'); ?></div>
-                            <div class="table-responsive">
+                    <div class="card-body pt-0">
+                        <div class="download_label"><?php echo $this->lang->line('blood_donor_report'); ?></div>
+                        <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('blood_donor_report'); ?>">
                                     <thead>  
                                        <tr>
@@ -116,14 +114,11 @@ if ((isset($search_type)) && ($search_type == $key)) {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
-</div>
 <script>
     $(function () {
         //Initialize Select2 Elements
@@ -141,11 +136,11 @@ if ((isset($search_type)) && ($search_type == $key)) {
 
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>
@@ -198,8 +193,12 @@ if ((isset($search_type)) && ($search_type == $key)) {
                     $("#error_search_type").html('');
  initDatatable('allajaxlist','admin/bloodbank/blooddonorreports',data.param,[],100,
             [
-{ "sWidth": "130px", "bSortable": false, "aTargets": [ -1] ,'sClass': 'dt-head-right dt-body-right'},
-{ "sWidth": "130px", "aTargets": [ -2,-3,-4,-5] ,'sClass': 'dt-head-right dt-body-right'},
+{ "sWidth": "55px", "bSortable": false, "aTargets": [ -1] ,'sClass': 'dt-head-right dt-body-right'},
+{ "sWidth": "70px", "aTargets": [ -2 ] ,'sClass': 'dt-head-right dt-body-right'},
+{ "sWidth": "85px", "aTargets": [ -3,-4 ] ,'sClass': 'dt-head-right dt-body-right'},
+{ "sWidth": "65px", "aTargets": [ -5 ] ,'sClass': 'dt-head-right dt-body-right'},
+{ "sWidth": "75px", "aTargets": [ 4 ] },
+{ "sWidth": "120px", "aTargets": [ 2 ] },
 { "sWidth": "20px", "aTargets": [ 0 ] ,'sClass': 'dt-head-center dt-body-center'}
             ] 
             );
@@ -217,11 +216,11 @@ if ((isset($search_type)) && ($search_type == $key)) {
    
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>

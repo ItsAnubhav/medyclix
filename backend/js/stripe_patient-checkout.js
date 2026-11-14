@@ -54,22 +54,57 @@ async function initialize(event) {
     const amount = document.getElementById("amount").value;
     const currency = document.getElementById("currency").value;
 
-    const { paymentIntentId, clientSecret } = await fetch(baseurl+"patient/payment/stripe/create_payment_intent", {
+    const intentResponse = await fetch(baseurl+"patient/payment/stripe/create_payment_intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currency: currency, amount: amount}),
-    }).then((r) => r.json());
-    
+    }).then((r) => r.json()).catch(() => ({ error: "Could not reach payment server." }));
+
+    if (intentResponse.error || !intentResponse.clientSecret) {
+        showMessage(intentResponse.error || "Payment could not be initialized. Please contact the hospital administrator.");
+        paymentReinitiate();
+        return;
+    }
+
+    const { paymentIntentId, clientSecret } = intentResponse;
+
+    // Pull the live SH theme tokens off <body> so the Stripe Payment Element
+    // (a cross-origin iframe we can't style with CSS) matches whatever variant
+    // is active — light or dark. tok() falls back if a token is missing, and
+    // the try/catch below guarantees the element still mounts if Stripe ever
+    // rejects a value, so payment is never blocked by theming.
+    const cs  = getComputedStyle(document.body);
+    const tok = (name, fallback) => (cs.getPropertyValue(name) || '').trim() || fallback;
+
     const appearance = {
         theme: 'stripe',
+        variables: {
+            colorPrimary:       tok('--accent',  '#0d6efd'),
+            colorBackground:    tok('--surface', '#ffffff'),
+            colorText:          tok('--ink',     '#1f2937'),
+            colorTextSecondary: tok('--muted',   '#6b7280'),
+            colorDanger:        tok('--red',     '#dc3545'),
+            fontFamily:         cs.fontFamily || 'Inter, system-ui, sans-serif',
+            borderRadius:       '8px'
+        },
         rules: {
-            '.Label': {
-                fontWeight: 'bold',
-            }
+            '.Label':            { fontWeight: 'bold', color: tok('--ink', '#1f2937') },
+            '.Input':            { backgroundColor: tok('--surface-2', '#ffffff'),
+                                   border: '1px solid ' + tok('--border', '#d1d5db'),
+                                   color: tok('--ink', '#1f2937') },
+            '.Input::placeholder': { color: tok('--muted', '#9ca3af') },
+            '.Input:focus':      { border: '1px solid ' + tok('--accent', '#0d6efd') }
         }
     };
-    
-    elements = stripe.elements({ clientSecret, appearance });
+
+    try {
+        elements = stripe.elements({ clientSecret, appearance });
+    } catch (e) {
+        // Bad appearance value — fall back to Stripe's default so the card
+        // fields still render and the patient can complete payment.
+        console.warn('Stripe appearance rejected, using default theme.', e);
+        elements = stripe.elements({ clientSecret });
+    }
     
     const paymentElement = elements.create("payment");
     paymentElement.mount("#stripe-payment-element");
@@ -186,15 +221,30 @@ function showMessage(messageText) {
 }
 
 // Show a spinner on payment submission
+// NOTE (2026-06-03): the old Bootstrap-3 stateful-button API
+// (`$el.button('loading')` / `.button('reset')`) was removed in Bootstrap 4/5.
+// The patient layout now ships Bootstrap 5, so the legacy call threw
+// "button is not a function" the instant Pay Now was clicked, aborting
+// handlePaymentSubmit() before confirmPayment() could run. Replaced with a
+// plain enable/disable + the button's own `data-loading-text` spinner markup.
 function setLoading(isLoading) {
+    if (!submitButton) {
+        return;
+    }
     if (isLoading) {
-        // Disable the submit button and show a spinner
-        button_loading.button('loading');
-       
+        // Disable the submit button and swap in the spinner label
+        submitButton.disabled = true;
+        submitButton.dataset.originalHtml = submitButton.innerHTML;
+        var loadingText = submitButton.getAttribute('data-loading-text');
+        if (loadingText) {
+            submitButton.innerHTML = loadingText;
+        }
     } else {
-        // Enable the submit button and hide a spinner
-        button_loading.button('reset');
-    
+        // Re-enable the submit button and restore its original label
+        submitButton.disabled = false;
+        if (submitButton.dataset.originalHtml) {
+            submitButton.innerHTML = submitButton.dataset.originalHtml;
+        }
     }
 }
 

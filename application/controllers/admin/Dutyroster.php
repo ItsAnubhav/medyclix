@@ -6,6 +6,9 @@ if (!defined('BASEPATH')) {
 
 class Dutyroster extends Admin_Controller
 {
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -28,9 +31,10 @@ class Dutyroster extends Admin_Controller
         }
         $this->session->set_userdata('top_menu', 'dutyroster');
         $this->session->set_userdata('sub_menu', 'dutyroster/shift');		
-        $this->load->view("layout/header");
-        $this->load->view("admin/dutyroster/shift");
-        $this->load->view("layout/footer");
+        $data['module'] = 'duty_roster';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/dutyroster/shift", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function getShiftDatatable()
@@ -45,11 +49,11 @@ class Dutyroster extends Admin_Controller
 					$action = "<div class=''>";	
 					
 					if ($this->rbac->hasPrivilege('roster_shift', 'can_edit')) {	
-						$action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_shift_modal' data-loading-text='" . $this->lang->line('please_wait') . "' data-toggle='tooltip' data-record-id=" . $shift_value->id . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";	
+						$action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_shift_modal' data-loading-text='" . $this->lang->line('please_wait') . "' data-bs-toggle='tooltip' data-record-id=" . $shift_value->id . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
 					}
 					
 					if ($this->rbac->hasPrivilege('roster_shift', 'can_delete')) {
-						$action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_shift(" . $shift_value->id . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
+						$action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_shift(" . $shift_value->id . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
 					}
 			  
 					$action .= "</div>";
@@ -74,9 +78,10 @@ class Dutyroster extends Admin_Controller
 
     public function add_shift()
     {        
-        $this->form_validation->set_rules('shift_name', $this->lang->line('shift_name'), 'required');
-        $this->form_validation->set_rules('shift_start', $this->lang->line('shift_start'), 'required');
-        $this->form_validation->set_rules('shift_end', $this->lang->line('shift_end'), 'required');
+		
+        $this->form_validation->set_rules('shift_name', $this->lang->line('shift_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('shift_start', $this->lang->line('shift_start'), 'required|xss_clean');
+        $this->form_validation->set_rules('shift_end', $this->lang->line('shift_end'), 'required|xss_clean');
 		
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -88,18 +93,18 @@ class Dutyroster extends Admin_Controller
         } else {
 			
 			if($this->customlib->getHospitalTimeFormat()){			 
-				$datetime_1     =  $this->input->post('shift_start'); 
-				$datetime_2     =  $this->input->post('shift_end'); 
+				$datetime_1     =  $this->input->post('shift_start', TRUE);
+				$datetime_2     =  $this->input->post('shift_end', TRUE);
 			}else{
-				$datetime_1 	= date("H:i:s", strtotime($this->input->post('shift_start')));
-				$datetime_2   	= date("H:i:s", strtotime($this->input->post('shift_end')));
+				$datetime_1 	= date("H:i:s", strtotime($this->input->post('shift_start', TRUE)));
+				$datetime_2   	= date("H:i:s", strtotime($this->input->post('shift_end', TRUE)));
 			}
-				$check_shift_time   =  $this->dutyroster_model->check_shift_time($datetime_1,$datetime_2,$this->input->post('shift_id')); 
+				$check_shift_time   =  $this->dutyroster_model->check_shift_time($datetime_1,$datetime_2,$this->input->post('shift_id', TRUE));
 				if($check_shift_time!=0){
 					
 					if (strtotime($datetime_1) > strtotime($datetime_2)){						
-						$timein = date("Y-m-d H:i:s",strtotime($this->input->post('shift_start')));
-						$timeout = date('Y-m-d H:i:s', strtotime($this->input->post('shift_end')) + 86400);  
+						$timein = date("Y-m-d H:i:s",strtotime($this->input->post('shift_start', TRUE)));
+						$timeout = date('Y-m-d H:i:s', strtotime($this->input->post('shift_end', TRUE)) + 86400);  
 						$start_timein = new DateTime($timein);						
 						$diff = $start_timein->diff(new DateTime($timeout)); 
 					}else{
@@ -108,8 +113,8 @@ class Dutyroster extends Admin_Controller
 					}
 					
 					$data = array(
-						'id'                => $this->input->post('shift_id'),
-						'shift_name'        => $this->input->post('shift_name'),
+						'id'                => $this->input->post('shift_id', TRUE),
+						'shift_name'        => $this->input->post('shift_name', TRUE),
 						'shift_start'       => $datetime_1,
 						'shift_end'         => $datetime_2,
 						'shift_hour'        => $diff->h.":".$diff->i.":".$diff->s,               
@@ -136,7 +141,7 @@ class Dutyroster extends Admin_Controller
     
     public function getShiftDetails()
     {      
-        $id           = $this->input->post("shift_id");        
+        $id           = $this->input->post("shift_id", TRUE);
         $result       = $this->dutyroster_model->getShiftList($id);
 		$result['shift_start']  = $this->customlib->getHospitalTime_Format($result['shift_start']);
 		$result['shift_end']  	= $this->customlib->getHospitalTime_Format($result['shift_end']);
@@ -157,16 +162,17 @@ class Dutyroster extends Admin_Controller
         $this->session->set_userdata('top_menu', 'dutyroster');
         $this->session->set_userdata('sub_menu', 'dutyroster/rosterlist');		
 		$data['shift_list']   = $this->dutyroster_model->getShiftList();		
-        $this->load->view("layout/header");
+        $data['module'] = 'duty_roster';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/dutyroster/rosterlist", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function add_roster_list()
     {
-        $this->form_validation->set_rules('duty_roster_shift_id', $this->lang->line('shift_name'), 'required'); 
-        $this->form_validation->set_rules('duty_roster_start_date', $this->lang->line('start_date'), 'required');
-        $this->form_validation->set_rules('duty_roster_end_date', $this->lang->line('end_date'), 'required');
+        $this->form_validation->set_rules('duty_roster_shift_id', $this->lang->line('shift_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('duty_roster_start_date', $this->lang->line('start_date'), 'required|xss_clean');
+        $this->form_validation->set_rules('duty_roster_end_date', $this->lang->line('end_date'), 'required|xss_clean');
         
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -177,19 +183,19 @@ class Dutyroster extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {	
 
-            $duty_roster_shift_id    =   $this->input->post('duty_roster_shift_id');
-			$datetime_1              =   $this->customlib->dateFormatToYYYYMMDD($this->input->post('duty_roster_start_date'));			
-			$datetime_2              =   $this->customlib->dateFormatToYYYYMMDD($this->input->post('duty_roster_end_date'));
+            $duty_roster_shift_id    =   $this->input->post('duty_roster_shift_id', TRUE);
+			$datetime_1              =   $this->customlib->dateFormatToYYYYMMDD($this->input->post('duty_roster_start_date', TRUE));
+			$datetime_2              =   $this->customlib->dateFormatToYYYYMMDD($this->input->post('duty_roster_end_date', TRUE));
             $days = ((strtotime($datetime_2) - strtotime($datetime_1)) / (60 * 60 * 24))+1;
  
-            $check_roster_date   =  $this->dutyroster_model->check_roster_date($datetime_1,$datetime_2,$this->input->post('id')); 
+            $check_roster_date   =  $this->dutyroster_model->check_roster_date($datetime_1,$datetime_2,$this->input->post('id', TRUE));
 			 
              if($check_roster_date!=0){
                 $data = array(
-                    'id'                         => $this->input->post('id'),
-                    'duty_roster_shift_id'       => $this->input->post('duty_roster_shift_id'),
-                    'duty_roster_start_date'     => $this->customlib->dateFormatToYYYYMMDD($this->input->post("duty_roster_start_date")),
-                    'duty_roster_end_date'       => $this->customlib->dateFormatToYYYYMMDD($this->input->post("duty_roster_end_date")), 
+                    'id'                         => $this->input->post('id', TRUE),
+                    'duty_roster_shift_id'       => $this->input->post('duty_roster_shift_id', TRUE),
+                    'duty_roster_start_date'     => $this->customlib->dateFormatToYYYYMMDD($this->input->post("duty_roster_start_date", TRUE)),
+                    'duty_roster_end_date'       => $this->customlib->dateFormatToYYYYMMDD($this->input->post("duty_roster_end_date", TRUE)),
                     'duty_roster_total_day'      => $days,               
                 );
             
@@ -213,7 +219,7 @@ class Dutyroster extends Admin_Controller
                 $row  = array();
 					$action = "<div class=''>";	
 					if ($this->rbac->hasPrivilege('roster_list', 'can_delete')) {	
-						$action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_roster_list(" . $shift_value->id . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";				
+						$action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_roster_list(" . $shift_value->id . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
 					}
 					
 					$action .= "</div>";
@@ -241,7 +247,7 @@ class Dutyroster extends Admin_Controller
 
     public function getRosterListDetails()
     {      
-        $id           = $this->input->post("record_id");        
+        $id           = $this->input->post("record_id", TRUE);
         $result       = $this->dutyroster_model->getRosterListDetails($id); 
         $result['roster_start_date'] = $this->customlib->YYYYMMDDTodateFormat($result['duty_roster_start_date']) ;    
         $result['roster_end_date']   = $this->customlib->YYYYMMDDTodateFormat($result['duty_roster_end_date']) ;   
@@ -278,15 +284,16 @@ class Dutyroster extends Admin_Controller
         $resultlist         		= $this->staff_model->searchFullText("", 1);
         $data['resultlist'] 		= $resultlist;
 
-        $this->load->view("layout/header");
-        $this->load->view("admin/dutyroster/rosterassign",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'duty_roster';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/dutyroster/rosterassign", $data);
+        $this->load->view("layout/footer", $data);
     }
 
 	public function add_roster_assign(){
 
-        $this->form_validation->set_rules('duty_roster_staff', $this->lang->line('staff'), 'required');
-        $this->form_validation->set_rules('duty_roster_list_id', $this->lang->line('shift_date'), 'required');
+        $this->form_validation->set_rules('duty_roster_staff', $this->lang->line('staff'), 'required|xss_clean');
+        $this->form_validation->set_rules('duty_roster_list_id', $this->lang->line('shift_date'), 'required|xss_clean');
         
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -295,23 +302,15 @@ class Dutyroster extends Admin_Controller
             );
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else{
-            $duty_roster_floor           =     $this->input->post('duty_roster_floor');
-            $duty_roster_department      =     $this->input->post('duty_roster_department');
-            $duty_roster_staff_array     =     $this->input->post('duty_roster_staff');
-            $duty_roster_list_id         =     $this->input->post('duty_roster_list_id');
-			 $edit_code					 =	   $this->input->post('edit_code');
+            $duty_roster_staff_array     =     $this->input->post('duty_roster_staff', TRUE);
+            $duty_roster_list_id         =     $this->input->post('duty_roster_list_id', TRUE);
+			 $edit_code					 =	   $this->input->post('edit_code', TRUE);
 			 
             $check_roster_assign =  $this->dutyroster_model->check_roster_assign($duty_roster_list_id,$duty_roster_staff_array,$edit_code); 
   
-            if($duty_roster_floor==""){
-                $duty_roster_floor=null;
-            }
-            if($duty_roster_department==""){
-                $duty_roster_department=null;
-            }
 
             if($check_roster_assign!=0){
-                $roster_list_id     =   $this->input->post('duty_roster_list_id');
+                $roster_list_id     =   $this->input->post('duty_roster_list_id', TRUE);
                 $getrosterdate      =   $this->dutyroster_model->getRosterList($roster_list_id);
 
                 foreach($getrosterdate as $key=>$value){
@@ -333,13 +332,13 @@ class Dutyroster extends Admin_Controller
                 }
                 $maxid=($code+1);
                 $j=0;
-				if($this->input->post('duty_roster_floor')){
-					$duty_roster_floor	=	$this->input->post('duty_roster_floor');
+				if($this->input->post('duty_roster_floor', TRUE)){
+					$duty_roster_floor	=	$this->input->post('duty_roster_floor', TRUE);
 				}else{
 					$duty_roster_floor	=	null;
 				}
-				if($this->input->post('duty_roster_department')){
-					$duty_roster_department	=	$this->input->post('duty_roster_department');
+				if($this->input->post('duty_roster_department', TRUE)){
+					$duty_roster_department	=	$this->input->post('duty_roster_department', TRUE);
 				}else{
 					$duty_roster_department	=	null;
 				}
@@ -350,7 +349,7 @@ class Dutyroster extends Admin_Controller
                     'floor_id'              => $duty_roster_floor,
                     'department_id'         => $duty_roster_department,
                     'staff_id'              => $duty_roster_staff_array,
-                    'duty_roster_list_id'   => $this->input->post('duty_roster_list_id'),
+                    'duty_roster_list_id'   => $this->input->post('duty_roster_list_id', TRUE),
                     'roster_duty_date'      => date('Y-m-d', strtotime($from_date. " + $j days")),
                     'generated_by'      => $this->customlib->getStaffID()
                 );
@@ -380,10 +379,10 @@ class Dutyroster extends Admin_Controller
                 $action = "<div class=''>";
 				
 				if ($this->rbac->hasPrivilege('roster_assign', 'can_edit')) {	
-					$action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_assign_roster' data-loading-text='" . $this->lang->line('please_wait') . "' data-toggle='tooltip' data-record_id=" . $shift_value->code . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>"; 
+					$action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_assign_roster' data-loading-text='" . $this->lang->line('please_wait') . "' data-bs-toggle='tooltip' data-record_id=" . $shift_value->code . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
 				}
 				if ($this->rbac->hasPrivilege('roster_assign', 'can_delete')) {					
-					$action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_roster_assign(" . $shift_value->code . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";   
+					$action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_roster_assign(" . $shift_value->code . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
 				}
 				
                 $action .= "</div>";
@@ -414,7 +413,7 @@ class Dutyroster extends Admin_Controller
 
     public function edit_assign_roster()
     {
-        $id           = $this->input->post("id");        
+        $id           = $this->input->post("id", TRUE);
         $result       = $this->dutyroster_model->getassignRosterDetails($id);
 		 
         $json_array   = array('status' => '1', 'error' => '', 'result' => $result);
@@ -430,9 +429,9 @@ class Dutyroster extends Admin_Controller
         echo json_encode(array('status' => 1, 'msg' => $this->lang->line('delete_message')));        
     }
 	
-	 public function getrosterlistbyshift()
+	public function getrosterlistbyshift()
     {
-        $shift = $this->input->get('shift');
+        $shift = $this->input->get('shift', TRUE);
         $data     = $this->dutyroster_model->getRosterListByShiftId($shift);
         echo json_encode($data);
     }
@@ -441,51 +440,74 @@ class Dutyroster extends Admin_Controller
 
     //----------------------- Duty Roster Report Start -----------------
     public function roster_report()
-    {       
+    {
+        if (!$this->rbac->hasPrivilege('duty_roster', 'can_view')) { access_denied(); }
         $this->session->set_userdata('top_menu', 'dutyroster');
-        $this->session->set_userdata('sub_menu', 'dutyroster/rosterassign');        
-        $data["searchlist"]     	= $this->search_type;             
+        $this->session->set_userdata('sub_menu', 'dutyroster/roster_report');
 
-		$data['staff_list'] 	=  $this->staff_model->searchFullText("",1);     
-        $staff         			= 	$this->input->post('staff'); 
-		$data['date_from']      = 	$this->input->post('date_from');
-        $data['date_to']        = 	$this->input->post('date_to');
-		$data['search_type']	=	$this->input->post('search_type');
-		
-		if ($data['search_type'] == 'period') {
+        $data['searchlist']  = $this->search_type;
+        $data['staff_list']  = $this->staff_model->searchFullText("", 1);
+        $data['search_type'] = $this->input->post('search_type', TRUE);
+        $data['date_from']   = $this->input->post('date_from', TRUE);
+        $data['date_to']     = $this->input->post('date_to', TRUE);
+        $staff               = $this->input->post('staff', TRUE);
+        $data['staff']       = $staff;
+        $data['roster_data'] = array();
 
-            $start_date = $this->customlib->dateFormatToYYYYMMDD($data['date_from']);
-            $end_date   = $this->customlib->dateFormatToYYYYMMDD($data['date_to']);
+        $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
 
-        } else {
-
-            if (isset($data['search_type']) && $data['search_type'] != '') {
-                $dates               = $this->customlib->get_betweendate($data['search_type']);
-                $data['search_type'] = $data['search_type'];
+        if ($this->form_validation->run()) {
+            if ($data['search_type'] == 'period') {
+                $start_date = $this->customlib->dateFormatToYYYYMMDD($data['date_from']);
+                $end_date   = $this->customlib->dateFormatToYYYYMMDD($data['date_to']);
             } else {
-                $dates               = $this->customlib->get_betweendate('this_year');
-                $data['search_type'] = '';
+                $dates      = $this->customlib->get_betweendate($data['search_type']);
+                $start_date = $dates['from_date'];
+                $end_date   = $dates['to_date'];
             }
+            $data['roster_data'] = $this->dutyroster_model->getrosterassign_datails($staff, $start_date, $end_date);
+        }
 
+        $data['module'] = 'duty_roster';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/dutyroster/roster_report", $data);
+        $this->load->view("layout/footer", $data);
+    }
+
+    public function roster_report_print()
+    {
+        if (!$this->rbac->hasPrivilege('duty_roster', 'can_view')) {
+            access_denied();
+        }
+        $staff             = $this->input->post('staff', TRUE);
+        $search_type       = $this->input->post('search_type', TRUE);
+        $date_from         = $this->input->post('date_from', TRUE);
+        $date_to           = $this->input->post('date_to', TRUE);
+        $staff_name        = $this->input->post('staff_name', TRUE);
+        $search_type_label = $this->input->post('search_type_label', TRUE);
+
+        if ($search_type == 'period') {
+            $start_date = $this->customlib->dateFormatToYYYYMMDD($date_from);
+            $end_date   = $this->customlib->dateFormatToYYYYMMDD($date_to);
+        } else {
+            if ($search_type != '') {
+                $dates = $this->customlib->get_betweendate($search_type);
+            } else {
+                $dates = $this->customlib->get_betweendate('this_year');
+            }
             $start_date = $dates['from_date'];
             $end_date   = $dates['to_date'];
-        }		
-		
-		$data['staff']	=	$staff;
-		$data['roster_data']	=	$this->dutyroster_model->getrosterassign_datails($staff,$start_date,$end_date);		 
-		
-		$this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
-         
-			
-        if ($this->form_validation->run() == false) {
-            $this->load->view("layout/header");
-            $this->load->view("admin/dutyroster/roster_report",$data);
-            $this->load->view("layout/footer");
-        }else{       
-            $this->load->view("layout/header");
-            $this->load->view("admin/dutyroster/roster_report",$data);
-            $this->load->view("layout/footer");
         }
+
+        $data['roster_data']        = $this->dutyroster_model->getrosterassign_datails($staff, $start_date, $end_date);
+        $data['staff_name']         = $staff_name;
+        $data['search_type_label']  = $search_type_label;
+        $data['date_from']          = $date_from;
+        $data['date_to']            = $date_to;
+        $data['start_date_display'] = $this->customlib->YYYYMMDDTodateFormat($start_date);
+        $data['end_date_display']   = $this->customlib->YYYYMMDDTodateFormat($end_date);
+        $page = $this->load->view('admin/dutyroster/print/roster_report_print', $data, TRUE);
+        echo json_encode(array('status' => 1, 'page' => $page));
     }
 
     //----------------------- Duty Roster Report End -------------------

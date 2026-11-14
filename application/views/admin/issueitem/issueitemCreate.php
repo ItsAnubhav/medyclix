@@ -1,20 +1,13 @@
-<style type="text/css">
-    #div_avail{
-        display: none;
-    }
-</style>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('issue_item'); ?></h3>
-                    </div><!-- /.box-header -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('issue_item'); ?></h3>
+                    </div><!-- /.card-header -->
                     <!-- form start -->
                     <form  action="<?php echo site_url('admin/issueitem/add') ?>"  id="issueitem" name="employeeform" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <div class="row">
                                 <?php if ($this->session->flashdata('msg')) {?>
                                     <?php echo $this->session->flashdata('msg') ?>
@@ -25,7 +18,7 @@ if (isset($error_message)) {
 }
 ?>
                                 <?php echo $this->customlib->getCSRF(); ?>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('user_type'); ?></label><small class="req"> *</small>
                                     <select name="account_type" onchange="getIssueUser(this.value)"  id="" class="form-control ac_type">
                                         <?php
@@ -39,29 +32,29 @@ if (isset($error_message)) {
                                     </select>
                                     <span class="text-danger"><?php echo form_error('Items'); ?></span>
                                 </div>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('issue_to'); ?></label><small class="req"> *</small>
                                     <select  id="issue_to" name="issue_to" class="form-control">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                     </select>
                                     <span class="text-danger"><?php echo form_error('Items'); ?></span>
                                 </div>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('issue_by'); ?></label><small class="req"> *</small>
                                     <input id="issue_by" name="issue_by" placeholder="" type="text" class="form-control"  value="<?php echo set_value('issue_by'); ?>" />
                                     <span class="text-danger"><?php echo form_error('issue_by'); ?></span>
 								</div>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('issue_date'); ?></label><small class="req"> *</small>
                                     <input id="issue_date" name="issue_date" placeholder="" type="text" class="form-control date"  value="<?php echo set_value('issue_date'); ?>" readonly />
                                     <span class="text-danger"><?php echo form_error('issue_date'); ?></span>
                                 </div>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('return_date'); ?></label>
                                     <input id="return_date" name="return_date" placeholder="" type="text" class="form-control date"  value="<?php echo set_value('return_date'); ?>" readonly/>
                                     <span class="text-danger"><?php echo form_error('return_date'); ?></span>
                                 </div>
-                                <div class="form-group col-md-4 col-sm-4">
+                                <div class="mb-3 col-md-4 col-sm-4">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('note'); ?></label>
                                     <textarea name="note" class="form-control" id="note"/><?php echo set_value('note'); ?></textarea>
                                     <span class="text-danger"><?php echo form_error('note'); ?></span>
@@ -70,7 +63,7 @@ if (isset($error_message)) {
                                 <hr>
                                 <div class="col-md-12">
                                     <div class="row">
-                                        <div class="form-group col-sm-4">
+                                        <div class="mb-3 col-sm-4">
                                             <label for="exampleInputEmail1"><?php echo $this->lang->line('item_category'); ?></label><small class="req"> *</small>
                                             <select  id="item_category_id" name="item_category_id" class="form-control" >
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -89,17 +82,17 @@ if (set_value('item_category_id') == $item_category['id']) {
                                             </select>
                                             <span class="text-danger"><?php echo form_error('item_category_id'); ?></span>
                                         </div>
-                                        <div class="form-group col-sm-4">
+                                        <div class="mb-3 col-sm-4">
                                             <label for="exampleInputEmail1"><?php echo $this->lang->line('item'); ?></label><small class="req"> *</small>
                                             <select id="item_id" name="item_id" class="form-control" >
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('item_id'); ?></span>
                                         </div>
-                                        <div class="form-group col-md-4">
+                                        <div class="mb-3 col-md-4">
                                             <label for="exampleInputEmail1"><?php echo $this->lang->line('quantity'); ?></label><small class="req"> *</small>
                                             <input  class="form-control" name="quantity"/>
-                                            <div id="div_avail">
+                                            <div id="div_avail" class="d-none">
                                                 <span><?php echo $this->lang->line('available_quantity'); ?> : </span>
                                                 <span id="item_available_quantity">0</span>
                                             </div>
@@ -107,9 +100,9 @@ if (set_value('item_category_id') == $item_category['id']) {
                                     </div>
                                 </div>
                             </div>
-                        </div><!-- /.box-body -->
-                        <div class="box-footer">
-                            <button type="submit" class="allot-fees btn btn-primary btn-sm pull-right" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Please Wait.."><?php echo $this->lang->line('submit'); ?>
+                        </div><!-- /.card-body -->
+                        <div class="card-footer">
+                            <button type="submit" class="allot-fees btn btn-primary btn-sm float-end" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Please Wait.."><?php echo $this->lang->line('submit'); ?>
                             </button>
                         </div>
                     </form>
@@ -120,17 +113,14 @@ if (set_value('item_category_id') == $item_category['id']) {
             <div class="col-md-12">
             </div><!--/.col (right) -->
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 
 <script type="text/javascript">
 
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('.date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* .date init removed - auto-init via event delegation */
     });
 	
     var base_url = '<?php echo base_url() ?>';
@@ -165,7 +155,7 @@ if (set_value('item_category_id') == $item_category['id']) {
     });
 	
     $(document).on('change', '#item_id', function (e) {
-        $('#div_avail').hide();
+        $('#div_avail').addClass('d-none');
         var item_id = $(this).val();
         availableQuantity(item_id);
 
@@ -182,7 +172,7 @@ if (set_value('item_category_id') == $item_category['id']) {
                 dataType: "json",
                 success: function (data) {
                     $('#item_available_quantity').html(data.available);
-                    $('#div_avail').show();
+                    $('#div_avail').removeClass('d-none');
                 }
             });
         }
@@ -223,7 +213,7 @@ if (set_value('item_category_id') == $item_category['id']) {
         var issue_to = $('#issue_to option:selected').text();
         data.push({name: 'issue_to_name', value: issue_to});
         var $this = $('.allot-fees');
-        $this.button('loading');
+        $this.btnLoading();
         e.preventDefault();
         var postData = data;
         var formURL = $(this).attr("action");
@@ -243,16 +233,16 @@ if (set_value('item_category_id') == $item_category['id']) {
                             errorMsg(message);
                         } else {
                             $('#item_available_quantity').html("");
-                            $('#div_avail').css('display', 'none');
+                            $('#div_avail').addClass('d-none');
                             document.getElementById("issueitem").reset();
                             successMsg(data.message);
                         }
 
-                        $this.button('reset');
+                        $this.btnReset();
                     },
                     error: function (jqXHR, textStatus, errorThrown)
                     {
-                        $this.button('reset');
+                        $this.btnReset();
                     }
                 });
     });

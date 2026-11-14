@@ -120,9 +120,9 @@ class Customlib
 		}	
 			
         if ($folder_path == "") {
-            $folder_path = null;
+            return null;
         }
-        return $folder_path;
+        return rtrim($folder_path, '/') . '/';
     }
 	
     public function getStaffFullName($firstname, $lastname, $employee_id)
@@ -464,7 +464,16 @@ class Customlib
     }
 
 
-    public function getHospitalDateFormat($date_only = true, $time = false)
+    /**
+     * BACKUP — Original buggy version of getHospitalDateFormat().
+     * Bug: Treated time_format STRING values "12-hour" and "24-hour" as boolean truthy.
+     * Both strings are truthy in PHP → both paths fell through to 24-hour mode,
+     * so 12-hour AM/PM format was never returned correctly.
+     * Kept here as _old for reference/rollback. New version uses explicit string
+     * comparison matching getHospitalDateFormatFrontCMS() pattern.
+     * Backed up: 2026-05-04 (during Tempus Dominus 6 picker migration).
+     */
+    public function getHospitalDateFormat_old($date_only = true, $time = false)
     {
         $time_format = $this->getHospitalTimeFormat(); //24 true 12 false
         $hi_format = ' h:i A';
@@ -500,6 +509,79 @@ class Customlib
         }
     }
 
+    /**
+     * Returns PHP date format string from sch_settings, optionally with time appended.
+     * @param bool $date_only true = date-only format (e.g., 'd-m-Y')
+     * @param bool $time      true = append time format based on sch_settings.time_format
+     * @return string PHP date format (e.g., 'd-m-Y' / 'd-m-Y H:i' / 'd-m-Y h:i A')
+     *
+     * Time appended when $date_only=true and $time=true:
+     *   - sch_settings.time_format = "24-hour" → ' H:i'  (e.g., "14:30")
+     *   - sch_settings.time_format = "12-hour" → ' h:i A' (e.g., "02:30 PM")
+     *
+     * FIX (2026-05-04): Original version used `if ($time_format)` which treated
+     * both "12-hour" and "24-hour" strings as truthy → always returned 24h format.
+     * New version uses explicit string comparison (same pattern as
+     * getHospitalDateFormatFrontCMS at line 513).
+     */
+    public function getHospitalDateFormat($date_only = true, $time = false)
+    {
+        $time_format = $this->getHospitalTimeFormat();
+        $hi_format = ' h:i A';
+        $Hi_format = ' H:i';
+
+        // Helper: derive time suffix from time_format setting
+        // Accepts string ("24-hour"/"12-hour"), boolean (true/false), or int (1/0)
+        // for backward compat with any session payload variant.
+        $is24h = ($time_format === '24-hour' || $time_format === true || $time_format === 1 || $time_format === '1');
+
+        // Pick base date_format from session/setting
+        if ($this->CI->session->has_userdata('hospitaladmin')) {
+            $admin = $this->CI->session->userdata('hospitaladmin');
+            $base_format = $admin['date_format'];
+        } elseif ($this->CI->session->has_userdata('patient')) {
+            $patient = $this->CI->session->userdata('patient');
+            $base_format = $patient['date_format'];
+        } else {
+            $setting_result = $this->CI->setting_model->getSetting();
+            $base_format = $setting_result->date_format;
+        }
+
+        // Date only
+        if ($date_only && !$time) {
+            return $base_format;
+        }
+
+        // Date + time (12h or 24h based on setting)
+        return $is24h ? ($base_format . $Hi_format) : ($base_format . $hi_format);
+    }
+
+    /**
+     * Convert a UTC datetime string (e.g. a MySQL TIMESTAMP column such as `created_at`,
+     * which is stored/returned in UTC) to the hospital's configured timezone and format it
+     * with the hospital date format. Use this for any value written by the DB default
+     * CURRENT_TIMESTAMP — plain date()/YYYYMMDDHisTodateFormat() do NOT shift timezone and
+     * would show the raw UTC time. Returns '' for empty/zero datetimes; on bad timezone
+     * data it falls back to a raw reformat rather than throwing.
+     */
+    public function utcToHospitalDateFormat($utc_datetime, $with_time = true)
+    {
+        if (empty($utc_datetime) || $utc_datetime == '0000-00-00 00:00:00') {
+            return '';
+        }
+        $format = $this->getHospitalDateFormat(true, $with_time);
+        try {
+            $dt = new DateTime($utc_datetime, new DateTimeZone('UTC'));
+            $tz = $this->getTimeZone();
+            if (!empty($tz)) {
+                $dt->setTimezone(new DateTimeZone($tz));
+            }
+            return $dt->format($format);
+        } catch (Exception $e) {
+            return date($format, strtotime($utc_datetime));
+        }
+    }
+
     public function getHospitalDateFormatFrontCMS($date_only = true, $time = false)
     {
         // to be used by session or sch_setting table
@@ -517,9 +599,30 @@ class Customlib
         }
     }
 
+    public function getJSDateFormat()
+    {
+        $php_fmt = $this->getHospitalDateFormatFrontCMS();
+        if (empty($php_fmt)) { return 'dd/MM/yyyy'; }
+        // PHP → TempusDominus 6 token map (collision-safe via placeholders)
+        $fmt = $php_fmt;
+        $fmt = str_replace('Y', "\x01", $fmt);
+        $fmt = str_replace('M', "\x02", $fmt);
+        $fmt = str_replace('m', "\x03", $fmt);
+        $fmt = str_replace('d', "\x04", $fmt);
+        $fmt = str_replace('j', "\x05", $fmt);
+        $fmt = str_replace('n', "\x06", $fmt);
+        $fmt = str_replace("\x01", 'yyyy', $fmt);
+        $fmt = str_replace("\x02", 'MMM',  $fmt);
+        $fmt = str_replace("\x03", 'MM',   $fmt);
+        $fmt = str_replace("\x04", 'dd',   $fmt);
+        $fmt = str_replace("\x05", 'd',    $fmt);
+        $fmt = str_replace("\x06", 'M',    $fmt);
+        return $fmt;
+    }
+
     public function getHospitalTime_Format($time)
     {
-        // to be used by session or sch_setting table      
+        // to be used by session or sch_setting table
         $setting_result = $this->CI->setting_model->get();
         $time_format    = $setting_result[0]['time_format'];
 
@@ -651,6 +754,19 @@ class Customlib
         return $theme;
     }
 
+    public function getCurrentVariant()
+    {
+        $admin = $this->CI->session->userdata('hospitaladmin');
+        if ($admin && !empty($admin['sh_variant'])) {
+            return $admin['sh_variant'];
+        }
+        $patient = $this->CI->session->userdata('patient');
+        if ($patient && !empty($patient['sh_variant'])) {
+            return $patient['sh_variant'];
+        }
+        return 'a';
+    }
+
     public function getRTL()
     {
         $rtl   = "";
@@ -703,6 +819,53 @@ class Customlib
         return false;
     }
 
+  public function get_pending_staff_forms()
+    {
+        $staff_id = $this->getStaffID();
+        if (!$staff_id) {
+            return [];
+        }
+        $this->CI->load->model('Survey_model');
+        return $this->CI->Survey_model->getPendingFormsForStaff($staff_id);
+    }
+
+    public function getStaffPendingCustomFormCount()
+    {
+        $staff_id = $this->getStaffID();
+        if (!$staff_id) {
+            return 0;
+        }
+        $this->CI->load->model('Survey_model');
+        return $this->CI->Survey_model->getPendingFormCountForStaff($staff_id);
+    }
+
+    public function get_pending_patient_forms()
+    {
+        if (!$this->CI->session->has_userdata('patient')) {
+            return [];
+        }
+        $patient_session = $this->CI->session->userdata('patient');
+        $patient_id      = $patient_session['id'] ?? 0;
+        if (!$patient_id) {
+            return [];
+        }
+        $this->CI->load->model('Survey_model');
+        return $this->CI->Survey_model->getPendingFormsForPatient($patient_id);
+    }
+
+    public function getPatientPendingCustomFormCount()
+    {
+        if (!$this->CI->session->has_userdata('patient')) {
+            return 0;
+        }
+        $patient_session = $this->CI->session->userdata('patient');
+        $patient_id      = $patient_session['id'] ?? 0;
+        if (!$patient_id) {
+            return 0;
+        }
+        $this->CI->load->model('Survey_model');
+        return $this->CI->Survey_model->getPendingFormCountForPatient($patient_id);
+    }
     public function getSessionLanguage()
     {
         $patient_session = $this->CI->session->userdata('hospitaladmin');
@@ -768,8 +931,8 @@ class Customlib
     public function getStaffRole()
     {
         $admin = $this->CI->session->userdata('hospitaladmin');
-        $roles = $admin['roles'];
         if ($admin) {
+            $roles = $admin['roles'];
             $role_key = key($roles);
             return json_encode(array('id' => $roles[$role_key], 'name' => $role_key));
         }
@@ -777,8 +940,8 @@ class Customlib
 
     public function getAppVersion()
     {
-        //Build: 250628
-        $appVersion = "6.0";
+        //Build: 20260630
+        $appVersion = "7.0";
         return $appVersion;
     }
 
@@ -950,7 +1113,8 @@ class Customlib
         if (!empty($notifications)) {
             foreach ($notifications as $note_key => $note_value) {
                 if ($note_value->type == $find) {
-                    return array('mail' => $note_value->is_mail, 'sms' => $note_value->is_sms, 'mobileapp' => $note_value->is_notification, 'template' => $note_value->template, 'template_id' => $note_value->template_id, 'subject' => $note_value->subject);
+                    return array('mail' => $note_value->is_mail, 'sms' => $note_value->is_sms, 'mobileapp' => $note_value->is_notification,'whatsapp'=>$note_value->is_whatsapp, 
+                        'template' => $note_value->template, 'template_id' => $note_value->template_id, 'subject' => $note_value->subject);
                 }
             }
         }
@@ -1695,13 +1859,21 @@ class Customlib
 
     public function getCertificateVariables()
     {
-        return "[patient_name] [patient_id] [dob] [age] [gender] [email] [phone] [address] [opd_ipd_no] [guardian_name] [opd_checkup_id] [consultant_doctor]";
+        $common = "[patient_name] [patient_id] [dob] [age] [gender] [email] [phone] [mobileno] [address] [guardian_name] [opd_ipd_no] [opd_no] [ipd_no] [opd_checkup_id] [consultant_doctor] [doctorname] [date_time] [present_date]";
+        $ipd    = "[department_name] [bed_group] [bed_name] [unit_name] [case_type] [attendant_phone] [abha_id] [id_proof] [secondary_doctor]";
+        return "Common: " . $common . "<br>IPD Admission: " . $ipd;
     }
 
     public function patientpanel()
     {
         $admin = $this->CI->Setting_model->getSetting();
         return $admin->patient_panel;
+    }
+
+    public function patientDeleteAccount()
+    {
+        $admin = $this->CI->Setting_model->getSetting();
+        return $admin->patient_delete_account;
     }
 
     public function checkDischargePatient($discharge)
@@ -1785,15 +1957,20 @@ class Customlib
         $this->CI->zend->load('Zend/Barcode');
         //generate barcode
         $imageResource = Zend_Barcode::factory('code128', 'image', array('text' => $code, 'barHeight' => 20), array())->draw();
-        
-        imagepng($imageResource, $this->CI->customlib->getFolderPath().'uploads/patient_id_card/barcodes/' . $admission_no . '.png');
-        
+        $barcode_dir = $this->CI->customlib->getFolderPath().'uploads/patient_id_card/barcodes/';
+        if (!is_dir($barcode_dir)) {
+            mkdir($barcode_dir, 0755, true);
+        }
+        imagepng($imageResource, $barcode_dir . $admission_no . '.png');
         $barcode = 'uploads/patient_id_card/barcodes/' . $admission_no . '.png';
 
         //=============qrcode=================
         $this->CI->load->library('QR_Code');
-        $path= $this->CI->customlib->getFolderPath().'uploads/patient_id_card/qrcode/';
-        $qrcode =   $this->CI->qr_code->generate($path, $code,$admission_no);
+        $path = $this->CI->customlib->getFolderPath().'uploads/patient_id_card/qrcode/';
+        if (!is_dir($path)) {
+            mkdir($path, 0755, true);
+        }
+        $qrcode = $this->CI->qr_code->generate($path, $code, $admission_no);
 
         if ($default_return_code == "barcode") {
             return $barcode;
@@ -1813,12 +1990,19 @@ class Customlib
         $this->CI->zend->load('Zend/Barcode');
         //generate barcode
         $imageResource = Zend_Barcode::factory('code128', 'image', array('text' => $code, 'barHeight' => 20), array())->draw();
-        imagepng($imageResource, $this->CI->customlib->getFolderPath().'uploads/staff_id_card/barcodes/' . $staff_id . '.png');
+        $barcode_dir = $this->CI->customlib->getFolderPath().'uploads/staff_id_card/barcodes/';
+        if (!is_dir($barcode_dir)) {
+            mkdir($barcode_dir, 0755, true);
+        }
+        imagepng($imageResource, $barcode_dir . $staff_id . '.png');
         $barcode = 'uploads/staff_id_card/barcodes/' . $staff_id . '.png';
         //=============qrcode=================
-        $this->CI->load->library('QR_Code');     
+        $this->CI->load->library('QR_Code');
 
-        $path= $this->CI->customlib->getFolderPath().'uploads/staff_id_card/qrcode/';
+        $path = $this->CI->customlib->getFolderPath().'uploads/staff_id_card/qrcode/';
+        if (!is_dir($path)) {
+            mkdir($path, 0755, true);
+        }
         
         $qrcode =   $this->CI->qr_code->generate($path,$code,$staff_id);
 
@@ -1891,8 +2075,24 @@ class Customlib
         return $schedule_test=$this->CI->pharmacy_model->get_TPA_amount($batch_id,$org_id);
     }
 
+    /**
+     * Returns the message delivery mode for the current session.
+     * 0 = direct send, 1 = queue mode
+     */
+    public function checkMessageMode()
+    {
+        $admin = $this->CI->session->userdata('hospitaladmin');
+        if ($admin && isset($admin['message_mode'])) {
+            return (int) $admin['message_mode'];
+        }
+        // No admin session (front site / patient portal) — read from DB
+        // setting_model may not be loaded yet (e.g. called during autoload library init)
+        if (!isset($this->CI->setting_model)) {
+            $this->CI->load->model('setting_model');
+        }
+        $setting = $this->CI->setting_model->get();
+        return isset($setting[0]['message_mode']) ? (int) $setting[0]['message_mode'] : 0;
+    }
 
-
-
-
+   
 }

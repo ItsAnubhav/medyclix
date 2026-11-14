@@ -117,7 +117,7 @@ class Sharecontent_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            
+            return true;
         }
     }
 
@@ -176,7 +176,7 @@ class Sharecontent_model extends MY_Model
         return $this->datatables->generate('json');
     }
 
-    public function getOtherStaffsharelist($role_id,$staff_id)
+    public function getOtherStaffsharelist_old($role_id,$staff_id)
     {
         $sql="select * from (SELECT `share_contents`.*, `staff`.`name`, `staff`.`surname`,`staff`.`employee_id` FROM `share_contents` JOIN `staff` ON `share_contents`.`created_by` = `staff`.`id` WHERE share_contents.created_by=".$staff_id." UNION SELECT `share_contents`.*, `staff`.`name`, `staff`.`surname`,`staff`.`employee_id` FROM `share_content_for`  INNER join share_contents on share_contents.id = share_content_for.share_content_id JOIN `staff` ON `share_contents`.`created_by` = `staff`.`id` WHERE (group_id=".$role_id." or staff_id=".$staff_id. ") and (share_contents.valid_upto >= ".$this->db->escape(date('Y-m-d'))."  or share_contents.valid_upto IS NULL )) as a ";
         $this->datatables->query($sql)
@@ -187,18 +187,94 @@ class Sharecontent_model extends MY_Model
         return $this->datatables->generate('json');  
     }
     
-    public function getSharedUserBySharedID($share_content_id)
+	public function getOtherStaffsharelist($role_id, $staff_id)
+	{
+		// First query
+		$this->db->select('share_contents.*, staff.name, staff.surname, staff.employee_id');
+		$this->db->from('share_contents');
+		$this->db->join('staff', 'share_contents.created_by = staff.id');
+		$this->db->where('share_contents.created_by', $staff_id);
+		$query1 = $this->db->get_compiled_select();
+
+		// Reset builder
+		$this->db->reset_query();
+
+		// Second query
+		$this->db->select('share_contents.*, staff.name, staff.surname, staff.employee_id');
+		$this->db->from('share_content_for');
+		$this->db->join('share_contents', 'share_contents.id = share_content_for.share_content_id');
+		$this->db->join('staff', 'share_contents.created_by = staff.id');
+
+		$this->db->group_start();
+			$this->db->where('group_id', $role_id);
+			$this->db->or_where('staff_id', $staff_id);
+		$this->db->group_end();
+
+		$this->db->group_start();
+			$this->db->where('share_contents.valid_upto >=', date('Y-m-d'));
+			$this->db->or_where('share_contents.valid_upto IS NULL', null, false);
+		$this->db->group_end();
+
+		$query2 = $this->db->get_compiled_select();
+
+		$sql = "SELECT * FROM ($query1 UNION $query2) as a";
+ 
+		$this->datatables->query($sql)
+			->sort('a.id', 'desc')
+			->searchable('title,send_to,share_date,valid_upto,description,name,surname,description')
+			->orderable('title,send_to,share_date,valid_upto,name,description')
+			->query_where_enable(FALSE);
+
+		return $this->datatables->generate('json');
+	}
+
+    public function getSharedUserBySharedID_old($share_content_id)
     {
         $sql= "SELECT share_content_for.*,staff.name,roles.name as role_name,staff.name as staff_first_name,staff.surname as staff_surname ,staff_roles.id as staff_role_id ,staff_role_alias.name as staff_role_name, staff.employee_id as staff_employee_id FROM `share_content_for` LEFT JOIN roles on roles.id= share_content_for.group_id  LEFT join staff on staff.id = share_content_for.staff_id LEFT JOIN staff_roles on staff_roles.staff_id =staff.id LEFT JOIN roles as `staff_role_alias` on staff_role_alias.id = staff_roles.role_id  WHERE share_content_id=".$share_content_id;
           $query = $this->db->query($sql);
           return $query->result();
     }
+	
+	public function getSharedUserBySharedID($share_content_id)
+	{
+		$this->db->select('share_content_for.*,staff.name,roles.name as role_name,staff.name as staff_first_name,staff.surname as staff_surname,staff_roles.id as staff_role_id,staff_role_alias.name as staff_role_name,staff.employee_id as staff_employee_id');
+		$this->db->from('share_content_for');
+		$this->db->join('roles', 'roles.id = share_content_for.group_id', 'left');
+		$this->db->join('staff', 'staff.id = share_content_for.staff_id', 'left');
+		$this->db->join('staff_roles', 'staff_roles.staff_id = staff.id', 'left');
+		$this->db->join('roles as staff_role_alias', 'staff_role_alias.id = staff_roles.role_id', 'left');
+		$this->db->where('share_content_for.share_content_id', $share_content_id);
+		$query = $this->db->get();
+		return $query->result();
+	}
 
-    public function getPatientShareList($patient_id)
+    public function getPatientShareList_old($patient_id)
     {
-        $sql="SELECT `share_contents`.*, `staff`.`name`, `staff`.`surname`, `staff`.`employee_id`, staff_roles.role_id FROM `share_contents` JOIN `staff` ON `share_contents`.`created_by` = `staff`.`id` JOIN `staff_roles` ON `staff_roles`.`staff_id` = `staff`.`id` WHERE share_contents.id in (SELECT share_content_id FROM `share_content_for` WHERE group_id ='patient' or patient_id='".$patient_id."') order by share_contents.id desc";      
-         $query = $this->db->query($sql);
+        $patient_id = (int)$patient_id;
+        $sql="SELECT `share_contents`.*, `staff`.`name`, `staff`.`surname`, `staff`.`employee_id`, staff_roles.role_id FROM `share_contents` JOIN `staff` ON `share_contents`.`created_by` = `staff`.`id` JOIN `staff_roles` ON `staff_roles`.`staff_id` = `staff`.`id` WHERE share_contents.id in (SELECT share_content_id FROM `share_content_for` WHERE group_id ='patient' or patient_id=" . $patient_id . ") order by share_contents.id desc";
+        $query = $this->db->query($sql);
           return $query->result();
     } 
+	
+	public function getPatientShareList($patient_id)
+	{		
+		$subquery = $this->db->select('share_content_id')
+			->from('share_content_for')
+			->group_start()
+				->where('group_id', 'patient')
+				->or_where('patient_id', $patient_id)
+			->group_end()
+			->get_compiled_select();		
+		$this->db->reset_query();
+		
+		$this->db->select('share_contents.*,staff.name,staff.surname,staff.employee_id,staff_roles.role_id');
+		$this->db->from('share_contents');
+		$this->db->join('staff', 'share_contents.created_by = staff.id');
+		$this->db->join('staff_roles', 'staff_roles.staff_id = staff.id');
+		$this->db->where("share_contents.id IN ($subquery)", null, false);
+		$this->db->order_by('share_contents.id', 'DESC');
+		$query = $this->db->get();
+		return $query->result();
+	}
 
 }

@@ -6,6 +6,11 @@ if (!defined('BASEPATH')) {
 
 class Flutterwave extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $patient_data;
+	public $payment_mode;
+
  
     public $payment_method = array();
     public $pay_method     = array();

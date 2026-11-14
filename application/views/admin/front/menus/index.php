@@ -1,21 +1,19 @@
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-12">
                 <!-- general form elements -->
-                <div class="box box-primary" id="holist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('menu_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="holist">
+                    <div class="card-header ptbnull d-flex align-items-center justify-content-between">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('menu_list'); ?></h3>
+                        <div class="ms-auto d-flex gap-1">
                             <?php if ($this->rbac->hasPrivilege('menus', 'can_add')) { ?>
-                            <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm add_menu"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_menu'); ?></a>
+                            <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm add_menu"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_menu'); ?></a>
                         <?php } ?>
                             </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('menu_list'); ?></div>
                             <table class="table table-striped table-bordered table-hover">
@@ -23,7 +21,7 @@
                                     <tr>
                                         <th><?php echo $this->lang->line('title'); ?></th>
 
-                                        <th class="text-right no-print">
+                                        <th class="text-end no-print">
                                             <?php echo $this->lang->line('action'); ?>
                                         </th>
                                     </tr>
@@ -36,8 +34,8 @@
 
                                     <tr id="<?php echo $menu["id"]; ?>">
                                         <td class="mailbox-name">
-                                            <a href="#" data-toggle="popover" class="detail_popover"><?php echo $menu['menu'] ?></a>
-                                            <div class="fee_detail_popover" style="display: none">
+                                            <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $menu['menu'] ?></a>
+                                            <div class="fee_detail_popover d-none" >
                                             <?php
                                             if ($menu['description'] == "") { ?>
                                                 <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
@@ -47,22 +45,20 @@
                                             </div>
                                         </td>
                                         
-                                        <td class="mailbox-date pull-right no-print">
-                                        <?php
-                                        if ($this->rbac->hasPrivilege('menus', 'can_add')) {  ?>
-                                            <a href="<?php echo site_url('admin/front/menus/additem/' . $menu['slug']); ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('add_menu_item'); ?>">
-                                            <i class="fa fa-plus"></i></a>
-                                        <?php }
-                                            if ($this->rbac->hasPrivilege('menus', 'can_delete')) {  ?>
-                                            <?php
-                                            if ($menu['content_type'] != "default") {   ?>
-                                                <a  class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('<?php echo 'admin/front/menus/delete/' . $menu['id']; ?>', '<?php echo $this->lang->line('delete_message') ?>')">
-                                                                <i class="fa fa-trash"></i>
-                                                            </a>
-                                        <?php }
-                                        }
-                                        ?>
-                                            </td>
+                                        <td class="text-end no-print noExport">
+                                            <div class="d-inline-flex gap-1">
+                                                <?php if ($this->rbac->hasPrivilege('menus', 'can_add')) { ?>
+                                                    <a href="<?php echo site_url('admin/front/menus/additem/' . $menu['slug']); ?>" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('add_menu_item'); ?>">
+                                                        <i class="fa fa-plus"></i>
+                                                    </a>
+                                                <?php } if ($this->rbac->hasPrivilege('menus', 'can_delete')) {
+                                                    if ($menu['content_type'] != "default") { ?>
+                                                        <a class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('<?php echo 'admin/front/menus/delete/' . $menu['id']; ?>', '<?php echo $this->lang->line('delete_message') ?>')">
+                                                            <i class="fa fa-trash"></i>
+                                                        </a>
+                                                <?php } } ?>
+                                            </div>
+                                        </td>
                                             </tr>
                                         <?php 
                                     }
@@ -72,46 +68,50 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_menu'); ?></h4>
+    
+
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-mid modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_menu'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formadd" accept-charset="utf-8" action="<?php echo base_url(); ?>admin/front/menus/add" enctype="multipart/form-data" method="post">
-                    <div class="modal-body pt0 pb0">
-                        <div class="row ptt10">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1"><?php echo $this->lang->line('menu'); ?></label> <small class="req">*</small>
-                                    <input autofocus="" id="menu" name="menu" placeholder="" type="text" class="form-control"  value="<?php echo set_value('menu'); ?>" />
+                <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                        </div>
+                        <div class="p-2">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label"><?php echo $this->lang->line('menu'); ?> <small class="req">*</small></label>
+                                    <input autofocus="" id="menu" name="menu" type="text" class="form-control" value="<?php echo set_value('menu'); ?>" />
                                     <span class="text-danger"><?php echo form_error('menu'); ?></span>
                                 </div>
-                            </div>
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                                    <textarea class="form-control" id="description" name="description" placeholder="" rows="3" placeholder=""><?php echo set_value('description'); ?></textarea>
+                                <div class="col-12">
+                                    <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
                                     <span class="text-danger"><?php echo form_error('description'); ?></span>
                                 </div>
                             </div>
-                        </div><!--./row-->
+                        </div>
                     </div>
+                </div>
+                </div><!--./pup-scroll-area-->
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
-                    </div>
-                </div><!--./row-->
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
             </form>
-        </div><!--./col-md-12-->
-    </div><!--./row-->
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">
@@ -145,10 +145,7 @@
     });
 
     $(document).ready(function () {
-        $('#postdate').datepicker({
-            format: "dd-mm-yyyy",
-            autoclose: true
-        });
+        /* #postdate init removed - auto-init via class + event delegation */
     });
 
     $(document).ready(function () {

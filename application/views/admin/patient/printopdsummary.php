@@ -6,12 +6,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/sh-print.css">
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
     <div id="html-2-pdfwrapper">
         <div class="row">
             <!-- left column -->
@@ -23,7 +18,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>                  
                     <div class="divider mb-10 mt-10"></div>
@@ -31,45 +26,57 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <tr>
                             <th width="15%"><?php echo $this->lang->line('name'); ?></th>
                             <td width="20%"><?php if (!empty($result["patient_name"])) {
-                               echo $result["patient_name"]; }  ?></td>
+                               echo html_escape($result["patient_name"]); }  ?></td>
                             <th width="15%"><?php echo $this->lang->line('age'); ?></th>
-                            <td width="20%" class="text-left"><?php if (!empty($result["age"])) {
-                              echo $result["age"]." Years, ".$result["month"]." Month";
+                            <td width="20%" class="text-start"><?php if (!empty($result["age"])) {
+                              echo html_escape($result["age"])." Years, ".html_escape($result["month"])." Month";
                             }  ?></td>
                             <th width="10%"><?php echo $this->lang->line('gender'); ?></th>
-                            <td width="20%" class="text-left"><?php if (!empty($result["gender"])) {
-                             echo $result["gender"];
+                            <td width="20%" class="text-start"><?php if (!empty($result["gender"])) {
+                             echo html_escape($result["gender"]);
                             } ?></td>
                         </tr>
                          <tr>
-                            <th width="20%"><?php echo $this->lang->line('admission') . " " . $this->lang->line('date'); ?></th>
+                            <th width="20%"><?php echo $this->lang->line('admission_date') ; ?></th>
                             <td width="25%"><?php if (!empty($result["appointment_date"])) { 
                             echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date'])); } ?></td>
                             <th><?php echo $this->lang->line('discharged') . " " . $this->lang->line('date'); ?></th>
-                            <td width="30%" class="text-left"><?php if (!empty($result["discharged_date"])) {  
+                            <td width="30%" class="text-start"><?php if (!empty($result["discharged_date"])) {  
                             echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['discharged_date'])); } ?></td>
                         </tr>
                         <tr>
                             <th width="20%"><?php echo $this->lang->line('address') ; ?></th>
                             <td width="25%"><?php if (!empty($result['address'])) {
-                                echo $result['address'];
+                                echo html_escape($result['address']);
                             } ?></td>                           
                         </tr>
                         <tr>
                             <th width="20%"><?php echo $this->lang->line('diagnosis') ; ?></th>
                             <td width="25%"><?php if (!empty($result["diagnosis"])) {
-                               echo $result["diagnosis"];
+                               echo html_escape($result["diagnosis"]);
                             }   ?></td>
                         </tr>
+                        <?php if (!empty($icd_codes)) { ?>
+                        <tr>
+                            <th width="20%" style="vertical-align:top"><?php echo $this->lang->line('icd10_diagnosis'); ?></th>
+                            <td width="80%" colspan="5">
+                                <?php foreach ($icd_codes as $icd) { ?>
+                                <span style="display:inline-block; margin:1px 4px 1px 0; padding:1px 6px; background:#d6eaf8; border:1px solid #aed6f1; border-radius:3px; font-size:11px;">
+                                    <strong><?php echo html_escape($icd['icd_code']); ?></strong> – <?php echo html_escape($icd['icd_description']); ?>
+                                </span>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
                         <tr> <th><?php echo $this->lang->line('operation') ; ?></th>
-                            <td width="30%" class="text-left"><?php if (!empty($result["operation"])) {
-                             echo $result["operation"];
+                            <td width="30%" class="text-start"><?php if (!empty($result["operation"])) {
+                             echo html_escape($result["operation"]);
                             }   ?></td>
                         </tr>                        
                         <tr>                           
                             <th><?php echo $this->lang->line('note') ; ?></th>
-                            <td width="30%" class="text-left"><?php if (!empty($result['note'])) {
-                                echo nl2br($result['note']);
+                            <td width="30%" class="text-start"><?php if (!empty($result['note'])) {
+                                echo nl2br(html_escape($result['note']));
                             } ?></td>                          
                         </tr>
                     </table>
@@ -81,10 +88,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </tr>
                     <tr>
                         <td width="40%"><?php if (!empty($result["investigations"])) {
-                            echo nl2br($result["investigations"]);
+                            echo nl2br(html_escape($result["investigations"]));
                         } ?></td>
                         <td><?php if (!empty($result['treatment_home'])) {
-                           echo nl2br($result["treatment_home"]); 
+                           echo nl2br(html_escape($result["treatment_home"]));
                         } ?></td>
                     </tr>
                     </table> 

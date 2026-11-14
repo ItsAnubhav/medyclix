@@ -1,19 +1,17 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('live_meeting'); ?></h3>
-                        <div class="box-tools addmeeting box-tools-md">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h3 class="card-title"><?php echo $this->lang->line('live_meeting'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap addmeeting ms-auto">
                             <?php if ($this->rbac->hasPrivilege('live_meeting', 'can_add')) {
     ?>
-                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal-online-timetable"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?> </button>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-online-timetable"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?> </button>
                                 <?php
 }?>
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <?php if ($this->session->flashdata('msg')) {?>
                             <?php echo $this->session->flashdata('msg') ?>
                         <?php }?>
@@ -30,7 +28,7 @@
                                         <th><?php echo $this->lang->line('api_used'); ?></th>
                                         <th><?php echo $this->lang->line('created_by'); ?> </th>
                                         <th class="noExport" width="15%"><?php echo $this->lang->line('status'); ?></th>
-                                        <th class="text-right noExport" width="80"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport" width="80"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -41,118 +39,133 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <!-- Modal -->
-<div class="modal fade" id="modal-online-timetable">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade sh-modal sh-modal-accent" id="modal-online-timetable" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <form id="form-addconference" action="<?php echo site_url('admin/zoom_conference/addMeeting'); ?>" method="POST">
-            <div class="modal-content mx-2">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title"><?php echo $this->lang->line('add_live_meeting'); ?> </h4>
+                    <h5 class="modal-title"><?php echo $this->lang->line('add_live_meeting'); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-lg-8 col-md-8 col-sm-12">
-                            <div class="row">
-                                <input type="hidden" class="form-control" id="password" name="password">
-                                <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                                    <label for="title"><?php echo $this->lang->line('meeting_title'); ?> <small class="req"> *</small></label>
-                                    <input type="text" class="form-control" id="title" name="title">
-                                    <span class="text text-danger" id="title_error"></span>
-                                </div>
-                                <div class="clearfix"></div>
-                                <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
-                                    <label for="date"><?php echo $this->lang->line('meeting_date'); ?> <small class="req"> *</small></label>
-                                    <div class='input-group' id='meeting_date'>
-                                        <input type='text' class="form-control datetime" name="date" />
-                                        <span class="input-group-addon">
-                                            <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
+                <div class="pup-scroll-area">
+                    <div class="modal-body modal-background">
+                        <input type="hidden" id="password" name="password">
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <!-- Card 1: Meeting Details -->
+                            <div class="sh-meeting-details-col">
+                                <div class="sh-form-card mb-0">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><i class="fa fa-video"></i> <?php echo $this->lang->line('live_meeting'); ?></span>
                                     </div>
-                                    <span class="text text-danger" id="title_error"></span>
-                                </div>
-                                <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
-                                    <label for="duration"><?php echo $this->lang->line('meeting_duration_minutes'); ?> <small class="req"> *</small></label>
-                                    <input type="number" class="form-control" id="duration" name="duration">
-                                    <span class="text text-danger" id="title_error"></span>
-                                </div>
-                                <div class="clearfix"></div>
-                                <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
-                                    <label for="class"><?php echo $this->lang->line('host_video'); ?><small class="req"> *</small></label>
-                                    <label class="radio-inline"><input type="radio" name="host_video"  value="1" checked><?php echo $this->lang->line('enabled'); ?></label>
-                                    <label class="radio-inline"><input type="radio" name="host_video" value="0" ><?php echo $this->lang->line('disabled'); ?></label>
-                                    <span class="text text-danger" id="class_error"></span>
-                                </div>
-                                <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
-                                    <label for="class"><?php echo $this->lang->line('client_video'); ?><small class="req"> *</small></label>
-                                    <label class="radio-inline"><input type="radio" name="client_video"  value="1" checked><?php echo $this->lang->line('enabled'); ?></label>
-                                    <label class="radio-inline"><input type="radio" name="client_video" value="0" ><?php echo $this->lang->line('disabled'); ?></label>
-                                    <span class="text text-danger" id="class_error"></span>
-                                </div>
-                                <div class="clearfix"></div>
-                                <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                                    <label for="description"><?php echo $this->lang->line('description') ?></label>
-                                    <textarea class="form-control" name="description" id="description"></textarea>
-                                </div>
-
-                            </div>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-sm-12">
-                            <label class="label15"><?php echo $this->lang->line('staff_list'); ?> <small class="req"> *</small></label> <div class="staffmain">
-                                <ul class="liststaff">
-                                    <?php
-foreach ($staffList as $staff_key => $staff_value) {
-
-    if ($staff_value['id'] == $logged_staff_id) {
-        continue;
-    }
-
-    ?>
-                                        <li class="list-group-item">
-                                            <div class="checkbox">
-                                                <label for="staff_<?php echo $staff_value['id']; ?>">
-                                                    <input type="checkbox" id="staff_<?php echo $staff_value['id']; ?>" value="<?php echo $staff_value['id']; ?>" name="staff[]">
-                                                    <?php
-$name = ($staff_value["surname"] == "") ? $staff_value["name"] : $staff_value["name"] . " " . $staff_value["surname"];
-    echo $name . " (" . $staff_value['user_type'] . " : " . $staff_value['employee_id'] . ")";
-    ?>
-                                                </label>
+                                    <div class="px-2 py-3">
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label" for="title"><?php echo $this->lang->line('meeting_title'); ?> <small class="req"> *</small></label>
+                                                <input type="text" class="form-control form-control-sm" id="title" name="title">
+                                                <span class="text-danger" id="title_error"></span>
                                             </div>
-                                        </li>
-
-                                    <?php }
-?>
-                                </ul>
+                                            <div class="col-sm-6">
+                                                <label class="form-label" for="date"><?php echo $this->lang->line('meeting_date'); ?> <small class="req"> *</small></label>
+                                                <div class="input-group input-group-sm" id="meeting_date">
+                                                    <input type="text" class="form-control datetime" name="date" />
+                                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="form-label" for="duration"><?php echo $this->lang->line('meeting_duration_minutes'); ?> <small class="req"> *</small></label>
+                                                <input type="number" class="form-control form-control-sm" id="duration" name="duration">
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="form-label"><?php echo $this->lang->line('host_video'); ?> <small class="req"> *</small></label>
+                                                <div class="sh-radio-group">
+                                                    <label class="sh-radio-option">
+                                                        <input type="radio" name="host_video" value="1" checked>
+                                                        <span><?php echo $this->lang->line('enabled'); ?></span>
+                                                    </label>
+                                                    <label class="sh-radio-option">
+                                                        <input type="radio" name="host_video" value="0">
+                                                        <span><?php echo $this->lang->line('disabled'); ?></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="form-label"><?php echo $this->lang->line('client_video'); ?> <small class="req"> *</small></label>
+                                                <div class="sh-radio-group">
+                                                    <label class="sh-radio-option">
+                                                        <input type="radio" name="client_video" value="1" checked>
+                                                        <span><?php echo $this->lang->line('enabled'); ?></span>
+                                                    </label>
+                                                    <label class="sh-radio-option">
+                                                        <input type="radio" name="client_video" value="0">
+                                                        <span><?php echo $this->lang->line('disabled'); ?></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" for="description"><?php echo $this->lang->line('description'); ?></label>
+                                                <textarea class="form-control form-control-sm" name="description" id="description"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- Card 2: Staff List -->
+                            <div class="sh-meeting-staff-col">
+                                <div class="sh-form-card mb-0 h-100">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><i class="fa fa-users"></i> <?php echo $this->lang->line('staff_list'); ?> <small class="req ms-1"> *</small></span>
+                                    </div>
+                                    <div class="meeting-staff-list">
+                                        <ul class="list-unstyled mb-0">
+                                            <?php foreach ($staffList as $staff_key => $staff_value) {
+                                                if ($staff_value['id'] == $logged_staff_id) { continue; } ?>
+                                            <li class="meeting-staff-item">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="staff_<?php echo $staff_value['id']; ?>" value="<?php echo $staff_value['id']; ?>" name="staff[]">
+                                                    <label class="form-check-label" for="staff_<?php echo $staff_value['id']; ?>">
+                                                        <?php
+                                                        $name = ($staff_value["surname"] == "") ? $staff_value["name"] : $staff_value["name"] . " " . $staff_value["surname"];
+                                                        echo $name . " (" . $staff_value['user_type'] . " : " . $staff_value['employee_id'] . ")";
+                                                        ?>
+                                                    </label>
+                                                </div>
+                                            </li>
+                                            <?php } ?>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-info" id="load" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<div id="modal-chkstatus" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-    <form id="form-chkstatus" action="" method="POST">
-        <div class="modal-content mx-2">
+<div id="modal-chkstatus" class="modal fade sh-modal sh-modal-accent">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="zoom_details">
 
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
         </div>
-    </form>
     </div>
 </div>
 <script type="text/javascript">
@@ -165,30 +178,27 @@ $name = ($staff_value["surname"] == "") ? $staff_value["name"] : $staff_value["n
 } ( jQuery ) )
 </script>
 <script type="text/javascript">
-      $('#modal-chkstatus').on('shown.bs.modal', function (e) {
-            var $modalDiv = $(e.delegateTarget);
-              var id=$(e.relatedTarget).data('id');
-
+      // Fetch the status content FIRST, then open the modal once #zoom_details is populated.
+      $(document).on('click', '.js-open-livestatus', function (e) {
+            e.preventDefault();
+            var $btn = $(this);
+            if ($btn.hasClass('disabled')) { return; }
+            var id = $btn.data('id');
+            $btn.addClass('disabled');
+            $('#zoom_details').html("");
             $.ajax({
                 type: "POST",
                 url: base_url + 'admin/zoom_conference/getlivestatus',
-                data: {'id':id},
+                data: {'id': id},
                 dataType: "JSON",
-                beforeSend: function () {
-             $('#zoom_details').html("");
-                    $modalDiv.addClass('modal_loading');
-                },
                 success: function (data) {
-
                    $('#zoom_details').html(data.page);
-                    $modalDiv.removeClass('modal_loading');
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-chkstatus')).show();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    $modalDiv.removeClass('modal_loading');
+                    alert('<?php echo $this->lang->line('error_occurred_please_try_again'); ?>');
                 },
-                complete: function (data) {
-                    $modalDiv.removeClass('modal_loading');
-                }
+                complete: function () { $btn.removeClass('disabled'); }
             });
         })
 
@@ -223,7 +233,7 @@ $name = ($staff_value["surname"] == "") ? $staff_value["name"] : $staff_value["n
             data: $form.serialize(),
             dataType: "JSON",
             beforeSend: function () {
-                $button.button('loading');
+                $button.btnLoading();
             },
             success: function (data) {				
                 if (data.status == 0) {
@@ -233,17 +243,17 @@ $name = ($staff_value["surname"] == "") ? $staff_value["name"] : $staff_value["n
                     });
                     errorMsg(message);
                 } else {
-                    $('#modal-online-timetable').modal('hide');
+                    shModal('modal-online-timetable').hide();
                     successMsg(data.message);
                     window.location.reload(true);
                 }
-                $button.button('reset');
+                $button.btnReset();
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                $button.button('reset');
+                $button.btnReset();
             },
             complete: function (data) {
-                $button.button('reset');
+                $button.btnReset();
             }
         });
     })
@@ -367,10 +377,6 @@ $(".addmeeting").click(function(){
 }); 
 
     $(document).ready(function (e) {
-        $('#modal-online-timetable,#modal-chkstatus').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('modal-online-timetable', 'modal-chkstatus');
     });
 </script>

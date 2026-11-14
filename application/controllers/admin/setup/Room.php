@@ -23,7 +23,7 @@ class Room extends Admin_Controller
         $data['dept_list']     = $this->Ward_Model->getdepartment();
         $data['room_list']     = $this->Room_Model->roomlist();
         $this->load->view('layout/header');
-        $this->load->view('setup/Room', $data);
+        $this->load->view('setup/room', $data);
         $this->load->view('layout/footer');
     }
 

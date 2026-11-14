@@ -287,7 +287,7 @@ class Payment_model extends MY_Model
         $amount = $this->input->post('amount');
         if (!empty($amount)) {
            if($amount == 0.0){
-                $this->form_validation->set_message('check_validation', $this->lang->line('enter').' '.$this->lang->line('valid').' '.$this->lang->line('amount'));
+                $this->form_validation->set_message('check_validation', $this->lang->line('enter_valid_amount'));
                 return false; 
            }else{
                 return true; 

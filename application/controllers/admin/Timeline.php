@@ -12,6 +12,7 @@ class Timeline extends Admin_Controller
         parent::__construct();
         $this->load->library('form_validation');
         $this->load->library('Customlib');
+        $this->load->library('SaasValidation');
         $this->load->config('image_valid');
     }
 
@@ -19,12 +20,14 @@ class Timeline extends Admin_Controller
     {
         $this->form_validation->set_rules('timeline_title', $this->lang->line('title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('timeline_date', $this->lang->line('date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('timeline_doc', $this->lang->line('document'), 'callback_validateCanUploadFile[timeline_doc]');
         $title = $this->input->post("timeline_title");
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'timeline_title' => form_error('timeline_title'),
                 'timeline_date'  => form_error('timeline_date'),
+                'timeline_doc'   => form_error('timeline_doc'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
@@ -54,7 +57,21 @@ class Timeline extends Admin_Controller
                 $document = basename($_FILES['timeline_doc']['name']);
 
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["timeline_doc"]["tmp_name"], $uploaddir . $img_name);
+                if (move_uploaded_file($_FILES["timeline_doc"]["tmp_name"], $uploaddir . $img_name)) {
+                    // SaaS: add the uploaded timeline document size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['timeline_doc']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (timeline add): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (timeline add): ' . $e->getMessage());
+                    }
+                }
             } else {
                 $document = "";
                 $img_name = "";
@@ -72,7 +89,7 @@ class Timeline extends Admin_Controller
     {
         $this->form_validation->set_rules('timeline_title', $this->lang->line('title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('timeline_date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('timeline_doc', $this->lang->line('image'), 'callback_handle_upload[timeline_doc]');
+        $this->form_validation->set_rules('timeline_doc', $this->lang->line('image'), 'callback_handle_upload[timeline_doc]|callback_validateCanUploadFile[timeline_doc]');
         $title = $this->input->post("timeline_title");
 
         if ($this->form_validation->run() == false) {
@@ -113,7 +130,21 @@ class Timeline extends Admin_Controller
                 $document = basename($_FILES['timeline_doc']['name']);
 
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["timeline_doc"]["tmp_name"], $uploaddir . $img_name);
+                if (move_uploaded_file($_FILES["timeline_doc"]["tmp_name"], $uploaddir . $img_name)) {
+                    // SaaS: add the uploaded timeline document size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['timeline_doc']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (timeline add_staff_timeline): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (timeline add_staff_timeline): ' . $e->getMessage());
+                    }
+                }
             } else {
                 $document = "";
                 $img_name = "";
@@ -132,7 +163,7 @@ class Timeline extends Admin_Controller
     {
         $this->form_validation->set_rules('timeline_title', $this->lang->line('title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('timeline_date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('timeline_doc', $this->lang->line('image'), 'callback_handle_upload[timeline_doc]');
+        $this->form_validation->set_rules('timeline_doc', $this->lang->line('image'), 'callback_handle_upload[timeline_doc]|callback_validateCanUploadFile[timeline_doc]');
 
         $title = $this->input->post("timeline_title");
         if ($this->form_validation->run() == false) {
@@ -165,6 +196,11 @@ class Timeline extends Admin_Controller
 
             $this->timeline_model->add_staff_timeline($timeline);
 
+            // SaaS: capture the existing timeline document for quota diff + cleanup.
+            $saas_existing = $this->timeline_model->geteditstaffTimeline($timelineid);
+            $saas_old_doc  = (!empty($saas_existing) && !empty($saas_existing['document'])) ? $saas_existing['document'] : '';
+            $saas_prev_kb  = (!empty($saas_old_doc)) ? $this->media_storage->getUploadedFileSize($saas_old_doc, 'uploads/staff_timeline') : 0;
+
             if (isset($_FILES["timeline_doc"]) && !empty($_FILES['timeline_doc']['name'])) {
                 $uploaddir = './uploads/staff_timeline/';
                 if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
@@ -178,6 +214,21 @@ class Timeline extends Admin_Controller
 
                 $upload_data = array('id' => $timelineid, 'document' => $img_name);
                 $this->timeline_model->add_staff_timeline($upload_data);
+
+                // SaaS: remove orphaned old file (when name/extension changed) and adjust quota by size diff.
+                if (!empty($saas_old_doc) && $saas_old_doc != $img_name) {
+                    $this->media_storage->filedelete($saas_old_doc, 'uploads/staff_timeline');
+                }
+                try {
+                    $saas_new_kb = $this->media_storage->getTmpFileSize('timeline_doc');
+                    if ($saas_prev_kb > $saas_new_kb) {
+                        $this->saasvalidation->deleteResouceQuota('storage', $saas_prev_kb - $saas_new_kb);
+                    } elseif ($saas_new_kb > $saas_prev_kb) {
+                        $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_prev_kb);
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (timeline edit_staff_timeline): ' . $e->getMessage());
+                }
             }
 
             $msg   = $this->lang->line('timeline_added_successfully');
@@ -190,7 +241,7 @@ class Timeline extends Admin_Controller
     {
         $this->form_validation->set_rules('timeline_title', $this->lang->line('title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('timeline_date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('timeline_doc', $this->lang->line('document'), 'callback_handle_upload[timeline_doc]');      
+        $this->form_validation->set_rules('timeline_doc', $this->lang->line('document'), 'callback_handle_upload[timeline_doc]|callback_validateCanUploadFile[timeline_doc]');
 
         if ($this->form_validation->run() == false) {
 
@@ -202,23 +253,23 @@ class Timeline extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $visible_check = $this->input->post('visible_check');
-            $timeline_date = $this->input->post('timeline_date');
+            $visible_check = $this->input->post('visible_check', TRUE);
+            $timeline_date = $this->input->post('timeline_date', TRUE);
             $user_id       = $this->customlib->getStaffID();
-			
+
             if (empty($visible_check)) {
                 $visible = '';
             } else {
                 $visible = $visible_check;
             }
-			
+
             $timeline = array(
-                'title'                => $this->input->post('timeline_title'),
+                'title'                => $this->input->post('timeline_title', TRUE),
                 'timeline_date'        => $this->customlib->dateFormatToYYYYMMDDHis($timeline_date),
-                'description'          => $this->input->post('timeline_desc'),
+                'description'          => $this->input->post('timeline_desc', TRUE),
                 'status'               => $visible,
                 'date'                 => date('Y-m-d'),
-                'patient_id'           => $this->input->post('patient_id'),
+                'patient_id'           => $this->input->post('patient_id', TRUE),
                 'generated_users_type' => 'staff',
                 'generated_users_id'   => $user_id,
             );
@@ -229,8 +280,24 @@ class Timeline extends Admin_Controller
                 $file_name = $this->media_storage->fileupload("timeline_doc",'./uploads/patient_timeline/');
                 $upload_data = array('id' => $id, 'document' => $file_name);
                 $this->timeline_model->add_patient_timeline($upload_data);
+
+                // SaaS: add the uploaded timeline document size to the storage quota usage.
+                if (!IsNullOrEmptyString($file_name)) {
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['timeline_doc']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (timeline add_patient_timeline): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (timeline add_patient_timeline): ' . $e->getMessage());
+                    }
+                }
             }
-            
+
             $msg   = $this->lang->line('timeline_added_successfully');
             $array = array('status' => 'success', 'error' => '', 'message' => $msg);
         }
@@ -241,9 +308,9 @@ class Timeline extends Admin_Controller
     {
         $this->form_validation->set_rules('timeline_title', $this->lang->line('title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('timeline_date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('timeline_doc', $this->lang->line('document'), 'callback_handle_upload[timeline_doc]');
+        $this->form_validation->set_rules('timeline_doc', $this->lang->line('document'), 'callback_handle_upload[timeline_doc]|callback_validateCanUploadFile[timeline_doc]');
 
-        $title = $this->input->post("timeline_title");
+        $title = $this->input->post("timeline_title", TRUE);
 
         if ($this->form_validation->run() == false) {
 
@@ -256,23 +323,22 @@ class Timeline extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $visible_check = $this->input->post('visible_check');
-            $patientid     = $this->input->post('patient_id');
-            $timelineid    = $this->input->post('timeline_id');
-            $timeline_date = $this->input->post('timeline_date');
+            $visible_check = $this->input->post('visible_check', TRUE);
+            $patientid     = $this->input->post('patient_id', TRUE);
+            $timelineid    = $this->input->post('timeline_id', TRUE);
+            $timeline_date = $this->input->post('timeline_date', TRUE);
             $date          = $this->customlib->dateFormatToYYYYMMDDHis($timeline_date);
             $user_id       = $this->customlib->getStaffID();
             if (empty($visible_check)) {
                 $visible = '';
             } else {
-
                 $visible = $visible_check;
             }
             $timeline = array(
                 'id'                   => $timelineid,
-                'title'                => $this->input->post('timeline_title'),
+                'title'                => $this->input->post('timeline_title', TRUE),
                 'timeline_date'        => $date,
-                'description'          => $this->input->post('timeline_desc'),
+                'description'          => $this->input->post('timeline_desc', TRUE),
                 'status'               => $visible,
                 'date'                 => date('Y-m-d'),
                 'patient_id'           => $patientid,
@@ -282,10 +348,32 @@ class Timeline extends Admin_Controller
 
             $this->timeline_model->add_patient_timeline($timeline);
 
+            // SaaS: capture the existing timeline document for quota diff + cleanup.
+            $saas_existing = $this->timeline_model->geteditTimeline($timelineid);
+            $saas_old_doc  = (!empty($saas_existing) && !empty($saas_existing['document'])) ? $saas_existing['document'] : '';
+            $saas_prev_kb  = (!empty($saas_old_doc)) ? $this->media_storage->getUploadedFileSize($saas_old_doc, 'uploads/patient_timeline') : 0;
+
             if (isset($_FILES["timeline_doc"]) && !empty($_FILES['timeline_doc']['name'])) {
                 $file_name = $this->media_storage->fileupload("timeline_doc",'./uploads/patient_timeline/');
                 $upload_data = array('id' => $timelineid, 'document' => $file_name);
                 $this->timeline_model->add_patient_timeline($upload_data);
+
+                // SaaS: remove the replaced old file and adjust quota by the size diff.
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($saas_old_doc) && $saas_old_doc != $file_name) {
+                        $this->media_storage->filedelete($saas_old_doc, 'uploads/patient_timeline');
+                    }
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('timeline_doc');
+                        if ($saas_prev_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_prev_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_prev_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_prev_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (timeline edit_patient_timeline): ' . $e->getMessage());
+                    }
+                }
             }
 
 
@@ -336,6 +424,20 @@ class Timeline extends Admin_Controller
     public function delete_patient_timeline($id)
     {
         if (!empty($id)) {
+            // SaaS: release the timeline document's storage from the quota and remove the file.
+            $saas_row = $this->timeline_model->geteditTimeline($id);
+            if (!empty($saas_row) && !empty($saas_row['document'])) {
+                $saas_kb = $this->media_storage->getUploadedFileSize($saas_row['document'], 'uploads/patient_timeline');
+                if ($saas_kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $saas_kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (timeline delete_patient_timeline): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($saas_row['document'], 'uploads/patient_timeline');
+            }
+
             $this->timeline_model->delete_patient_timeline($id);
         }
     }
@@ -366,6 +468,17 @@ class Timeline extends Admin_Controller
         $result         = $this->timeline_model->getPatientTimeline($id, $status);
         $data["result"] = $result;
         $this->load->view("admin/patient_timeline", $data);
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function handle_upload($str, $var)

@@ -18,41 +18,17 @@ class Menus extends Admin_Controller
         if (!$this->rbac->hasPrivilege('menus', 'can_view')) {
             access_denied();
         }
-        $data['title']      = 'Add Book';
-        $data['title_list'] = 'Book Details';
         $this->session->set_userdata('top_menu', 'Front CMS');
         $this->session->set_userdata('sub_menu', 'admin/front/menus');
-        $listMenus         = $this->cms_menu_model->get();
-        $data['listMenus'] = $listMenus;
-        $this->form_validation->set_rules(
-            'menu', $this->lang->line('menu'), array(
-                'required',
-                array('check_exists', array($this->cms_menu_model, 'valid_check_exists')),
-            )
-        );
-
-        if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
-            $this->load->view('admin/front/menus/index', $data);
-            $this->load->view('layout/footer');
-        } else {
-            $config = array(
-                'field' => 'slug',
-                'title' => 'menu',
-                'table' => 'front_cms_menus',
-                'id'    => 'id',
-            );
-            $this->load->library('slug', $config);
-            $publish = $this->input->post('publish');
-            $data    = array(
-                'menu'        => $this->input->post('menu'),
-                'description' => $this->input->post('description'),
-            );
-            $data['slug'] = $this->slug->create_uri($data);
-            $this->cms_menu_model->add($data);
-            $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
-            redirect('admin/front/menus');
+        $listMenus = $this->cms_menu_model->get();
+        if (!empty($listMenus)) {
+            redirect('admin/front/menus/additem/' . $listMenus[0]['slug']);
         }
+        $data['listMenus'] = $listMenus;
+        $data['module']    = 'front_cms';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/front/menus/index', $data);
+        $this->load->view('layout/footer', $data);
     }
 
     public function add()
@@ -61,6 +37,7 @@ class Menus extends Admin_Controller
         $this->form_validation->set_rules(
             'menu', $this->lang->line('menu'), array(
                 'required',
+                'xss_clean',
                 array('check_exists', array($this->cms_menu_model, 'valid_check_exists')),
             )
         );
@@ -80,10 +57,10 @@ class Menus extends Admin_Controller
                 'id'    => 'id',
             );
             $this->load->library('slug', $config);
-            $publish = $this->input->post('publish');
+            $publish = $this->input->post('publish', TRUE);
             $data    = array(
-                'menu'        => $this->input->post('menu'),
-                'description' => $this->input->post('description'),
+                'menu'        => $this->input->post('menu', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
             $data['slug'] = $this->slug->create_uri($data);
             $this->cms_menu_model->add($data);
@@ -106,14 +83,16 @@ class Menus extends Admin_Controller
         $data['top_menu']           = $slug;
         $listMenus                  = $this->cms_menuitems_model->getMenus($result['id']);
         $data['listdropdown_Menus'] = $listMenus;
+        $data['allMenus']           = $this->cms_menu_model->get();
         $this->form_validation->set_rules('menu', $this->lang->line('menu_item'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('ext_url_link', $this->lang->line('external_url'), 'trim|xss_clean|callback_check_exists');
         $listPages         = $this->cms_page_model->get();
         $data['listPages'] = $listPages;
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/menus/additem', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $config = array(
                 'field' => 'slug',
@@ -123,15 +102,15 @@ class Menus extends Admin_Controller
             );
             $this->load->library('slug', $config);
             $data = array(
-                'menu_id'      => $this->input->post('menu_id'),
-                'page_id'      => $this->input->post('page_id'),
-                'menu'         => $this->input->post('menu'),
-                'ext_url'      => $this->input->post('ext_url'),
-                'open_new_tab' => $this->input->post('open_new_tab'),
+                'menu_id'      => $this->input->post('menu_id', TRUE),
+                'page_id'      => $this->input->post('page_id', TRUE),
+                'menu'         => $this->input->post('menu', TRUE),
+                'ext_url'      => $this->input->post('ext_url', TRUE),
+                'open_new_tab' => $this->input->post('open_new_tab', TRUE),
             );
-            if ($this->input->post('ext_url')) {
+            if ($this->input->post('ext_url', TRUE)) {
 
-                $data['ext_url_link'] = $this->input->post('ext_url_link');
+                $data['ext_url_link'] = $this->input->post('ext_url_link', TRUE);
             }
 
             $data['slug'] = $this->slug->create_uri($data);
@@ -167,14 +146,16 @@ class Menus extends Admin_Controller
 
         $listMenus                  = $this->cms_menuitems_model->getMenus($menu['menu_id']);
         $data['listdropdown_Menus'] = $listMenus;
+        $data['allMenus']           = $this->cms_menu_model->get();
         $this->form_validation->set_rules('menu', $this->lang->line('menu'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('ext_url_link', $this->lang->line('external_url'), 'trim|xss_clean|callback_check_exists');
         $listPages         = $this->cms_page_model->get();
         $data['listPages'] = $listPages;
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/menus/edititem', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
             $config = array(
@@ -185,20 +166,20 @@ class Menus extends Admin_Controller
             );
 
             $this->load->library('slug', $config);
-            $top_menu = $this->input->post('top_menu');
+            $top_menu = $this->input->post('top_menu', TRUE);
             $data     = array(
-                'id'           => $this->input->post('id'),
-                'page_id'      => $this->input->post('page_id'),
-                'menu'         => $this->input->post('menu'),
-                'ext_url'      => $this->input->post('ext_url'),
-                'open_new_tab' => $this->input->post('open_new_tab'),
+                'id'           => $this->input->post('id', TRUE),
+                'page_id'      => $this->input->post('page_id', TRUE),
+                'menu'         => $this->input->post('menu', TRUE),
+                'ext_url'      => $this->input->post('ext_url', TRUE),
+                'open_new_tab' => $this->input->post('open_new_tab', TRUE),
             );
-            if ($this->input->post('ext_url')) {
+            if ($this->input->post('ext_url', TRUE)) {
 
-                $data['ext_url_link'] = $this->input->post('ext_url_link');
+                $data['ext_url_link'] = $this->input->post('ext_url_link', TRUE);
             }
 
-            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id'));
+            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id', TRUE));
             $this->cms_menuitems_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/front/menus/additem/' . $top_menu);
@@ -210,7 +191,7 @@ class Menus extends Admin_Controller
         if (!$this->rbac->hasPrivilege('menus', 'can_add')) {
             access_denied();
         }
-        $order  = ($this->input->post('order'));
+        $order  = ($this->input->post('order', TRUE));
         $weight = 1;
         $array  = array();
         foreach ($order as $o_key => $o_value) {
@@ -232,7 +213,7 @@ class Menus extends Admin_Controller
 
     public function delete_image()
     {
-        $delte_image = $this->input->post('id');
+        $delte_image = $this->input->post('id', TRUE);
         if ($delte_image == "" && !isset($delte_image)) {
 
         } else {
@@ -246,7 +227,7 @@ class Menus extends Admin_Controller
     {
 
         $data['title'] = 'Fees Master List';
-        $id            = $this->input->post('id');
+        $id            = $this->input->post('id', TRUE);
         if (!$this->cms_menuitems_model->remove($id)) {
             echo json_encode(array('status' => 0, 'msg' => 'Something wrong'));
         } else {

@@ -1,20 +1,17 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Language Migrate</h3>
-                    </div><!-- /.box-header -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?= $this->lang->line('language_migrate') ?></h3>
+                    </div><!-- /.card-header -->
                     <!-- form start -->
-                    <div class="box-body">
-                    </div><!-- /.box-body -->
-                    <div class="box-footer">
-                        <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                    <div class="card-body">
+                    </div><!-- /.card-body -->
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                     </div>
                 </div>
             </div><!--/.col (right) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    

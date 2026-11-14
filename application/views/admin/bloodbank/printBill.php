@@ -8,7 +8,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>
 </div>  
@@ -98,9 +98,9 @@ $tax_amt=calculatePercent($total_discount_amount, $result['tax_percentage']);
                              <thead>
                                 <tr class="line">
                                    <td>#</td>
-                                   <td class="text-left"><?php echo $this->lang->line('description'); ?></td>                                 
+                                   <td class="text-start"><?php echo $this->lang->line('description'); ?></td>                                 
                                    <td class="text-center"><?php echo $this->lang->line('tax'); ?> (%)</td>
-                                   <td class="text-right"><?php echo $this->lang->line('amount').' ('. $currency_symbol .')'; ?></td>
+                                   <td class="text-end"><?php echo $this->lang->line('amount').' ('. $currency_symbol .')'; ?></td>
                                 </tr>
                              </thead>
                              <tbody>
@@ -109,35 +109,35 @@ $tax_amt=calculatePercent($total_discount_amount, $result['tax_percentage']);
                                    <td><?php echo $result['charge_category_name'];?><br></td>
                                     <td class="text-center"><?php echo $tax_amt." (".$result['tax_percentage']."%) ";?><br>
                                     </td>                                 
-                                   <td class="text-right"><?php echo $result['amount'] ?></td>
+                                   <td class="text-end"><?php echo $result['amount'] ?></td>
                                 </tr>
-                                <tr><td colspan="4" class="p-0" style="padding:0"></td></tr>
+                                <tr><td colspan="4" class="p-0 p-0" ></td></tr>
                                 <tr>
                                    <td colspan="2" class="no-line"></td>
-                                   <td class="text-right no-line"><?php echo $this->lang->line('total'); ?></td>
-                                   <td class="text-right no-line"><?php echo $currency_symbol . "" . amountFormat($result['amount']); ?></td>
-                                </tr>
-                                <tr>
-                                   <td colspan="2" class="no-line"></td>
-                                   <td class="text-right no-line"><?php echo $this->lang->line('discount'); ?></td>
-                                   <td class="text-right no-line"><?php echo $currency_symbol . "" . $discont_amt. " (".$result['discount_percentage']."%) "; ?></td>
+                                   <td class="text-end no-line"><?php echo $this->lang->line('total'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol . "" . amountFormat($result['amount']); ?></td>
                                 </tr>
                                 <tr>
                                    <td colspan="2" class="no-line"></td>
-                                   <td class="text-right no-line"><?php echo $this->lang->line('tax'); ?></td>
-                                   <td class="text-right no-line"><?php echo $currency_symbol . "" . $tax_amt ." (".$result['tax_percentage']."%) "; ?></td>
+                                   <td class="text-end no-line"><?php echo $this->lang->line('discount'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol . "" . $discont_amt. " (".$result['discount_percentage']."%) "; ?></td>
                                 </tr>
                                 <tr>
                                    <td colspan="2" class="no-line"></td>
-                                   <td class="text-right no-line"><?php echo $this->lang->line('paid'); ?></td>
-                                   <td class="text-right no-line">
+                                   <td class="text-end no-line"><?php echo $this->lang->line('tax'); ?></td>
+                                   <td class="text-end no-line"><?php echo $currency_symbol . "" . $tax_amt ." (".$result['tax_percentage']."%) "; ?></td>
+                                </tr>
+                                <tr>
+                                   <td colspan="2" class="no-line"></td>
+                                   <td class="text-end no-line"><?php echo $this->lang->line('paid'); ?></td>
+                                   <td class="text-end no-line">
                                     <?php echo $currency_symbol . "" . amountFormat($result['total_deposit']); ?>
                                     </td>
                                 </tr>
                                   <tr>
                                    <td colspan="2" class="no-line"></td>
-                                   <td class="text-right no-line"><?php echo $this->lang->line('total_due'); ?></td>
-                                   <td class="text-right no-line">
+                                   <td class="text-end no-line"><?php echo $this->lang->line('total_due'); ?></td>
+                                   <td class="text-end no-line">
                                     <?php echo $currency_symbol . "" . amountFormat(($result['amount']-$discont_amt)+$tax_amt-$result['total_deposit']); ?>
 
                                     </td>

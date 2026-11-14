@@ -2,6 +2,10 @@
 
 class Prescription extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
 
     public function __construct()
     {
@@ -18,7 +22,12 @@ class Prescription extends Patient_Controller
     {
        
         $result     = $this->prescription_model->getPrescriptionByVisitID($visitid);
-        
+
+        if (empty($result)) {
+            echo '<div class="alert alert-warning mb-0">' . $this->lang->line('record_not_found') . '</div>';
+            return;
+        }
+
         $data["print_details"] = $this->printing_model->getheaderfooter('opdpre');
         $data["result"]        = $result;
         $data["id"]            = $visitid;
@@ -42,12 +51,13 @@ class Prescription extends Patient_Controller
         $data["ipdid"]         = $ipdid;
         if (isset($_POST['print'])) {
             $data["print"] = 'yes';
-            $data['fields_prescription']   =  $this->customfield_model->get_custom_fields('prescription', '', 1, '', 1); 
+            $data['fields_prescription']   =  $this->customfield_model->get_custom_fields('prescription', '', 1, '', 1);
+            $this->load->view("patient/ipdprescription_print", $data);
         } else {
             $data["print"] = 'no';
-            $data['fields_prescription']   =  $this->customfield_model->get_custom_fields('prescription', '', '', '', 1); 
+            $data['fields_prescription']   =  $this->customfield_model->get_custom_fields('prescription', '', '', '', 1);
+            $this->load->view("patient/ipdprescription", $data);
         }
-        $this->load->view("patient/ipdprescription", $data);
     }
 
     public function downloadprescription($prescription_id)

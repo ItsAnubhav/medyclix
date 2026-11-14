@@ -1,37 +1,27 @@
-<style type="text/css">
-    @media print
-    {
-        .no-print, .no-print *
-        {
-            display: none !important;
-        }
-    }
-</style>
+
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper" >
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<!-- Main content -->
+    <div class="row">
             <!-- left column -->
             <div class="col-md-12">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('transaction_report') ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('transaction_report') ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                         </div>
                     </div>
-                    <div class="box-body pb0">
+                    <div class="card-body pb0">
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row">
                                     <form role="form" action="<?php echo site_url('admin/income/transactionreport') ?>" method="post">
-                                        <div class="box-body row">
+                                        <div class="card-body row">
                                             <?php echo $this->customlib->getCSRF(); ?>
                                             <div class="col-sm-6 col-md-3" >
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('search') . " " . $this->lang->line('type'); ?></label>
                                                     <select class="form-control" name="search_type" onchange="showdate(this.value)">
                                                         <option value=""><?php echo $this->lang->line('all') ?></option>
@@ -47,9 +37,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6 col-md-3" >
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line('collected_by'); ?></label>
-                                                    <select class="form-control select2"  name="collect_staff" style="width: 100%">
+                                                    <select class="form-control select2 w-100"  name="collect_staff" >
                                                         <option value=""><?php echo $this->lang->line('select') ?></option>
                                                         <?php foreach ($staffsearch as $dkey => $value) { ?>
                                                             <option value="<?php echo $value["staffid"] ?>"<?php
@@ -62,23 +52,23 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 <span class="text-danger"><?php echo form_error('doctor'); ?></span>
                                             </div>
                                         </div>
-                                        <div class="col-sm-6 col-md-4" id="fromdate" style="display: none">
-                                            <div class="form-group">
+                                        <div class="col-sm-6 col-md-4 d-none" id="fromdate">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line('date_from'); ?></label><small class="req"> *</small>
                                                     <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                                     <span class="text-danger"><?php echo form_error('date_from'); ?></span>
                                                 </div>
                                             </div>
-                                            <div class="col-sm-6 col-md-4" id="todate" style="display: none">
-                                                <div class="form-group">
+                                            <div class="col-sm-6 col-md-4 d-none" id="todate">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('date_to'); ?></label><small class="req"> *</small>
                                                     <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                                     <span class="text-danger"><?php echo form_error('date_to'); ?></span>
                                                 </div>
                                             </div>
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <div class="col-sm-12">
-                                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle float-end"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -93,7 +83,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <div class="tabsborderbg"></div>
                         <div class="nav-tabs-custom border0">
                             <ul class="nav nav-tabs">
-                                <li class="active"><a href="#all" data-toggle="tab" aria-expanded="true"><?php echo $this->lang->line('all') ?></a></li>
+                                <li class="active"><a href="#all" data-bs-toggle="tab" aria-expanded="true"><?php echo $this->lang->line('all') ?></a></li>
                                 <?php
 $j               = 0;
     $language_module = array(
@@ -114,7 +104,7 @@ $j               = 0;
     foreach ($parameter as $ckey => $value) {
         if (($this->rbac->hasPrivilege($permission_array[$j], 'can_view')) || ($this->rbac->hasPrivilege($report_module[$j], 'can_view'))) {
             ?>
-                                        <li><a href="#<?php echo $ckey ?>" data-toggle="tab" aria-expanded="true"><span><?php echo $this->lang->line($language_module[$permission_array[$j]]); ?></span></a></li>
+                                        <li><a href="#<?php echo $ckey ?>" data-bs-toggle="tab" aria-expanded="true"><span><?php echo $this->lang->line($language_module[$permission_array[$j]]); ?></span></a></li>
                                     <?php
 }
         $j++;
@@ -128,11 +118,11 @@ $j               = 0;
                                         <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%">
                                             <thead>
                                             <th><?php echo $this->lang->line('name'); ?></th>
-                                            <th><?php echo $this->lang->line('refference'); ?></th>
+                                            <th><?php echo $this->lang->line('reference'); ?></th>
                                             <th><?php echo $this->lang->line('head'); ?></th>
                                             <th><?php echo $this->lang->line('date'); ?></th>
                                             <th><?php echo $this->lang->line('collected_by'); ?></th>
-                                            <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                            <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
                                             </thead>
                                             <tbody>
                                                 <?php
@@ -200,10 +190,10 @@ $j          = 0;
             } else {
                 ?>
                                                             <tr>
-                                                                <td><?php echo $result["patient_name"] . " " . $patient_id ?></td> 
-                                                                <td><?php echo $refference ?></td>
-                                                                <td style="text-transform:capitalize;"><?php echo $key1 ?></td> 
-                                                                <td><?php echo $result["generated_byname"]; ?></td>
+                                                                <td><?php echo html_escape($result["patient_name"]) . " " . html_escape($patient_id) ?></td>
+                                                                <td><?php echo html_escape($refference) ?></td>
+                                                                <td class="text-capitalize"><?php echo html_escape($key1) ?></td>
+                                                                <td><?php echo html_escape($result["generated_byname"]); ?></td>
                                                             </tr>
                                                         <?php
 }
@@ -217,7 +207,7 @@ $j          = 0;
 												<td></td>
 												<td></td>
                                                 <td></td>
-                                                <td class="text-right"><?php echo $this->lang->line('total') . " : " . $currency_symbol . $total; ?>
+                                                <td class="text-end"><?php echo $this->lang->line('total') . " : " . $currency_symbol . $total; ?>
                                                 </td>
                                             </tr>
                                             </tbody>   
@@ -232,11 +222,11 @@ $i    = 0;
         ?>
                                     <div class="tab-pane" id="<?php echo $key ?>">
                                         <div class="download_label"><?php echo $this->lang->line('transaction_report'); ?></div>
-                                        <div class="box-body table-responsive">
+                                        <div class="card-body table-responsive">
                                             <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%">
                                                 <thead>
                                                     <th><?php echo $this->lang->line('name'); ?></th>
-                                                    <th><?php echo $this->lang->line('refference'); ?></th>
+                                                    <th><?php echo $this->lang->line('reference'); ?></th>
                                                     <th><?php echo $this->lang->line('head'); ?></th>
                                                     <th><?php echo $this->lang->line('date'); ?></th>
                                                 <?php if (($key !='income') && ($key !='expense') && ($key !='payroll')) { ?>
@@ -244,7 +234,7 @@ $i    = 0;
                                                     <?php    echo $this->lang->line('collected_by'); ?>
                                                     </th>
                                                  <?php   } ?>
-                                                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
                                                 </thead>
                                                 <tbody>
                                                     <?php
@@ -275,15 +265,15 @@ $tot[$value["label"]] = 0;
             }
             ?>
                                                         <tr>
-                                                            <td><?php echo $transaction["patient_name"] . " " . $surname . " " . $patient_id ?></td> 
-                                                            <td><?php echo $reff; ?></td>
-                                                            <td style="text-transform: capitalize;"><?php echo $value["label"] ?></td>
-                                                    <?php if (($key !='income') && ($key !='expense') && ($key !='payroll')) { ?>      
+                                                            <td><?php echo html_escape($transaction["patient_name"]) . " " . html_escape($surname) . " " . html_escape($patient_id) ?></td>
+                                                            <td><?php echo html_escape($reff); ?></td>
+                                                            <td class="text-capitalize"><?php echo html_escape($value["label"]) ?></td>
+                                                    <?php if (($key !='income') && ($key !='expense') && ($key !='payroll')) { ?>
                                                         <td>
-                                                      <?php echo $transaction["generated_byname"]; ?>
+                                                      <?php echo html_escape($transaction["generated_byname"]); ?>
                                                         </td>
                                                    <?php  } ?>
-                                                            <td class="text-right"><?php echo $payment ?></td>
+                                                            <td class="text-end"><?php echo html_escape($payment) ?></td>
                                                         </tr>
         <?php }?>
 														<tr class="box box-solid total-bg">
@@ -294,7 +284,7 @@ $tot[$value["label"]] = 0;
                                                             <?php if (($key !='income') && ($key !='expense') && ($key !='payroll')) { ?>
                                                             <td></td>
                                                             <?php } ?>
-															<td class="text-right" ><?php echo $this->lang->line('total') . " : " . $currency_symbol . $tot[$value["label"]]; ?></td>
+															<td class="text-end" ><?php echo $this->lang->line('total') . " : " . $currency_symbol . $tot[$value["label"]]; ?></td>
 														</tr>
                                                 </tbody>
                                             </table>
@@ -312,19 +302,10 @@ $tot[$value["label"]] = 0;
 
             </div>
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div>
 
-<script type="text/javascript">
-    $(document).ready(function () {
-        var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';		
-        $(".date").datepicker({
-            format: date_format,
-            autoclose: true,
-            todayHighlight: true
-        });
-    });
-</script>
+<!-- .date inputs auto-initialized as Tempus Dominus 6 pickers via event delegation in footer.php -->
 
 <script type="text/javascript">
     $(document).ready(function () {
@@ -352,11 +333,11 @@ $tot[$value["label"]] = 0;
 
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>

@@ -1,20 +1,17 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content">
-        <div class="row">   
+<div class="row">   
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_human_resource');?>
-                <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('staff_attendance_report'); ?> </h3>
+                <div class="card-header ptbnull"></div>
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('staff_attendance_report'); ?> </h3>
                     </div>
                     <form id='form1' action="<?php echo site_url('admin/staffattendance/attendancereport') ?>" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body pb-0">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('role'); ?></label>
                                         <select  id="role" name="role" class="form-control" >
                                             <option value="select"><?php echo $this->lang->line('select'); ?></option>
@@ -34,8 +31,8 @@
                                         <span class="text-danger"><?php echo form_error('role'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('month'); ?></label><small class="req"> *</small>
                                         <select id="month" name="month" class="form-control" >
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -55,8 +52,8 @@
                                         <span class="text-danger"><?php echo form_error('month'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('year'); ?></label>
                                         <select  id="year" name="year" class="form-control" >
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -75,8 +72,14 @@
                                         <span class="text-danger"><?php echo form_error('year'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-lg-12">
-                                    <button type="submit" name="search" value="search" class="btn btn-primary btn-sm pull-right checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="mb-3">
+                                        <label class="d-block">&nbsp;</label>
+                                        <button type="submit" name="search" value="search" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                            <i class="fa fa-search"></i>
+                                            <?php echo $this->lang->line('search'); ?>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div> 
@@ -84,14 +87,13 @@
                     <?php
                     if (isset($resultlist)) {
                         ?>
-                        <div class="box border0 clear" id="attendencelist">
-                            <div class="ptbnull"></div>
-                            <div class="box-header">
+                        <div class="card border0 clear" id="attendencelist">
+                            <div class="card-header pt-0">
                                 <div class="row">
                                     <div class="col-md-4 col-sm-4">
                                     </div>
                                     <div class="col-md-8 col-sm-8">
-                                        <div class="pull-right">
+                                        <div class="float-end">
                                             <?php
                                             foreach ($attendencetypeslist as $key_type => $value_type) {
                                                 ?>
@@ -108,7 +110,7 @@
                                         </div>
                                     </div>
                                 </div></div>
-                            <div class="table-responsive box-body">
+                            <div class="table-responsive card-body">
                                 <?php
                                 if (!empty($resultlist)) {
                                     ?>
@@ -119,12 +121,12 @@
                                                 <th>
                                                     <?php echo $this->lang->line('staff_date'); ?>
                                                 </th>
-                                                <th><br/><span data-toggle="tooltip" title="<?php echo $this->lang->line('gross_present_percentage'); ?>">%</span></th>
+                                                <th><br/><span data-bs-toggle="tooltip" title="<?php echo $this->lang->line('gross_present_percentage'); ?>">%</span></th>
                                                 <?php
                                                 if (!empty($attendence_array)) {
                                                     foreach ($attendencetypeslist as $key => $value) {
                                                         ?>
-                                                        <th><br/><span data-toggle="tooltip" title="<?php echo "Total " . $value["type"]; ?>"><?php echo strip_tags($value["key_value"]); ?>
+                                                        <th><br/><span data-bs-toggle="tooltip" title="<?php echo "Total " . $value["type"]; ?>"><?php echo strip_tags($value["key_value"]); ?>
 
                                                             </span></th>
 
@@ -192,17 +194,17 @@
                                                     }
 
                                                     if (($percentage < 75) && ($percentage >= 0)) {
-                                                        $label = "class='label label-danger'";
+                                                        $label = "class='badge bg-danger'";
                                                     } else if ($percentage > 75) {
-                                                        $label = "class='label label-success'";
+                                                        $label = "class='badge bg-success'";
                                                     } else {
-                                                        $label = "class='label label-default'";
+                                                        $label = "class='badge bg-secondary'";
                                                     }
                                                     
                                                     ?>
                                                     <tr>
-                                                        <th class="tdclsname"><span data-toggle="popover" class="detail_popover" data-original-title="" title=""><a href="#" style="color:#333"><?php echo $staff_value['name'] . " " . $staff_value['surname']; ?></a></span>
-                                                            <div class="fee_detail_popover" style="display: none"><?php echo $this->lang->line('staff_id'); ?>: <?php echo $staff_value['employee_id']; ?></div>
+                                                        <th class="tdclsname"><span data-bs-toggle="popover" class="detail_popover" title="" title=""><a href="#"><?php echo $staff_value['name'] . " " . $staff_value['surname']; ?></a></span>
+                                                            <div class="fee_detail_popover d-none"><?php echo $this->lang->line('staff_id'); ?>: <?php echo $staff_value['employee_id']; ?></div>
                                                         </th>
                                                         <th><?php echo "<label $label>" . $print_percentage . "</label>";     ?></th>
                                                         <th><?php echo $monthAttendance[$i][$staff_value['id']]['present']; ?></th>
@@ -215,10 +217,10 @@
                                                         foreach ($attendence_array as $at_key => $at_value) {
                                                             ?>
                                                             <th class="tdcls text text-center">
-                                                                <span data-toggle="popover" class="detail_popover" data-original-title="" title=""><a href="#" style="color:#333"><?php
+                                                                <span data-bs-toggle="popover" class="detail_popover" title="" title=""><a href="#"><?php
                                                                         print_r($resultlist[$at_value][$staff_value['id']]['key']);
                                                                         ?></a></span>
-                                                                <div class="fee_detail_popover" style="display: none"><?php
+                                                                <div class="fee_detail_popover d-none"><?php
                                                                     if (!empty($resultlist[$at_value][$staff_value['id']]['remark'])) {
                                                                         echo $resultlist[$at_value][$staff_value['id']]['remark'];
                                                                     }
@@ -250,15 +252,10 @@
                     }
                     ?>                
 					</div>
-                </section>
-            </div>
             <script type="text/javascript">
                 $(document).ready(function () {
                     var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
-                    $('#date').datepicker({
-                        format: date_format,
-                        autoclose: true
-                    });
+                    /* #date init removed - auto-init via class + event delegation */
 
                     $('.detail_popover').popover({
                         placement: 'right',

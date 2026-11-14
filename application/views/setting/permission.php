@@ -1,145 +1,97 @@
-<style type="text/css">
-    .material-switch > input[type="checkbox"] {
-        display: none;   
-    }
-
-    .material-switch > label {
-        cursor: pointer;
-        height: 0px;
-        position: relative; 
-        width: 40px;  
-    }
-
-    .material-switch > label::before {
-        background: rgb(0, 0, 0);
-        box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
-        border-radius: 8px;
-        content: '';
-        height: 16px;
-        margin-top: -8px;
-        position:absolute;
-        opacity: 0.3;
-        transition: all 0.4s ease-in-out;
-        width: 40px;
-    }
-    .material-switch > label::after {
-        background: rgb(255, 255, 255);
-        border-radius: 16px;
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-        content: '';
-        height: 24px;
-        left: -4px;
-        margin-top: -8px;
-        position: absolute;
-        top: -4px;
-        transition: all 0.3s ease-in-out;
-        width: 24px;
-    }
-    .material-switch > input[type="checkbox"]:checked + label::before {
-        background: inherit;
-        opacity: 0.5;
-    }
-    .material-switch > input[type="checkbox"]:checked + label::after {
-        background: inherit;
-        left: 20px;
-    }
-</style>
-
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">        
-            <?php $this->load->view('setting/sidebar'); ?>
-            <div class="col-md-10">            
-                <div class="box box-info">
-                    <div class="">
-                        <div class="nav-tabs-custom border0">
-                            <ul class="nav nav-tabs pull-right">
-                                <li><a href="#tab_patient" data-toggle="tab"><?php echo $this->lang->line('patient') ?></a></li>
-                                <li class="active"><a href="#tab_system" data-toggle="tab"><?php echo $this->lang->line('system') ?></a></li>
-                               <li class="pull-left header"><?php echo $this->lang->line('modules'); ?></li> 
-                            </ul>
-                        </div>    
-                    </div>
-                    <div class="box-body">   
-                        <div class="tab-content">
-                            <div class="tab-pane active table-responsive" id="tab_system">
-                                <div class="download_label"><?php echo $this->lang->line('modules'); ?></div>
-                                <table class="table table-striped table-bordered table-hover table-switch-right overflow-visible" cellspacing="0" width="100%">
-                                    <thead>
-                                        <tr>
-                                            <th><?php echo $this->lang->line('name'); ?></th>
-                                            <th class="text-right rtl-text-left"><?php echo $this->lang->line('action'); ?></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        if (!empty($permissionList)) {
-                                            $count = 1;
-                                            foreach ($permissionList as $permission) {
-                                                ?>
-                                                <tr>
-                                                    <td><?php echo $permission['name']; ?></td>
-                                                     <td class="pull-right noExport">
-                                                        <div class="material-switch pull-right">
-                                                            <input id="student<?php echo $permission['id'] ?>" name="someSwitchOption001" type="checkbox" data-role="student" class="chk" data-rowid="<?php echo $permission['short_code'] ?>" value="checked" <?php if ($permission['is_active'] == 1) echo "checked='checked'"; ?> />
-                                                            <label for="student<?php echo $permission['id'] ?>" class="label-success"></label>
-                                                        </div>
-
-                                                    </td>
-                                                </tr>
-                                                <?php
-                                                $count++;
-                                            }
+<div class="row">
+    <?php $this->load->view('setting/sidebar'); ?>
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header ptbnull d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="card-title mb-0"><?php echo $this->lang->line('modules'); ?></h5>
+                <ul class="nav nav-pills sh-segmented-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab_system_btn" data-bs-toggle="tab" data-bs-target="#tab_system" type="button" role="tab"><i class="fa fa-cogs"></i> <?php echo $this->lang->line('system') ?></button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab_patient_btn" data-bs-toggle="tab" data-bs-target="#tab_patient" type="button" role="tab"><i class="fa fa-user"></i> <?php echo $this->lang->line('patient') ?></button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab_system" role="tabpanel">
+                        <div class="table-responsive">
+                            <div class="download_label"><?php echo $this->lang->line('modules'); ?></div>
+                            <table class="table table-striped table-hover align-middle mb-0" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th><?php echo $this->lang->line('name'); ?></th>
+                                        <th class="text-end rtl-text-start sh-th-140"><?php echo $this->lang->line('action'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    if (!empty($permissionList)) {
+                                        foreach ($permissionList as $permission) {
+                                            ?>
+                                            <tr>
+                                                <td><?php echo $permission['name']; ?></td>
+                                                <td class="text-end noExport">
+                                                    <div class="form-check form-switch d-inline-flex m-0">
+                                                        <input class="form-check-input chk" type="checkbox" role="switch"
+                                                               id="student<?php echo $permission['id'] ?>"
+                                                               data-role="student"
+                                                               data-rowid="<?php echo $permission['short_code'] ?>"
+                                                               <?php if ($permission['is_active'] == 1) echo 'checked'; ?> />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php
                                         }
-                                        ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- /.tab-pane -->
-                            <div class="tab-pane" id="tab_patient">
-                              <div class="table-responsive overflow-visible">  
-                                <div class="download_label"><?php echo $this->lang->line('modules'); ?></div>
-                                <table class="table table-striped table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th><?php echo $this->lang->line('name'); ?></th>
-                                            <th class="text-right rtl-text-left"><?php echo $this->lang->line('action'); ?></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        if (!empty($patientPermissionList)) {
-                                            $count = 1;
-                                            foreach ($patientPermissionList as $permission) {
-                                                ?>
-                                                <tr>
-                                                    <td><?php echo $permission['name']; ?></td>
-                                                    <td class="pull-right">
-                                                        <div class="material-switch">
-                                                            <input id="patient<?php echo $permission['id'] ?>" name="someSwitchOption001" type="checkbox" data-role="patient" class="chk_patient" data-rowid="<?php echo $permission['id'] ?>" value="checked" <?php if ($permission['is_active'] == 1) echo "checked='checked'"; ?> />
-                                                            <label for="patient<?php echo $permission['id'] ?>" class="label-success"></label>
-                                                        </div>
-
-                                                    </td>
-                                                </tr>
-                                                <?php
-                                                $count++;
-                                            }
-                                        }
-                                        ?>
-                                    </tbody>
-                                </table>
-                              </div>  
-                            </div>
-                            <!-- /.tab-pane -->
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
                         </div>
-                        <!-- /.tab-content -->
-                    </div>  
+                    </div>
+                    <!-- /.tab-pane -->
+                    <div class="tab-pane fade" id="tab_patient" role="tabpanel">
+                        <div class="table-responsive">
+                            <div class="download_label"><?php echo $this->lang->line('modules'); ?></div>
+                            <table class="table table-striped table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><?php echo $this->lang->line('name'); ?></th>
+                                        <th class="text-end rtl-text-start sh-th-140"><?php echo $this->lang->line('action'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    if (!empty($patientPermissionList)) {
+                                        foreach ($patientPermissionList as $permission) {
+                                            ?>
+                                            <tr>
+                                                <td><?php echo $permission['name']; ?></td>
+                                                <td class="text-end">
+                                                    <div class="form-check form-switch d-inline-flex m-0">
+                                                        <input class="form-check-input chk_patient" type="checkbox" role="switch"
+                                                               id="patient<?php echo $permission['id'] ?>"
+                                                               data-role="patient"
+                                                               data-rowid="<?php echo $permission['id'] ?>"
+                                                               <?php if ($permission['is_active'] == 1) echo 'checked'; ?> />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php
+                                        }
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- /.tab-pane -->
                 </div>
-            </div> 
-        </div> 
-    </section>
+                <!-- /.tab-content -->
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">

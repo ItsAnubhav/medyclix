@@ -4,6 +4,10 @@
 
 class Onepay extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
     public $payment_method = array();
     public $pay_method     = array();
     public $patient_data;
@@ -88,7 +92,7 @@ class Onepay extends Patient_Controller
                 'vpc_Version' => '2'
             );
 
-        $vpcURL="https://mtf.onepay.vn/paygate/vpcpay.op?";
+        $vpcURL="https://onepay.vn/paygate/vpcpay.op?";
         foreach($payment_data as $key => $value) {
             if (strlen($value) > 0) {
                 if ($appendAmp == 0) {

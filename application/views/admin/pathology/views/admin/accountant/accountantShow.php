@@ -1,38 +1,37 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            <i class="fa fa-money"></i> <?php echo $this->lang->line('fees_collection'); ?>
-        </h1>
+            <i class="fa fa-money"></i></h1>
     </section>
     <!-- Main content -->
     <section class="content">
         <div class="row">
             <div class="col-md-3">
-                <div class="box box-primary">
-                    <div class="box-body box-profile">
-                        <img class="profile-user-img img-responsive img-circle" src="<?php echo $this->media_storage->getImageURL($accountant['image']); ?>" alt="User profile picture">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img class="profile-user-img img-fluid img-circle" src="<?php echo $this->media_storage->getImageURL($accountant['image']); ?>" alt="User profile picture">
                         <h3 class="profile-username text-center"><?php echo $accountant['name'] ?><br/>
                             <small>
-                                <a href="#"  class="schedule_modal text-green" data-toggle="tooltip" title="<?php echo $this->lang->line('login_detail'); ?>"><i class="fa fa-key"></i>
-                                    <?php echo $this->lang->line('login_details'); ?>
+                                <a href="#"  class="schedule_modal text-green" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('login_detail'); ?>"><i class="fa fa-key"></i>
+                                    <?php echo $this->lang->line('login_detail'); ?>
                                 </a>
                             </small>
                         </h3>
                         <ul class="list-group list-group-unbordered">
                             <li class="list-group-item">
-                                <b><?php echo $this->lang->line('gender'); ?></b> <a class="pull-right text-aqua"><?php echo $accountant['sex'] ?></a>
+                                <b><?php echo $this->lang->line('gender'); ?></b> <a class="float-end text-aqua"><?php echo $accountant['sex'] ?></a>
                             </li>
                             <li class="list-group-item">
-                                <b><?php echo $this->lang->line('date_of_birth'); ?></b> <a class="pull-right text-aqua"><?php echo date($this->customlib->getSchoolDateFormat(), $this->customlib->dateyyyymmddTodateformat($accountant['dob'])); ?></a>
+                                <b><?php echo $this->lang->line('date_of_birth'); ?></b> <a class="float-end text-aqua"><?php echo date($this->customlib->getSchoolDateFormat(), $this->customlib->dateyyyymmddTodateformat($accountant['dob'])); ?></a>
                             </li>
                             <li class="list-group-item">
-                                <b><?php echo $this->lang->line('phone'); ?></b> <a class="pull-right text-aqua"><?php echo $accountant['phone'] ?></a>
+                                <b><?php echo $this->lang->line('phone'); ?></b> <a class="float-end text-aqua"><?php echo $accountant['phone'] ?></a>
                             </li>
                             <li class="list-group-item">
-                                <b><?php echo $this->lang->line('email'); ?></b> <a class="pull-right text-aqua"><?php echo $accountant['email'] ?></a>
+                                <b><?php echo $this->lang->line('email'); ?></b> <a class="float-end text-aqua"><?php echo $accountant['email'] ?></a>
                             </li>
                             <li class="list-group-item">
-                                <b><?php echo $this->lang->line('address'); ?></b> <a class="pull-right text-aqua"><?php echo $accountant['address'] ?></a>
+                                <b><?php echo $this->lang->line('address'); ?></b> <a class="float-end text-aqua"><?php echo $accountant['address'] ?></a>
                             </li>
                         </ul>
                     </div>
@@ -45,7 +44,7 @@
 <script type="text/javascript">
     $(document).on('click', '.schedule_modal', function () {
         $('.modal-title').html("");
-        $('.modal-title').html("<?php echo $this->lang->line('login_details'); ?>");
+        $('.modal-title').html("<?php echo $this->lang->line('login_detail'); ?>");
         var base_url = '<?php echo base_url() ?>';
         var accountant_id = '<?php echo $accountant["id"] ?>';
         var teacher_name = '<?php echo $accountant["name"] ?>';
@@ -95,13 +94,13 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">×</button>
                 <h4 class="modal-title"></h4>
             </div>
             <div class="modal-body">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
             </div>
         </div>
     </div>

@@ -1,57 +1,55 @@
 <?php
-
+// Host = the doctor the consultation is created for
 $name = ($live->create_for_surname == "") ? $live->create_for_name : $live->create_for_name . " " . $live->create_for_surname;
 
-?>
-<div class="row">
-  <div class="col-lg-12 col-md-12">
-        <div class="modal-header zoommodal-title">
-            <h4 class="modal-title"><?php echo $live->title; ?></h4>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-4">
-        <label>
-            <span class="labalblock"> <?php echo $this->lang->line('host'); ?></span> <span class="text-dark robo-normal"><span class="text-dark"><?php echo $name; ?></span>
-        </label>
-    </div>
-
-    <div class="col-lg-4 col-md-4">
-        <label>
-            <span class="labalblock"> <?php echo $this->lang->line('date'); ?></span> <span class="text-dark robo-normal"><span class="text-dark"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($live->date)); ?></span>
-        </label>
-    </div>
-
-    <div class="col-lg-4 col-md-4">
-        <label>
-            <span class="labalblock"> <?php echo $this->lang->line('duration'); ?></span> <span class="text-dark robo-normal"><span class="text-dark"><?php echo $live->duration; ?></span>
-        </label>
-    </div>
-</div>
-
-<div class="row">
-  <div class="col-lg-12 col-md-12">
-  <div class="zoommodal-border">
-<?php
-
-    if ($conference_setting->use_zoom_app) {
-        ?>
-   <a href="<?php echo $live_url->join_url; ?>" class="btn btn-outline-success btn-sm pull-right join-btn" data-id="<?php echo $live->id; ?>" target="_blank">
-      <i class="fa fa-video-camera"></i> <?php echo $this->lang->line('join') . ' ' . $this->lang->line('now'); ?>
-      </a>
-
-  <?php
+// Status pill — reuse the app's status vocabulary (0 awaited, 1 cancelled, 2 finished)
+if ($live->status == 1) {
+    $pill_class = 'sh-status-pill-danger';
+    $pill_text  = $this->lang->line('cancelled');
+} elseif ($live->status == 2) {
+    $pill_class = 'sh-status-pill-muted';
+    $pill_text  = $this->lang->line('finished');
 } else {
-        ?>
-      <a href="<?php echo site_url('patient/dashboard/join/' . $live->id); ?>" class="btn btn-outline-success btn-sm pull-right">
-            <i class="fa fa-video-camera"></i> <?php echo $this->lang->line('join') . ' ' . $this->lang->line('now'); ?>
-      </a>
-
-  <?php
+    $pill_class = 'sh-status-pill-ok';
+    $pill_text  = $this->lang->line('awaited');
 }
 
-
+// Join action — zoom-app links open in a new tab and go through the add_history handler (join-btn)
+if ($conference_setting->use_zoom_app) {
+    $join_url = $live_url->join_url;
+    $extracls = 'join-btn';
+    $target   = '_blank';
+} else {
+    $join_url = site_url('patient/dashboard/join/' . $live->id);
+    $extracls = '';
+    $target   = '';
+}
 ?>
-</div>
-</div>
+
+<div class="sh-form-card">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fa fa-video"></i> <?php echo html_escape($live->title); ?></span>
+        <span class="sh-status-pill <?php echo $pill_class; ?> ms-auto"><?php echo $pill_text; ?></span>
+    </div>
+    <div class="sh-info-grid">
+        <div class="row g-0">
+            <div class="col-md-4 sh-info-item">
+                <span class="sh-info-label"><i class="fas fa-user-md"></i> <?php echo $this->lang->line('host'); ?></span>
+                <span class="sh-info-value highlight"><?php echo html_escape($name); ?></span>
+            </div>
+            <div class="col-md-4 sh-info-item">
+                <span class="sh-info-label"><i class="fas fa-calendar-alt"></i> <?php echo $this->lang->line('date'); ?></span>
+                <span class="sh-info-value"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($live->date)); ?></span>
+            </div>
+            <div class="col-md-4 sh-info-item">
+                <span class="sh-info-label"><i class="fas fa-hourglass-half"></i> <?php echo $this->lang->line('duration'); ?></span>
+                <span class="sh-info-value"><?php echo html_escape($live->duration); ?> min</span>
+            </div>
+        </div>
+    </div>
+    <div class="sh-card-actions">
+        <a href="<?php echo $join_url; ?>" class="btn btn-success btn-sm <?php echo $extracls; ?>" data-id="<?php echo (int) $live->id; ?>" target="<?php echo $target; ?>">
+            <i class="fa fa-video-camera"></i> <?php echo $this->lang->line('join') . ' ' . $this->lang->line('now'); ?>
+        </a>
+    </div>
 </div>

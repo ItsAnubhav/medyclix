@@ -1,9 +1,6 @@
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <ul class="tablists">
                       <li>
                         <a href="<?php echo base_url(); ?>admin/bloodbank/products" class="<?php echo set_sidebar_Submenu('admin/bloodbank/products'); ?>" ><?php echo $this->lang->line('products'); ?></a></li>
@@ -11,16 +8,16 @@
                 </div>
             </div>
             <div class="col-md-10">
-                <div class="box box-primary" id="tachelist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('product_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="tachelist">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('product_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('blood_bank_product', 'can_add')) {?>
                                 <a onclick="add()" class="btn btn-primary btn-sm charge_type"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_product'); ?></a>
                             <?php }?>
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">
                         </div>
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
@@ -29,7 +26,7 @@
                                     <tr>
                                         <th><?php echo $this->lang->line('name'); ?></th>
                                         <th><?php echo $this->lang->line('type'); ?></th>                                       
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -44,43 +41,47 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" id="title"></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formadd" action="<?php echo site_url('admin/bloodbank/add_product') ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                <div class="modal-body pt0 pb0">
-                    <div class="ptt10">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('type'); ?></label><small class="req"> *</small>
-                            <select class="form-control" id="type" name="type">
-                                <option value=""><?php echo $this->lang->line('select');?></option>
-                                <?php 
-                                foreach ($this->customlib->getblood_bank_type() as $key => $value) {
-                                   ?>
-                                   <option value="<?php echo $key;?>"> <?php echo $value; ?></option>
-                                   <?php
-                                }
-                                ?>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="name"  name="name"  type="text" class="form-control"  />
-                             <input autofocus="" id="id"  name="id"  type="hidden" class="form-control"  />
+            <form id="formadd" action="<?php echo site_url('admin/bloodbank/add_product') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input id="id" name="id" type="hidden" />
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('products'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('type'); ?></label><small class="req"> *</small>
+                                        <select class="form-control" id="type" name="type">
+                                            <option value=""><?php echo $this->lang->line('select');?></option>
+                                            <?php foreach ($this->customlib->getblood_bank_type() as $key => $value) { ?>
+                                                <option value="<?php echo $key;?>"><?php echo $value; ?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-0 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
+                                        <input autofocus="" id="name" name="name" type="text" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    </div>
-                        <div class="modal-footer">
-                            <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"> <i class="fa fa-check-circle" ></i> <?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -88,12 +89,12 @@
 	function add(){
 		$('#title').html("<?php echo $this->lang->line('add_product'); ?>");
         $("#formadd").trigger('reset');
-		$('#myModal').modal('show');
+		shModal('myModal').show();
 	}
 
     $(document).ready(function (e) {
         $('#formadd').on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -114,7 +115,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -132,7 +133,7 @@
             data: {id: record_id},
             dataType: 'json',
               beforeSend: function(){
-                 btn.button('loading');
+                 btn.btnLoading();
                  },
             success: function (data) {
                      if (data.status == 0) {
@@ -145,33 +146,36 @@
                         $('#type').val(data.is_blood_group);
                         $('#volume').val(data.volume);
                         $('#unit').val(data.charge_unit_id);
-						$('#myModal').modal('show');
+						shModal('myModal').show();
                     }
-                 btn.button('reset');
+                 btn.btnReset();
             },  
             error: function () {
-               btn.button('reset');
+               btn.btnReset();
                 },
                 complete: function(){
-                 btn.button('reset');
+                 btn.btnReset();
    }
         });
 
  }); 
 
     $(document).ready(function (e) {
-        $('#myModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal');
     });
 </script> 
 <script type="text/javascript">
 ( function ( $ ) {
     'use strict';
     $(document).ready(function () {
-        initDatatable('ajaxlist','admin/bloodbank/getproductlist');
+        initDatatable('ajaxlist','admin/bloodbank/getproductlist',{},[],100,[
+            { "aTargets": [-1], "searchable": false, "bSortable": false, "sClass": "text-end" }
+        ]);
+        $('.ajaxlist').on('draw.dt', function () {
+            $(this).find('[data-bs-toggle="tooltip"]').each(function () {
+                new bootstrap.Tooltip(this);
+            });
+        });
     });
 } ( jQuery ) )
 </script>

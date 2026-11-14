@@ -6,6 +6,10 @@ if (!defined('BASEPATH')) {
 
 class Payu extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
 
     public $payment_method = array();
     public $pay_method     = array();
@@ -67,6 +71,7 @@ class Payu extends Patient_Controller
                 'tid'                        => $txnid,
                 'hash'                       => $hash,
                 'amount'                     => $amount,
+                'payment_amount'             => $payment_data['deposit_amount'],
                 'name'                       => $customer_name,
                 'productinfo'                => $product_info,
                 'action'                     => "https://secure.payu.in/_payment", //for live change action  https://secure.payu.in

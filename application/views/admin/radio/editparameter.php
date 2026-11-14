@@ -7,10 +7,10 @@
  
     <table class="table table-striped table-bordered table-hover" id="edittableID">
         <thead>
-            <tr style="font-size: 13px">
-                <th><?php echo $this->lang->line('test') . " " .$this->lang->line('parameter') . " " . $this->lang->line('name'); ?><small class="req" style="color:red;"> *</small></th>
-                <th><?php echo $this->lang->line('refference') . " " . $this->lang->line('range'); ?> </th>
-                <th><?php echo $this->lang->line('unit') ; ?><small class="req" style="color:red;"> *</small></th>
+            <tr class="sh-fs-13">
+                <th><?php echo $this->lang->line('test') . " " .$this->lang->line('parameter') . " " . $this->lang->line('name'); ?><small class="req sh-text-red"> *</small></th>
+                <th><?php echo $this->lang->line('reference') . " " . $this->lang->line('range'); ?> </th>
+                <th><?php echo $this->lang->line('unit') ; ?><small class="req sh-text-red"> *</small></th>
             </tr>
         </thead>
         <?php 
@@ -24,7 +24,7 @@
 
                 <tr id="row<?php echo $i ?>">
                     <td width="40%">
-                        <select class="form-control select2" style="width:100%" onchange="getparametereditdetails(this.value, <?php echo $i ?>)" id="parameter_edit_name<?php echo $i ?>" name='parameter_name[]'>
+                        <select class="form-control select2 w-100" onchange="getparametereditdetails(this.value, <?php echo $i ?>)" id="parameter_edit_name<?php echo $i ?>" name='parameter_name[]'>
                             <option value="<?php echo set_value('radiology_parameter_id'); ?>"><?php echo $this->lang->line('select') ?></option>
                             <?php foreach ($parametername as $dkey => $dvalue) {  ?>
 							<option value="<?php echo $dvalue["id"]; ?>" <?php if ($value["parameter_id"] == $dvalue["id"]) echo "selected"; ?> ><?php echo $dvalue["parameter_name"] ?></option> 
@@ -43,7 +43,7 @@
 					<?php if ($i != 0) { ?>
 						<td><button type='button' onclick="delete_row('<?php echo $i ?>')" class='closebtn'><i class='fa fa-remove'></i></button></td>
 					<?php } else { ?>
-						<td><button type="button" onclick="editMore()" style="color:#2196f3" class="closebtn"><i class="fa fa-plus"></i></button></td>
+						<td><button type="button" onclick="editMore()" class="closebtn sh-text-blue"><i class="fa fa-plus"></i></button></td>
 					<?php } ?>
 				</tr>
 			<?php
@@ -52,7 +52,7 @@
 				<tr>
 					<td></td>
 					<td></td>
-					<td><button type="button" onclick="editMore()" style="color:#2196f3" class="closebtn"><i class="fa fa-plus"></i></button></td>
+					<td><button type="button" onclick="editMore()" class="closebtn sh-text-blue"><i class="fa fa-plus"></i></button></td>
 				</tr>
 			<?php  }  ?> 
 		</table>										
@@ -71,11 +71,7 @@
 <script type="text/javascript">
     
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }    
 
     (function ($) {

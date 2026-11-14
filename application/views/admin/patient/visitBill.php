@@ -2,12 +2,6 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 <link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/sh-print.css">
-<style type="text/css">
-
-    .printablea4{width: 100%;}
-    .printablea4>tbody>tr>th,
-    .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-</style>
 <html lang="en">
     <head> 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -20,14 +14,14 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 <div class="">
                     <div class="pprinta4">
                         <?php if (!empty($print_details[0]['print_header'])) { ?>
-                            <img style="height:100px" class="img-responsive" src="<?php echo $this->media_storage->getImageURL($print_details[0]["print_header"]) ?>">
+                            <img style="height:100px" class="img-fluid" src="<?php echo $this->media_storage->getImageURL($print_details[0]["print_header"]) ?>">
                         <?php } ?>
-                        <div style="height: 10px; clear: both;"></div>
+                        <div class="sh-spacer-10"></div>
                     </div>
                     <table width="100%" class="printablea4">
                         <tr>
-                            <td class="text-left"><?php echo $this->lang->line('bill') . " " ?><?php echo $opd_prefix.$result["opdid"] ?></td>
-                            <td class="text-right"><?php echo $this->lang->line('date') . " : " ?><?php
+                            <td class="text-start"><?php echo $this->lang->line('bill') . " " ?><?php echo $opd_prefix.$result["opdid"] ?></td>
+                            <td class="text-end"><?php echo $this->lang->line('date') . " : " ?><?php
                                     if (!empty($result['appointment_date'])) {
                                         echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date']));
                                     }

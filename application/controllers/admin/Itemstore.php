@@ -24,6 +24,7 @@ class Itemstore extends Admin_Controller
         $data['title']         = $this->lang->line('item_store_list');
         $itemstore_result      = $this->itemstore_model->get();
         $data['itemstorelist'] = $itemstore_result;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/itemstore/itemstoreList', $data);
         $this->load->view('layout/footer', $data);
@@ -35,6 +36,8 @@ class Itemstore extends Admin_Controller
             access_denied();
         }
         $this->form_validation->set_rules('name', $this->lang->line('item_store_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('code', $this->lang->line('code'), 'trim|xss_clean');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -44,9 +47,9 @@ class Itemstore extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $data = array(
-                'item_store'  => $this->input->post('name'),
-                'code'        => $this->input->post('code'),
-                'description' => $this->input->post('description'),
+                'item_store'  => $this->input->post('name', TRUE),
+                'code'        => $this->input->post('code', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->itemstore_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -75,14 +78,15 @@ class Itemstore extends Admin_Controller
         $data['itemstorelist'] = $itemstore_result;
         $this->form_validation->set_rules('name', $this->lang->lang->line('name'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'inventory';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/itemstore/itemstoreList', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'item_store'  => $this->input->post('name'),
-                'code'        => $this->input->post('code'),
-                'description' => $this->input->post('description'),
+                'item_store'  => $this->input->post('name', TRUE),
+                'code'        => $this->input->post('code', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->itemstore_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left"></div>');
@@ -95,8 +99,10 @@ class Itemstore extends Admin_Controller
         if (!$this->rbac->hasPrivilege('store', 'can_edit')) {
             access_denied();
         }
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $this->form_validation->set_rules('name', $this->lang->line('item_store_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('code', $this->lang->line('code'), 'trim|xss_clean');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('name'),
@@ -105,9 +111,9 @@ class Itemstore extends Admin_Controller
         } else {
             $data = array(
                 'id'          => $id,
-                'item_store'  => $this->input->post('name'),
-                'code'        => $this->input->post('code'),
-                'description' => $this->input->post('description'),
+                'item_store'  => $this->input->post('name', TRUE),
+                'code'        => $this->input->post('code', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $this->itemstore_model->add($data);

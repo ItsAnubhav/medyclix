@@ -27,7 +27,7 @@ class Floor extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->floor_model, 'valid_floor')),
             )
         );
@@ -39,8 +39,8 @@ class Floor extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $floor = array(
-                'name'        => $this->input->post('name'),
-                'description' => $this->input->post('description'),
+                'name'        => $this->input->post('name', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->floor_model->savefloor($floor); 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -65,8 +65,8 @@ class Floor extends Admin_Controller
         } else {
             $floor = array(
                 'id'          => $id,
-                'name'        => $this->input->post('name'),
-                'description' => $this->input->post('description'),
+                'name'        => $this->input->post('name', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
 
             $this->floor_model->savefloor($floor); 

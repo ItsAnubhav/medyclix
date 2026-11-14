@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Vital extends Admin_Controller
 {
+	public $time_format;
+
 
     public function __construct()
     {
@@ -34,9 +36,10 @@ class Vital extends Admin_Controller
         $data['schedule']    = $this->organisation_model->get();
         $data['taxcategory'] = $this->taxcategory_model->get();
 
-        $this->load->view("layout/header");
+        $data['module'] = 'setup';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/vital/vital", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function getDatatable()
@@ -48,22 +51,18 @@ class Vital extends Admin_Controller
             foreach ($dt_response->data as $charge_key => $charge_value) {
 
                 $row    = array();
-                $action = "<div class=''>";             
-				
-				if ($this->rbac->hasPrivilege('vital', 'can_edit')) {
-						
-					$action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record edit_vital_modal' data-loading-text='" . $this->lang->line('please_wait') . "' data-toggle='tooltip' data-record-id=" . $charge_value->id . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
-						
-				}
-					
-				if($charge_value->is_system != 1){	
-					if ($this->rbac->hasPrivilege('vital', 'can_delete')) {
-					
-						$action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_vital (" . $charge_value->id . ")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
-						
-					}
-				}
-			  
+                $action = "<div class='rowoptionview mt-mius0'>";
+
+                if ($this->rbac->hasPrivilege('vital', 'can_edit')) {
+                    $action .= "<a href='#' class='btn btn-sm btn-light edit_record edit_vital_modal' data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "' data-record-id='" . (int)$charge_value->id . "' onclick='return false;'><i class='fa fa-pencil'></i></a>";
+                }
+
+                if ($charge_value->is_system != 1) {
+                    if ($this->rbac->hasPrivilege('vital', 'can_delete')) {
+                        $action .= "<a href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_vital(" . (int)$charge_value->id . "); return false;'><i class='fa fa-trash'></i></a>";
+                    }
+                }
+
                 $action .= "</div>";
 
                 $row[] = $charge_value->name;
@@ -85,7 +84,7 @@ class Vital extends Admin_Controller
 
     public function add_vital()
     {        
-        $this->form_validation->set_rules('vital_name', $this->lang->line('vital_name'), 'required');
+        $this->form_validation->set_rules('vital_name', $this->lang->line('vital_name'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'vital_name'     => form_error('vital_name'),                
@@ -93,20 +92,20 @@ class Vital extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $range="";
-             if($this->input->post('from_reference_range')!=""){
-                $range = $this->input->post('from_reference_range');
-            }            
-            if($this->input->post('to_reference_range')!=""){
-                $range = $this->input->post('to_reference_range');
+             if($this->input->post('from_reference_range', TRUE)!=""){
+                $range = $this->input->post('from_reference_range', TRUE);
             }
-            if($this->input->post('from_reference_range')!="" && $this->input->post('to_reference_range')!="" ){
-                $range = $this->input->post('from_reference_range').' - '.$this->input->post('to_reference_range');
+            if($this->input->post('to_reference_range', TRUE)!=""){
+                $range = $this->input->post('to_reference_range', TRUE);
+            }
+            if($this->input->post('from_reference_range', TRUE)!="" && $this->input->post('to_reference_range', TRUE)!="" ){
+                $range = $this->input->post('from_reference_range', TRUE).' - '.$this->input->post('to_reference_range', TRUE);
             }
             $data = array(
-                'id'                 => $this->input->post('vital_id'),
-                'name'               => $this->input->post('vital_name'),
-                'unit'               => $this->input->post('unit'),
-                'reference_range'    => $range ,
+                'id'                 => $this->input->post('vital_id', TRUE),
+                'name'               => $this->input->post('vital_name', TRUE),
+                'unit'               => $this->input->post('unit', TRUE),
+                'reference_range'    => $range,
             );
             
             $insert_id  = $this->vital_model->add($data);
@@ -118,7 +117,7 @@ class Vital extends Admin_Controller
     
     public function getDetails()
     {      
-        $id           = $this->input->post("vital_id");        
+        $id           = $this->input->post("vital_id", TRUE);
         $result       = $this->vital_model->getDetails($id);
         if(strpos($result['reference_range'],'-')!=false ){
             $str = explode("-",$result['reference_range']);
@@ -137,7 +136,7 @@ class Vital extends Admin_Controller
         if (!$this->rbac->hasPrivilege('hospital_charges', 'can_view')) {
             access_denied();
         }
-        $id             = $this->input->post("charges_id");
+        $id             = $this->input->post("charges_id", TRUE);
         $data['result'] = $this->charge_model->getDetails($id, "");
         $page           = $this->load->view("admin/charges/_viewDetails", $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
@@ -160,15 +159,15 @@ class Vital extends Admin_Controller
     
     public function addpatientvital()
 	{  
-		$total_rows = $this->input->post('total_rows_vitals');
+		$total_rows = $this->input->post('total_rows_vitals', TRUE);
 		 
 		if (isset($total_rows) && !empty($total_rows)) {
 			
             foreach ($total_rows as $row_key => $row_value) {		 
 				
-                $vital_name_validation  				= $this->input->post('vital_name_' . $row_value);
-                $from_reference_range_validation      	= $this->input->post('from_reference_range_' . $row_value);
-                $vital_date_validation           		= $this->input->post('vital_date_' . $row_value);				
+                $vital_name_validation  				= $this->input->post('vital_name_' . $row_value, TRUE);
+                $from_reference_range_validation      	= $this->input->post('from_reference_range_' . $row_value, TRUE);
+                $vital_date_validation           		= $this->input->post('vital_date_' . $row_value, TRUE);				
                 
 				$vital_name = 0;
                 if ($vital_name_validation == "") {		
@@ -227,15 +226,15 @@ class Vital extends Admin_Controller
 			
 		}else {
              
-            $total_rows_vitals   = $this->input->post('total_rows_vitals');
+            $total_rows_vitals   = $this->input->post('total_rows_vitals', TRUE);
                 
             foreach ($total_rows_vitals as $row_key => $row_values) {
                         
 				$data = array(								 
-						'patient_id'         => $this->input->post('patient_id'),
-						'vital_id'           => $this->input->post('vital_name_' . $row_values),
-						'reference_range'    => $this->input->post('from_reference_range_' . $row_values) ,
-						'messure_date'       => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('vital_date_' . $row_values), $this->time_format),                    
+						'patient_id'         => $this->input->post('patient_id', TRUE),
+						'vital_id'           => $this->input->post('vital_name_' . $row_values, TRUE),
+						'reference_range'    => $this->input->post('from_reference_range_' . $row_values, TRUE),
+						'messure_date'       => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('vital_date_' . $row_values, TRUE), $this->time_format),                    
 				);				 
 							
 				$this->vital_model->addpatientvital($data);
@@ -251,7 +250,7 @@ class Vital extends Admin_Controller
     
     public function editvital()
     {
-        $id     = $this->input->post("id");
+        $id     = $this->input->post("id", TRUE);
         $result = $this->vital_model->getpatientvitalbyvitalid($id);
         $result['messure_date'] = $this->customlib->YYYYMMDDHisTodateFormat($result['messure_date'],$this->customlib->getHospitalTimeFormat());
         echo json_encode($result);
@@ -259,10 +258,10 @@ class Vital extends Admin_Controller
     
     public function editpatientvital()
     {        
-        $this->form_validation->set_rules('evital_name', $this->lang->line('vital_name'), 'required');        
-        $this->form_validation->set_rules('evital_value', $this->lang->line('vital_value'), 'required');
-        $this->form_validation->set_rules('emessure_date', $this->lang->line('vital_date'), 'required');    
-        $emessure_date	=	$this->customlib->dateFormatToYYYYMMDDHis($this->input->post("emessure_date"), $this->time_format);             
+        $this->form_validation->set_rules('evital_name', $this->lang->line('vital_name'), 'trim|xss_clean|required');
+        $this->form_validation->set_rules('evital_value', $this->lang->line('vital_value'), 'trim|xss_clean|required');
+        $this->form_validation->set_rules('emessure_date', $this->lang->line('vital_date'), 'trim|xss_clean|required');
+        $emessure_date	=	$this->customlib->dateFormatToYYYYMMDDHis($this->input->post("emessure_date", TRUE), $this->time_format);             
         
         if ($this->form_validation->run() == false) {
             
@@ -277,10 +276,10 @@ class Vital extends Admin_Controller
         } else {
             
             $data = array(
-                'id'                 => $this->input->post('evital_id'),
-                'patient_id'         => $this->input->post('patient_id'),
-                'vital_id'           => $this->input->post('evital_name'),
-                'reference_range'    => $this->input->post('evital_value') ,
+                'id'                 => $this->input->post('evital_id', TRUE),
+                'patient_id'         => $this->input->post('patient_id', TRUE),
+                'vital_id'           => $this->input->post('evital_name', TRUE),
+                'reference_range'    => $this->input->post('evital_value', TRUE),
                 'messure_date'    	 => $emessure_date,
             );              
            

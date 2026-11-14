@@ -6,570 +6,468 @@ if (!empty($bloodgroup)) {
     $load_blood_id = array_keys($bloodgroup)[0];
 }
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="box box-primary" id="tachelist">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('blood_bank_status'); ?></h3>
-                        <div class="box-tools pull-right">
-                            <?php if ($this->rbac->hasPrivilege('blood_donor', 'can_view')) { ?>
-                                <a href="<?php echo base_url(); ?>admin/bloodbank/search" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('donor_details'); ?></a>
-                            <?php }
-                            if ($this->rbac->hasPrivilege('blood_issue', 'can_view')) { ?>
-                                <a href="<?php echo base_url() ?>admin/bloodbank/issue" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('blood_issue_details'); ?></a>
-                            <?php }
-                            if ($this->rbac->hasPrivilege('issue_component', 'can_view')) { ?>
-                                <a href="<?php echo base_url(); ?>admin/bloodbank/component_issue" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('component_issue'); ?></a>
-                            <?php } ?>
-                        </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
-                        <div class="bloodbg">
-                            <div class="row">
-                                <div class="col-lg-1 col-md-1 col-sm-2">
-                                    <ul class="nav nav-pills nav-stacked blood-stacked">
-                                        <?php $i = 1;
-                                        foreach ($bloodgroup as $group_key => $group_value) { ?>
-                                            <li <?= $i == 1 ? " class='active'" : ""; ?>><a onclick="getBloodListTable(this.id)" id="<?= $group_key; ?>" data-toggle="tab" href="#menu<?= $group_key; ?>"><?= $group_value; ?></a></li>
-                                        <?php $i++;
-                                        } ?>
-                                    </ul>
-                                </div><!--./col-lg-3-->
-                                <div class="col-lg-11 col-md-11 col-sm-10">
-                                    <div class="tab-content">
-                                        <div class="tab-pane fade in active">
-                                            <div id="bloodGroupDiv" class="row">
-                                            </div><!--./row-->
-                                        </div><!--#/menu1-->
-                                    </div><!--./tab-content-->
-                                </div><!--./col-lg-9-->
-                            </div><!--./row-->
-                        </div><!--./bloodbg-->
-                    </div><!--./box-body-->
-                    <div class="">
-                        <div class="mailbox-controls">
-                        </div>
-                    </div>
+<div class="bb-card">
+    <div class="bb-card-hdr">
+        <h4 class="bb-page-title">
+            <?php echo $this->lang->line('blood_bank_status'); ?>
+        </h4>
+        <div class="bb-hdr-actions">
+            <?php if ($this->rbac->hasPrivilege('blood_donor', 'can_view')) { ?>
+                <a href="<?php echo base_url(); ?>admin/bloodbank/search" class="btn-bb-action"><i class="fa fa-users fa-fw"></i> <?php echo $this->lang->line('donor_details'); ?></a>
+            <?php } if ($this->rbac->hasPrivilege('blood_issue', 'can_view')) { ?>
+                <a href="<?php echo base_url() ?>admin/bloodbank/issue" class="btn-bb-action"><i class="fa fa-list-alt fa-fw"></i> <?php echo $this->lang->line('blood_issue_details'); ?></a>
+            <?php } if ($this->rbac->hasPrivilege('issue_component', 'can_view')) { ?>
+                <a href="<?php echo base_url(); ?>admin/bloodbank/component_issue" class="btn-bb-action"><i class="fa fa-flask fa-fw"></i> <?php echo $this->lang->line('component_issue'); ?></a>
+            <?php } ?>
+        </div>
+    </div>
+    <hr class="m-0">
+    <div class="bb-card-body">
+        <div class="d-flex">
+
+            <!-- Blood Group Pills -->
+            <div class="bb-group-col">
+                <div class="bb-group-label"><?php echo $this->lang->line('blood_group'); ?></div>
+                <div class="bb-pill-list">
+                    <?php $i = 1; foreach ($bloodgroup as $group_key => $group_value) { ?>
+                    <div class="bb-pill<?= $i == 1 ? ' active' : ''; ?>"
+                         id="<?= $group_key; ?>"
+                         onclick="bbPillClick(this)"><?= $group_value; ?></div>
+                    <?php $i++; } ?>
                 </div>
             </div>
+
+            <!-- Blood + Components content (loaded via AJAX) -->
+            <div class="bb-content">
+                <div id="bloodGroupDiv"></div>
+            </div>
+
         </div>
-    </section>
+    </div>
 </div>
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_blood_bank_status'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editmyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editmyModalLabel"><?php echo $this->lang->line('edit_blood_bank_status'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="bloodgroupstatus" action="<?php echo site_url('admin/bloodbankstatus/status') ?>" method="post" accept-charset="utf-8">
-                <div class="modal-body pb0">
-                    <div class="box-body">
-                        <?php if ($this->session->flashdata('msg')) { ?>
-                            <?php echo $this->session->flashdata('msg') ?>
-                        <?php } ?>
-                        <?php echo $this->customlib->getCSRF(); ?>
-                        <div class="row">
-                            <div class="form-group">
-                                <label><?php echo $this->lang->line('blood_group'); ?></label>
-                                <input autofocus="" name="blood_group" readonly="readonly" type="text" id="blood_group" class="form-control" value="<?php
-                                                                                                                                                    if (isset($result)) {
-                                                                                                                                                        echo $result["blood_group"];
-                                                                                                                                                    }
-                                                                                                                                                    ?>" />
-                                <span class="text-danger"><?php echo form_error('blood_group'); ?></span>
-                            </div>
+                <div class="modal-body">
+                    <?php if ($this->session->flashdata('msg')) { ?>
+                        <?php echo $this->session->flashdata('msg') ?>
+                    <?php } ?>
+                    <?php echo $this->customlib->getCSRF(); ?>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label small"><?php echo $this->lang->line('blood_group'); ?></label>
+                            <input name="blood_group" readonly type="text" id="blood_group" class="form-control form-control-sm" value="<?php if (isset($result)) { echo html_escape($result["blood_group"]); } ?>">
+                            <span class="text-danger"><?php echo form_error('blood_group'); ?></span>
                         </div>
-                        <div class="row">
-                            <div class="form-group">
-                                <label><?php echo $this->lang->line('status_in_bags'); ?></label><small class="req"> *</small>
-                                <input autofocus="" id="status" name="status" placeholder="" type="text" class="form-control" value="<?php
-                                                                                                                                        if (isset($result)) {
-                                                                                                                                            echo $result["status"];
-                                                                                                                                        }
-                                                                                                                                        ?>" />
-                                <span class="text-danger"><?php echo form_error('status'); ?></span>
-                                <input autofocus="" id="id" name="id" placeholder="" type="hidden" class="form-control" value="<?php
-                                                                                                                                if (isset($result)) {
-                                                                                                                                    echo $result["id"];
-                                                                                                                                }
-                                                                                                                                ?>" />
-                            </div>
+                        <div class="col-12">
+                            <label class="form-label small"><?php echo $this->lang->line('status_in_bags'); ?> <small class="req">*</small></label>
+                            <input id="status" name="status" type="text" class="form-control form-control-sm" value="<?php if (isset($result)) { echo html_escape($result["status"]); } ?>">
+                            <span class="text-danger"><?php echo form_error('status'); ?></span>
+                            <input id="id" name="id" type="hidden" value="<?php if (isset($result)) { echo (int) $result["id"]; } ?>">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" id="bloodgroupstatusbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="bloodgroupstatusbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
-        </div><!--./row-->
+        </div>
     </div>
 </div>
 
-<div class="modal fade" id="addBloodDetailModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close close_button pupclose" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('blood_donor_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-nospace" id="addBloodDetailModal" tabindex="-1" aria-labelledby="addBloodDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBloodDetailModalLabel"><?php echo $this->lang->line('blood_donor_details'); ?></h5>
+                <button type="button" class="btn-close close_button" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="donorblood" accept-charset="utf-8" method="post" class="ptt10">
+            <form id="donorblood" accept-charset="utf-8" method="post">
                 <div class="pup-scroll-area">
-                    <div class="modal-body pb0 pt0">
-                        <input type="hidden" name="blood_bank_product_id" id="blood_group_id">
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line("blood_donor"); ?></label>
-                                    <small class="req"> *</small>
-                                    <select name="blood_donor_id" id="blood_donor_id" style="width: 100%" class="form-control select2">
-                                        <option value=""><?= $this->lang->line("select"); ?></option>
-                                    </select>
-                                    <span class="text-danger"><?php echo form_error('blood_donor_id'); ?></span>
+                <div class="modal-body pb-3">
+                    <input type="hidden" name="blood_bank_product_id" id="blood_group_id">
+                    <input type="hidden" name="qty" id="qty" value="1">
+                    <div class="sh-form-card mb-3">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('blood_donor_details'); ?></span>
+                        </div>
+                        <div class="p-3">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line("blood_donor"); ?> <small class="req">*</small></label>
+                                        <select name="blood_donor_id" id="blood_donor_id" class="form-control form-control-sm select2">
+                                            <option value=""><?php echo $this->lang->line("select"); ?></option>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('blood_donor_id'); ?></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('donate_date'); ?></label>
-                                    <small class="req"> *</small>
-                                    <input name="donate_date" type="text" class="form-control datetime" />
-                                    <span class="text-danger"><?php echo form_error('quantity'); ?></span>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('donate_date'); ?> <small class="req">*</small></label>
+                                        <input name="donate_date" type="text" class="form-control form-control-sm datetime">
+                                        <span class="text-danger"><?php echo form_error('quantity'); ?></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('bag'); ?> </label> <small class="req"> *</small>
-                                    <input name="bag_no" type="text" class="form-control" />
-                                    <span class="text-danger"><?php echo form_error('bag_no'); ?></span>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('bag'); ?> <small class="req">*</small></label>
+                                        <input name="bag_no" type="text" class="form-control form-control-sm">
+                                        <span class="text-danger"><?php echo form_error('bag_no'); ?></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('volume'); ?></label>
-                                    <input autofocus="" id="volume" name="volume" type="text" class="form-control" />
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('volume'); ?></label>
+                                        <input id="volume" name="volume" type="text" class="form-control form-control-sm">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('unit_type'); ?></label>
-                                    <select name="unit" id="unit" class="form-control unit_type">
-                                        <option value=""><?php echo $this->lang->line('select') ?></option>
-                                        <?php foreach ($unit_type as $unit_type_key => $unit_type_value) { ?>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('unit_type'); ?></label>
+                                        <select name="unit" id="unit" class="form-control form-control-sm unit_type">
+                                            <option value=""><?php echo $this->lang->line('select') ?></option>
+                                            <?php foreach ($unit_type as $unit_type_key => $unit_type_value) { ?>
                                             <option value="<?php echo $unit_type_value->id; ?>"><?php echo $unit_type_value->unit; ?></option>
+                                            <?php } ?>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('unit_type'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('lot'); ?></label>
+                                        <input name="lot" type="text" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('charge_category'); ?> <small class="req">*</small></label>
+                                        <select name="charge_category" id="charge_category" class="form-control form-control-sm select2 charge_category">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('charge_category'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('charge_name'); ?> <small class="req">*</small></label>
+                                        <select name="charge_id" id="code" class="form-control form-control-sm addcharge select2">
+                                            <option value=""><?php echo $this->lang->line('select') ?></option>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('code'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></label>
+                                        <input type="text" name="standard_charge" id="addstandard_charge" class="form-control form-control-sm" value="<?php echo set_value('standard_charge'); ?>">
+                                        <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-2">
+                                        <label class="form-label small"><?php echo $this->lang->line('institution'); ?></label>
+                                        <input name="institution" type="text" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="sh-flex-col">
+                            <div class="sh-form-card h-100">
+                                <div class="sh-card-header">
+                                    <span class="sh-card-header-title"><?php echo $this->lang->line('note'); ?></span>
+                                </div>
+                                <div class="p-3">
+                                    <textarea name="note" rows="3" id="note" class="form-control form-control-sm"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sh-flex-col">
+                            <div class="sh-form-card h-100 overflow-hidden">
+                                <div class="sh-card-header">
+                                    <span class="sh-card-header-title"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></span>
+                                </div>
+                                <div class="sh-summary-row border-bottom">
+                                    <span><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></span>
+                                    <input type="text" value="0" name="total" id="total" class="form-control sh-summary-input text-end total" readonly>
+                                </div>
+                                <div class="sh-summary-row border-bottom">
+                                    <span><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></span>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input type="text" name="discount_percent" id="discount_percent" value="0" class="form-control sh-summary-input-pct text-end discount_percent">
+                                        <span class="text-muted small">%</span>
+                                        <input type="text" value="0" name="discount" id="discount" class="form-control sh-summary-input text-end discount">
+                                    </div>
+                                </div>
+                                <div class="sh-summary-row border-bottom">
+                                    <span><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></span>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input type="text" name="tax_percentage" id="tax_percentage" class="form-control sh-summary-input-pct text-end tax_percentage" readonly>
+                                        <span class="text-muted small">%</span>
+                                        <input type="text" value="0" name="tax" id="tax" class="form-control sh-summary-input sh-summary-input-tax text-end tax" readonly>
+                                    </div>
+                                </div>
+                                <div class="sh-summary-row border-bottom">
+                                    <span><?php echo $this->lang->line('net_amount'); ?></span>
+                                    <input type="text" value="0" name="net_amount" id="net_amount" class="form-control sh-summary-input text-end net_amount" readonly>
+                                </div>
+                                <div class="px-2 py-3">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="mb-2">
+                                                <label class="form-label small"><?php echo $this->lang->line('payment_mode'); ?></label>
+                                                <select class="form-control form-control-sm payment_mode" name="payment_mode">
+                                                    <?php foreach ($payment_mode as $key => $value) { ?>
+                                                    <option value="<?php echo $key ?>"><?php echo $value ?></option>
+                                                    <?php } ?>
+                                                </select>
+                                                <span class="text-danger"><?php echo form_error('payment_mode'); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-2">
+                                                <label class="form-label small"><?php echo $this->lang->line('payment_amount') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></label>
+                                                <input type="text" name="payment_amount" id="payment_amount" class="form-control form-control-sm payment_amount text-end" readonly>
+                                                <span class="text-danger"><?php echo form_error('payment_amount'); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="cheque_div mt-2 d-none" >
+                                        <div class="d-flex gap-3">
+                                            <div class="flex-fill">
+                                                <div class="mb-2">
+                                                    <label class="form-label small"><?php echo $this->lang->line('cheque_no'); ?> <small class="req">*</small></label>
+                                                    <input type="text" name="cheque_no" id="cheque_no" class="form-control form-control-sm">
+                                                </div>
+                                            </div>
+                                            <div class="flex-fill">
+                                                <div class="mb-2">
+                                                    <label class="form-label small"><?php echo $this->lang->line('cheque_date'); ?> <small class="req">*</small></label>
+                                                    <input type="text" name="cheque_date" id="cheque_date" class="form-control form-control-sm date">
+                                                </div>
+                                            </div>
+                                            <div class="flex-fill">
+                                                <div class="mb-2">
+                                                    <label class="form-label small"><?php echo $this->lang->line('attach_document'); ?></label>
+                                                    <input type="file" class="filestyle form-control form-control-sm" name="document">
+                                                    <span class="text-danger"><?php echo form_error('document'); ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="calculateAmt(true)" class="btn btn-info"><i class="fa fa-calculator"></i> <?php echo $this->lang->line('calculate'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="donorbloodbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_components'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="componentsadd" accept-charset="utf-8" method="post">
+                <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="sh-form-card mb-3">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('blood_group'); ?> &amp; <?php echo $this->lang->line('bag'); ?></span>
+                        </div>
+                        <div class="p-2">
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label small"><?php echo $this->lang->line('blood_group'); ?> <small class="req">*</small></label>
+                                    <select class="form-control form-control-sm select2 blood_group" id="blood_bank_product_id" name="blood_bank_product_id">
+                                        <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                        <?php foreach ($bloodgroup as $key => $value) { ?>
+                                        <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) { echo "selected"; } ?>><?php echo $value; ?></option>
                                         <?php } ?>
                                     </select>
-                                    <span class="text-danger"><?php echo form_error('unit_type'); ?></span>
                                 </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('lot'); ?> </label>
-                                    <input name="lot" type="text" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('charge_category'); ?></label><small class="req"> *</small>
-
-                                    <select name="charge_category" id="charge_category" style="width: 100%" class="form-control select2 charge_category">
+                                <div class="col-sm-6">
+                                    <label class="form-label small"><?php echo $this->lang->line('bag'); ?> <small class="req">*</small></label>
+                                    <select class="form-control form-control-sm select2 bag_no" name="blood_donor_cycle_id">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                     </select>
-                                    <span class="text-danger"><?php echo form_error('charge_category'); ?></span>
                                 </div>
                             </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('charge_name'); ?></label> <small class="req"> *</small>
-                                    <select name="charge_id" id="code" style="width: 100%" class="form-control addcharge select2 ">
-                                        <option value=""><?php echo $this->lang->line('select') ?></option>
-                                    </select>
-                                    <span class="text-danger"><?php echo form_error('code'); ?></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")" ?></label> <small class="req"> *</small>
-                                    <input type="text" name="standard_charge" id="addstandard_charge" class="form-control" value="<?php echo set_value('standard_charge'); ?>">
-
-                                    <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-3 hide">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('qty'); ?></label><small class="req"> *</small>
-                                    <input type="text" name="qty" id="qty" value="1" class="form-control">
-                                    <span class="text-danger"><?php echo form_error('qty'); ?></span>
-                                </div>
-                            </div>
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('institution'); ?></label>
-                                    <input name="institution" type="text" class="form-control" />
-                                </div>
-                            </div>
-                        </div><!--./row-->
-                        <div class="divider"></div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="row">
-                                    <div class="col-sm-12">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('note'); ?></label>
-                                            <textarea name="note" rows="3" id="note" class="form-control"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div><!--./col-sm-6-->
-                            <div class="col-sm-6">
-                                <table class="printablea4">
-                                    <tr>
-                                        <th width="40%"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td width="60%" colspan="2" class="text-right ipdbilltable">
-                                            <input type="text" placeholder="<?php echo $this->lang->line('total'); ?>" value="0" name="total" id="total" style="width: 30%; float: right" class="form-control total" readonly />
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable">
-                                            <h4 style="float: right;font-size: 12px; padding-left: 5px;"> %</h4>
-                                            <input type="text" placeholder="<?php echo $this->lang->line('discount'); ?>" name="discount_percent" id="discount_percent" class="form-control discount_percent" style="width: 70%; float: right;font-size: 12px;" />
-                                        </td>
-                                        <td class="text-right ipdbilltable">
-                                            <input type="text" placeholder="<?php echo $this->lang->line('discount'); ?>" value="0" name="discount" id="discount" style="width: 50%; float: right" class="form-control discount" />
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable">
-                                            <h4 style="float: right;font-size: 12px; padding-left: 5px;"> %</h4>
-                                            <input type="text" placeholder="<?php echo $this->lang->line('tax'); ?>" name="tax_percentage" id="tax_percentage" class="form-control tax_percentage" readonly style="width: 70%; float: right;font-size: 12px;" />
-                                        </td>
-                                        <td class="text-right ipdbilltable">
-                                            <input type="text" placeholder="<?php echo $this->lang->line('tax'); ?>" name="tax" value="0" id="tax" style="width: 50%; float: right" class="form-control tax" readonly />
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td colspan="2" class="text-right ipdbilltable">
-                                            <input type="text" placeholder="<?php echo $this->lang->line('net_amount'); ?>" value="0" name="net_amount" id="net_amount" style="width: 30%; float: right" class="form-control net_amount" readonly />
-                                        </td>
-                                    </tr>
+                        </div>
+                    </div>
+                    <div class="sh-form-card mb-3">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('components_name'); ?></span>
+                        </div>
+                        <div class="p-2">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th><?php echo $this->lang->line('components_name'); ?> <small class="req">*</small></th>
+                                            <th><?php echo $this->lang->line('bag'); ?> <small class="req">*</small></th>
+                                            <th><?php echo $this->lang->line('volume'); ?></th>
+                                            <th><?php echo $this->lang->line('unit'); ?></th>
+                                            <th><?php echo $this->lang->line('lot'); ?> <small class="req">*</small></th>
+                                            <th><?php echo $this->lang->line('institution'); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($components as $key => $value) { ?>
+                                        <tr>
+                                            <td>
+                                                <div class="form-check"><label class="form-check-label"><input type="checkbox" class="form-check-input" name="select[]" value="<?php echo $key; ?>" /> <?php echo $value; ?></label></div>
+                                            </td>
+                                            <td><input type="text" class="form-control form-control-sm" name="bag_no_<?php echo $key; ?>" value=""></td>
+                                            <td><input type="text" class="form-control form-control-sm" name="volume_<?php echo $key; ?>" value=""></td>
+                                            <td>
+                                                <select class="form-control form-control-sm" name="unit_<?php echo $key; ?>">
+                                                    <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                    <?php foreach ($unit_type as $typekey => $typevalue) { ?>
+                                                    <option value="<?php echo $typevalue->id; ?>"><?php echo $typevalue->unit; ?></option>
+                                                    <?php } ?>
+                                                </select>
+                                            </td>
+                                            <td><input type="text" class="form-control form-control-sm" name="lot_<?php echo $key; ?>" value=""></td>
+                                            <td><input type="text" class="form-control form-control-sm" name="institution_<?php echo $key; ?>" value=""></td>
+                                        </tr>
+                                        <?php } ?>
+                                    </tbody>
                                 </table>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('payment_mode'); ?></label>
-                                            <select class="form-control payment_mode" name="payment_mode">
-                                                <?php foreach ($payment_mode as $key => $value) {
-                                                ?>
-                                                    <option value="<?php echo $key ?>"><?php echo $value ?></option>
-                                                <?php
-                                                }
-                                                ?>
-                                            </select>
-                                            <span class="text-danger"><?php echo form_error('payment_mode'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('payment_amount') . " (" . $currency_symbol . ")"; ?></label><small class="req"> *</small>
-                                            <input type="text" name="payment_amount" id="payment_amount" class="form-control payment_amount text-right" readonly>
-                                            <span class="text-danger"><?php echo form_error('payment_amount'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="cheque_div" style="display:none;">
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small>
-                                                <input type="text" name="cheque_no" id="cheque_no" class="form-control">
-                                                <span class="text-danger"></span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small>
-                                                <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
-                                                <span class="text-danger"></span>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-4">
-                                            <div class="form-group">
-                                                <label><?php echo $this->lang->line('attach_document'); ?></label>
-                                                <input type="file" class="filestyle form-control" name="document">
-                                                <span class="text-danger"><?php echo form_error('document'); ?></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
-                        </div><!--./row-->
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer sticky-footer">
-                    <div class="pull-right">
-                        <button type="button" onclick="calculateAmt(true)" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-calculator"></i> <?php echo $this->lang->line('calculate'); ?></button>
-                        <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="donorbloodbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_components'); ?></h4>
-            </div>
-            <form id="componentsadd" accept-charset="utf-8" method="post" class="ptt10">
-                <div class="scroll-area">
-                    <div class="modal-body pb0 pt0">
-                        <div class="row">
-                            <div class="col-lg-3 col-md-3 col-sm-6">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('blood_group'); ?></label><small class="req"> *</small>
-                                    <select style="width: 100%" class="form-control select2 blood_group" id="blood_bank_product_id" name="blood_bank_product_id">
-                                        <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                        <?php
-                                        foreach ($bloodgroup as $key => $value) {
-                                        ?>
-                                            <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) {
-                                                                                    echo "selected";
-                                                                                }
-                                                                                ?>><?php echo $value; ?></option>
-                                        <?php
-                                        }
-                                        ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-3 col-sm-6">
-                                <div class="form-group select-100">
-                                    <label><?php echo $this->lang->line('bag'); ?></label><small class="req"> *</small>
-                                    <select style="width: 100%" class="form-control select2 bag_no" name="blood_donor_cycle_id">
-                                        <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div><!--./row-->
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-hover">
-                                <thead>
-                                    <tr>
-                                        <th class="white-space-nowrap"><?php echo $this->lang->line('components_name'); ?><small class="req"> *</small></th>
-                                        <th><?php echo $this->lang->line('bag'); ?><small class="req"> *</small></th>
-                                        <th><?php echo $this->lang->line('volume'); ?></th>
-                                        <th><?php echo $this->lang->line('unit'); ?></th>
-                                        <th><?php echo $this->lang->line('lot'); ?><small class="req"> *</small></th>
-                                        <th><?php echo $this->lang->line('institution'); ?></th>
-                                    </tr>
-                                    <?php
-                                    foreach ($components as $key => $value) {
-                                    ?>
-                                        <tr>
-                                            <td>
-                                                <div class="checkbox"><label><input type="checkbox" name="select[]" value="<?php echo $key; ?>" /> <?php echo $value; ?></label></div>
-                                            </td>
-                                            <td><input type="text" class="form-control min-w-sm-160-px" name="bag_no_<?php echo $key ?>" value="" /></td>
-                                            <td><input type="text" class="form-control min-w-sm-160-px" name="volume_<?php echo $key ?>" value="" /></td>
-                                            <td><select type="text" class="form-control min-w-sm-160-px" name="unit_<?php echo $key ?>" value="">
-                                                    <option value=""> <?php echo $this->lang->line('select') ?></option>
-                                                    <?php
-                                                    foreach ($unit_type as $typekey => $typevalue) {
-                                                    ?>
-                                                        <option value="<?php echo $typevalue->id; ?>"><?php echo $typevalue->unit; ?></option><?php
-                                                                                                                                            }
-                                                                                                                                                ?>
-                                                </select></td>
-                                            <td><input type="text" class="form-control min-w-sm-160-px" name="lot_<?php echo $key ?>" value="" /></td>
-                                            <td><input type="text" class="form-control min-w-sm-160-px" name="institution_<?php echo $key ?>" value="" /></td>
-                                        </tr>
-                                    <?php
-                                    }
-                                    ?>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div><!--./row-->
+<div class="modal fade sh-modal sh-modal-nospace" id="bloodIssueModal" tabindex="-1" aria-labelledby="bloodIssueModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <div class="modal-header gap-2">
+                    <h5 class="modal-title" id="bloodIssueModalLabel"><?php echo $this->lang->line('issue_blood'); ?></h5>
+                    <input type="hidden" id="id_case_reference_id_exist" name="id_case_reference_id_exist" class="is_caseid_exit">
+                    <select class="form-control form-control-sm patient_list_ajax sh-bill-patient-pick" name="patient_id" id="addpatient_id" onchange="get_PatientDetails(this.value)" data-placeholder="<?php echo $this->lang->line('search_patient'); ?>"></select>
+                    <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+                    <a data-bs-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient btn btn-light btn-sm text-nowrap"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
+                    <?php } ?>
+                    <div class="input-group input-group-sm sh-ig-180">
+                        <input type="text" class="form-control form-control-sm" id="case_reference_id" placeholder="<?php echo $this->lang->line('case_id'); ?>" name="case_reference_id">
+                        <button class="btn btn-secondary btn-sm search_case_reference_id" type="button" id="search_case_reference_id" data-modal-name="bloodIssueModal">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="form-check ms-1">
+                        <input class="form-check-input" type="checkbox" value="1" id="is_tpa" name="is_tpa" onclick="reset_all(this)">
+                        <label class="form-check-label" for="is_tpa"><?php echo $this->lang->line('apply_tpa'); ?></label>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="pup-scroll-area">
+                        <div></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-
-                    </div>
+                    <input type="hidden" id="organisation_id" name="organisation_id" />
+                    <input type="hidden" id="insurance_id" name="insurance_id" />
+                    <input type="hidden" id="insurance_validity" name="insurance_validity" />
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="button" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info printsavebtn_issue"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save_print'); ?></button>
+                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="formaddbtn_issue" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="bloodIssueModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <form id="formadd" accept-charset="utf-8" method="post">
-                <div class="modal-header modal-media-header">
-                    <button type="button" class="close pupclose" data-dismiss="modal">&times;</button>
-                    <div class="row">
-                          <div class="col-lg-5 col-md-5 col-sm-11">                              
-                            <div class="row">
-                            <div class="col-lg-9 col-md-7 col-sm-8 col-xs-8">
-                             <div class="p-2 select2-full-width">
-                                <select class="form-control patient_list_ajax" name='patient_id' id="addpatient_id" onchange="get_PatientDetails(this.value)">
-                                </select>
-                                <span class="text-danger"><?php echo form_error('refference'); ?></span>
-                             </div>
-                            </div>
-                            <div class="col-lg-3 col-md-5 col-sm-4 col-xs-2">
-                             <div class="p-2">
-                                <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                                <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient  w-lg-100"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
-                                <?php } ?>
-                             </div>
-                            </div>
-                            </div>
-                          </div>
-                          <div class="col-lg-5 col-md-5 col-sm-11">
-                            <div class="row pt-sm-2"> 
-                             <div class="col-lg-9 col-md-8 col-sm-8 col-xs-8">
-                              <div class="p-2">
-                                <div class="input-group">
-                                  
-                                  <input type="hidden" id="id_case_reference_id_exist" name="id_case_reference_id_exist" class="is_caseid_exit">
-                                  
-                                  <input type="text" class="form-control" id="case_reference_id" placeholder="<?php echo $this->lang->line('case_id'); ?>" name="case_reference_id">
-                                    <div class="input-group-btn">
-                                     <button class="btn btn-default btn-group-custom search_case_reference_id" type="button" id="search_case_reference_id"  data-modal-name="bloodIssueModal">
-                                      <i class="fa fa-search"></i></button>
-                                    </div>
-                                </div>
-                              </div>
-                             </div>
-                              <div class="col-lg-3 col-md-4 col-sm-4 col-xs-4">
-                               <div class="form-check pt5">
-                                <input class="form-check-input" type="checkbox" value="1" id="is_tpa" name="is_tpa" onclick="reset_all()">
-                                <label class="form-check-label text-white" for="is_tpa">
-                                <?php echo $this->lang->line('apply_tpa'); ?>
-                                </label>
-                                </div> 
-                              </div>
-                            </div>
-                          </div>
-                    </div><!-- ./row -->
-                </div>
-                <div class="pup-scroll-area">
-                    <div class="modal-body pb0 ptt10">
-                    </div><!--./modal-body-->
-                </div>
-                <div class="box-footer sticky-footer">
-                    <div class="pull-right">
-                         <input type="hidden" id="organisation_id" name="organisation_id" />
-                         <input type="hidden" id="insurance_id" name="insurance_id" />
-                         <input type="hidden" id="insurance_validity" name="insurance_validity" />
-                        <button type="button" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info printsavebtn_issue"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save_print'); ?></button>
-                        <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="formaddbtn_issue" class="btn btn-info mleft5"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="componentIssueModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
+<div class="modal fade sh-modal sh-modal-nospace" id="componentIssueModal" tabindex="-1" aria-labelledby="componentIssueModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
             <form id="formaddComponent" accept-charset="utf-8" method="post">
-                <div class="modal-header modal-media-header">
-                    <button type="button" class="close pupclose" data-dismiss="modal">&times;</button>
-                    <div class="row">
-                        <div class="col-lg-5 col-md-5 col-sm-11">
-                        <div class="row">
-                         <div class="col-lg-9 col-md-7 col-sm-8 col-xs-8">
-                          <div class="p-2 select2-full-width">
-                           <select class="form-control patient_list_ajax" name='patient_id' id="addpatient_id" onchange="get_component_PatientDetails(this.value)"></select>
-                            <span class="text-danger"><?php echo form_error('refference'); ?></span>
-                          </div>
-                         </div>
-                         <div class="col-lg-3 col-md-5 col-sm-4 col-xs-2">                                
-                          <div class="form-group15">
-                           <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                            <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient   w-lg-100"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
-                            <?php } ?>
-                           </div>
-                        </div>
-                        </div>
-                        </div>
-                        <div class="col-lg-5 col-md-5 col-sm-11">                            
-                        <div class="row pt-sm-2"> 
-                         <div class="col-lg-9 col-md-8 col-sm-8 col-xs-8">
-                          <div class="p-2">
-                            <div class="input-group">
-                             <input type="hidden" id="component_organisation_id" name="organisation_id" />
-                             <input type="hidden" id="component_insurance_id" name="insurance_id" />
-                             <input type="hidden" id="component_insurance_validity" name="insurance_validity" />
-
-                             <input type="hidden" name="is_case_reference_idd" id="is_case_reference_idd"  class="is_caseid_exit">
-                             <input type="text" class="form-control" id="case_reference_id" placeholder="<?php echo $this->lang->line('case_id'); ?>" name="case_reference_id">
-                             <div class="input-group-btn">
-                             <button class="btn btn-default btn-group-custom search_case_reference_id" type="button" id="search_case_reference_id" data-modal-name="componentIssueModal" >
-                             <i class="fa fa-search"></i>
-                             </button>
-                             </div>
-                            </div>
-                           </div>
-                           </div>
-                           <div class="col-lg-3 col-md-4 col-sm-4 col-xs-4">
-                            <div class="form-check pt5">
-                             <input class="form-check-input" type="checkbox" value="1" id="is_tpa" name="is_tpa" onclick="reset_all()">
-                             <label class="form-check-label text-white" for="is_tpa">
-                             <?php echo $this->lang->line('apply_tpa'); ?>
-                             </label>
-                             </div>                         
-                           </div>
-                           </div>
-                        </div>
-                    </div><!-- ./row -->
-                </div>
-                <div class="pup-scroll-area">
-                    <div class="modal-body pb0 ptt10">
-                    </div><!--./modal-body-->
-                </div>
-                <div class="modal-footer sticky-footer">
-                    <div class="pull-right">
-                        <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="formaddbtn_issue_component" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                <div class="modal-header gap-2">
+                    <h5 class="modal-title" id="componentIssueModalLabel"><?php echo $this->lang->line('component_issue'); ?></h5>
+                    <input type="hidden" name="is_case_reference_idd" id="is_case_reference_idd" class="is_caseid_exit">
+                    <select class="form-control form-control-sm patient_list_ajax sh-bill-patient-pick" name="patient_id" id="addpatient_id_component" onchange="get_component_PatientDetails(this.value)" data-placeholder="<?php echo $this->lang->line('search_patient'); ?>"></select>
+                    <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+                    <a data-bs-toggle="modal" onclick="holdModal('myModalpa')" class="modalbtnpatient btn btn-light btn-sm text-nowrap"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
+                    <?php } ?>
+                    <div class="input-group input-group-sm sh-ig-180">
+                        <input type="text" class="form-control form-control-sm" id="case_reference_id_component" placeholder="<?php echo $this->lang->line('case_id'); ?>" name="case_reference_id">
+                        <button class="btn btn-secondary btn-sm search_case_reference_id" type="button" data-modal-name="componentIssueModal">
+                            <i class="fa fa-search"></i>
+                        </button>
                     </div>
-                    <div class="pull-right" style="margin-right:10px;">
-                        <button type="button" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right printsavebtn_issue"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save_print'); ?></button>
+                    <div class="form-check ms-1">
+                        <input class="form-check-input" type="checkbox" value="1" id="is_tpa_component" name="is_tpa" onclick="reset_all(this)">
+                        <label class="form-check-label" for="is_tpa_component"><?php echo $this->lang->line('apply_tpa'); ?></label>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="pup-scroll-area">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="component_organisation_id" name="organisation_id" />
+                    <input type="hidden" id="component_insurance_id" name="insurance_id" />
+                    <input type="hidden" id="component_insurance_validity" name="insurance_validity" />
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="button" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info printsavebtn_issue"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save_print'); ?></button>
+                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="formaddbtn_issue_component" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="availableBloodModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('available_bloods'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="availableBloodModal" tabindex="-1" aria-labelledby="availableBloodModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="availableBloodModalLabel"><?php echo $this->lang->line('available_bloods'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pb0 ptt10">
-            </div><!--./col-md-12-->
-        </div><!--./row-->
+            <div class="modal-body pup-scroll-area">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'json',
             url: '<?php echo base_url(); ?>admin/bloodbankstatus/edit/' + id,
@@ -585,9 +483,9 @@ if (!empty($bloodgroup)) {
         var mode = $(this).val();
         if (mode == "Cheque") {
             $('.filestyle', '#addBloodDetailModal').dropify();
-            $('.cheque_div').css("display", "block");
+            $('.cheque_div').removeClass('d-none');
         } else {
-            $('.cheque_div').css("display", "none");
+            $('.cheque_div').addClass('d-none');
         }
     });
 	
@@ -595,7 +493,7 @@ if (!empty($bloodgroup)) {
          
         $('.select2').select2();
         $('#editformadd').on('submit', (function(e) {
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -616,14 +514,14 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('loading');
+                    $("#editformaddbtn").btnLoading();
                 },
                 error: function() {}
             });
         }));
 
         $('#bloodgroupstatus').on('submit', (function(e) {
-            $("#bloodgroupstatusbtn").button('loading');
+            $("#bloodgroupstatusbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -644,7 +542,7 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#bloodgroupstatusbtn").button('reset');
+                    $("#bloodgroupstatusbtn").btnReset();
                 },
                 error: function() {}
             });
@@ -664,21 +562,21 @@ if (!empty($bloodgroup)) {
             },
             dataType: 'json',
             beforeSend: function() {
-                this.button('loading');
+                this.btnLoading();
                 createModal.addClass('modal_loading');
             },
             success: function(res) {
                 $('.modal-body', createModal).html(res.page);
-                createModal.modal('show');
+                shModal(createModal[0]).show();
 
             },
             error: function(xhr) { // if error occured
                 alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                this.button('reset');
+                this.btnReset();
                 createModal.removeClass('modal_loading');
             },
             complete: function() {
-                this.button('reset');
+                this.btnReset();
                 createModal.removeClass('modal_loading');
             }
         });
@@ -686,9 +584,8 @@ if (!empty($bloodgroup)) {
 
     function bloodDetailsModal(bloodgroupid) {
         $("#donorblood").trigger("reset");
-        $("#addBloodDetailModal").modal({
-            backdrop: "static"
-        });
+        modal_click_disabled('addBloodDetailModal');
+        shModal('addBloodDetailModal').show();
         div_data = "";
         $("#blood_group_id").val(bloodgroupid);
         $.ajax({
@@ -744,9 +641,8 @@ if (!empty($bloodgroup)) {
 
     function componentDetailsModal(bloodgroupid) {
         $("#blood_bank_product_id").val(bloodgroupid).trigger('change');
-        $("#myModal").modal({
-            backdrop: "static"
-        });
+        modal_click_disabled('myModal');
+        shModal('myModal').show();
         var bloodgroup = $("#blood_bank_product_id").val();
         getBloodGroupBagNos(bloodgroup, "");
     }
@@ -765,7 +661,7 @@ if (!empty($bloodgroup)) {
                 cache: false,
                 processData: false,
                 beforeSend: function() {
-                    button_loading.button("loading");
+                    button_loading.btnLoading();
                 },
                 success: function(data) {
                     if (data.status == "fail") {
@@ -778,13 +674,13 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#donorbloodbtn").button('reset');
+                    $("#donorbloodbtn").btnReset();
                 },
                 error: function() {
-                    button_loading.button('reset');
+                    button_loading.btnReset();
                 },
                 complete: function() {
-                    button_loading.button('reset');
+                    button_loading.btnReset();
                 }
             });
         }));
@@ -852,6 +748,7 @@ if (!empty($bloodgroup)) {
                     var tax_amount = parseFloat((total_amout - discount_amount) * tax / 100)
                     var net_amount = (total_amout - discount_amount) + tax_amount;
                     $('#total').val(total_amout.toFixed(2));
+                    $('#discount').val(discount_amount.toFixed(2));
                     $('#tax').val(tax_amount.toFixed(2));
 
                     $('#net_amount').val(net_amount.toFixed(2));
@@ -899,7 +796,7 @@ if (!empty($bloodgroup)) {
         var tot_amt = parseFloat($('#total').val());
         if (is_percentage) {
             var dis_per = $('#discount_percent').val();
-            var dis_amt = parseFloat(tot_amt * dis_per / 100);
+            var dis_amt = isNaN(parseFloat(tot_amt * dis_per / 100)) ? 0 : parseFloat(tot_amt * dis_per / 100);
             $('#discount').val(dis_amt.toFixed(2));
         } else {
             var dis_amt = parseFloat($('#discount').val());
@@ -919,6 +816,12 @@ if (!empty($bloodgroup)) {
     <?php
     }
     ?>
+
+    function bbPillClick(el) {
+        document.querySelectorAll('.bb-pill').forEach(function(p){ p.classList.remove('active'); });
+        el.classList.add('active');
+        getBloodListTable(el.id);
+    }
 
     function getBloodListTable(id) {
         $.ajax({
@@ -1004,7 +907,7 @@ if (!empty($bloodgroup)) {
 
     $(document).ready(function(e) {
         $("#componentsadd").on('submit', (function(e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/bloodbank/addcomponents',
@@ -1025,7 +928,7 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function() {}
             });
@@ -1037,42 +940,75 @@ if (!empty($bloodgroup)) {
     function componentIssueModal(blood_group_id, bag_no,bloodid) {
         $("#formaddComponent").trigger('reset');
         issueModal = $("#componentIssueModal");
-        issueModal.modal("show");
+        shModal(issueModal[0]).show();
         $.ajax({
             url: '<?php echo base_url(); ?>admin/bloodbank/issuecomponentfront',
             type: "POST",
+            data: {blood_group_id: blood_group_id},
             dataType: 'json',
             success: function(res) {
-                $('.modal-body', issueModal).html(res.page);
+                $('.pup-scroll-area', issueModal).html(res.page);
+                initBloodPatientSelect('#addpatient_id_component', '#componentIssueModal');
                 getcharge_category_issue("blood_bank");
                 $('.filestyle', '#componentIssueModal').dropify();
-                $('.modal-body', issueModal).find('.select2').select2();
-                $("#blood_group_issue_select").val(blood_group_id);
-                $("#blood_group_issue").val(blood_group_id);
-                $('#blood_group_issue_select').trigger('change');
+                // Init all select2 except blood group select (needs value set first)
+                $('.modal-body', issueModal).find('.select2:not(#blood_group_issue_select)').select2();
+                // Set value then init blood group select2 separately so it picks up pre-selected option
+                issueModal.find("#blood_group_issue").val(blood_group_id);
+                issueModal.find("#blood_group_issue_select").val(blood_group_id).select2();
                 getComponentBagNosIssue(blood_group_id, bag_no,bloodid)
             },
+        });
+    }
+
+    // Initialize the ajax patient-search select2 inside a blood/component issue modal.
+    // Without this the patient dropdown (#addpatient_id) never gets its ajax config and won't open.
+    function initBloodPatientSelect(selectSelector, modalSelector) {
+        var $sel = $(selectSelector);
+        if (!$sel.length) return;
+        if ($sel.hasClass('select2-hidden-accessible')) {
+            $sel.select2('destroy');
+        }
+        $sel.select2({
+            ajax: {
+                url: "<?php echo base_url(); ?>admin/patient/getPatientListAjax",
+                type: "post",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { searchTerm: params.term };
+                },
+                processResults: function (response) {
+                    return { results: response };
+                },
+                cache: true
+            },
+            placeholder: "<?php echo $this->lang->line('search_patient'); ?>",
+            dropdownParent: $(modalSelector),
+            width: '300px'
         });
     }
 
     function bloodIssueModal(blood_group_id, bag_no) {
         $("#formadd").trigger('reset');
         issueModal = $("#bloodIssueModal");
-        issueModal.modal("show");
+        shModal(issueModal[0]).show();
         $.ajax({
             url: '<?php echo base_url(); ?>admin/bloodbank/issuebloodFront',
             type: "POST",
+            data: {blood_group_id: blood_group_id},
             dataType: 'json',
             success: function(res) {
-                $('.modal-body', issueModal).html(res.page);
+                $('.pup-scroll-area', issueModal).html(res.page);
                 $('.datetime').trigger('change');
-                $('.patient_list_ajax').select2("val", "");
+                initBloodPatientSelect('#addpatient_id', '#bloodIssueModal');
                 getcharge_category_issue("blood_bank");
                 $('.filestyle', '#bloodIssueModal').dropify();
-                $('.modal-body', issueModal).find('.select2').select2();
-				$("#blood_group_issue_select").val(blood_group_id);
-                $("#blood_group_issue").val(blood_group_id);
-                $('#blood_group_issue_select').trigger('change');
+                // Init all select2 except blood group select (needs value set first)
+                $('.modal-body', issueModal).find('.select2:not(#blood_group_issue_select)').select2();
+                // Set value then init blood group select2 separately so it picks up pre-selected option
+                issueModal.find("#blood_group_issue").val(blood_group_id);
+                issueModal.find("#blood_group_issue_select").val(blood_group_id).select2();
                 getBloodGroupBagNosIssue(blood_group_id, bag_no)
             },
         });
@@ -1193,11 +1129,7 @@ if (!empty($bloodgroup)) {
     }
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }
 
     $(document).on('select2:select', '.charge_category_issue', function() {
@@ -1208,6 +1140,14 @@ if (!empty($bloodgroup)) {
 
     function getchargecodeissue(charge_category, charge_id) {
         var div_data = "<option value=''><?php echo $this->lang->line('select'); ?></option>";
+        $('#tax_percentage_issue').val(0);
+        $('#addstandard_charge_issue').val(0);
+        $('#total_issue').val(0);
+        $('#discount_percent_issue').val(0);
+        $('#discount_issue').val(0);
+        $('#tax_issue').val(0);
+        $('#net_amount_issue').val(0);
+        $('#payment_amount_issue').val(0);
         if (charge_category != "") {
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/charges/getchargeDetails',
@@ -1261,6 +1201,7 @@ if (!empty($bloodgroup)) {
                     var tax_amount = parseFloat((total_amout - discount_amount) * tax / 100)
                     var net_amount_issue = (total_amout - discount_amount) + tax_amount;
                     var payment_amount_issue = (total_amout - discount_amount) + tax_amount;
+                    $('#discount_issue').val(discount_amount.toFixed(2));
                     $('#tax_issue').val(tax_amount.toFixed(2));
                     $('#net_amount_issue').val(net_amount_issue.toFixed(2));
                     $('#payment_amount_issue').val(payment_amount_issue.toFixed(2));
@@ -1286,7 +1227,7 @@ if (!empty($bloodgroup)) {
                 postData.append(val.name, val.value);
             });
 
-            $("#printsavebtn_issue").button('loading');
+            $("#printsavebtn_issue").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/bloodbank/addIssue',
@@ -1307,7 +1248,7 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         printData(data.id);
                     }
-                    $("#printsavebtn_issue").button('reset');
+                    $("#printsavebtn_issue").btnReset();
                 },
                 error: function() {
 
@@ -1348,7 +1289,7 @@ if (!empty($bloodgroup)) {
                 cache: false,
                 processData: false,
                 beforeSend: function() {
-                    $("#formaddbtn_issue").button('loading');
+                    $("#formaddbtn_issue").btnLoading();
                 },
                 success: function(data) {
                     if (data.status == "fail") {
@@ -1361,13 +1302,13 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn_issue").button('reset');
+                    $("#formaddbtn_issue").btnReset();
                 },
                 error: function() {
-                    $("#formaddbtn_issue").button('reset');
+                    $("#formaddbtn_issue").btnReset();
                 },
                 complete: function() {
-                    $("#formaddbtn_issue").button('reset');
+                    $("#formaddbtn_issue").btnReset();
                 }
             });
         }));
@@ -1391,7 +1332,7 @@ if (!empty($bloodgroup)) {
                 cache: false,
                 processData: false,
                 beforeSend: function() {
-                    $("#formaddbtn_issue_component").button('loading');
+                    $("#formaddbtn_issue_component").btnLoading();
                 },
                 success: function(data) {
                     if (data.status == "fail") {
@@ -1404,13 +1345,13 @@ if (!empty($bloodgroup)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn_issue_component").button('reset');
+                    $("#formaddbtn_issue_component").btnReset();
                 },
                 error: function() {
-                    $("#formaddbtn_issue_component").button('reset');
+                    $("#formaddbtn_issue_component").btnReset();
                 },
                 complete: function() {
-                    $("#formaddbtn_issue_component").button('reset');
+                    $("#formaddbtn_issue_component").btnReset();
                 }
             });
         }));
@@ -1461,13 +1402,13 @@ if (!empty($bloodgroup)) {
 
 
 
-    function reset_all(){
-        $('#payment_amount_issue').val(0);
-        $('#addstandard_charge_issue').val('');
-        $('.addcharge_issue').val('').trigger('change');
-        $('.charge_category_issue').val('').trigger('change');
-        $(".printablea4").find('input').val(0);
-
+    function reset_all(context){
+        var $ctx = $(context).closest('.modal');
+        $ctx.find('.payment_amount').val(0);
+        $ctx.find('#addstandard_charge_issue').val('');
+        $ctx.find('.addcharge_issue').val('').trigger('change');
+        $ctx.find('.charge_category_issue').val('').trigger('change');
+        $ctx.find('.sh-summary-row input').val(0);
     }
 
 </script>
@@ -1497,16 +1438,16 @@ if (!empty($bloodgroup)) {
     $('.close_button').click(function() {
         $(".select2").select2().select2('val', '');
         $(".addcharge").select2().select2('val', '');
-        $('.cheque_div').hide();
+        $('.cheque_div').addClass('d-none');
     })
 </script>
 
 <?php $this->load->view('admin/patient/patientaddmodal') ?>
 
 <script>
-	function get_PatientDetails(id) {   
+	function get_PatientDetails(id) {
         if(id!=""){
-        reset_all();
+        reset_all(document.getElementById('bloodIssueModal'));
         $.ajax({
             url: base_url+'admin/patient/patientDetails',
             type: "POST",
@@ -1525,8 +1466,8 @@ if (!empty($bloodgroup)) {
     }
     }
 	
-    function get_component_PatientDetails(id) {   
-        reset_all();
+    function get_component_PatientDetails(id) {
+        reset_all(document.getElementById('componentIssueModal'));
         $.ajax({
             url: base_url+'admin/patient/patientDetails',
             type: "POST",

@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Customfield extends Admin_Controller
 {
+	public $custom_field_table;
+
 
     public $custom_fields_list = array();
 
@@ -38,11 +40,11 @@ class Customfield extends Admin_Controller
         if ($this->form_validation->run() == true) {
 
             $data = array(
-                'belong_to'                => $this->input->post('belong_to'),
-                'type'                     => $this->input->post('type'),
-                'bs_column'                => $this->input->post('column'),
-                'name'                     => $this->input->post('name'),
-                'field_values'             => $this->input->post('field_values'),
+                'belong_to'                => $this->input->post('belong_to', TRUE),
+                'type'                     => $this->input->post('type', TRUE),
+                'bs_column'                => $this->input->post('column', TRUE),
+                'name'                     => $this->input->post('name', TRUE),
+                'field_values'             => $this->input->post('field_values', TRUE),
                 'validation'               => isset($_POST['validation']) ? $_POST['validation'] : "",
                 'visible_on_table'         => isset($_POST['display_tbl']) ? $_POST['display_tbl'] : "",
                 'visible_on_print'         => isset($_POST['display_print']) ? $_POST['display_print'] : "",
@@ -53,15 +55,16 @@ class Customfield extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
             redirect('admin/customfield/index');
         }
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/customfield/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function validate_type()
     {
         if (isset($_POST['type']) and ($_POST['type'] == "select" || $_POST['type'] == "multiselect" || $_POST['type'] == "checkbox" || $_POST['type'] == "link")) {
-            if ($this->input->post('field_values') == "") {
+            if ($this->input->post('field_values', TRUE) == "") {
                 $this->form_validation->set_message('validate_type', $this->lang->line('fields_values_required'));
                 return false;
             }
@@ -86,12 +89,12 @@ class Customfield extends Admin_Controller
         $this->form_validation->set_rules('field_values', $this->lang->line('field_values'), 'callback_validate_type');
         if ($this->form_validation->run() == true) {
             $data = array(
-                'id'                       => $this->input->post('id'),
-                'bs_column'                => $this->input->post('column'),
-                'belong_to'                => $this->input->post('belong_to'),
-                'type'                     => $this->input->post('type'),
-                'name'                     => $this->input->post('name'),
-                'field_values'             => $this->input->post('field_values'),
+                'id'                       => $this->input->post('id', TRUE),
+                'bs_column'                => $this->input->post('column', TRUE),
+                'belong_to'                => $this->input->post('belong_to', TRUE),
+                'type'                     => $this->input->post('type', TRUE),
+                'name'                     => $this->input->post('name', TRUE),
+                'field_values'             => $this->input->post('field_values', TRUE),
                 'validation'               => isset($_POST['validation']) ? $_POST['validation'] : "",
                 'visible_on_table'         => isset($_POST['display_tbl']) ? $_POST['display_tbl'] : "",
                 'visible_on_print'         => isset($_POST['display_print']) ? $_POST['display_print'] : "",
@@ -102,9 +105,10 @@ class Customfield extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/customfield/index');
         }
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/customfield/edit', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function delete($id)
@@ -115,8 +119,8 @@ class Customfield extends Admin_Controller
 
     public function updateorder()
     {
-        $belong_to = $this->input->post('belong_to');
-        $items     = $this->input->post('items');
+        $belong_to = $this->input->post('belong_to', TRUE);
+        $items     = $this->input->post('items', TRUE);
 
         if (!empty($items)) {
             $updateorder = array();

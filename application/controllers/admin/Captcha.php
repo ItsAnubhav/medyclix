@@ -25,9 +25,10 @@ class Captcha extends Admin_Controller
         $this->session->set_userdata('inner_menu', 'admin/captcha/index');
         $data['inserted_fields'] = $this->captcha_model->getSetting();
         $data['fields']          = get_captcha_editable_fields();
-        $this->load->view('layout/header');
+        $data['module'] = 'setup';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/captcha/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function changeStatus()
@@ -36,8 +37,8 @@ class Captcha extends Admin_Controller
             access_denied();
         }
         $data = array(
-            'name'   => $this->input->post('name'),
-            'status' => $this->input->post('status'),
+            'name'   => $this->input->post('name', TRUE),
+            'status' => $this->input->post('status', TRUE),
         );
         $this->captcha_model->update_status($data);
 

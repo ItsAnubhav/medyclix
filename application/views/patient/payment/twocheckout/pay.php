@@ -1,69 +1,81 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('payment_details'); ?></h3>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
-                    <div class="row" id="patient_details"></div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-offset-6 col-xs-6">
-                                <p class="lead"><?php echo $this->lang->line('amount'); ?></p>
+<!-- TWIN of index.php — this is the SUCCESS view rendered by pay() once phone/email
+     validate. Same checkout layout as index.php, but here the 2Checkout inline-cart
+     SDK (twoCoInlineCart.js) is loaded at the bottom. Keep this layout in sync with
+     index.php. The SDK <script> blocks below are preserved verbatim. -->
+<div class="container-fluid px-1 py-1">
+        <div class="row g-3">
 
-                                <form action="#" method="post" >
+            <!-- LEFT: patient summary — injected by the AJAX call below. -->
+            <div class="col-md-7">
+                <div id="patient_details" class="h-100"></div>
+            </div>
 
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <tbody>
-                                            <tr>
-                                                <th><?php echo $this->lang->line('payment_amount') . " (" . $currency_symbol . ")"; ?></th>
-                                                <td><?php echo number_format((float)$amount, 2, '.', ''); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th><?php echo $this->lang->line('processing_fees') . " (" . $currency_symbol . ")"; ?></th>
-                                                <td><?php echo number_format((float)$gateway_processing_charge, 2, '.', ''); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
-                                                <td><b><?php echo number_format(((float)$gateway_processing_charge +$amount), 2, '.', ''); ?></b></td>
-                                            </tr>
-                                            <tr>
-                                                <th><?php echo $this->lang->line('phone'); ?></th>
-                                                <td><input type="text" class="form-control"  name="phone" value="<?php echo set_value('phone'); ?>" /> <span class="alert-danger"> <?php echo form_error('phone');?></span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th><?php echo $this->lang->line('email'); ?></th>
-                                                <td><input type="text" class="form-control" name="email" value="<?php echo set_value('email'); ?>"> <span class="alert-danger"> <?php echo form_error('email');?></span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <?php if (!empty($api_error)) { ?> 
-                                    <div class="alert alert-danger">
-                                        <?php echo "<pre>"; print_r($api_error); ?> 
-                                    </div>
-                                <?php } ?>
-                                        <div class="text-right">
-                                            <button type="submit" class="btn btn-primary submit_button"><i class="fa fa fa-money"></i> <?php echo $this->lang->line('make_payment') ?></button>
-                                        </div> 
-                                </form>
+            <!-- RIGHT: payment card — amount breakdown + email/phone (carried over,
+                 set_value-filled from the validated POST). -->
+            <div class="col-md-5">
+                <div class="sh-form-card h-100 mb-0">
+                    <div class="sh-card-header">
+                        <span class="sh-card-header-title"><i class="fa fa-credit-card me-1"></i><?php echo $this->lang->line('payment_details'); ?></span>
+                    </div>
+                    <div class="p-3">
+
+                        <!-- Amount breakdown -->
+                        <div class="sh-pay-summary mb-2">
+                            <div class="pay-row">
+                                <span class="lbl"><?php echo $this->lang->line('payment_amount') . ' (' . $currency_symbol . ')'; ?></span>
+                                <span class="val"><?php echo number_format((float)$amount, 2, '.', ''); ?></span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="lbl"><?php echo $this->lang->line('processing_fees') . ' (' . $currency_symbol . ')'; ?></span>
+                                <span class="val"><?php echo number_format((float)$gateway_processing_charge, 2, '.', ''); ?></span>
+                            </div>
+                            <div class="pay-row pay-total">
+                                <span class="lbl"><?php echo $this->lang->line('total') . ' (' . $currency_symbol . ')'; ?></span>
+                                <span class="val"><?php echo number_format(((float)$gateway_processing_charge + $amount), 2, '.', ''); ?></span>
                             </div>
                         </div>
-                    </div><!-- /.box-body -->
+
+                        <form action="#" method="post">
+                            <div class="form-group row mt-3 align-items-center">
+                                <label for="email" class="col-sm-3 col-form-label"><?php echo $this->lang->line('email'); ?> <small class="req text-danger">*</small></label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" name="email" id="email" value="<?php echo set_value('email'); ?>" />
+                                    <span class="text-danger"><?php echo form_error('email'); ?></span>
+                                </div>
+                            </div>
+
+                            <div class="form-group row mt-2 align-items-center">
+                                <label for="phone" class="col-sm-3 col-form-label"><?php echo $this->lang->line('phone'); ?> <small class="req text-danger">*</small></label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" name="phone" id="phone" value="<?php echo set_value('phone'); ?>" />
+                                    <span class="text-danger"><?php echo form_error('phone'); ?></span>
+                                </div>
+                            </div>
+
+                            <?php if (isset($api_error) && !empty($api_error)) { ?>
+                                <div class="alert alert-danger mt-2 mb-0"><?php echo $api_error; ?></div>
+                            <?php } ?>
+
+                            <div class="sh-pay-actions">
+                                <button type="button" onclick="window.history.go(-1); return false;" class="btn btn-light">
+                                    <i class="fa fa-chevron-left me-1"></i><?php echo $this->lang->line('back'); ?>
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-pay submit_button">
+                                    <i class="fa fa-lock me-1"></i><?php echo $this->lang->line('make_payment') ?>
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
                 </div>
-            </div><!--/.col (right) -->
+            </div>
+
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+</div>   <!-- /.container-fluid -->
+
 <script>
 get_patientdetails();
     function get_patientdetails(){
@@ -74,14 +86,14 @@ get_patientdetails();
                 $("#patient_details").html(data);
             },
             error: function () {
-                
+
             }
         });
     }
 </script>
 
 <script src="<?php echo base_url();?>backend/custom/jquery.min.js"></script>
-         
+
          <script>
             (function(document, src, libName, config) {
                 var script = document.createElement('script');
@@ -105,7 +117,7 @@ get_patientdetails();
                 "cart": {
                     "host": "https:\/\/secure.2checkout.com"
                 }
-            }); 
+            });
         </script>
           <script type="text/javascript">
           	//$('#buy-button').trigger("click");
@@ -127,7 +139,7 @@ get_patientdetails();
                     });
 
                     TwoCoInlineCart.cart.setOrderExternalRef("<?php echo md5(time()); ?>");
-                    TwoCoInlineCart.cart.setExternalCustomerReference("<?php echo md5("1".time()); ?>"); // external customer reference 
+                    TwoCoInlineCart.cart.setExternalCustomerReference("<?php echo md5("1".time()); ?>"); // external customer reference
                     TwoCoInlineCart.cart.setCurrency("<?php echo $currency; ?>");
                     TwoCoInlineCart.cart.setTest(false);
                     TwoCoInlineCart.cart.setReturnMethod({

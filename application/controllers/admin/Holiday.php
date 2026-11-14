@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Holiday extends Admin_Controller
 {
+	public $sch_setting_detail;
+
     public function __construct()
     {
         parent::__construct();
@@ -39,6 +41,7 @@ class Holiday extends Admin_Controller
 
         $data["holidaylist"]  	=	$holidaylist; 
 		$data['superadmin_restriction']        = $this->sch_setting_detail->superadmin_restriction;
+        $data['module'] = 'annual_calendar';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/holiday/index', $data);
         $this->load->view('layout/footer', $data);
@@ -46,7 +49,10 @@ class Holiday extends Admin_Controller
 
     public function add()
     {       
-		 
+		if (!$this->rbac->hasPrivilege('annual_calendar', 'can_add')) {
+            access_denied();
+        }
+		
         $holiday_type=$this->input->post('holiday_type');
 
         if(isset($holiday_type) && $holiday_type==3){
@@ -72,28 +78,28 @@ class Holiday extends Admin_Controller
 
             // IF THERE IS SINGLE DATE THEN IT WILL BE SAME FOR BOTH COLUMNS - FROM_DATE AND TO_DATE //
             if(isset($holiday_type) && $holiday_type==3 && $holiday_type!=''){                
-                 $from_date   =    $this->input->post('from_date');
-                 $to_date     =    $this->input->post('to_date');
-            }else{                
-                 $from_date   =   $this->input->post('from_date');
-                 $to_date     =   $this->input->post('from_date');
+                 $from_date   =    $this->input->post('from_date', TRUE);
+                 $to_date     =    $this->input->post('to_date', TRUE);
+            }else{
+                 $from_date   =   $this->input->post('from_date', TRUE);
+                 $to_date     =   $this->input->post('from_date', TRUE);
             }  
 			
-			if($this->input->post('front_site')){
+			if($this->input->post('front_site', TRUE)){
 				$front_site	=	1;
 			}else{
 				$front_site	=	0;
 			}           
 
             $data = array(
-                'id'                 =>     $this->input->post('id'),
-                'holiday_type'       =>     $this->input->post('holiday_type'),
+                'id'                 =>     $this->input->post('id', TRUE),
+                'holiday_type'       =>     $this->input->post('holiday_type', TRUE),
                 'from_date'          =>     date('Y-m-d', $this->customlib->datetostrtotime($from_date)),
                 'to_date'            =>     date('Y-m-d 23:59:00', $this->customlib->datetostrtotime($to_date)),
-                'description'        =>     $this->input->post('description'),
+                'description'        =>     $this->input->post('description', TRUE),
                 'front_site'         =>     $front_site,
                 'created_by'         =>     $this->customlib->getStaffID(),
-                'holiday_color'      =>     '#008000'                
+                'holiday_color'      =>     '#008000'
             );
 
             $edit_id= $this->input->post('id');
@@ -105,7 +111,7 @@ class Holiday extends Admin_Controller
 
             $this->holiday_model->add($data);      
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
-    }     
+		}     
         echo json_encode($array);
     }
 
@@ -116,14 +122,19 @@ class Holiday extends Admin_Controller
             access_denied();
         }
 		
-        $this->holiday_model->delete_holiday($_POST['id']);
+        $this->holiday_model->delete_holiday($this->input->post('id', TRUE));
         $array = array('status' => 1, 'success' => $this->lang->line('delete_message'));
         echo json_encode($array);
     }
 	
 	public function getholiday()
     {
-        $id           = $this->input->post("id");        
+		
+		if (!$this->rbac->hasPrivilege('annual_calendar', 'can_view')) {
+            access_denied();
+        }
+		
+        $id           = $this->input->post("id", TRUE);
         $result       = $this->holiday_model->get($id);
 		 
 		$result['from_date'] = date($this->customlib->YYYYMMDDTodateFormat($result['from_date']));

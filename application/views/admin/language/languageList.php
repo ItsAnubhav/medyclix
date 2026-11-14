@@ -1,24 +1,18 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <!-- left column -->
             <?php $this->load->view('setting/sidebar'); ?>
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('language_list'); ?></h3>
-                        <div class="box-tools pull-right">
-                            <div class="box-tools pull-right">
-                               <?php if ($this->rbac->hasPrivilege('languages', 'can_add')) { ?>
-                                <a href="#" data-target="#myModal" class="btn btn-primary btn-sm"  data-toggle="modal" title="<?php echo $this->lang->line('add'); ?>" >
-                                    <i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?>
-                                </a>
-                            <?php } ?>
-                            </div>
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card">
+                    <div class="card-header ptbnull d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <h3 class="card-title mb-0"><?php echo $this->lang->line('language_list'); ?></h3>
+                        <?php if ($this->rbac->hasPrivilege('languages', 'can_add')) { ?>
+                        <a href="#" data-bs-target="#myModal" class="btn btn-primary btn-sm" data-bs-toggle="modal" title="<?php echo $this->lang->line('add'); ?>">
+                            <i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?>
+                        </a>
+                        <?php } ?>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="alert alert-warning">
                             To change language key phrases, go your language directory e.g. for English language go edit file  /application/language/English/app_files/system_lang.php
                         </div>
@@ -28,73 +22,78 @@
                                 $this->session->unset_userdata('msg');
                              ?>
                         <?php } ?>
-                        <div class="table-responsive mailbox-messages">
-                            <table class="table table-hover table-striped">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0">
+                                <thead>
                                     <tr>
-                                        <th>#</th>
+                                        <th class="sh-th-50">#</th>
                                         <th><?php echo $this->lang->line('language'); ?></th>
                                         <th><?php echo $this->lang->line('short_code'); ?></th>
                                         <th><?php echo $this->lang->line('country_code'); ?></th>
                                         <th><?php echo $this->lang->line('status'); ?></th>
-                                        <th><?php echo $this->lang->line('active'); ?></th>
-                                        <th><?php echo $this->lang->line('is_rtl'); ?></th>
-                                        <th class="text-right rtl-text-left"><?php echo $this->lang->line('action'); ?></th>
-                                    </tr> 
-                                     <tbody id="result_data">
+                                        <th class="text-center sh-th-90"><?php echo $this->lang->line('active'); ?></th>
+                                        <th class="text-center sh-th-90"><?php echo $this->lang->line('is_rtl'); ?></th>
+                                        <th class="text-end rtl-text-start sh-th-140"><?php echo $this->lang->line('action'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="result_data">
                                     <?php $this->load->view('admin/language/languageResult'); ?>
                                 </tbody>
-                            </table><!-- /.table -->
-                        </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
-                    <div class="box-footer">
+                            </table>
+                        </div>
+                    </div><!-- /.card-body -->
+                    <div class="card-footer">
                         <div class="mailbox-controls">
                         </div>
                     </div>
                 </div>
             </div>
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div> 
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-sm400" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"><?php echo $this->lang->line('add_language'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_language'); ?></h5>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
-            <form id="addlanguage" class="ptt10" method="post" accept-charset="utf-8" enctype="multipart/form-data">                
-                <div class="modal-body pt0 pb0">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('language'); ?><small class="req"> *</small></label>
-                                <input id="invoice_no" name="language" placeholder="" type="text" class="form-control" value="<?php echo set_value('language'); ?>" />
+            <form id="addlanguage" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card mb-0">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('add_language'); ?></span>
                             </div>
-                        </div>
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('short_code'); ?><small class="req"> *</small></label></label>
-                                <input id="short_code" name="short_code" placeholder="" type="text" class="form-control" value="<?php echo set_value('short_code'); ?>" />
-                            </div>
-                        </div>
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('country_code'); ?><small class="req"> *</small></label></label>
-                                <input id="country_code" name="country_code" placeholder="" type="text" class="form-control" value="<?php echo set_value('country_code'); ?>" />
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label for="invoice_no" class="form-label"><?php echo $this->lang->line('language'); ?><small class="req"> *</small></label>
+                                        <input id="invoice_no" name="language" type="text" class="form-control" value="<?php echo set_value('language'); ?>" />
+                                    </div>
+                                    <div class="mb-3 col-12">
+                                        <label for="short_code" class="form-label"><?php echo $this->lang->line('short_code'); ?><small class="req"> *</small></label>
+                                        <input id="short_code" name="short_code" type="text" class="form-control" value="<?php echo set_value('short_code'); ?>" />
+                                    </div>
+                                    <div class="mb-0 col-12">
+                                        <label for="country_code" class="form-label"><?php echo $this->lang->line('country_code'); ?><small class="req"> *</small></label>
+                                        <input id="country_code" name="country_code" type="text" class="form-control" value="<?php echo set_value('country_code'); ?>" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div><!-- /.modal-body -->
+                </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
     </div>
-
 </div>
  
 <script type="text/javascript">
@@ -226,11 +225,7 @@ function load(){
     }
     
     $(document).ready(function (e) {
-        $('#myModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal');
     });
  
     function rtl(id){

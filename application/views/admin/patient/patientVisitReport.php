@@ -2,105 +2,104 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 
-<div class="content-wrapper">
-    <!-- Main content -->
-<div class="modal fade" id="viewDetailReportModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='action_detail_report_modal'>
-
-                   </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('bill_details'); ?></h4> 
+<!-- Main content -->
+<div class="modal fade sh-modal sh-modal-branded" id="viewDetailReportModal" tabindex="-1" aria-labelledby="viewDetailReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDetailReportModalLabel"><?php echo $this->lang->line('bill_details'); ?></h5>
+                <div class="d-flex align-items-center gap-2" id="action_detail_report_modal"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body ptt10 pb0">
-                <div id="reportbilldata"></div>
+            <div class="pup-scroll-area">
+                <div class="modal-body"></div>
             </div>
-        </div>
-    </div>    
-</div>
-
-<div class="modal fade" id="viewModalBill" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('bill ') . " " . $this->lang->line('details'); ?></h4> 
-            </div>
-            <div class="modal-body pt0 pb0">
-                <div id="reportdata"></div>
-            </div>
-        </div>
-    </div>    
-</div>
-
-<div class="modal fade" id="viewModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('bill_details'); ?></h4>
-            </div>
-            <div class="modal-body pt0 pb0 min-h-3">
-                <div id="pharmacy_reportdata"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-    <section class="content">
-        <div class="row">
+<div class="modal fade sh-modal sh-modal-branded" id="viewModalBill" tabindex="-1" aria-labelledby="viewModalBillLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalBillLabel"><?php echo $this->lang->line('bill_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div id="reportdata"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-branded" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('bill_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div id="pharmacy_reportdata"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="row">
             <div class="col-md-12">                
-                <div class="box box-primary">
+                <div class="card">
                     <?php $this->load->view('admin/report/_patient');?>
-                    <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">                        
-                        <h3 class="box-title"><?php echo  $this->lang->line("patient_visit_report"); ?></h3>
+                    <div class="card-header ptbnull"></div>
+                    <div class="card-header">                        
+                        <h3 class="card-title"><?php echo  $this->lang->line("patient_visit_report"); ?></h3>
                     </div>
-                        <div class="box-body pb0">                       
-                            <form action="<?= base_url(); ?>admin/patient/patientvisitreport" method="post" class="form-inline pt4">
-                                <div class="row">
-                                    <input type="hidden" name="ci_csrf_token" value="">  
-                                    <div class="form-group" id="patient_id">                                      
-                                        <div class="col-sm-12">                                        
-                                            <label><?php echo $this->lang->line('patient_id'); ?></label><small class="req"> *</small>
-                                            <input id="patient_id" name="patient_id" placeholder="<?php echo $this->lang->line('patient_id'); ?>" type="text" class="form-control" value="<?php echo set_value('patient_id'); ?>" />
-                                            <span class="text-danger"><?php echo form_error('patient_id'); ?></span>
-                                        </div>
-                                    </div>                                                  
-                                    <div class="form-group">
-                                        <div class="col-sm-12">
-                                            <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button> 
-                                        </div>
+                        <div class="card-body pb0">                       
+                            <form action="<?= base_url(); ?>admin/patient/patientvisitreport" method="post" class="pt-2">
+                                <div class="row g-3 align-items-end">
+                                    <input type="hidden" name="ci_csrf_token" value="">
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label" for="patient_id_input"><?php echo $this->lang->line('patient_id'); ?></label><small class="req"> *</small>
+                                        <input id="patient_id_input" name="patient_id" placeholder="<?php echo $this->lang->line('patient_id'); ?>" type="text" class="form-control" value="<?php echo set_value('patient_id'); ?>" />
+                                        <span class="text-danger"><?php echo form_error('patient_id'); ?></span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-2 d-flex align-items-end">
+                                        <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                            <i class="fa fa-search"></i>
+                                            <?php echo $this->lang->line('search'); ?>
+                                        </button>
                                     </div>
                                 </div>
                             </form>
                         </div>                     
-                    <div class="box border0 clear" id="visit_report">
-                        <div class="box-header ptbnull"></div>
-                        <div class="box-body table-responsive">
+                    <div id="visit_report">
+                        <div class="card-body table-responsive pt-0">
                             <div id="printhead">
                                 <h5><?php echo $this->lang->line("patient_visit_report") . "<br>"; ?></h5>
                             </div>
                             <div>
-                                <div class="box-header with-border" id="headreport" style="display:none;">
-                                    <h3 class="box-title text-center"><?php if(!empty($patient_name)){
+                                <div class="card-header" id="headreport" class="d-none">
+                                    <h3 class="card-title text-center"><?php if(!empty($patient_name)){
                                 echo composePatientName($patient_name,$patient_id) .' '.$this->lang->line("visit_details"); } ?></h3>
                               </div>
                             </div>
                             <div class="download_label"><?php echo $this->lang->line('opd_report'); ?></div>
                             <div id="excel_print_div" class="ptt10">
-                                <a class="btn btn-default btn-xs pull-right" id="print"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('print'); ?>" onclick="printDiv()"><i class="fa fa-print"></i></a> 
-                                <a class="btn btn-default btn-xs pull-right" id="btnExport"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('export_to_excel'); ?>" onclick="tablesToExcel(array1, array2, array3, array4, array5, array6, array7, 'myfile.xls');"> <i class="fa fa-file-excel-o"></i> </a>
+                                <a class="btn btn-secondary btn-sm float-end" id="print"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('print'); ?>" onclick="printDiv()"><i class="fa fa-print"></i></a> 
+                                <a class="btn btn-secondary btn-sm float-end" id="btnExport"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('export_to_excel'); ?>" onclick="tablesToExcel(array1, array2, array3, array4, array5, array6, array7, 'myfile.xls');"> <i class="fa fa-file-excel-o"></i> </a>
                             </div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="1">
                                 <caption><h4><?= $this->lang->line("opd_details"); ?></h4></caption>
@@ -142,7 +141,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('ipd_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="2">
                             <caption><h4><?= $this->lang->line("ipd_details"); ?></h4></caption>
@@ -183,7 +182,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('pharmacy_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="3">
                             <caption><h4><?= $this->lang->line("pharmacy_details"); ?></h4></caption>
@@ -191,13 +190,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     <th><?php echo $this->lang->line('bill_no'); ?></th>
                                     <th><?php echo $this->lang->line('case_id'); ?></th>
                                     <th><?php echo $this->lang->line('date'); ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('amount') . " " . '(' . $currency_symbol . ')'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('discount') . " " . '(%)'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('tax') . " " . '(%)'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('net_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('paid_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('refund_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line("balance_amount") . " " . '(' . $currency_symbol . ')'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('amount') . " " . '(' . $currency_symbol . ')'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('discount') . " " . '(%)'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('tax') . " " . '(%)'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('net_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('paid_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('refund_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line("balance_amount") . " " . '(' . $currency_symbol . ')'; ?></th>
                                 </tr>
                                 <tbody>
                                     <?php
@@ -226,36 +225,36 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 <td><?php echo $this->customlib->getSessionPrefixByType('pharmacy_billing') . $value['id']; ?></td>
                                                 <td><?php echo $case_id ; ?></td>
                                                 <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-                                                <td class="text-right"><?php echo amountFormat($value['total']); ?></td>
-                                                <td class="text-right"><?php echo amountFormat($value['discount'])." (".$value['discount_percentage']."%)"; ?></td>
-                                                <td class="text-right"><?php                                                 
-                                                $tax_percentage = number_format((float)(($value['tax']*100) / ($value['total']-$value['discount'])), 2, '.', '');                                               
+                                                <td class="text-end"><?php echo amountFormat($value['total']); ?></td>
+                                                <td class="text-end"><?php echo amountFormat($value['discount'])." (".$value['discount_percentage']."%)"; ?></td>
+                                                <td class="text-end"><?php                                                 
+                                                $tax_base = $value['total'] - $value['discount'];
+                                                $tax_percentage = $tax_base != 0 ? number_format((float)(($value['tax']*100) / $tax_base), 2, '.', '') : '0.00';                                               
                                                 echo $value['tax']." (".$tax_percentage."%)"; ?></td>
-                                                <td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-                                                <td class="text-right"><?php echo  number_format((float)$value['paid_amount']-$value['refund_amount'], 2, '.', ''); ?></td>
-                                                <td class="text-right"><?php echo  number_format((float)$value['refund_amount'], 2, '.', ''); ?></td>
-                                                <td class="text-right"><?php echo  number_format((float)$balance_amount, 2, '.', '');; ?></td>
-                                                <td><div  class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs ' onclick="viewDetail(<?php echo $value['id']; ?>)"  data-module-type="pharmacy"  data-toggle='tooltip' title='<?php echo $this->lang->line('view'); ?>' ><i class='fa fa-reorder'></i></a></div></td>
+                                                <td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+                                                <td class="text-end"><?php echo  number_format((float)$value['paid_amount']-$value['refund_amount'], 2, '.', ''); ?></td>
+                                                <td class="text-end"><?php echo  number_format((float)$value['refund_amount'], 2, '.', ''); ?></td>
+                                                <td class="text-end"><?php echo  number_format((float)$balance_amount, 2, '.', '');; ?><div  class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm ' onclick="viewDetail(<?php echo $value['id']; ?>)"  data-module-type="pharmacy"  data-bs-toggle='tooltip' title='<?php echo $this->lang->line('view'); ?>' ><i class='fa fa-reorder'></i></a></div></td>
                                             </tr>                                            
                                     <?php
                                         } ?>
                                         <tr>
                                             <td colspan="2"></td>
                                             <td><b><?= $this->lang->line("total"); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_amt,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_refund_amount,2); ?></b></td>
-                                            <td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_amt,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_refund_amount,2); ?></b></td>
+                                            <td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
                                         </tr>
                                     <?php }
                                     ?>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('pathology_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="4">
                             <caption><h4><?= $this->lang->line("pathology_details"); ?></h4></caption>
@@ -264,13 +263,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 										<th><?php echo $this->lang->line('bill_no'); ?></th>
 										<th><?php echo $this->lang->line('case_id'); ?></th>
 										<th><?php echo $this->lang->line('date');  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>				
-										<th class="text-right"><?php echo $this->lang->line('discount') . " (%)";  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('tax') . " (%)";  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>                    
-										<th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-										<th></th>
+										<th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>				
+										<th class="text-end"><?php echo $this->lang->line('discount') . " (%)";  ?></th>
+										<th class="text-end"><?php echo $this->lang->line('tax') . " (%)";  ?></th>
+										<th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>                    
+										<th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+										<th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -299,35 +297,34 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 											<td><?php echo $this->customlib->getSessionPrefixByType('pathology_billing') . $value['id']; ?></td>
 											<td><?php echo $case_id ; ?></td>
 											<td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-											<td class="text-right"><?php echo amountFormat($value['total']); ?></td>						
-											<td class="text-right"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)'; ?></td>						
-											<td class="text-right"><?php  
+											<td class="text-end"><?php echo amountFormat($value['total']); ?></td>						
+											<td class="text-end"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)'; ?></td>						
+											<td class="text-end"><?php  
 												$tax_percentage = number_format(($value['tax']*100)/($value['total']-$value['discount']),2);						
 												echo amountFormat($value['tax']).' ('.$tax_percentage.'%)'; ?></td>						
-											<td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-											<td class="text-right"><?php echo amountFormat($value['paid_amount']); ?></td>
-											<td class="text-right"><?php echo number_format($balance_amount, 2); ?></td>
-											<td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="pathology"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('view'); ?>" ><i class='fa fa-reorder'></i></a></div></td>
-										</tr>                        
+											<td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+											<td class="text-end"><?php echo amountFormat($value['paid_amount']); ?></td>
+											<td class="text-end"><?php echo number_format($balance_amount, 2); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="pathology"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view'); ?>" ><i class='fa fa-reorder'></i></a></div></td>
+										</tr>
 								<?php
 									}
 									?>
 									<tr>
 										<td colspan="2"></td>
-										<td><b><?= $this->lang->line("total_amount"); ?>: </b></td>						
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+										<td><b><?= $this->lang->line("total_amount"); ?>: </b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
 									</tr>
 								<?php }
 								?>
 								</tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('radiology_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="5">
                             <caption><h4><?= $this->lang->line("radiology_details"); ?></h4></caption>
@@ -336,13 +333,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 										<th><?php echo $this->lang->line('bill_no'); ?></th>
 										<th><?php echo $this->lang->line('case_id'); ?></th>
 										<th><?php echo $this->lang->line('date'); ?></th>
-										<th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>					
-										<th class="text-right"><?php echo $this->lang->line('discount'). " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('tax'). " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-										<th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-										<th></th>
+										<th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>					
+										<th class="text-end"><?php echo $this->lang->line('discount'). " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('tax'). " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>
+										<th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+										<th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -371,33 +367,32 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 												<td><?php echo $this->customlib->getSessionPrefixByType('radiology_billing') . $value['id']; ?></td>
 												<td><?php echo $case_id ; ?></td>
 												<td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>	
-												<td class="text-right"><?php echo amountFormat($value['total']) ; ?></td>							
-												<td class="text-right"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)' ; ?></td>			
-												<td class="text-right"><?php  $tax_percentage = number_format(($value['tax']*100)/($value['total']-$value['discount']),2);			
+												<td class="text-end"><?php echo amountFormat($value['total']) ; ?></td>							
+												<td class="text-end"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)' ; ?></td>			
+												<td class="text-end"><?php  $tax_percentage = number_format(($value['tax']*100)/($value['total']-$value['discount']),2);			
 												echo amountFormat($value['tax']).' ('.$tax_percentage.')'; ?></td>							
-												<td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-												<td class="text-right"><?php echo amountFormat($value['paid_amount']); ?></td>
-												<td class="text-right"><?php echo number_format($balance_amount, 2); ?></td>
-												<td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="radiology" data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('view'); ?>" ><i class='fa fa-reorder'></i></a></div></td>
+												<td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+												<td class="text-end"><?php echo amountFormat($value['paid_amount']); ?></td>
+												<td class="text-end"><?php echo number_format($balance_amount, 2); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="radiology" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view'); ?>" ><i class='fa fa-reorder'></i></a></div></td>
 											</tr>                       
 									<?php
 										} ?>
 										<tr>
 											<td colspan="2"></td>
 											<td><b><?= $this->lang->line("total_amount"); ?>: </b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>						
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>						
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
 										</tr>
 									<?php }
 									?>
 								</tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="6">
                             <caption><h4><?= $this->lang->line("blood_bank_issue_details"); ?></h4></caption> 
@@ -408,12 +403,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     <th><?php echo $this->lang->line('issue_date'); ?></th>
                     <th><?php echo $this->lang->line('donor_name'); ?></th>
                     <th><?php echo $this->lang->line('bags'); ?></th>					
-                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -441,30 +436,29 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date_of_issue'], $this->customlib->getHospitalTimeFormat()); ?></td>
                         <td><?php echo $value['donor_name']; ?></td>
                         <td><?php echo $this->customlib->bag_string($value['bag_no'],$value['volume'],$value['charge_unit']); ?></td>
-						<td class="text-right"><?php echo amountFormat($value['standard_charge']); ?></td>					
-                        <td class="text-right"><?php 						
+						<td class="text-end"><?php echo amountFormat($value['standard_charge']); ?></td>					
+                        <td class="text-end"><?php 						
 						$discount_amt = calculatePercent($value['standard_charge'],$value['discount_percentage']);						
 						echo amountFormat($discount_amt).' ('.$value['discount_percentage'].'%)'; ?></td>						
-						<td class="text-right"><?php 					
+						<td class="text-end"><?php 					
 						$tax =  (($value['standard_charge']-$discount_amt)*$value['tax_percentage'])/100;						
 						$total_tax+= $tax;					
 						echo amountFormat($tax).' ('.$value['tax_percentage'].'%)'; ?></td>						
-                        <td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-                        <td class="text-right"><?php echo amountFormat($value['paid_amount']); ?></td>
-                        <td class="text-right"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?></td>
-                        <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="blood_issue"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
+                        <td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+                        <td class="text-end"><?php echo amountFormat($value['paid_amount']); ?></td>
+                        <td class="text-end"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="blood_issue"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
                     </tr>
                    <?php
                 } ?>
                 <tr>
                     <td colspan="4"></td>
                     <td><b><?= $this->lang->line("total_amount"); ?>: </b></td>
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_standard_charge,2); ?></b></td>
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>					
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-                    <td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_standard_charge,2); ?></b></td>
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>					
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+                    <td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
                 </tr>
             <?php }
                 ?>
@@ -472,7 +466,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             </table>
                         </div>
 						
-                         <div class="box-body table-responsive">
+                         <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="6">
                             <caption><h4><?= $this->lang->line("blood_bank_component_details"); ?></h4></caption>
@@ -484,12 +478,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 										<th><?php echo $this->lang->line('donor_name'); ?></th>
 										<th><?php echo $this->lang->line('component'); ?></th>
 										<th><?php echo $this->lang->line('bags'); ?></th>                                  
-										<th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+										<th class="text-end"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
 									</tr>
 									</thead>
 									<tbody>
@@ -517,37 +511,36 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 												<td><?php echo $value['donor_name']; ?></td>
 												<td><?php echo $value['component_name']; ?></td>
 												<td><?php echo $this->customlib->bag_string($value['bag_no'],$value['volume'],$value['charge_unit']); ?></td>
-												<td class="text-right"><?php echo amountFormat($value['standard_charge']); ?></td>					
-												<td class="text-right"><?php 						
+												<td class="text-end"><?php echo amountFormat($value['standard_charge']); ?></td>					
+												<td class="text-end"><?php 						
 												$discount_amt = calculatePercent($value['standard_charge'],$value['discount_percentage']);						
 												echo amountFormat($discount_amt).' ('.$value['discount_percentage'].'%)'; ?></td>						
-												<td class="text-right"><?php 					
+												<td class="text-end"><?php 					
 												$tax =  (($value['standard_charge']-$discount_amt)*$value['tax_percentage'])/100;						
 												$total_tax+= $tax;					
 												echo amountFormat($tax).' ('.$value['tax_percentage'].'%)'; ?></td>                      
-												<td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-												<td class="text-right"><?php echo amountFormat($value['paid_amount']); ?></td>
-												<td class="text-right"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?></td>
-												<td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="component_issue"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
+												<td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+												<td class="text-end"><?php echo amountFormat($value['paid_amount']); ?></td>
+												<td class="text-end"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="component_issue"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
 											</tr>
 										<?php
 										} ?>
 										<tr>
 											<td colspan="5"></td>
 											<td><b><?= $this->lang->line("total_amount"); ?>: </b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_standard_charge,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>					
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-											<td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_standard_charge,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_discount,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>					
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+											<td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
 										</tr>
 									<?php }
 										?>                
 									</tbody>
                             </table>
                         </div>
-                        <div class="box-body table-responsive">
+                        <div class="card-body table-responsive">
                             <div class="download_label"><?php echo $this->lang->line('ambulance_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" id="7">
                             <caption><h4><?= $this->lang->line("ambulance_details"); ?></h4></caption>
@@ -557,17 +550,16 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 									<th><?php echo $this->lang->line('case_id'); ?></th>
 									<th><?php echo $this->lang->line('date'); ?></th>
 									<th><?php echo $this->lang->line('vehicle_number'); ?></th>
-									<th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
-									<th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")";  ?></th>
-									<th class="text-right"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")";  ?></th>
-									<th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>
-									<th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-									<th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-									<th></th>
+									<th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
+									<th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")";  ?></th>
+									<th class="text-end"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")";  ?></th>
+									<th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";  ?></th>
+									<th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+									<th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
 								</tr>
 							</thead>
 							<tbody>
-				
+
 								<?php
 								if (!empty($ambulance_data)) {  
 				
@@ -592,27 +584,26 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 											<td><?php echo $case_id ; ?></td>
 											<td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
 											<td><?php echo $value['vehicle_model']; ?></td>	
-											<td class="text-right"><?php echo amountFormat($value['standard_charge']); ?></td>
-											<td class="text-right"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)'; ?></td>
-											<td class="text-right"><?php $tax = (($value['standard_charge']-$value['discount'])*$value['tax_percentage'])/100;				
+											<td class="text-end"><?php echo amountFormat($value['standard_charge']); ?></td>
+											<td class="text-end"><?php echo amountFormat($value['discount']).' ('.$value['discount_percentage'].'%)'; ?></td>
+											<td class="text-end"><?php $tax = (($value['standard_charge']-$value['discount'])*$value['tax_percentage'])/100;				
 											$total_tax += $tax;
 											echo amountFormat($tax).' ('.$value['tax_percentage'].'%)'; ?></td>						
-											<td class="text-right"><?php echo amountFormat($value['net_amount']); ?></td>
-											<td class="text-right"><?php echo amountFormat($value['paid_amount']); ?></td>
-											<td class="text-right"><?php echo number_format($balance_amount, 2); ?></td>
-											<td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs'  onclick="viewDetailBill('<?php echo $value['id']; ?>')" data-module-type="ambulance"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
+											<td class="text-end"><?php echo amountFormat($value['net_amount']); ?></td>
+											<td class="text-end"><?php echo amountFormat($value['paid_amount']); ?></td>
+											<td class="text-end"><?php echo number_format($balance_amount, 2); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm'  onclick="viewDetailBill('<?php echo $value['id']; ?>')" data-module-type="ambulance"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view'); ?>"  ><i class='fa fa-reorder'></i></a></div></td>
 										</tr>                        
 								<?php
 									} ?>
 									<tr>
 										<td colspan="3"></td>
 										<td><b><?= $this->lang->line("total_amount"); ?>: </b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($discount_amount,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>						
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
-										<td class="text-right"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_amount,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($discount_amount,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_tax,2); ?></b></td>						
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_net,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_paid,2); ?></b></td>
+										<td class="text-end"><b><?php echo $currency_symbol.number_format($total_balance,2); ?></b></td>
 									</tr>
 								<?php
 								}
@@ -624,8 +615,6 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <script>    
     document.getElementById("headreport").style.display = "block";
@@ -635,16 +624,16 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     document.getElementById("excel_print_div").style.display = "block";
 
     function printDiv() {
-        document.getElementById("excel_print_div").style.display = "none"; 
-        var divElements = document.getElementById('visit_report').innerHTML;
-        var oldPage = document.body.innerHTML;
-        document.body.innerHTML =
-            "<html><head><title>Patient Bill Report</title></head><body>" +
-            divElements + "</body>";
-        window.print();
-        document.body.innerHTML = oldPage;
-        document.getElementById("printhead").style.display = "none";
-        location.reload(true);
+        var patient_id = document.querySelector('input[name="patient_id"]').value;
+        if (!patient_id) { return; }
+        $.ajax({
+            url: '<?php echo base_url(); ?>admin/patient/patientvisitreport_print',
+            type: 'POST',
+            data: { patient_id: patient_id },
+            success: function(result) {
+                popup(result);
+            }
+        });
     }
 </script>
 <script>
@@ -726,7 +715,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             data: {'id': id,'module_name':module_name},
             dataType: 'json',
             beforeSend: function() {
-				$this.button('loading');
+				$this.btnLoading();
                 modal_view.addClass('modal_loading');                
             },
             success: function (data) {        
@@ -734,41 +723,44 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 				$('#viewDetailReportModal .modal-body').html(data.page);  
 				$('#viewDetailReportModal #action_detail_report_modal').html(data.actions);            
 
-				$('#viewDetailReportModal').modal('show');
+				shModal('viewDetailReportModal').show();
 				modal_view.removeClass('modal_loading');
             },
 
             error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-				$this.button('reset');
+				$this.btnReset();
                 modal_view.removeClass('modal_loading');
 			},
 			complete: function() {
-				$this.button('reset');
+				$this.btnReset();
                 modal_view.removeClass('modal_loading');          
 			}
         });  
         }
 </script>
 <script>
-    function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
-    } 
-
     function viewDetailBill(id) {
+        var modal = $('#viewModalBill');
         $.ajax({
-            url: '<?php echo base_url() ?>admin/patient/getBillDetails/' + id,
+            url: '<?php echo base_url() ?>admin/patient/getAmbulanceBillDetail/' + id,
             type: "GET",
-            data: {id: id},
-            success: function (data) {
-                $('#reportdata').html(data);
-               
-                holdModal('viewModalBill');
+            dataType: 'json',
+            beforeSend: function() {
+                shModal('viewModalBill').show();
+                modal.addClass('modal_loading');
             },
+            success: function (data) {
+                $('#reportdata').html(data.page);
+                modal.removeClass('modal_loading');
+            },
+            error: function() {
+                errorMsg('<?php echo $this->lang->line('something_went_wrong'); ?>');
+                modal.removeClass('modal_loading');
+            },
+            complete: function() {
+                modal.removeClass('modal_loading');
+            }
         });
     }
 </script>
@@ -781,7 +773,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             data: {'id': id},
             dataType:"JSON",
             beforeSend: function(){
-           $('#viewModal').modal('show');
+           shModal('viewModal').show();
            view_modal.addClass('modal_loading');
            },
            complete: function(){

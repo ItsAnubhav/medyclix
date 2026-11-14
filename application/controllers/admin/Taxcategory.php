@@ -33,7 +33,7 @@ class Taxcategory extends Admin_Controller
             access_denied();
         }
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->taxcategory_model, 'valid_tax_category')),
             )
         );
@@ -49,9 +49,9 @@ class Taxcategory extends Admin_Controller
 
             ///=========================
             $insert_data = array(
-                'id'         => $this->input->post('id'),
-                'name'       => $this->input->post('name'),
-                'percentage' => $this->input->post('percentage'),
+                'id'         => $this->input->post('id', TRUE),
+                'name'       => $this->input->post('name', TRUE),
+                'percentage' => $this->input->post('percentage', TRUE),
             );
 
             $this->taxcategory_model->add($insert_data);
@@ -72,16 +72,16 @@ class Taxcategory extends Admin_Controller
                 $row    = array();
                 $action = "<div class='rowoptionview rowview-mt-19'>";
                 if ($this->rbac->hasPrivilege('tax_category', 'can_edit')) {
-                    $action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record' data-loading-text='" . $this->lang->line('please_wait') . "' data-toggle='tooltip' data-record-id=" . $tax_value->id . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a  href='javascript:void(0)' class='btn btn-default btn-xs edit_record' data-loading-text='" . $this->lang->line('please_wait') . "' data-bs-toggle='tooltip' data-record-id=" . $tax_value->id . "  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('tax_category', 'can_delete')) {
-                    $action .= "<a class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_recordById(\"admin/taxcategory/delete/" . $tax_value->id . "\", \"" . $this->lang->line('delete_message') . "\")' data-original-title='" . $this->lang->line('delete') . "'> <i class='fa fa-trash'></i></a>";
+                    $action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='Delete' onclick='delete_recordById(\"admin/taxcategory/delete/" . $tax_value->id . "\", \"" . $this->lang->line('delete_message') . "\")'> <i class='fa fa-trash'></i></a>";
                 }
                 $action .= "</div>";
 
-                $row[]     = $tax_value->name . $action;
+                $row[]     = $tax_value->name;
                 $row[]     = $tax_value->percentage;
-                $row[]     = '';
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -96,7 +96,7 @@ class Taxcategory extends Admin_Controller
 
     public function getDetails()
     {
-        $id = $this->input->post('tax_id');
+        $id = $this->input->post('tax_id', TRUE);
         echo json_encode($this->taxcategory_model->get($id));
     }
 

@@ -41,8 +41,8 @@ class Itemstock_model extends MY_Model
             ->join('item_supplier', 'item_stock.supplier_id = item_supplier.id')
             ->join('item_store', 'item_store.id = item_stock.store_id', 'left outer')
             ->join('staff as generated_by_staff', 'generated_by_staff.id = item_stock.generated_by', "left") 
-            ->searchable('item.name,item_category.item_category,item_supplier.item_supplier,item_store.item_store,item_stock.date,item_stock.quantity,item_stock.purchase_price,generated_by_staff.name as generated_byname')
-            ->orderable('item.name,item_category.item_category,item_supplier.item_supplier,item_store.item_store,item_stock.date,item_stock.quantity,item_stock.purchase_price,generated_by_staff.name as generated_byname')
+            ->searchable('item.name,item_category.item_category,item_supplier.item_supplier,item_store.item_store,item_stock.date,item_stock.quantity,item_stock.purchase_price,generated_by_staff.name as generated_byname,""')
+            ->orderable('item.name,item_category.item_category,item_supplier.item_supplier,item_store.item_store,item_stock.date,item_stock.quantity,item_stock.purchase_price,generated_by_staff.name as generated_byname,""')
             ->sort('item_stock.id', 'desc')
             ->from('item_stock');
         return $this->datatables->generate('json');
@@ -129,6 +129,8 @@ class Itemstock_model extends MY_Model
 	public function getAllitemreportRecord($start_date = null, $end_date = null) 
     {		
 		if($start_date != '' && $end_date != '' ){
+			$start_date = $this->db->escape_str($start_date);
+			$end_date   = $this->db->escape_str($end_date);
 			$query="  date_format(item_stock.date,'%Y-%m-%d') >='". $start_date."'and date_format(item_stock.date,'%Y-%m-%d') <= '".$end_date."'";
 			$this->datatables->where($query);
 		}
@@ -157,8 +159,8 @@ class Itemstock_model extends MY_Model
                 echo form_error();
                 $return = 0;
             } else {
-                $from_date  = $this->input->post('date_from');
-                $to_date    = $this->input->post('date_to');
+                $from_date  = $this->input->post('date_from', TRUE);
+                $to_date    = $this->input->post('date_to', TRUE);
                 $date_from  = date("Y-m-d", $this->customlib->datetostrtotime($from_date));
                 $date_to    = date("Y-m-d", $this->customlib->datetostrtotime($to_date));
                 $start_date = $date_from;
@@ -231,6 +233,8 @@ class Itemstock_model extends MY_Model
             $return = 0;
         }
         if ($return == 1) {
+            $start_date = $this->db->escape_str($start_date);
+            $end_date   = $this->db->escape_str($end_date);
             $condition = " and date_format(item_stock.date,'%Y-%m-%d') between '" . $start_date . "' and '" . $end_date . "'";
         }
 
@@ -241,6 +245,8 @@ class Itemstock_model extends MY_Model
 
     public function additemreportRecord($start_date, $end_date) {
    
+        $start_date = $this->db->escape_str($start_date);
+        $end_date   = $this->db->escape_str($end_date);
         $sql="SELECT `item_stock`.*, `item`.`name`, `item`.`item_category_id`, `item`.`description` as `des`, `item_category`.`item_category`, `item_supplier`.`item_supplier`, `item_store`.`item_store` FROM `item_stock` JOIN `item` ON `item`.`id` = `item_stock`.`item_id` JOIN `item_category` ON `item`.`item_category_id` = `item_category`.`id` JOIN `item_supplier` ON `item_stock`.`supplier_id` = `item_supplier`.`id` LEFT OUTER JOIN `item_store` ON `item_store`.`id` = `item_stock`.`store_id` where date_format(item_stock.date,'%Y-%m-%d') >='". $start_date."'and date_format(item_stock.date,'%Y-%m-%d') <= '".$end_date."'"; 
             $this->datatables->query($sql)
               ->searchable('item.name,item_category.item_category,item_supplier.item_supplier,item_store.item_store,item_stock.date,item_stock.quantity,item_stock.purchase_price')

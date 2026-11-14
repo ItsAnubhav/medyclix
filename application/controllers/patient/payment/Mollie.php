@@ -3,6 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Mollie extends Patient_Controller
 {
+	public $payment_mode;
+
 
     public $pay_method     = array();
     public $patient_data;

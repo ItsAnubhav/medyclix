@@ -14,7 +14,7 @@ class Vital_model extends MY_Model
         //=======================Code Start===========================
 
         $id = null;
-        if (isset($data['id']) && $data['id'] != null) {
+        if (isset($data['id']) && $data['id'] > 0) {
             $this->db->where('id', $data['id']);
             $this->db->update('vitals', $data);
             $message = UPDATE_RECORD_CONSTANT . " On Vitals id " . $data['id'];

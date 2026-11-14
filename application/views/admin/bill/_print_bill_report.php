@@ -2,8 +2,8 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 <div class="table-responsive pl5 pr5" id="bill_report">
-    <div id="printhead" style="display:none"><h5><?php echo $this->lang->line("patient_bill_report") . "<br>";?></h5></div>   
-    <table class="table table-striped table-bordered table-hover allajaxlist" id="headerTable">
+    <div id="printhead" class="d-none"><h5><?php echo $this->lang->line("patient_bill_report") . "<br>";?></h5></div>   
+    <table class="sh-print-table" id="headerTable">
         <thead>
             <tr>
                 <th><?php echo $this->lang->line('module'); ?></th>
@@ -12,7 +12,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 <th><?php echo $this->lang->line('bill_no'); ?></th>
                 <th><?php echo $this->lang->line('payment_mode'); ?></th>
                 <th><?php echo $this->lang->line('payment_date'); ?></th>
-                <th class="text-right"><?php echo $this->lang->line('payment_amount')."(".$currency_symbol.")"; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('payment_amount')."(".$currency_symbol.")"; ?></th>
             </tr>
         </thead>
         <tbody>
@@ -40,7 +40,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         }?>
                 </td>
                 <td>
-                    <ul style="list-style-type:none;padding-left: 0;">
+                    <ul class="list-unstyled">
                         <?php foreach ($charge_payment->payments as $payment) { ?>
                             <li><?php
                                 echo $this->lang->line(strtolower($payment->payment_mode)); 
@@ -53,14 +53,14 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </ul>
                 </td>
                 <td>
-                    <ul style="list-style-type:none; padding-left: 0;">
+                    <ul class="list-unstyled">
                         <?php foreach ($charge_payment->payments as $payment) { ?>
                             <li><?= $this->customlib->YYYYMMDDTodateFormat($payment->payment_date); ?></li>
                         <?php } ?>
                     </ul>
                 </td>
-                <td class="text-right">
-                    <ul class="text-right" style="list-style-type:none;padding-left: 0;">                                           
+                <td class="text-end">
+                    <ul class="text-end list-unstyled">                                           
                     <?php 
                     $total = 0;
                     foreach($charge_payment->payments as $payment){ ?>
@@ -73,13 +73,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </ul>
                 </td>
             <tr>
-            <tr>
                 <td colspan="5"></td>
                 <td><b><?= $this->lang->line("total_charge"); ?> : </b><?php
                       $charge = $charge_payment->charge==''?0: $charge_payment->charge;
 echo $currency_symbol.amountFormat($charge);
                   ?></td>
-                <td class="text-right"><b><?= $this->lang->line("total_payment"); ?> : </b><?= $currency_symbol.amountFormat($total); ?></td>
+                <td class="text-end"><b><?= $this->lang->line("total_payment"); ?> : </b><?= $currency_symbol.amountFormat($total); ?></td>
                 <?php 
                 $grand_total_charge += $charge; 
                 $grand_total_payment += $total; 
@@ -89,10 +88,10 @@ echo $currency_symbol.amountFormat($charge);
                     }
                 }
             ?>
-                <tr class="box box-solid total-bg">
+                <tr class="total-bg fw-bold">
                 <td colspan="5"></td>
                 <td><b><?= $this->lang->line("grand_total_charge"); ?> : </b><?= $grand_total_charge==''?0:$currency_symbol.amountFormat($grand_total_charge); ?></td>
-                <td class="text-right"><b><?= $this->lang->line("grand_total_payment"); ?> : </b><?= $currency_symbol.amountFormat($grand_total_payment); ?></td>
+                <td class="text-end"><b><?= $this->lang->line("grand_total_payment"); ?> : </b><?= $currency_symbol.amountFormat($grand_total_payment); ?></td>
             </tr>
         </tbody>
     </table>

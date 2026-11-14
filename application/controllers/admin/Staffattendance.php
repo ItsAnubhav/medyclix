@@ -6,6 +6,10 @@ if (!defined('BASEPATH')) {
 
 class Staffattendance extends Admin_Controller
 {
+	public $config_attendance;
+	public $sch_setting_detail;
+	public $staff_attendance;
+
 
     public function __construct()
     {
@@ -38,7 +42,7 @@ class Staffattendance extends Admin_Controller
         $data['class_id']     = "";
         $data['section_id']   = "";
         $data['date']         = "";
-        $user_type_id         = $this->input->post('user_id');
+        $user_type_id         = $this->input->post('user_id', TRUE);
         $data["user_type_id"] = $user_type_id;
         $data['sch_setting'] = $this->setting_model->getHospitalDetail();
 
@@ -46,46 +50,47 @@ class Staffattendance extends Admin_Controller
         $data['staff_settings']   = $staff_settings;       
         
         if (!(isset($user_type_id))) {            
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/staffattendancelist', $data);
             $this->load->view('layout/footer', $data);
 
         } else {
-            $user_type            = $this->input->post('user_id');
-            $date                 = $this->input->post('date');
+            $user_type            = $this->input->post('user_id', TRUE);
+            $date                 = $this->input->post('date', TRUE);
             $data['user_type_id'] = $user_type_id;
             $data['section_id']   = "";
             $data['date']         = $date;
-            $search               = $this->input->post('search');
-            $holiday              = $this->input->post('holiday');
+            $search               = $this->input->post('search', TRUE);
+            $holiday              = $this->input->post('holiday', TRUE);
 
             $this->session->set_flashdata('msg', '');
             if ($search == "saveattendence") {              
 
-                $user_type_ary = $this->input->post('patient_session');
+                $user_type_ary = $this->input->post('patient_session', TRUE);
                 $absent_list   = array();
 
                 foreach ($user_type_ary as $key => $value) {
 
-                    $in_time    =   $this->input->post("in_time_" . $value);
-                    $out_time   =   $this->input->post("out_time_" . $value);
+                    $in_time    =   $this->input->post("in_time_" . $value, TRUE);
+                    $out_time   =   $this->input->post("out_time_" . $value, TRUE);
 
                     if(!isset($in_time) || $in_time=="" && !isset($out_time) || $out_time=="" ){
                         $in_time="";
                         $out_time="";
                     }else{
-                        $in_time=date('H:i:s', strtotime($this->input->post("in_time_" . $value)));
-                        $out_time=date('H:i:s', strtotime($this->input->post("out_time_" . $value)));
+                        $in_time=date('H:i:s', strtotime($this->input->post("in_time_" . $value, TRUE)));
+                        $out_time=date('H:i:s', strtotime($this->input->post("out_time_" . $value, TRUE)));
                     }
 
-                    $checkForUpdate = $this->input->post('attendendence_id' . $value);
+                    $checkForUpdate = $this->input->post('attendendence_id' . $value, TRUE);
                     if ($checkForUpdate != 0) {
                         if (isset($holiday)) {
                             $arr = array(
                                 'id'                       => $checkForUpdate,
                                 'staff_id'                 => $value,
                                 'staff_attendance_type_id' => 5,
-                                'remark'                   => $this->input->post("remark" . $value),
+                                'remark'                   => $this->input->post("remark" . $value, TRUE),
                                 'in_time'                  => $in_time,
                                 'out_time'                 => $out_time, 
                                 'date'                     => $this->customlib->dateFormatToYYYYMMDD($date),
@@ -95,8 +100,8 @@ class Staffattendance extends Admin_Controller
                             $arr = array(
                                 'id'                       => $checkForUpdate,
                                 'staff_id'                 => $value,
-                                'staff_attendance_type_id' => $this->input->post('attendencetype' . $value),
-                                'remark'                   => $this->input->post("remark" . $value),
+                                'staff_attendance_type_id' => $this->input->post('attendencetype' . $value, TRUE),
+                                'remark'                   => $this->input->post("remark" . $value, TRUE),
                                  'in_time'                  => $in_time,
                                 'out_time'                 => $out_time,
                                 'date'                     => $this->customlib->dateFormatToYYYYMMDD($date),
@@ -118,9 +123,9 @@ class Staffattendance extends Admin_Controller
 
                             $arr = array(
                                 'staff_id'                 => $value,
-                                'staff_attendance_type_id' => $this->input->post('attendencetype' . $value),
+                                'staff_attendance_type_id' => $this->input->post('attendencetype' . $value, TRUE),
                                 'date'                     => $this->customlib->dateFormatToYYYYMMDD($date),
-                                'remark'                   => $this->input->post("remark" . $value),
+                                'remark'                   => $this->input->post("remark" . $value, TRUE),
                                 'in_time'                  => $in_time,
                                 'out_time'                 => $out_time,
                                 'created_at'               => $this->customlib->dateFormatToYYYYMMDD($date, true),
@@ -149,6 +154,7 @@ class Staffattendance extends Admin_Controller
             $resultlist                  = $this->staffattendancemodel->searchAttendenceUserType($user_type, $this->customlib->dateFormatToYYYYMMDD($date)); 
             $data['resultlist'] = $resultlist;         
 
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/staffattendancelist', $data);
             $this->load->view('layout/footer', $data);
@@ -175,23 +181,24 @@ class Staffattendance extends Admin_Controller
         $data['date']                = "";
         $data['month_selected']      = "";
         $data["role_selected"]       = "";
-        $role                        = $this->input->post("role");
+        $role                        = $this->input->post("role", TRUE);
         $this->form_validation->set_rules('month', $this->lang->line('month'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/attendancereport', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $resultlist             = array();
-            $month                  = $this->input->post('month');
-            $searchyear             = $this->input->post('year');
+            $month                  = $this->input->post('month', TRUE);
+            $searchyear             = $this->input->post('year', TRUE);
             $data['month_selected'] = $month;
             $data["role_selected"]  = $role;
             $stafflist              = $this->staff_model->getEmployee($role);
             $startMonth             = $this->setting_model->getStartMonth();
             $month_number           = date("m", strtotime($month));
             $year                   = date('Y');
-            $num_of_days            = cal_days_in_month(CAL_GREGORIAN, $month_number, $year);
+            $num_of_days            = (int) date('t', mktime(0, 0, 0, $month_number, 1, $year));
             $attr_result            = array();
             $attendence_array       = array();
             $staff_array         = array();
@@ -228,6 +235,7 @@ class Staffattendance extends Admin_Controller
                 $data['staff_array']    = array();
             }
 
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/attendancereport', $data);
             $this->load->view('layout/footer', $data);
@@ -275,9 +283,10 @@ class Staffattendance extends Admin_Controller
         $data["resultlist"]       = $res;
         $data["attendence_array"] = $attendence_array;
         $data["date_array"]       = $date_array;
-        $this->load->view("layout/header");
+        $data['module'] = 'human_resource';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/staff/staffattendance", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 	
 	public function staffdaywiseattendancereport()
@@ -295,19 +304,21 @@ class Staffattendance extends Admin_Controller
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
 		
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/staffdaywiseattendancereport', $data);
             $this->load->view('layout/footer', $data);
         } else {			
             $resultlist             = array();
-            $role                  = $this->input->post('role');
-            $date                  = $this->input->post('date');
-            $attendance_mode                  = $this->input->post('attendance_mode');
+            $role                  = $this->input->post('role', TRUE);
+            $date                  = $this->input->post('date', TRUE);
+            $attendance_mode                  = $this->input->post('attendance_mode', TRUE);
             $data['role_selected']       = $role;
             $data['date_selected'] = $date;
             $resultlist                  = $this->staffattendancemodel->searchAttendenceUserTypeWithMode($role, date('Y-m-d', $this->customlib->datetostrtotime($date)),$attendance_mode);
             $data['resultlist']          = $resultlist;
 
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staffattendance/staffdaywiseattendancereport', $data);
             $this->load->view('layout/footer', $data);

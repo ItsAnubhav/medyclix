@@ -1,81 +1,73 @@
- <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <!-- Main content -->
-    <section class="content">
         <div class="row">
             <div class="col-md-12">
                 <!-- general form elements -->
                 <div id="frame">
+                    <div class="chatloader"></div>
                     <div id="sidepanel">
                         <input type="hidden" name="chat_connection_id" value="0">
                         <input type="hidden" name="chat_to_user" value="0">
                         <input type="hidden" name="last_chat_id" value="0">
-
                         <div id="search">
-                            <label for=""><?php echo $this->lang->line('chat_system'); ?></label>
+                            <label><?php echo $this->lang->line('chat_system'); ?></label>
                             <div id="bottom-bar">
-                              <button id="addcontact" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus"></i></button>
+                                <button id="addcontact" data-bs-toggle="modal" data-bs-target="#myModal"><i class="fa fa-plus"></i></button>
                             </div>
                         </div>
                         <div id="contacts">
                             <ul>
                             </ul>
                         </div>
-
                     </div>
                     <div class="chatcontent">
                         <div class="contact-profile">
                             <img src="<?php echo $this->media_storage->getImageURL('uploads/patient_images/no_image.png'); ?>" alt="" />
-                            <p><?php echo $this->lang->line('select_any_user_to_start_your_chat') ?></p>
+                            <p><?php echo $this->lang->line('select_any_user_to_start_your_chat'); ?></p>
                         </div>
                         <div class="messages">
                             <ul>
                             </ul>
                         </div>
-                        <div class="message-input relative">
-                            <div class="wrap">
-                                <input type="text" placeholder="<?php echo $this->lang->line('write_your_message') ?>" class="chat_input" />
+                        <div class="message-input ">
+                            <div class="wrap relative">
+                                <input type="text" placeholder="<?php echo $this->lang->line('write_your_message'); ?>" class="chat_input" />
                                 <button class="submit input_submit" disabled="disabled"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div><!-- /.box-header -->
-        </div><!-- /.box-header -->
-    </section>
-</div><!-- /.box-body -->
-</div>
-</div><!--/.col (left) -->
-<!-- right column -->
-
-</div>
-
-</section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+            </div>
+        </div>
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
+<div id="myModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="display: block; width: 600px; max-width: 92vw;">
         <!-- Modal content-->
         <form id="addUser" action="<?php echo site_url('patient/chat/adduser') ?>" method="POST">
-            <div class="modal-content mx-2">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title"><?php echo $this->lang->line('add_contact'); ?><small style="color:red;"> *</small></h4>
+                    <h5 class="modal-title"><?php echo $this->lang->line('add_contact'); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="pup-scroll-area">
                 <div class="modal-body">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                        </div>
+                    <div class="p-2">
                     <div id="custom-search-input">
                         <div class="input-group col-md-12">
-                            <input type="text" class="search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
+                            <input type="text" class="search-query form-control" id="search-query" placeholder="<?php echo $this->lang->line('search'); ?>" autocomplete="off" />
                         </div>
                     </div>
                     <div class="usersearchlist">
-
                     </div>
+                    </div><!--./p-2-->
+                    </div><!--./sh-form-card-->
                 </div>
+                </div><!--./pup-scroll-area-->
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success btn-sm"  data-loading-text="<i class='fa fa-spinner fa-spin '></i> Please wait"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="add_userbtn"  data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></button>
                 </div>
             </div>
         </form>
@@ -104,7 +96,7 @@ $(document).on('input','.chat_input',function(){
     }
 });
 
-    $(document).on('keyup', '.search-query', function () {
+    $(document).on('keyup input', '.search-query', function () {
         $this = $(this);
         var keyword = $(this).val();
         if (keyword.length >= 2) {
@@ -307,7 +299,7 @@ $(document).on('input','.chat_input',function(){
         var userType = userrecord.data('userType');
         var $form = $(this),
                 url = $form.attr('action');
-        var $button = $form.find("button[type=submit]:focus");
+        var $button = $form.find("#add_userbtn");
         $.ajax({
             type: "POST",
             url: url,
@@ -331,11 +323,11 @@ $(document).on('input','.chat_input',function(){
                     $("input[name='chat_to_user']").val(data.new_user.chat_user_id);
                     $("input[name='last_chat_id']").val(data.user_last_chat.id);
                     $(".chat_input").val("");
-                    if (data.new_user.user_type == "patien") {
-                        new_user_type = "patien";
+                    if (data.new_user.user_type == "patient") {
+                        new_user_type = "patient";
                         img = baseurl + data.new_user.image;
                     } else if (data.new_user.user_type == "staff") {
-                        new_user_type = "Staff";
+                        new_user_type = "staff";
                         img =  data.new_user.image;
                     }
                     $('.contact-profile').find('p').html(data.new_user.name);
@@ -345,7 +337,7 @@ $(document).on('input','.chat_input',function(){
                             );
                     clearInterval(interval);
                     interval = setInterval(getChatsUpdates, 2000);
-                    $('#myModal').modal('hide');
+                    $('#myModal .btn-close').click();
                     successMsg(data.message);
                 }
                 $button.button('reset');

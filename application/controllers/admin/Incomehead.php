@@ -23,6 +23,7 @@ class Incomehead extends Admin_Controller
         $data['title']        = $this->lang->line('income_head_list');
         $category_result      = $this->incomehead_model->get();
         $data['categorylist'] = $category_result;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/incomehead/incomeheadList', $data);
         $this->load->view('layout/footer', $data);
@@ -36,6 +37,7 @@ class Incomehead extends Admin_Controller
         $data['title']    = $this->lang->line('income_head_list');
         $category         = $this->incomehead_model->get($id);
         $data['category'] = $category;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/incomehead/incomeheadShow', $data);
         $this->load->view('layout/footer', $data);
@@ -61,6 +63,7 @@ class Incomehead extends Admin_Controller
         $data['categorylist'] = $category_result;
         $this->form_validation->set_rules('incomehead', $this->lang->line('income_head'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'finance';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/incomehead/incomeheadList', $data);
             $this->load->view('layout/footer', $data);
@@ -82,7 +85,7 @@ class Incomehead extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('incomehead_'.$row_value, $this->lang->line('income_head'), 'trim|required');        
+                $this->form_validation->set_rules('incomehead_'.$row_value, $this->lang->line('income_head'), 'trim|required|xss_clean');
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array('incomehead' => form_error('incomehead_'.$row_value));
@@ -97,8 +100,8 @@ class Incomehead extends Admin_Controller
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                 
                 $data  = array(
-                    'income_category' => $this->input->post('incomehead_'.$row_values),
-                    'description' => $this->input->post('description_'.$row_values));
+                    'income_category' => $this->input->post('incomehead_'.$row_values, TRUE),
+                    'description' => $this->input->post('description_'.$row_values, TRUE));
                  $this->incomehead_model->add($data);
             }
             // save the multiple data 

@@ -2,7 +2,7 @@
 if (!empty($sectionList)) {
     foreach ($sectionList as $section_key => $section_value) {
         ?>
-             <li class='option'><label class='checkbox'><input type='checkbox'  name='symptoms_title' value='<?php echo $section_value->symptoms_title."\n".$section_value->description ; ?>'> <?php echo $section_value->symptoms_title ?></label></li>
+             <li class='option'><div class='form-check'><input class='form-check-input' type='checkbox' name='symptoms_title' value='<?php echo $section_value->symptoms_title."\n".$section_value->description ; ?>'><label class='form-check-label'> <?php echo $section_value->symptoms_title ?></label></div></li>
         <?php
     }
 }

@@ -2,31 +2,28 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <?php $this->load->view("admin/charges/sidebar"); ?>
                 </div>
             </div>
 			
 			<?php if ($this->rbac->hasPrivilege('hospital_charges', 'can_view')) {?>  
             <div class="col-md-10">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('charges_details_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('charges_details_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php
                                 if ($this->rbac->hasPrivilege('hospital_charges', 'can_add')) {
                             ?>
-                                <a data-toggle="modal" onclick="holdModal('myModal')" id="add_charge_modal" class="btn btn-primary btn-sm charge"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_charges'); ?></a>
+                                <a data-bs-toggle="modal" data-bs-target="#myModal" id="add_charge_modal" class="btn btn-primary btn-sm charge"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_charges'); ?></a>
                             <?php }?>
                            
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('charges_details_list'); ?>">
                             <thead>
                                 <tr>
@@ -35,7 +32,8 @@ $genderList      = $this->customlib->getGender();
                                     <th><?php echo $this->lang->line('charge_type'); ?></th>
                                     <th><?php echo $this->lang->line('unit'); ?></th>
                                     <th class=""><?php echo $this->lang->line('tax').'(%)'; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end noExport sh-th-140"><?php echo $this->lang->line('action'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -46,152 +44,146 @@ $genderList      = $this->customlib->getGender();
             </div>
 			<?php } ?>
         </div>
-    </section>
-</div>
-<div class="modal fade" id="myModal"  role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><div id="modal_title"></div></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><span id="modal_title"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
-                <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
-                    <div class="modal-body pt0">
-                            <input type="hidden" class="id" name="id">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('charge_type'); ?></label>
-                                        <small class="req"> *</small>
-                                        <select name="charge_type"  class="form-control charge_type">
-                                            <option value=""><?php echo $this->lang->line('select') ?></option>
-                                            <?php foreach ($charge_type as $charge_key => $charge_value) {?>
-                                                <option value="<?php echo $charge_value->id; ?>"><?php echo $charge_value->charge_type; ?></option>
-                                            <?php }?>
-                                        </select>
-                                        <span class="text-danger"><?php echo form_error('charge_type'); ?></span>
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <input type="hidden" class="id" name="id">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="sh-form-card h-100">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><?php echo $this->lang->line('charges_details'); ?></span>
                                     </div>
-                                </div> 
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('charge_category'); ?></label>
-                                        <small class="req"> *</small>
-                                        <select name="charge_category" id="charge_category" class="form-control select2" style="width: 100%">
-                                            <option value=""><?php echo $this->lang->line('select') ?></option>
-                                        </select>
-                                        <span class="text-danger"><?php echo form_error('charge_category'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('unit_type') ?></label><small class="req"> *</small>
-                                           <select name="unit_type" class="form-control unit_type">
-                                            <option value=""><?php echo $this->lang->line('select') ?></option>
-                                            <?php foreach ($unit_type as $unit_type_key => $unit_type_value) {
-    ?>
-                                                <option value="<?php echo $unit_type_value->id; ?>"><?php echo $unit_type_value->unit; ?></option>
-                                            <?php }?>
-                                        </select>
-
-                                        <span class="text-danger"><?php echo form_error('unit_type'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('charge_name') ?></label><small class="req"> *</small>
-                                        <input type="text" name="charge_name" id="charge_name" class="form-control">
-                                        <span class="text-danger"><?php echo form_error('charge_name'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="row">
-                                    <div class="col-sm-6">
-                                         <div class="form-group">
-                                        <label><?php echo $this->lang->line('tax_category'); ?></label><small class="req"> *</small>
-                                          <select name="taxcategory" id="taxcategory" class="form-control tax_category">
-                                            <option value=""><?php echo $this->lang->line('select') ?></option>
-                                            <?php foreach ($taxcategory as $taxcategory_key => $taxcategory_value) {
-    ?>
-                                                <option value="<?php echo $taxcategory_value['id']; ?>"><?php echo $taxcategory_value['name']; ?></option>
-                                            <?php }?>
-                                        </select>
-                                        <span class="text-danger"><?php echo form_error('taxcategory'); ?></span>
-                                    </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group"> 
-                                         <label for="exampleInputFile"><?php echo $this->lang->line('tax'); ?></label>
-                                            <div class="input-group">
-                                            <input type="text" class="form-control right-border-none" readonly name="tax_percentage" id="tax_percentage"  autocomplete="off">
-                                            <span class="input-group-addon "> %</span>
+                                    <div class="p-3">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label"><?php echo $this->lang->line('charge_name') ?></label><small class="req"> *</small>
+                                                <input type="text" name="charge_name" id="charge_name" class="form-control">
+                                                <span class="text-danger"><?php echo form_error('charge_name'); ?></span>
                                             </div>
-                                    </div>
-                                        
-                                    </div>
-                                </div>
-                                   
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></label><small class="req"> *</small>
-                                        <input type="text" name="standard_charge" id="standard_charge" class="form-control">
-                                        <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label> <?php echo $this->lang->line('description'); ?></label>
-                                        <textarea name="description" class="form-control description"></textarea>
-                                        <span class="text-danger"><?php echo form_error('description'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-12 col-md-6 col-lg-6">
-                                    <label><?php echo $this->lang->line('scheduled_charges_for_tpa'); ?></label>
-                                    <button type="button" class="plusign" onclick="apply_to_all()"><?php echo $this->lang->line('apply_to_all'); ?></button>
-                                    <div class="chargesborbg">
-                                        <div class="form-group">
-                                            <table class="printablea4">
-                                                <?php foreach ($schedule as $category) {?>
-                                                    <tr id="schedule_charge">
-                                                    <input type="hidden" name="schedule_charge_id[]" value="<?php echo $category['id']; ?>">
-                                                    <td class="col-sm-8" style="vertical-align: bottom; text-align: left; padding-right: 20px;"><?php echo $category['organisation_name']; ?></td>
-                                                    <td class="col-sm-4">
-                                                <input type="text" name="schedule_charge_<?php echo $category['id']; ?>" id="schedule_charge_<?php echo $category['id']; ?>" class="form-control schedule_charge">
-                                                   </td>
-                                                    </tr>
-                                                <?php }?>
-                                            </table>
-                                            <span class="text-danger"><?php echo form_error('schedule_charge'); ?></span>
+                                            <div class="col-md-4">
+                                                <label class="form-label"><?php echo $this->lang->line('charge_type'); ?></label><small class="req"> *</small>
+                                                <select name="charge_type" class="form-control charge_type">
+                                                    <option value=""><?php echo $this->lang->line('select') ?></option>
+                                                    <?php foreach ($charge_type as $charge_key => $charge_value) {?>
+                                                        <option value="<?php echo $charge_value->id; ?>"><?php echo $charge_value->charge_type; ?></option>
+                                                    <?php }?>
+                                                </select>
+                                                <span class="text-danger"><?php echo form_error('charge_type'); ?></span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label"><?php echo $this->lang->line('charge_category'); ?></label><small class="req"> *</small>
+                                                <select name="charge_category" id="charge_category" class="form-control select2 w-100">
+                                                    <option value=""><?php echo $this->lang->line('select') ?></option>
+                                                </select>
+                                                <span class="text-danger"><?php echo form_error('charge_category'); ?></span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label"><?php echo $this->lang->line('unit_type') ?></label><small class="req"> *</small>
+                                                <select name="unit_type" class="form-control unit_type">
+                                                    <option value=""><?php echo $this->lang->line('select') ?></option>
+                                                    <?php foreach ($unit_type as $unit_type_key => $unit_type_value) {?>
+                                                        <option value="<?php echo $unit_type_value->id; ?>"><?php echo $unit_type_value->unit; ?></option>
+                                                    <?php }?>
+                                                </select>
+                                                <span class="text-danger"><?php echo form_error('unit_type'); ?></span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label"><?php echo $this->lang->line('tax_category'); ?></label><small class="req"> *</small>
+                                                <select name="taxcategory" id="taxcategory" class="form-control tax_category">
+                                                    <option value=""><?php echo $this->lang->line('select') ?></option>
+                                                    <?php foreach ($taxcategory as $taxcategory_key => $taxcategory_value) {?>
+                                                        <option value="<?php echo $taxcategory_value['id']; ?>"><?php echo $taxcategory_value['name']; ?></option>
+                                                    <?php }?>
+                                                </select>
+                                                <span class="text-danger"><?php echo form_error('taxcategory'); ?></span>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label"><?php echo $this->lang->line('tax'); ?></label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control right-border-none text-end" readonly name="tax_percentage" id="tax_percentage" autocomplete="off">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <label class="form-label"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></label><small class="req"> *</small>
+                                                <input type="text" name="standard_charge" id="standard_charge" class="form-control text-end">
+                                                <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                                <textarea name="description" class="form-control description" rows="2"></textarea>
+                                                <span class="text-danger"><?php echo form_error('description'); ?></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>    
-                            <div class="modal-footer">
-                                <div class="pull-right">
-                                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                            <div class="col-md-6">
+                                <div class="sh-form-card h-100">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><?php echo $this->lang->line('scheduled_charges_for_tpa'); ?></span>
+                                        <button type="button" class="btn btn-primary btn-sm ms-auto" onclick="apply_to_all()"><?php echo $this->lang->line('apply_to_all'); ?></button>
+                                    </div>
+                                    <div class="p-3">
+                                        <table class="table table-sm mb-0">
+                                            <?php foreach ($schedule as $category) {?>
+                                                <tr>
+                                                    <td class="align-middle">
+                                                        <input type="hidden" name="schedule_charge_id[]" value="<?php echo $category['id']; ?>">
+                                                        <?php echo $category['organisation_name']; ?>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <input type="text" name="schedule_charge_<?php echo $category['id']; ?>" id="schedule_charge_<?php echo $category['id']; ?>" class="form-control form-control-sm schedule_charge text-end">
+                                                    </td>
+                                                </tr>
+                                            <?php }?>
+                                        </table>
+                                        <span class="text-danger"><?php echo form_error('schedule_charge'); ?></span>
+                                    </div>
                                 </div>
                             </div>
-                    </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-primary"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 <!-- dd -->
 
-<div class="modal fade" id="viewModal"  role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('charges_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('charges_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 mb0 min-h-3">
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     $(function () {
-    $('.select2').select2();
-});
-
+        $('.select2').select2();
+    });
 
     function apply_to_all() {
         var standard_charge = $("#standard_charge").val();
@@ -257,7 +249,7 @@ $genderList      = $this->customlib->getGender();
     $(document).ready(function (e) {
         $("#formadd").on('submit', (function (e) {
             
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/charges/add_charges',
@@ -278,7 +270,7 @@ $genderList      = $this->customlib->getGender();
                         successMsg(data.message);
                         window.location.reload();
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
                 }
@@ -289,7 +281,7 @@ $genderList      = $this->customlib->getGender();
 
     $(document).ready(function (e) {
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'DD', 'm' => 'MM', 'Y' => 'YYYY']) ?>';
-        $('#dates_of_birth , #date_of_birth').datepicker();
+        /* picker init removed - auto-init via class + event delegation in footer.php */
     });
 
 
@@ -303,7 +295,7 @@ $genderList      = $this->customlib->getGender();
             data: {charges_id: record_id},
             dataType: 'json',
             beforeSend: function(){
-                btn.button('loading');
+                btn.btnLoading();
              },
             success: function (data) {
                  if (data.status == 0) {
@@ -325,15 +317,15 @@ $genderList      = $this->customlib->getGender();
 
 
                 getcharge_category(data.result.charge_type_master_id,data.result.charge_category_id);
-                $('#myModal').modal('show');
+                shModal('myModal').show();
             }
-                 btn.button('reset');
+                 btn.btnReset();
             }, 
             error: function () {
-               btn.button('reset');
+               btn.btnReset();
                 },
                 complete: function(){
-                 btn.button('reset');
+                 btn.btnReset();
    }
         });
 
@@ -349,7 +341,7 @@ $genderList      = $this->customlib->getGender();
             dataType:"JSON",
             beforeSend: function(){
                
-           $('#viewModal').modal('show');
+           shModal('viewModal').show();
            view_modal.addClass('modal_loading');
            },
            complete: function(){
@@ -362,16 +354,14 @@ $genderList      = $this->customlib->getGender();
         });
     }
  
-    function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
-    }
+
 </script>
 
 <script type="text/javascript">
+    $(document).ready(function () {
+        modal_click_disabled('myModal');
+    });
+
      $('#myModal').on('hidden.bs.modal', function (e) {
         $('#formadd').find('input:text').val(''); 
         $('#formadd input:checkbox').removeAttr('checked');       
@@ -398,7 +388,7 @@ $genderList      = $this->customlib->getGender();
 ( function ( $ ) {
     'use strict';
     $(document).ready(function () {        
-        initDatatable('ajaxlist','admin/charges/getDatatable',{},[],100,[{"aTargets": [ -1,-2 ] ,'sClass': 'dt-body-right dt-head-right'}]);        
+        initDatatable('ajaxlist','admin/charges/getDatatable',{},[],100,[{"bSortable": false, "aTargets": [ -1 ]},{"aTargets": [ -2,-3 ] ,'sClass': 'dt-body-right dt-head-right'}]);        
     });
 } ( jQuery ) )
 </script>

@@ -1,49 +1,47 @@
 <script src="<?php echo base_url(); ?>backend/plugins/ckeditor/ckeditor.js"></script>
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
 
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('edit_event'); ?></h3>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <h3 class="card-title mb-0"><?php echo $this->lang->line('edit_event'); ?></h3>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="row">
                             <form  action="<?php echo site_url('admin/front/events/edit/' . $result['slug']) ?>"  id="eventform" name="employeeform" method="post" accept-charset="utf-8">
                                 <div class="col-md-12">
                                     <input type="hidden" name="id" value="<?php echo $result['id']; ?>" id="content_id">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('title'); ?></label>
                                         <input autofocus=""  id="title" name="title" placeholder="" type="text" class="form-control"  value="<?php echo set_value('title', $result['title']); ?>" />
                                         <span class="text-danger"><?php echo form_error('title'); ?></span>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('event_start'); ?></label>
                                         <input id="start_date" name="start_date" placeholder="" type="text" class="form-control date"  value="<?php echo set_value('start_date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($result['event_start']))); ?>" readonly="readonly" />
                                         <span class="text-danger"><?php echo form_error('event_start'); ?></span>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('event_end'); ?></label>
                                         <input id="end_date" name="end_date" placeholder="" type="text" class="form-control date"  value="<?php echo set_value('end_date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($result['event_end']))); ?>" readonly="readonly" />
 
                                         <span class="text-danger"><?php echo form_error('event_end'); ?></span>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('venue'); ?></label>
                                         <input autofocus=""  id="venue" name="venue" placeholder="" type="text" class="form-control"  value="<?php echo set_value('venue', $result['event_venue']); ?>" />
                                         <span class="text-danger"><?php echo form_error('venue'); ?></span>
                                     </div>
-                                    <div class="form-group"> <!-- Submit button !-->
-                                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#mediaModal"><i class="fa fa-plus"></i>
+                                    <div class="mb-3"> <!-- Submit button !-->
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mediaModal"><i class="fa fa-plus"></i>
                                             <?php echo $this->lang->line('add_media'); ?>
                                         </button>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
                                         <textarea id="editor1" name="description" placeholder="" type="text" class="form-control compose-textarea" >
                                             <?php echo set_value('description', $result['description']); ?>
@@ -59,7 +57,7 @@
                                     <input type="hidden" name="record_id" value="<?php echo $result['id']; ?>" id="record_id">
                                     <div class="row">
                                         <div class="col-sm-6 col-md-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="exampleInputFile"><?php echo $this->lang->line('upload_file'); ?></label>
                                                 <input class="filestyle form-control" type='file' name='files[]'  id="multiFiles" size='20' />
                                                 <p class="help-block"><?php echo $this->lang->line('allowed_png_jpg_jpeg'); ?></p>
@@ -85,9 +83,9 @@ if (!empty($result['images'])) {
             $featured_img = "active";
         }
         ?>
-                                                <div class='col-sm-6 col-md-3 col-xs-6 image_div'>
+                                                <div class='col-sm-6 col-md-3 col-6 image_div'>
                                                     <div class="fadeoverlay <?php echo $featured_img; ?>">
-                                                        <img class='img-responsive' alt='' src='<?php echo $this->media_storage->getImageURL($img_value->thumb_path . $img_value->thumb_name); ?>' />
+                                                        <img class='img-fluid' alt='' src='<?php echo $this->media_storage->getImageURL($img_value->thumb_path . $img_value->thumb_name); ?>' />
                                                         <div class="overlay3">
                                                             <a href="#" class="uploadclosebtn" data-record_id="<?php echo $img_value->id ?>"><i class="fa fa-times-circle"></i></a>
                                                             <a href="#" class="uploadcheckbtn" data-record_id="<?php echo $img_value->id ?>"><i class="fa fa-check-circle"></i></a>
@@ -104,25 +102,21 @@ if (!empty($result['images'])) {
                                 </div> <!-- row / end -->
                             </div>
                         </div>
-                    </div><!-- /.box-body -->
-                    <div class="box-footer">
-                        <button type="button" class="btn btn-info edit_form pull-right" ><?php echo $this->lang->line('save'); ?></button>
+                    </div><!-- /.card-body -->
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-info edit_form float-end" ><?php echo $this->lang->line('save'); ?></button>
                     </div>
                 </div>
             </div><!--/.col (right) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 
 <script>
 
     CKEDITOR.replace('editor1');
     $(document).ready(function () {
-        $('#mediaModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: false
-        });
+        modal_click_disabled('mediaModal');
         $('#mediaModal').on('show.bs.modal', function (event) {
 
             var $modalDiv = $(event.delegateTarget);
@@ -158,10 +152,7 @@ if (!empty($result['images'])) {
         });
 
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('.date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* .date init removed - auto-init via event delegation */
     });
 
     $(document).on('click', '.img_div_modal', function (event) {
@@ -175,7 +166,7 @@ if (!empty($result['images'])) {
         if (typeof content_html != "undefined") {
             content = '<img src="' + content_html + '">';
             InsertHTML(content);
-            $('#mediaModal').modal('hide');
+            shModal('mediaModal').hide();
         }
     });
 
@@ -197,14 +188,14 @@ if (!empty($result['images'])) {
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content modal-media-content mx-2">
             <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title modal-media-title" id="myModalLabel"><?php echo $this->lang->line('media'); ?></h4>
             </div>
             <div class="modal-body modal-media-body">
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
                 <button type="button" class="btn btn-primary add_media"><?php echo $this->lang->line('add'); ?></button>
             </div>
         </div>
@@ -293,9 +284,9 @@ if (!empty($result['images'])) {
 	
     function appendImage(data) {
         var image = baseurl + data.thumb_path + data.thumb_name;
-        var image_date = "<div class='col-sm-6 col-md-3 col-xs-6 image_div'>";
+        var image_date = "<div class='col-sm-6 col-md-3 col-6 image_div'>";
         image_date += "<div class='fadeoverlay processing-bg'>";
-        image_date += "<img class='img-responsive' alt='' src='" + image + "'>";
+        image_date += "<img class='img-fluid' alt='' src='" + image + "'>";
         image_date += "<div class='overlay3'>";
         image_date += "<a href='#' class='uploadclosebtn' data-record_id='19'><i class='fa fa-times-circle'></i></a>";
         image_date += "<a href='#' class='uploadcheckbtn' data-record_id='19'><i class='fa fa-check-circle'></i></a>";

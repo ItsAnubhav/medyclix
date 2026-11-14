@@ -8,7 +8,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>
 </div>     
@@ -32,7 +32,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <?php 
                             $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         ?> 
-                <div class="box-body pb0">
+                <div class="card-body pb-0">
                     <div class="col-md-12 col-lg-10 col-sm-9">
                             <table class="print-table" style="text-align: left; padding-top: 10px;">
                                 <tbody>
@@ -126,7 +126,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                          </tr> 
                                     <tr>
                                    
-                                        <th><?php echo $this->lang->line('Referral_Date'); ?></th>
+                                        <th><?php echo $this->lang->line('referral_date'); ?></th>
                                         <td>
                                         	<?php if((!empty($discharge_card)) && $discharge_card['refer_date']!=''){ echo $this->customlib->YYYYMMDDHisTodateFormat($discharge_card['refer_date']); }   ?>
                                         </td>

@@ -5,7 +5,7 @@
         <thead>
             <tr class="font13">
                 <th><?php echo $this->lang->line('test') . " " .$this->lang->line('parameter') . " " . $this->lang->line('name'); ?><small class="req"> *</small></th>
-                <th><?php echo $this->lang->line('refference') . " " . $this->lang->line('range'); ?> </th>
+                <th>dfg<?php echo $this->lang->line('reference') . " " . $this->lang->line('range'); ?> </th>
                 <th><?php echo $this->lang->line('unit') ; ?><small class="req"> *</small></th>
             </tr>
         </thead>
@@ -16,7 +16,7 @@
             <input type="hidden" name="previous_pathology_id" value="<?php echo $value['pathology_id'] ?>">
             <tr id="row<?php echo $i ?>">
                 <td width="40%">
-                    <select class="form-control select2" style="width:100%" onchange="getparametereditdetails(this.value, <?php echo $i ?>)" id="parameter_edit_name<?php echo $i ?>" name='parameter_name[]'>
+                    <select class="form-control select2 w-100" onchange="getparametereditdetails(this.value, <?php echo $i ?>)" id="parameter_edit_name<?php echo $i ?>" name='parameter_name[]'>
                         <option value="<?php echo set_value('pathology_parameter_id'); ?>"><?php echo $this->lang->line('select') ?></option>
                         <?php foreach ($parametername as $dkey => $dvalue) {  ?>
                         <option value="<?php echo $dvalue["id"]; ?>" <?php if ($value["parameter_id"] == $dvalue["id"]) echo "selected"; ?> ><?php echo $dvalue["parameter_name"] ?></option> 
@@ -32,9 +32,9 @@
                     <input type="text" readonly="" value="<?php echo $value['unit_name']; ?>" name="patho_unit[]"  id="patho_edit_unit<?php echo $i ?>" class="form-control">
                 </td>                                              
                 <?php if ($i != 0) { ?>
-                        <td><button type='button' onclick="delete_row('<?php echo $i ?>')" class='closebtn'><i class='fa fa-remove'></i></button></td>
+                        <td><button type='button' onclick="delete_row('<?php echo $i ?>')" class='btn btn-sm btn-outline-danger'><i class='fa fa-remove'></i></button></td>
                 <?php } else { ?>
-                        <td><button type="button" onclick="editMore()" style="color:#2196f3" class="closebtn"><i class="fa fa-plus"></i></button></td>
+                        <td><button type="button" onclick="editMore()" class="closebtn sh-text-blue"><i class="fa fa-plus"></i></button></td>
                 <?php } ?>
             </tr>
         <?php
@@ -55,11 +55,7 @@
 
 <script type="text/javascript">   
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }     
 
     (function ($) {
@@ -137,7 +133,7 @@
         var table_len = (table.rows.length);
         var id = parseInt(table_len - 1);      
         var div = "<td><select class='form-control' name='parameter_name[]' onchange='getparametereditdetails(this.value," + id + ")'><option value='<?php echo set_value('parameter_name'); ?>'><?php echo $this->lang->line('select') ?></option><?php foreach ($parametername as $dkey => $dvalue) { ?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["parameter_name"] ?></option><?php } ?></select></td><td><input type='text' reference_range[]' readonly id='reference_edit_range" + id + "' class='form-control'></td><td><input type='text' name='patho_unit[]' readonly id='patho_edit_unit" + id + "' class='form-control'></td>";
-        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "'>" + div + "<td><button type='button' onclick='delete_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
+        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "'>" + div + "<td><button type='button' onclick='delete_row(" + id + ")' class='btn btn-sm btn-outline-danger'><i class='fa fa-remove'></i></button></td></tr>";
         $('.select2').select2();
     }
 

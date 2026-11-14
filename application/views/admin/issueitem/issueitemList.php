@@ -1,25 +1,23 @@
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('issue_item_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('issue_item_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('issue_item', 'can_add')) {?>
-                                <a href="" data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addissueitem"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_issue_item'); ?></a>
+                                <a href="" data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm addissueitem"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_issue_item'); ?></a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <?php $logUser = $this->customlib->getLoggedInUserData(); ?>
                         <div class="table-responsive mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('issue_item_list'); ?></div>
-                            <table class="table table-hover table-striped table-bordered ajaxlist" data-export-title="<?php echo $this->lang->line('issue_item_list'); ?>">
+                            <table id="issueitem-list-table" class="table table-hover table-striped table-bordered ajaxlist" data-export-title="<?php echo $this->lang->line('issue_item_list'); ?>">
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('item'); ?></th>
@@ -29,8 +27,8 @@
                                         <th><?php echo $this->lang->line('issued_by'); ?></th>
                                         <th><?php echo $this->lang->line('quantity'); ?></th>
                                         <th><?php echo $this->lang->line('note'); ?></th>
-                                        <th><?php echo $this->lang->line('status'); ?></th>                                   
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-center noExport"><?php echo $this->lang->line('status'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -38,125 +36,135 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (right) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
 
-<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content mx-2">
+
+<div class="modal fade sh-modal sh-modal-accent" id="confirm-delete" tabindex="-1" aria-labelledby="confirmReturnLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('confirm_return'); ?></h4>
+                <h5 class="modal-title" id="confirmReturnLabel"><?php echo $this->lang->line('confirm_return'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="item_issue_id" name="item_issue_id" value="">
-                <p><?php echo $this->lang->line('are_you_sure_to_return_this_item'); ?></p>
-                <ul class="list2">
-                    <li><?php echo $this->lang->line('item'); ?><span id="modal_item"></span></li>
-                    <li><?php echo $this->lang->line('item_category'); ?><span id="modal_item_cat"></span></li>
-                    <li><?php echo $this->lang->line('quantity'); ?><span id="modal_item_quantity"></span></li>
-                </ul>
+                <div class="d-flex align-items-start gap-2 mb-3">
+                    <i class="fa fa-exclamation-circle text-warning mt-1"></i>
+                    <p class="mb-0 small text-muted"><?php echo $this->lang->line('are_you_sure_to_return_this_item'); ?></p>
+                </div>
+                <div class="border rounded overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+                        <i class="fa fa-fw fa-cube text-muted"></i>
+                        <span class="text-muted small flex-grow-1"><?php echo $this->lang->line('item'); ?></span>
+                        <span class="fw-semibold small" id="modal_item"></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+                        <i class="fa fa-fw fa-tag text-muted"></i>
+                        <span class="text-muted small flex-grow-1"><?php echo $this->lang->line('item_category'); ?></span>
+                        <span class="fw-semibold small" id="modal_item_cat"></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2">
+                        <i class="fa fa-fw fa-sort-numeric-asc text-muted"></i>
+                        <span class="text-muted small flex-grow-1"><?php echo $this->lang->line('quantity'); ?></span>
+                        <span class="fw-semibold small" id="modal_item_quantity"></span>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
-                <a class="btn cfees btn-ok" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('return'); ?>"><?php echo $this->lang->line('return'); ?></a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <a class="btn btn-info cfees btn-ok" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('return'); ?>"><?php echo $this->lang->line('return'); ?></a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="follow_up">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_issue_item'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="addIssueItemLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addIssueItemLabel"><?php echo $this->lang->line('add_issue_item'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
             <form id="form1" action="<?php echo base_url() ?>admin/issueitem/add" name="itemstockform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="scroll-area">
-                    <div class="modal-body pt0 pb0">
-                        <div class="row ptt10">
-                            <?php echo $this->customlib->getCSRF(); ?>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('user_type'); ?></label><small class="req"> *</small>
-                                <select name="account_type" onchange="getIssueUser(this.value)" id="" class="form-control ac_type">
-                                    <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                    <?php
-                                    foreach ($roles as $role_key => $role_value) {
-                                        ?>
-                                        <option value="<?php echo $role_value['id']; ?>"><?php echo $role_value['name'] ?></option>
-                                        <?php echo $role_value['name']; ?>
-                                        <?php } ?>
-                                </select>
-                                <span class="text-danger"><?php echo form_error('Items'); ?></span>
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <?php echo $this->customlib->getCSRF(); ?>
+                        <div class="sh-form-card mb-3">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
                             </div>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('issue_to'); ?></label><small class="req"> *</small>
-                                <select id="issue_to" name="issue_to" class="form-control">
-                                    <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                </select>
-                                <span class="text-danger"><?php echo form_error('Items'); ?></span>
-                            </div>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('issued_by'); ?></label><small class="req"> *</small>
-                                <input id="issue_by" name="issue_by" placeholder="" type="text" class="form-control" value="<?php echo $logUser['username']; ?>" />
-                                <span class="text-danger"><?php echo form_error('issue_by'); ?></span>
-                            </div>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('issue_date'); ?></label><small class="req"> *</small>
-                                <input id="issue_date" name="issue_date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('issue_date'); ?>" readonly />
-                                <span class="text-danger"><?php echo form_error('issue_date'); ?></span>
-                            </div>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('return_date'); ?></label>
-                                <input id="return_date" name="return_date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('return_date'); ?>" readonly/>
-                                <span class="text-danger"><?php echo form_error('return_date'); ?></span>
-                            </div>
-                            <div class="form-group col-md-4 col-sm-4">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('note'); ?></label>
-                                <textarea name="note" class="form-control" id="note"/><?php echo set_value('note'); ?></textarea>
-                                <span class="text-danger"><?php echo form_error('note'); ?></span>
-                            </div>
-                            <div class="clearfix"></div>
-                            <hr>
-                            <div class="col-md-12">
-                                <div class="row">
-                                    <div class="form-group col-sm-4">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('item_category'); ?></label><small class="req"> *</small>
-
-                                        <select  id="item_category_id" name="item_category_id" class="form-control">
+                            <div class="p-2">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('user_type'); ?> <small class="req">*</small></label>
+                                        <select name="account_type" onchange="getIssueUser(this.value)" class="form-select form-select-sm ac_type">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                            <?php
-                                        foreach ($itemcatlist as $item_category) {
-                                            ?>
-                                                                                    <option value="<?php echo $item_category['id'] ?>"<?php
-                                        if (set_value('item_category_id') == $item_category['id']) {
-                                                echo "selected = selected";
-                                            }
-                                            ?>><?php echo $item_category['item_category'] ?></option>
-                                                                                    <?php
-                                        }
-                                        ?>
+                                            <?php foreach ($roles as $role_key => $role_value) { ?>
+                                                <option value="<?php echo $role_value['id']; ?>"><?php echo $role_value['name'] ?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('issue_to'); ?> <small class="req">*</small></label>
+                                        <select id="issue_to" name="issue_to" class="form-select form-select-sm">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('issued_by'); ?> <small class="req">*</small></label>
+                                        <input id="issue_by" name="issue_by" type="text" class="form-control form-control-sm" value="<?php echo $logUser['username']; ?>">
+                                        <span class="text-danger"><?php echo form_error('issue_by'); ?></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('issue_date'); ?> <small class="req">*</small></label>
+                                        <input id="issue_date" name="issue_date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('issue_date'); ?>" readonly>
+                                        <span class="text-danger"><?php echo form_error('issue_date'); ?></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('return_date'); ?></label>
+                                        <input id="return_date" name="return_date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('return_date'); ?>" readonly>
+                                        <span class="text-danger"><?php echo form_error('return_date'); ?></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('note'); ?></label>
+                                        <textarea name="note" class="form-control form-control-sm" id="note" rows="1"><?php echo set_value('note'); ?></textarea>
+                                        <span class="text-danger"><?php echo form_error('note'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('item'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('item_category'); ?> <small class="req">*</small></label>
+                                        <select id="item_category_id" name="item_category_id" class="form-select form-select-sm">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach ($itemcatlist as $item_category) { ?>
+                                                <option value="<?php echo $item_category['id'] ?>"<?php if (set_value('item_category_id') == $item_category['id']) echo ' selected'; ?>><?php echo $item_category['item_category'] ?></option>
+                                            <?php } ?>
                                         </select>
                                         <span class="text-danger"><?php echo form_error('item_category_id'); ?></span>
                                     </div>
-                                    <div class="form-group col-sm-4">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('item'); ?></label><small class="req"> *</small>
-                                        <select  id="item_id" name="item_id" class="form-control" >
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('item'); ?> <small class="req">*</small></label>
+                                        <select id="item_id" name="item_id" class="form-select form-select-sm">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                         </select>
                                         <span class="text-danger"><?php echo form_error('item_id'); ?></span>
                                     </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('quantity'); ?></label><small class="req"> *</small>
-                                        <input  class="form-control" name="quantity"/>
-                                        <div id="div_avail">
-                                            <span><?php echo $this->lang->line('available_quantity'); ?> : </span>
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('quantity'); ?> <small class="req">*</small></label>
+                                        <input class="form-control form-control-sm" name="quantity">
+                                        <div id="div_avail" class="small text-muted mt-1">
+                                            <span><?php echo $this->lang->line('available_quantity'); ?>: </span>
                                             <span id="item_available_quantity">0</span>
                                         </div>
                                     </div>
@@ -166,9 +174,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="form1btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="form1btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
@@ -176,14 +183,16 @@
 </div>
 
 <script>
-    $(document).ready(function () {
-        $('.detail_popover').popover({
+    document.querySelectorAll('.detail_popover').forEach(function(el) {
+        new bootstrap.Popover(el, {
             placement: 'right',
             trigger: 'hover',
             container: 'body',
             html: true,
-            content: function () {
-                return $(this).closest('td').find('.fee_detail_popover').html();
+            content: function() {
+                var td = el.closest('td');
+                var inner = td ? td.querySelector('.fee_detail_popover') : null;
+                return inner ? inner.innerHTML : '';
             }
         });
     });
@@ -193,7 +202,6 @@
     $(document).ready(function () {
         $('#confirm-delete').on('show.bs.modal', function (e) {
             $('#item_issue_id').val("");
-            $('.debug-url').html('');
             $('#modal_item_quantity,#modal_item,#modal_item_cat').text("");
             var item_issue_id = $(e.relatedTarget).data('item');
             var item_category = $(e.relatedTarget).data('category');
@@ -205,19 +213,10 @@
             $('#modal_item_quantity').text(quantity);
         });
 		
-        $("#confirm-delete").modal({
-            backdrop: false,
-            show: false
-        });
+        modal_click_disabled('confirm-delete');
 		
-        var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('.date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
     });
 
-    var base_url = '<?php echo base_url() ?>';
     $(document).on('change', '#item_category_id', function (e) {
         var item_category_id = $(this).val();
         populateItem(0, item_category_id);
@@ -225,7 +224,7 @@
 
     $(document).on('click', '.btn-ok', function () {
         var $this = $('.btn-ok');
-        $this.button('loading');
+        $this.btnLoading();
         var item_issue_id = $('#item_issue_id').val();
 
         $.ajax(
@@ -240,15 +239,15 @@
                             errorMsg(data.message);
                         } else {
                             successMsg(data.message);
-                            $("#confirm-delete").modal('hide');
+                            shModal('confirm-delete').hide();
                             location.reload();
                         }
 
-                        $this.button('reset');
+                        $this.btnReset();
                     },
                     error: function (jqXHR, textStatus, errorThrown)
                     {
-                        $this.button('reset');
+                        $this.btnReset();
                     }
                 });
     });
@@ -258,7 +257,7 @@
     $(document).ready(function (e) {
 
         $('#form1').on('submit', (function (e) {
-            $("#form1btn").button('loading');
+            $("#form1btn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -279,7 +278,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#form1btn").button('reset');
+                    $("#form1btn").btnReset();
                 },
                 error: function () {
                     alert("Fail")
@@ -386,11 +385,7 @@ $(".addissueitem").click(function(){
 });
     
     $(document).ready(function (e) {
-        $('#myModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('myModal');
     });
 </script>
 
@@ -399,7 +394,20 @@ $(".addissueitem").click(function(){
 ( function ( $ ) {
     'use strict';
     $(document).ready(function () {
-        initDatatable('ajaxlist','admin/issueitem/getissueitemdatatable');
+        initDatatable('ajaxlist','admin/issueitem/getissueitemdatatable',[],[],100,[
+            { "bSortable": false, "aTargets": [-1], "sClass": "text-end" },
+            { "bSortable": false, "aTargets": [-2], "sClass": "text-center" },
+            { "aTargets": [0], "sWidth": "200px" },
+            { "aTargets": [1], "sWidth": "180px" },
+            { "aTargets": [2], "sWidth": "250px", "sClass": "text-nowrap" },
+            { "aTargets": [3], "sWidth": "120px" },
+            { "aTargets": [4], "sWidth": "120px" },
+            { "aTargets": [5], "sWidth": "100px", "sClass": "text-center" },
+            { "aTargets": [6], "sWidth": "150px" }
+        ]);
+        $('#ajaxlist').on('draw.dt', function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
     });
 } ( jQuery ) )
 </script>

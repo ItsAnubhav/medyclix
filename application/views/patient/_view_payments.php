@@ -8,15 +8,19 @@ if($module=='radiolog'){
  $print='print_trans'; 
 }
 ?>
+<div class="sh-form-card mb-0">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><i class="fa fa-money me-1"></i><?php echo $this->lang->line('payments'); ?></span>
+    </div>
     <div class="table-responsive">
-        <table class="table table-striped table-bordered table-hover example">
+        <table class="table table-striped table-bordered table-hover example mb-0">
                 <thead>
                     <th><?php echo $this->lang->line('date'); ?></th>
                     <th><?php echo $this->lang->line('note'); ?></th>
                     <th><?php echo $this->lang->line('payment_mode'); ?></th>
                     <th><?php echo $this->lang->line('payment_type'); ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('action'); ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-center"><?php echo $this->lang->line('action'); ?></th>
                 </thead>
                 <tbody>
                 <?php
@@ -32,12 +36,12 @@ if($module=='radiolog'){
                             ?>
                             <tr>
                                 <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($payment['payment_date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-                                <td><?php echo $payment["note"] ?></td>
+                                <td><?php echo html_escape($payment["note"]) ?></td>
                               <td><?php if(!empty($payment["payment_mode"])){ echo $this->lang->line(strtolower($payment["payment_mode"]))."<br>"; }
 							  
                                 if($payment['payment_mode'] == "Cheque"){
                                      if($payment['cheque_no']!=''){
-               echo $this->lang->line("cheque_no"). ": ".$payment['cheque_no'];              
+               echo $this->lang->line("cheque_no"). ": ".html_escape($payment['cheque_no']);              
             echo "<br>";
         }
             if($payment['cheque_date']!='' && $payment['cheque_date']!='0000-00-00'){
@@ -46,15 +50,15 @@ if($module=='radiolog'){
              }                                ?>
                                 </td> 
                                 <td><?php echo $this->lang->line($payment["type"]); ?></td>
-                                <td class="text-right"><?php echo amountFormat($payment["amount"]) ?></td>                              
-                                <td class="text-right">
+                                <td class="text-end"><?php echo amountFormat($payment["amount"]) ?></td>
+                                <td class="text-center">
                                 <?php  if ($payment['payment_mode'] == "Cheque" && $payment['attachment'] != "")  {
                             ?>
-                            <a href='<?php echo site_url('patient/dashboard/downloadreceipt/'.$payment['id']);?>' class='btn btn-default btn-xs'  title='<?php echo $this->lang->line('download'); ?>'><i class='fa fa-download'></i></a>
+                            <a href='<?php echo site_url('patient/dashboard/downloadreceipt/'.(int)$payment['id']);?>' class='btn btn-default btn-sm'  title='<?php echo $this->lang->line('download'); ?>'><i class='fa fa-download'></i></a>
                             <?php
                         }
                                  ?>
-                                 <a href="javascript:void(0);"  class="btn btn-default btn-xs <?php echo $print; ?> " data-toggle="tooltip" title="" data-loading-text="<i class='fa fa-circle-o-notch fa-spi'></i>" data-record-id="<?php echo $payment['id']; ?>"  data-original-title="<?php echo $this->lang->line('print'); ?>" data-module-type="<?php echo $module; ?>">
+                                 <a href="javascript:void(0);"  class="btn btn-default btn-sm <?php echo $print; ?> " data-bs-toggle="tooltip" title="<?php echo $this->lang->line('print'); ?>" data-loading-text="<i class='fa fa-circle-o-notch fa-spi'></i>" data-record-id="<?php echo (int)$payment['id']; ?>" data-module-type="<?php echo html_escape($module); ?>">
                                             <i class="fa fa-print"></i>
                                         </a> 
                                     </td>
@@ -65,10 +69,11 @@ if($module=='radiolog'){
                             <td></td>
                             <td></td>
                             <td></td>
-                            <td class="text-right"><?php echo $this->lang->line('total'); ?></td>
-                            <td class="text-right"><?php echo $currency_symbol.amountFormat($total- $refund_total); ?></td>
+                            <td class="text-end"><?php echo $this->lang->line('total'); ?></td>
+                            <td class="text-end"><?php echo $currency_symbol.amountFormat($total- $refund_total); ?></td>
                             <td></td>   
                         </tr>
                     </tbody>
         </table>
-    </div>    
+    </div>
+</div>

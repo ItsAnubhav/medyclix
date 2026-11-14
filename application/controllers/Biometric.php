@@ -21,7 +21,7 @@ class Biometric extends MY_Controller
     {
         $method = $this->input->server('REQUEST_METHOD');
         if ($method != 'POST') {
-            json_output(400, array('status' => 400, 'message' => 'Bad request.'));
+            json_output(400, array('status' => 400, 'message' => $this->lang->line('bad_request')));
         } else {
 
             $attendence_param = file_get_contents('php://input');
@@ -49,11 +49,11 @@ class Biometric extends MY_Controller
                                     $insert_result = $this->staffattendancemodel->onlineattendence($insert_record, $record_data['role_id']);                               
 
                                 if ($insert_result == 1) {
-                                    json_output(200, array('status' => 200, 'message' => 'Attendance submitted'));
+                                    json_output(200, array('status' => 200, 'message' => $this->lang->line('attendance_submitted')));
                                 } elseif($insert_result == 2) {
-                                    json_output(200, array('status' => 200, 'message' => 'Attendance setting not configured, or contact to admin'));
+                                    json_output(200, array('status' => 200, 'message' => $this->lang->line('attendance_setting_not_configured_or')));
                                 }elseif($insert_result == 0) {
-                                    json_output(200, array('status' => 200, 'message' => 'Attendance already submitted'));
+                                    json_output(200, array('status' => 200, 'message' => $this->lang->line('attendance_already_submitted')));
                                 }
                             }
                         }

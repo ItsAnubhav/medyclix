@@ -74,6 +74,8 @@ class Dutyroster_model extends MY_Model
 
     public function check_shift_time($datetime_1,$datetime_2,$shift_id){		
 		$this->db->select("duty_roster_shift.id");	 
+		$datetime_1 = $this->db->escape_str($datetime_1);
+		$datetime_2 = $this->db->escape_str($datetime_2);
 		$this->db->where("date_format(`shift_start`,'%H:%i:%s')='$datetime_1' and date_format(`shift_end`,'%H:%i:%s')='$datetime_2' ");
 		$query = $this->db->get('duty_roster_shift');  
 		$result = $query->row_array();
@@ -91,6 +93,8 @@ class Dutyroster_model extends MY_Model
 
     public function check_roster_date($datetime_1,$datetime_2,$id){		
 		$this->db->select("duty_roster_list.id"); 
+		$datetime_1 = $this->db->escape_str($datetime_1);
+		$datetime_2 = $this->db->escape_str($datetime_2);
 		$this->db->where("date_format(`duty_roster_start_date`,'%Y-%m-%d')='$datetime_1' and date_format(`duty_roster_end_date`,'%Y-%m-%d')='$datetime_2' ");		         
 		$query = $this->db->get('duty_roster_list');
 		$result = $query->row_array();
@@ -107,8 +111,8 @@ class Dutyroster_model extends MY_Model
 
     public function check_roster_assign($duty_roster_list_id,$staff_id,$code){		
 		$this->db->select("duty_roster_assign.code");      
-		$this->db->where("duty_roster_list_id=$duty_roster_list_id");   
-		$this->db->where("staff_id =$staff_id");	   
+		$this->db->where('duty_roster_list_id', $duty_roster_list_id);
+		$this->db->where('staff_id', $staff_id);
 		$this->db->group_by('staff_id');   
 		$query = $this->db->get('duty_roster_assign'); 
 		$result = $query->row_array();
@@ -143,14 +147,14 @@ class Dutyroster_model extends MY_Model
         if (isset($data['id']) && $data['id']!="") {
             $this->db->where('id', $data['id']);
             $this->db->update('duty_roster_list', $data);
-            $message = UPDATE_RECORD_CONSTANT . " On Duty Roster Shift id " . $data['id'];
+            $message = UPDATE_RECORD_CONSTANT . " On Duty Roster List id " . $data['id'];
             $action = "Update";
             $record_id = $data['id'];
             $this->log($message, $record_id, $action);
         } else {
             $this->db->insert('duty_roster_list', $data);
             $insert_id = $this->db->insert_id();
-            $message = INSERT_RECORD_CONSTANT . " On Duty Roster Shift id" . $insert_id;
+            $message = INSERT_RECORD_CONSTANT . " On Duty Roster List id" . $insert_id;
             $action = "Insert";
             $record_id = $insert_id;
             $this->log($message, $record_id, $action);
@@ -291,45 +295,35 @@ class Dutyroster_model extends MY_Model
         $this->log($message, $record_id, $action);
     }  
 	
-	public function getrosterassign_datails($staff=null,$from_date=null,$to_date=null){         
+    public function getrosterassign_datails($staff = null, $from_date = null, $to_date = null) {
+        $this->db->select("duty_roster_assign.staff_id, duty_roster_assign.roster_duty_date, duty_roster_assign.floor_id, duty_roster_assign.department_id, duty_roster_shift.shift_name, duty_roster_shift.shift_start, duty_roster_shift.shift_end, duty_roster_shift.shift_hour, floor.name as floor_name, department.department_name, staff.name as staff_name, staff.surname as staff_surname, staff.employee_id");
+        $this->db->join('duty_roster_list',  'duty_roster_list.id = duty_roster_assign.duty_roster_list_id', 'inner');
+        $this->db->join('duty_roster_shift', 'duty_roster_shift.id = duty_roster_list.duty_roster_shift_id', 'inner');
+        $this->db->join('staff',             'staff.id = duty_roster_assign.staff_id', 'inner');
+        $this->db->join('floor',             'floor.id = duty_roster_assign.floor_id', 'left');
+        $this->db->join('department',        'department.id = duty_roster_assign.department_id', 'left');
 
-        $this->db->select("duty_roster_assign.staff_id"); 
-		if (isset($staff) && $staff!="") {
-			$this->db->where('duty_roster_assign.staff_id', $staff);
-		}
-		if (isset($from_date) && $from_date!=""  && isset($to_date) && $to_date!="" ) {
-			$this->db->where(" date_format(duty_roster_assign.roster_duty_date,'%Y-%m-%d')  between '$from_date'  and '$to_date'");
-		}
-        $this->db->group_by('staff_id');        
-        $this->db->order_by('staff_id', 'asc');        
-        $query = $this->db->get('duty_roster_assign');       
-		
-		$result1 =  $query->result_array();
-		if(!empty($result1)){
-			foreach ($result1 as $key => $result_value){
-				
-				$this->db->select("duty_roster_list.*,duty_roster_shift.*,duty_roster_assign.*,floor.name as floor_name,department.department_name,staff.name as staff_name,staff.surname as staff_surname,duty_roster_start_date,duty_roster_end_date,staff.employee_id");
-				
-				$this->db->join('duty_roster_list', 'duty_roster_list.id = duty_roster_assign.duty_roster_list_id') ;
-				$this->db->join('duty_roster_shift', 'duty_roster_shift.id = duty_roster_list.duty_roster_shift_id');
-				$this->db->join('staff', 'staff.id = duty_roster_assign.staff_id') ;
-				$this->db->join('floor', 'floor.id = duty_roster_assign.floor_id','left')  ;
-				$this->db->join('department', 'department.id = duty_roster_assign.department_id','left')  ;				
-				
-				if (isset($staff) && $staff!="") {
-					$this->db->where('duty_roster_assign.staff_id', $staff);
-				}else{
-					$this->db->where('duty_roster_assign.staff_id', $result_value['staff_id']);
-				}			
-			
-				$query1 = $this->db->get('duty_roster_assign');  
-				$results[$key] = $query1->result_array(); 
-			}
-			return $results;	
-		}else{
-			return '';		
-		}       	
+        if (!empty($staff)) {
+            $this->db->where('duty_roster_assign.staff_id', $staff);
+        }
+        if (!empty($from_date) && !empty($to_date)) {
+            // Raw SQL required: MySQL DATE_FORMAT() has no CI Query Builder equivalent
+            $this->db->where("date_format(duty_roster_assign.roster_duty_date,'%Y-%m-%d') between '" . $this->db->escape_str($from_date) . "' and '" . $this->db->escape_str($to_date) . "'");
+        }
 
+        $this->db->order_by('duty_roster_assign.staff_id', 'asc');
+        $this->db->order_by('duty_roster_assign.roster_duty_date', 'asc');
+        $query = $this->db->get('duty_roster_assign');
+        $rows  = $query->result_array();
+
+        if (empty($rows)) { return array(); }
+
+        // Group rows by staff_id to match expected nested array format
+        $grouped = array();
+        foreach ($rows as $row) {
+            $grouped[$row['staff_id']][] = $row;
+        }
+        return $grouped;
     }  
 
 	public function getRosterListByShiftId($shift=null)

@@ -22,8 +22,8 @@ class Referralperson extends Admin_Controller
 
         $data              = array();
         $commission_amount = "";
-        $module_commission = $this->input->post("module_commission");
-        $referral_type_id  = $this->input->post("referral_type_id");
+        $module_commission = $this->input->post("module_commission", TRUE);
+        $referral_type_id  = $this->input->post("referral_type_id", TRUE);
 
         foreach ($referral_type_id as $key => $value) {
             if (empty($commission_amount)) {
@@ -55,12 +55,12 @@ class Referralperson extends Admin_Controller
             );
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $name         = $this->input->post("name");
-            $category_id  = $this->input->post("category");
-            $contact      = $this->input->post("referrer_contact");
-            $person_name  = $this->input->post("person_name");
-            $person_phone = $this->input->post("person_phone");
-            $address      = $this->input->post("address");
+            $name         = $this->input->post("name", TRUE);
+            $category_id  = $this->input->post("category", TRUE);
+            $contact      = $this->input->post("referrer_contact", TRUE);
+            $person_name  = $this->input->post("person_name", TRUE);
+            $person_phone = $this->input->post("person_phone", TRUE);
+            $address      = $this->input->post("address", TRUE);
 
             $person = array(
                 "name"                => $name,
@@ -69,7 +69,7 @@ class Referralperson extends Admin_Controller
                 "person_name"         => $person_name,
                 "person_phone"        => $person_phone,
                 "address"             => $address,
-                "standard_commission" => $this->input->post("commission"),
+                "standard_commission" => $this->input->post("commission", TRUE),
             );
 
             $person_id = $this->referral_person_model->add($person);
@@ -116,8 +116,8 @@ class Referralperson extends Admin_Controller
         }
         $data              = array();
         $commission_amount = "";
-        $module_commission = $this->input->post("module_commission");
-        $referral_type_id  = $this->input->post("referral_type_id");
+        $module_commission = $this->input->post("module_commission", TRUE);
+        $referral_type_id  = $this->input->post("referral_type_id", TRUE);
 
         foreach ($referral_type_id as $key => $value) {
             if (empty($commission_amount)) {

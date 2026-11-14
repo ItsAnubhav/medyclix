@@ -6,6 +6,16 @@ if (!defined('BASEPATH')) {
 
 class Staff extends Admin_Controller
 {
+	public $blood_group;
+	public $contract_type;
+	public $marital_status;
+	public $patient_data;
+	public $payment_mode;
+	public $payroll_status;
+	public $sch_setting_detail;
+	public $staff_attendance;
+	public $status;
+
 
     public function __construct()
     {
@@ -27,8 +37,54 @@ class Staff extends Admin_Controller
         $this->config->load('image_valid');
         $this->load->library('customlib');
         $this->load->library('media_storage');
+        $this->load->library('SaasValidation');
         $this->load->helper('customfield_helper');
         $this->sch_setting_detail  = $this->setting_model->getSetting();
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the combined size of the uploaded
+     * staff files would push the tenant over its storage quota. The param string
+     * is a comma-separated list of file fields; SaasValidation sets the message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    /**
+     * SaaS: on a staff-file replace (edit), adjust the storage quota by the size
+     * difference (old vs new) and delete the replaced physical file. Columns store
+     * a bare filename; $dir is the relative upload directory for that field
+     * (uploads/staff_images or uploads/staff_documents/<id>). Uses the throwing
+     * updateResouceQuota/deleteResouceQuota, so a plain catch suffices.
+     *
+     * @param string $field     $_FILES key of the newly uploaded file
+     * @param string $old_value prior column value (bare filename), '' if none
+     * @param string $dir       relative directory the file lives in
+     */
+    private function meterStaffFileReplace($field, $old_value, $dir)
+    {
+        $old_kb = (!empty($old_value)) ? $this->media_storage->getUploadedFileSize($old_value, $dir) : 0;
+        $new_kb = $this->media_storage->getTmpFileSize($field);
+
+        try {
+            if ($old_kb > $new_kb) {
+                $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+            } elseif ($new_kb > $old_kb) {
+                $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+            }
+        } catch (Exception $e) {
+            log_message('error', 'SaaS storage quota update failed (staff edit ' . $field . '): ' . $e->getMessage());
+        }
+
+        // Remove the replaced old file (new upload uses a unique name, so it never
+        // overwrote the old one).
+        if (!empty($old_value)) {
+            $this->media_storage->filedelete($old_value, $dir);
+        }
     }
 
     public function index()
@@ -42,11 +98,11 @@ class Staff extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'admin/staff');
         $staffRole    = $this->staff_model->getStaffRole();
         $data["role"] = $staffRole;
-        $search       = $this->input->post("search");
+		$search = $this->input->post("search", TRUE);
 
         $data["role_id"] = "";
         $data['fields']  = $this->customfield_model->get_custom_fields('staff', 1);
-        $search_text = $this->input->post('search_text');
+        $search_text = $this->input->post('search_text', TRUE);
         if ($this->input->server('REQUEST_METHOD') === 'GET') {
 			
 			if(!empty($this->uri->segment(4))){
@@ -62,34 +118,25 @@ class Staff extends Admin_Controller
             
         } elseif ($this->input->server('REQUEST_METHOD') === 'POST') {
 
-            if (isset($search)) {
-                if ($search == 'search_filter') {
-                    $this->form_validation->set_rules('role', $this->lang->line('role'), 'trim|required|xss_clean');
-                    if ($this->form_validation->run() == false) {
+            $role        = $this->input->post('role', TRUE);
+            $search_text = $this->input->post('search_text', TRUE);
+            $data["role_id"]     = $role;
+            $data['search_text'] = $search_text;
 
-                        $data["resultlist"] = array();
-                    } else {
-                        $data['searchby']    = "filter";
-                        $role                = $this->input->post('role');
-                        $data['employee_id'] = $this->input->post('empid');
-                        $data["role_id"]     = $role;
-                        $data['search_text'] = $this->input->post('search_text');
-                        $resultlist          = $this->staff_model->getEmployee($role, 1);
-                        $data['resultlist']  = $resultlist;
-                    }
-                } else if ($search == 'search_full') {
-
-                    $data['searchby']    = "text";
-                    $data['search_text'] = trim($this->input->post('search_text'));
-                    $resultlist          = $this->staff_model->searchFullText($search_text, 1);
-                    $data['resultlist']  = $resultlist;
-                    $data['title']       = 'Search Details: ' . $data['search_text'];
-                }
+            if (!empty($role)) {
+                $data['searchby'] = "filter";
+                $resultlist       = $this->staff_model->getEmployee($role, 1);
+                $data['resultlist'] = $resultlist;
+            } else {
+                $data['searchby'] = "text";
+                $resultlist       = $this->staff_model->searchFullText($search_text, 1);
+                $data['resultlist'] = $resultlist;
             }
         }
-        $this->load->view('layout/header');
+        $data['module'] = 'human_resource';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/staff/staffsearch', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function server_data()
@@ -178,6 +225,7 @@ class Staff extends Admin_Controller
                 $data['title']       = 'Search Details: ' . $data['search_text'];
             }
         }
+        $data['module'] = 'human_resource';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/staff/disablestaff', $data);
         $this->load->view('layout/footer', $data);
@@ -270,6 +318,7 @@ class Staff extends Admin_Controller
         $data['getqrcode']        = $this->customlib->generatestaffbarcode($employee_id,$id,'qrcode');       
 		
         $data['superadmin_restriction']        = $this->sch_setting_detail->superadmin_restriction;
+        $data['module'] = 'human_resource';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/staff/staffprofile', $data);
         $this->load->view('layout/footer', $data); 
@@ -277,6 +326,9 @@ class Staff extends Admin_Controller
 
     public function countAttendance($year, $no_of_months, $emp)
     {
+        if (!$this->rbac->hasPrivilege('staff_attendance', 'can_view')) {
+            access_denied();
+        }
         $record = array();
         for ($i = 1; $i <= 1; $i++) {
             $r     = array();
@@ -325,6 +377,9 @@ class Staff extends Admin_Controller
     
     public function download_document($staff_id,$type)
     {
+        if (!$this->rbac->hasPrivilege('staff', 'can_view')) {
+            access_denied();
+        }
         $staff_data=$this->staff_model->getstaff($staff_id);
 
         if($type==1){
@@ -341,6 +396,9 @@ class Staff extends Admin_Controller
 
     public function doc_delete($id, $doc)
     {
+        if (!$this->rbac->hasPrivilege('staff', 'can_delete')) {
+            access_denied();
+        }
         $this->staff_model->doc_delete($id, $doc); 
         $this->session->set_flashdata('msg', '<i class="fa fa-check-square-o" aria-hidden="true"></i> ' . $this->lang->line('document_deleted_successfully'));
         redirect('admin/staff/profile/' . $id);
@@ -348,6 +406,9 @@ class Staff extends Admin_Controller
 
     public function ajax_attendance($id)
     {
+        if (!$this->rbac->hasPrivilege('staff_attendance', 'can_view')) {
+            access_denied();
+        }
         $attendencetypes             = $this->staffattendancemodel->getStaffAttendanceType();
         $data['attendencetypeslist'] = $attendencetypes;
         $year                        = $this->input->post("year");
@@ -386,13 +447,27 @@ class Staff extends Admin_Controller
             $page=$this->load->view("admin/staff/ajaxattendance", $data,true);
             echo json_encode(array('status' => 1, 'page' => $page,'countAttendance'=>$countAttendance));
         } else {
-            echo json_encode(array('status' => 0, 'error' => 'No Record Found','countAttendance'=>$countAttendance));
+            echo json_encode(array('status' => 0, 'error' => $this->lang->line('no_record_found'),'countAttendance'=>$countAttendance));
         }
     }
 
 
+
+    public function validateCanAddNewResource($input, $resource_name)
+    {
+        list($resource_name, $quantity) = explode(',', $resource_name);
+
+        return $this->saasvalidation->validateCanAddNewResource($input, $resource_name, $quantity);
+    }
+
+
+
     public function create()
     {
+		if (!$this->rbac->hasPrivilege('staff', 'can_add')) {
+            access_denied();
+        }
+		
         $image_validate = $this->config->item('image_validate');
         $this->session->set_userdata('top_menu', 'HR');
         $this->session->set_userdata('sub_menu', 'admin/staff');
@@ -421,34 +496,38 @@ class Staff extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[staff][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[staff][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
-		
+
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('role', $this->lang->line('role'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('gender', $this->lang->line('gender'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('dob', $this->lang->line('date_of_birth'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('email', $this->lang->line('email'), array('required', 'valid_email',
+        $this->form_validation->set_rules('email', $this->lang->line('email'), array('required', 'xss_clean', 'valid_email',
             array('check_exists', array($this->staff_model, 'valid_email_id')),
         )
         );
-        $this->form_validation->set_rules('employee_id', $this->lang->line('staff_id'), array('required',
+        $this->form_validation->set_rules('employee_id', $this->lang->line('staff_id'), array('required', 'xss_clean',
             array('check_exists', array($this->staff_model, 'valid_employee_id')),
         )
         );
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload[file]');
+		
+		$this->form_validation->set_rules('validate_resource',  $this->lang->line('staff'),  "callback_validateCanAddNewResource[no_of_staff,1]");
+
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload[file]|callback_validateCanUploadFile[file,first_doc,second_doc,third_doc,fourth_doc]');
         $this->form_validation->set_rules('first_doc', $this->lang->line('document'), 'callback_handle_upload[first_doc]');
         $this->form_validation->set_rules('second_doc', $this->lang->line('document'), 'callback_handle_upload[second_doc]');
         $this->form_validation->set_rules('third_doc', $this->lang->line('document'), 'callback_handle_upload[third_doc]');
-        $this->form_validation->set_rules('fourth_doc', $this->lang->line('document'), 'callback_handle_upload[fourth_doc]');        
+        $this->form_validation->set_rules('fourth_doc', $this->lang->line('document'), 'callback_handle_upload[fourth_doc]');
 
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staff/staffcreate', $data);
             $this->load->view('layout/footer', $data);
         } else {
-
+		  try {
             $custom_field_post  = $this->input->post("custom_fields[staff]");
             $custom_value_array = array();
             if (!empty($custom_fields)) {
@@ -463,63 +542,63 @@ class Staff extends Admin_Controller
                     $custom_value_array[] = $array_custom;
                 }
             }
-            $employee_id    = $this->input->post("employee_id");
-            $department     = $this->input->post("department");
-            $designation    = $this->input->post("designation");
-            $specialist     = $this->input->post("specialist[]");
-            $role           = $this->input->post("role");
-            $name           = $this->input->post("name");
-            $gender         = $this->input->post("gender");
-            $marital_status = $this->input->post("marital_status");
-            $dob            = $this->input->post("dob");
+            $employee_id    = $this->input->post("employee_id", TRUE);
+            $department     = $this->input->post("department", TRUE);
+            $designation    = $this->input->post("designation", TRUE);
+            $specialist     = $this->input->post("specialist[]", TRUE);
+            $role           = $this->input->post("role", TRUE);
+            $name           = $this->input->post("name", TRUE);
+            $gender         = $this->input->post("gender", TRUE);
+            $marital_status = $this->input->post("marital_status", TRUE);
+            $dob            = $this->input->post("dob", TRUE);
             if (!empty($dob)) {
                 $insert_dob = $this->customlib->dateFormatToYYYYMMDD($dob);
             }
-            $contact_no      = $this->input->post("contactno");
-            $emergency_no    = $this->input->post("emgcontactno");
-            $email           = $this->input->post("email");
-            $date_of_joining = $this->input->post("date_of_joining");
+            $contact_no      = $this->input->post("contactno", TRUE);
+            $emergency_no    = $this->input->post("emgcontactno", TRUE);
+            $email           = $this->input->post("email", TRUE);
+            $date_of_joining = $this->input->post("date_of_joining", TRUE);
             if (!empty($date_of_joining)) {
                 $insert_date_of_joining = $this->customlib->dateFormatToYYYYMMDD($date_of_joining);
             } else {
                 $insert_date_of_joining = null;
             }
 
-            $date_of_leaving = $this->input->post("date_of_leaving");
+            $date_of_leaving = $this->input->post("date_of_leaving", TRUE);
             if (!empty($date_of_leaving)) {
                 $insert_date_of_leaving = $this->customlib->dateFormatToYYYYMMDD($date_of_leaving);
             } else {
                 $insert_date_of_leaving = null;
             }
 
-            $address                     = $this->input->post("address");
-            $qualification               = $this->input->post("qualification");
-            $work_exp                    = $this->input->post("work_exp");
-            $basic_salary                = $this->input->post('basic_salary');
-            $account_title               = $this->input->post("account_title");
-            $bank_account_no             = $this->input->post("bank_account_no");
-            $bank_name                   = $this->input->post("bank_name");
-            $ifsc_code                   = $this->input->post("ifsc_code");
-            $bank_branch                 = $this->input->post("bank_branch");
-            $contract_type               = $this->input->post("contract_type");
-            $shift                       = $this->input->post("shift");
-            $location                    = $this->input->post("location");
-            $leave                       = $this->input->post("leave");
-            $facebook                    = $this->input->post("facebook");
-            $twitter                     = $this->input->post("twitter");
-            $linkedin                    = $this->input->post("linkedin");
-            $instagram                   = $this->input->post("instagram");
-            $permanent_address           = $this->input->post("permanent_address");
-            $father_name                 = $this->input->post("father_name");
-            $surname                     = $this->input->post("surname");
-            $mother_name                 = $this->input->post("mother_name");
-            $specialization              = $this->input->post("specialization");
-            $note                        = $this->input->post("note");
-            $epf_no                      = $this->input->post("epf_no");
-            $blood_group                 = $this->input->post("blood_group");
-            $pan_number                  = $this->input->post("pan_number");
-            $identification_number       = $this->input->post("identification_number");
-            $local_identification_number = $this->input->post("local_identification_number");
+            $address                     = $this->input->post("address", TRUE);
+            $qualification               = $this->input->post("qualification", TRUE);
+            $work_exp                    = $this->input->post("work_exp", TRUE);
+            $basic_salary                = $this->input->post('basic_salary', TRUE);
+            $account_title               = $this->input->post("account_title", TRUE);
+            $bank_account_no             = $this->input->post("bank_account_no", TRUE);
+            $bank_name                   = $this->input->post("bank_name", TRUE);
+            $ifsc_code                   = $this->input->post("ifsc_code", TRUE);
+            $bank_branch                 = $this->input->post("bank_branch", TRUE);
+            $contract_type               = $this->input->post("contract_type", TRUE);
+            $shift                       = $this->input->post("shift", TRUE);
+            $location                    = $this->input->post("location", TRUE);
+            $leave                       = $this->input->post("leave", TRUE);
+            $facebook                    = $this->input->post("facebook", TRUE);
+            $twitter                     = $this->input->post("twitter", TRUE);
+            $linkedin                    = $this->input->post("linkedin", TRUE);
+            $instagram                   = $this->input->post("instagram", TRUE);
+            $permanent_address           = $this->input->post("permanent_address", TRUE);
+            $father_name                 = $this->input->post("father_name", TRUE);
+            $surname                     = $this->input->post("surname", TRUE);
+            $mother_name                 = $this->input->post("mother_name", TRUE);
+            $specialization              = $this->input->post("specialization", TRUE);
+            $note                        = $this->input->post("note", TRUE);
+            $epf_no                      = $this->input->post("epf_no", TRUE);
+            $blood_group                 = $this->input->post("blood_group", TRUE);
+            $pan_number                  = $this->input->post("pan_number", TRUE);
+            $identification_number       = $this->input->post("identification_number", TRUE);
+            $local_identification_number = $this->input->post("local_identification_number", TRUE);
 
             $password = $this->role->get_random_password($chars_min = 6, $chars_max = 6, $use_upper_case = false, $include_numbers = true, $include_special_chars = false);
             if (!empty($specialist)) {
@@ -573,19 +652,19 @@ class Staff extends Admin_Controller
                 'local_identification_number' => $local_identification_number,
                 'is_active'                   => 1,
             );
-            $leave_type  = $this->input->post('leave_type');
+            $leave_type  = $this->input->post('leave_type', TRUE);
             $leave_array = array();
             if (!empty($leave_type)) {
                 foreach ($leave_type as $leave_key => $leave_value) {
                     $leave_array[] = array(
                         'staff_id'      => 0,
                         'leave_type_id' => $leave_value,
-                        'alloted_leave' => $this->input->post('alloted_leave_' . $leave_value),
+                        'alloted_leave' => $this->input->post('alloted_leave_' . $leave_value, TRUE),
                     );
                 }
             }
 
-            $role_array = array('role_id' => $this->input->post('role'), 'staff_id' => 0);
+            $role_array = array('role_id' => $this->input->post('role', TRUE), 'staff_id' => 0);
             $insert_id  = $this->staff_model->batchInsert($data_insert, $role_array, $leave_array);
             $staff_id   = $insert_id;  
 
@@ -612,8 +691,8 @@ class Staff extends Admin_Controller
             //new upload file function
             if (isset($_FILES["first_doc"]) && !empty($_FILES['first_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $staff_id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $resume = $this->media_storage->fileupload("first_doc",'./uploads/staff_documents/' . $staff_id . '/');
             }else{
@@ -622,8 +701,8 @@ class Staff extends Admin_Controller
 
             if (isset($_FILES["second_doc"]) && !empty($_FILES['second_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $staff_id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $joining_letter = $this->media_storage->fileupload("second_doc",'./uploads/staff_documents/' . $staff_id . '/');
             }else{
@@ -632,8 +711,8 @@ class Staff extends Admin_Controller
 
             if (isset($_FILES["third_doc"]) && !empty($_FILES['third_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $staff_id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $resignation_letter = $this->media_storage->fileupload("third_doc",'./uploads/staff_documents/' . $staff_id . '/');
             }else{
@@ -642,8 +721,8 @@ class Staff extends Admin_Controller
 
             if (isset($_FILES["fourth_doc"]) && !empty($_FILES['fourth_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $staff_id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $fourth_doc = $this->media_storage->fileupload("fourth_doc",'./uploads/staff_documents/' . $staff_id . '/');
                 $fourth_title = 'Other Doucment';
@@ -657,6 +736,35 @@ class Staff extends Admin_Controller
             $data_doc = array('id' => $staff_id, 'resume' => $resume, 'joining_letter' => $joining_letter, 'resignation_letter' => $resignation_letter, 'other_document_name' => $fourth_title, 'other_document_file' => $fourth_doc);
             $this->staff_model->add($data_doc);
 
+            // SaaS: add the size of every uploaded staff file (profile image + the four
+            // documents) to the storage quota usage in one call. updateStorageLimit sums
+            // $_FILES sizes (which survive move_uploaded_file) across all listed fields and
+            // skips absent ones. This is a pure add — create() always makes a new staff row.
+            try {
+                $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['file', 'first_doc', 'second_doc', 'third_doc', 'fourth_doc']);
+                // Silent-failure capture: updateStorageLimit does not throw on API
+                // rejection — it returns a JSON string with status:false instead.
+                if (is_string($saas_quota_result)) {
+                    $saas_decoded = json_decode($saas_quota_result, true);
+                    if (isset($saas_decoded['status']) && $saas_decoded['status'] === false) {
+                        log_message('error', 'SaaS storage quota update returned failure (staff create): ' . $saas_quota_result);
+                    }
+                }
+            } catch (Exception $e) {
+                log_message('error', 'SaaS storage quota update failed (staff create): ' . $e->getMessage());
+            }
+
+            // SaaS: increment the staff count usage by 1 (count-based resource:
+            // no_of_staff). The pre-check (callback_validateCanAddNewResource[no_of_staff,1])
+            // only blocks when over limit; this is what actually raises the usage so the
+            // limit stays meaningful. Own try/catch so a quota-API hiccup does not abort
+            // the already-created staff's flow (updateResouceQuota throws on failure).
+            try {
+                $this->saasvalidation->updateResouceQuota('no_of_staff', 1);
+            } catch (Exception $e) {
+                log_message('error', 'SaaS no_of_staff quota increment failed (staff create): ' . $e->getMessage());
+            }
+
             //===================
 
             if ($staff_id) {
@@ -668,7 +776,18 @@ class Staff extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('success_message') . '</div>');
 
             redirect('admin/staff');
+			
+			
+			
+			
+			} catch (Exception $e) {
+                // Print the exception message for debugging or logging purposes
+                echo 'Error: ' . $e->getMessage();
+            }
         }
+		
+		
+		
     }
 
     /**
@@ -742,18 +861,18 @@ class Staff extends Admin_Controller
         $data["contract_type"]     = $this->contract_type;
         $staffLeaveDetails         = $this->staff_model->getLeaveDetails($id);
         $data['staffLeaveDetails'] = $staffLeaveDetails;
-        $resume                    = $this->input->post("resume");
-        $joining_letter            = $this->input->post("joining_letter");
-        $resignation_letter        = $this->input->post("resignation_letter");
-        $other_document_name       = $this->input->post("other_document_name");
-        $other_document_file       = $this->input->post("other_document_file");
+        $resume                    = $this->input->post("resume", TRUE);
+        $joining_letter            = $this->input->post("joining_letter", TRUE);
+        $resignation_letter        = $this->input->post("resignation_letter", TRUE);
+        $other_document_name       = $this->input->post("other_document_name", TRUE);
+        $other_document_file       = $this->input->post("other_document_file", TRUE);
         $custom_fields             = $this->customfield_model->getByBelong('staff');
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
 
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[staff][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[staff][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
@@ -761,82 +880,83 @@ class Staff extends Admin_Controller
         $this->form_validation->set_rules('role', $this->lang->line('role'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('gender', $this->lang->line('gender'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('dob', $this->lang->line('date_of_birth'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_image_upload[file]');
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_image_upload[file]|callback_validateCanUploadFile[file,first_doc,second_doc,third_doc,fourth_doc]');
         $this->form_validation->set_rules('first_doc', $this->lang->line('document'), 'callback_handle_upload[first_doc]');
         $this->form_validation->set_rules('second_doc', $this->lang->line('document'), 'callback_handle_upload[second_doc]');
         $this->form_validation->set_rules('third_doc', $this->lang->line('document'), 'callback_handle_upload[third_doc]');
         $this->form_validation->set_rules('fourth_doc', $this->lang->line('document'), 'callback_handle_upload[fourth_doc]');
         $this->form_validation->set_rules(
-            'email', $this->lang->line('email'), array('required', 'valid_email',
+            'email', $this->lang->line('email'), array('required', 'xss_clean', 'valid_email',
                 array('check_exists', array($this->staff_model, 'valid_email_id')),
             )
         );
-        $this->form_validation->set_rules('employee_id', $this->lang->line('staff_id'), array('required',
+        $this->form_validation->set_rules('employee_id', $this->lang->line('staff_id'), array('required', 'xss_clean',
             array('check_exists', array($this->staff_model, 'valid_employee_id')),
         )
         );
 
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'human_resource';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/staff/staffedit', $data);
             $this->load->view('layout/footer', $data);
         } else {
-            $employee_id                 = $this->input->post("employee_id");
-            $department                  = $this->input->post("department");
-            $designation                 = $this->input->post("designation");
-            $specialist                  = $this->input->post("specialist[]");
-            $role                        = $this->input->post("role");
-            $name                        = $this->input->post("name");
-            $gender                      = $this->input->post("gender");
-            $marital_status              = $this->input->post("marital_status");
-            $dob                         = $this->input->post("dob");
-            $contact_no                  = $this->input->post("contactno");
-            $emergency_no                = $this->input->post("emgcontactno");
-            $email                       = $this->input->post("email");
-            $dateofjoining               = $this->input->post("date_of_joining");
-            $pan_number                  = $this->input->post("pan_number");
-            $identification_number       = $this->input->post("identification_number");
-            $local_identification_number = $this->input->post("local_identification_number");
+            $employee_id                 = $this->input->post("employee_id", TRUE);
+            $department                  = $this->input->post("department", TRUE);
+            $designation                 = $this->input->post("designation", TRUE);
+            $specialist                  = $this->input->post("specialist[]", TRUE);
+            $role                        = $this->input->post("role", TRUE);
+            $name                        = $this->input->post("name", TRUE);
+            $gender                      = $this->input->post("gender", TRUE);
+            $marital_status              = $this->input->post("marital_status", TRUE);
+            $dob                         = $this->input->post("dob", TRUE);
+            $contact_no                  = $this->input->post("contactno", TRUE);
+            $emergency_no                = $this->input->post("emgcontactno", TRUE);
+            $email                       = $this->input->post("email", TRUE);
+            $dateofjoining               = $this->input->post("date_of_joining", TRUE);
+            $pan_number                  = $this->input->post("pan_number", TRUE);
+            $identification_number       = $this->input->post("identification_number", TRUE);
+            $local_identification_number = $this->input->post("local_identification_number", TRUE);
 
-            if (!empty($this->input->post("date_of_joining"))) {
+            if (!empty($this->input->post("date_of_joining", TRUE))) {
                 $date_of_joining = $this->customlib->dateFormatToYYYYMMDD($dateofjoining);
             } else {
                 $date_of_joining = null;
             }
 
-            $dateofleaving = $this->input->post("date_of_leaving");
-            if (!empty($this->input->post("date_of_leaving"))) {
+            $dateofleaving = $this->input->post("date_of_leaving", TRUE);
+            if (!empty($this->input->post("date_of_leaving", TRUE))) {
                 $date_of_leaving = $this->customlib->dateFormatToYYYYMMDD($dateofleaving);
             } else {
                 $date_of_leaving = null;
             }
 
-            $address            = $this->input->post("address");
-            $qualification      = $this->input->post("qualification");
-            $work_exp           = $this->input->post("work_exp");
-            $basic_salary       = $this->input->post('basic_salary');
-            $account_title      = $this->input->post("account_title");
-            $bank_account_no    = $this->input->post("bank_account_no");
-            $bank_name          = $this->input->post("bank_name");
-            $ifsc_code          = $this->input->post("ifsc_code");
-            $bank_branch        = $this->input->post("bank_branch");
-            $contract_type      = $this->input->post("contract_type");
-            $shift              = $this->input->post("shift");
-            $location           = $this->input->post("location");
-            $leave              = $this->input->post("leave");
-            $facebook           = $this->input->post("facebook");
-            $twitter            = $this->input->post("twitter");
-            $linkedin           = $this->input->post("linkedin");
-            $instagram          = $this->input->post("instagram");
-            $permanent_address  = $this->input->post("permanent_address");
-            $father_name        = $this->input->post("father_name");
-            $surname            = $this->input->post("surname");
-            $mother_name        = $this->input->post("mother_name");
-            $blood_group        = $this->input->post("blood_group");
-            $note               = $this->input->post("note");
-            $epf_no             = $this->input->post("epf_no");
-            $specialization     = $this->input->post("specialization");
-            $custom_field_post  = $this->input->post("custom_fields[staff]");
+            $address            = $this->input->post("address", TRUE);
+            $qualification      = $this->input->post("qualification", TRUE);
+            $work_exp           = $this->input->post("work_exp", TRUE);
+            $basic_salary       = $this->input->post('basic_salary', TRUE);
+            $account_title      = $this->input->post("account_title", TRUE);
+            $bank_account_no    = $this->input->post("bank_account_no", TRUE);
+            $bank_name          = $this->input->post("bank_name", TRUE);
+            $ifsc_code          = $this->input->post("ifsc_code", TRUE);
+            $bank_branch        = $this->input->post("bank_branch", TRUE);
+            $contract_type      = $this->input->post("contract_type", TRUE);
+            $shift              = $this->input->post("shift", TRUE);
+            $location           = $this->input->post("location", TRUE);
+            $leave              = $this->input->post("leave", TRUE);
+            $facebook           = $this->input->post("facebook", TRUE);
+            $twitter            = $this->input->post("twitter", TRUE);
+            $linkedin           = $this->input->post("linkedin", TRUE);
+            $instagram          = $this->input->post("instagram", TRUE);
+            $permanent_address  = $this->input->post("permanent_address", TRUE);
+            $father_name        = $this->input->post("father_name", TRUE);
+            $surname            = $this->input->post("surname", TRUE);
+            $mother_name        = $this->input->post("mother_name", TRUE);
+            $blood_group        = $this->input->post("blood_group", TRUE);
+            $note               = $this->input->post("note", TRUE);
+            $epf_no             = $this->input->post("epf_no", TRUE);
+            $specialization     = $this->input->post("specialization", TRUE);
+            $custom_field_post  = $this->input->post("custom_fields[staff]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
@@ -851,6 +971,7 @@ class Staff extends Admin_Controller
                 }
                 $this->customfield_model->updateRecord($custom_value_array, $id, 'staff');
             }
+            $specialist_separated = '';
             if(!empty($specialist)){
                 $specialist_separated = implode(",", $specialist);
             }
@@ -900,12 +1021,12 @@ class Staff extends Admin_Controller
             );
 
             $insert_id = $this->staff_model->add($data1);
-            $role_id   = $this->input->post("role");
+            $role_id   = $this->input->post("role", TRUE);
             $role_data = array('staff_id' => $id, 'role_id' => $role_id);
             $this->staff_model->update_role($role_data);
-            $leave_type    = $this->input->post("leave_type_id");
-            $alloted_leave = $this->input->post("alloted_leave");
-            $altid         = $this->input->post("altid");
+            $leave_type    = $this->input->post("leave_type_id", TRUE);
+            $alloted_leave = $this->input->post("alloted_leave", TRUE);
+            $altid         = $this->input->post("altid", TRUE);
 
             if(!empty($leave_type)){
                 $i = 0;
@@ -931,52 +1052,65 @@ class Staff extends Admin_Controller
                 }
             }
 
-            //new upload file function
+			
+			//new upload file function
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_images/';
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
+                }
                 $file_name = $this->media_storage->fileupload("file",'./uploads/staff_images/');
                 $data_img = array('id' => $id, 'image' => $file_name);
                 $this->staff_model->add($data_img);
+                $this->meterStaffFileReplace('file', isset($staff['image']) ? $staff['image'] : '', 'uploads/staff_images');
             }
             //new upload file function
 
             //new upload file function
             if (isset($_FILES["first_doc"]) && !empty($_FILES['first_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $resume_doc = $this->media_storage->fileupload("first_doc",'./uploads/staff_documents/' . $id . '/');
+                $this->meterStaffFileReplace('first_doc', isset($staff['resume']) ? $staff['resume'] : '', 'uploads/staff_documents/' . $id);
             }else{
                 $resume_doc = $resume;
             }
 
             if (isset($_FILES["second_doc"]) && !empty($_FILES['second_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $joining_letter_doc = $this->media_storage->fileupload("second_doc",'./uploads/staff_documents/' . $id . '/');
+                $this->meterStaffFileReplace('second_doc', isset($staff['joining_letter']) ? $staff['joining_letter'] : '', 'uploads/staff_documents/' . $id);
             }else{
-                $resignation_letter_doc = $resignation_letter;
+                $joining_letter_doc = $joining_letter;
             }
 
             if (isset($_FILES["third_doc"]) && !empty($_FILES['third_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $resignation_letter_doc = $this->media_storage->fileupload("third_doc",'./uploads/staff_documents/' . $id . '/');
+                $this->meterStaffFileReplace('third_doc', isset($staff['resignation_letter']) ? $staff['resignation_letter'] : '', 'uploads/staff_documents/' . $id);
             }else{
-                $resignation_letter_doc = "";
+                // Preserve the existing resignation_letter instead of wiping it (the
+                // other three documents already preserve their old value here). Using
+                // the stored DB value keeps the file + its quota intact on a no-upload edit.
+                $resignation_letter_doc = isset($staff['resignation_letter']) ? $staff['resignation_letter'] : "";
             }
 
             if (isset($_FILES["fourth_doc"]) && !empty($_FILES['fourth_doc']['name'])) {
                 $uploaddir = $this->customlib->getFolderPath().'./uploads/staff_documents/' . $id . '/';
-                if (!is_dir($uploaddir) && !mkdir($uploaddir)) {
-                    die("Error creating folder $uploaddir");
+                if (!is_dir($uploaddir) && !mkdir($uploaddir, 0755, true)) {
+                    show_error("Could not create upload directory: $uploaddir");
                 }
                 $fourth_doc = $this->media_storage->fileupload("fourth_doc",'./uploads/staff_documents/' . $id . '/');
                 $fourth_title = 'Other Doucment';
+                $this->meterStaffFileReplace('fourth_doc', isset($staff['other_document_file']) ? $staff['other_document_file'] : '', 'uploads/staff_documents/' . $id);
             }else{
                 $fourth_title = 'Other Document';
                 $fourth_doc   = $other_document_file;
@@ -997,7 +1131,53 @@ class Staff extends Admin_Controller
             access_denied();
         }
         $data['title'] = $this->lang->line('staff_list');
+
+        // SaaS: release the storage quota for every file this staff owns and delete the
+        // physical files BEFORE the row is removed (the record holds the filenames; once
+        // removed they are gone). Mirrors ss720dev. Each release sits in its own try/catch
+        // so a quota-API hiccup never blocks the delete, and getUploadedFileSize/filedelete
+        // no-op safely when a file is missing — so existing delete behavior is preserved.
+        $staff = $this->staff_model->get($id);
+        if (!empty($staff)) {
+            // Profile image lives in uploads/staff_images; the documents in
+            // uploads/staff_documents/<id>. other_document_name is a title, not a file, so
+            // it is intentionally excluded from the release map.
+            $release_map = array(
+                'image'               => 'uploads/staff_images',
+                'resume'              => 'uploads/staff_documents/' . $id,
+                'joining_letter'      => 'uploads/staff_documents/' . $id,
+                'resignation_letter'  => 'uploads/staff_documents/' . $id,
+                'other_document_file' => 'uploads/staff_documents/' . $id,
+            );
+
+            foreach ($release_map as $column => $dir) {
+                if (!empty($staff[$column])) {
+                    // Read size before unlinking the file.
+                    $kb = $this->media_storage->getUploadedFileSize($staff[$column], $dir);
+                    if ($kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (staff delete ' . $column . '): ' . $e->getMessage());
+                        }
+                    }
+                    $this->media_storage->filedelete($staff[$column], $dir);
+                }
+            }
+        }
+
         $this->staff_model->remove($id);
+
+        // SaaS: decrement the staff count usage by 1 (count-based resource: no_of_staff),
+        // mirroring the +1 increment done on create — so the API usage tracks the actual
+        // staff count. deleteResouceQuota throws on failure; own try/catch keeps the
+        // delete flow intact if the quota API is momentarily unavailable.
+        try {
+            $this->saasvalidation->deleteResouceQuota('no_of_staff', 1);
+        } catch (Exception $e) {
+            log_message('error', 'SaaS no_of_staff quota decrement failed (staff delete): ' . $e->getMessage());
+        }
+
         $this->session->set_flashdata('message', $this->lang->line('delete_message'));
         redirect('admin/staff');
     }
@@ -1022,6 +1202,9 @@ class Staff extends Admin_Controller
 
     public function enablestaff($id)
     {
+		if (!$this->rbac->hasPrivilege('disable_staff', 'can_view')) {
+            access_denied();
+        }
         $this->staff_model->enablestaff($id);
         $staff_details = $this->notificationsetting_model->getstaffDetails($id);
         $event_data = array(
@@ -1037,15 +1220,22 @@ class Staff extends Admin_Controller
 
     public function staffLeaveSummary()
     {
+        if (!$this->rbac->hasPrivilege('apply_leave', 'can_view')) {
+            access_denied();
+        }
         $resultdata         = $this->staff_model->getLeaveSummary();
         $data["resultdata"] = $resultdata;
-        $this->load->view("layout/header");
+        $data['module'] = 'human_resource';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/staff/staff_leave_summary", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function getEmployeeByRole()
     {
+        if (!$this->rbac->hasPrivilege('staff', 'can_view')) {
+            access_denied();
+        }
         $role = $this->input->post("role");
         $data = $this->staff_model->getEmployee($role);
         echo json_encode($data);
@@ -1061,6 +1251,9 @@ class Staff extends Admin_Controller
 
     public function permission($id)
     {
+        if (!$this->rbac->hasPrivilege('users', 'can_edit')) {
+            access_denied();
+        }
         $data['title']          = $this->lang->line('add_role');
         $data['id']             = $id;
         $staff                  = $this->staff_model->get($id);
@@ -1091,9 +1284,10 @@ class Staff extends Admin_Controller
             redirect('admin/staff');
         }
 
-        $this->load->view('layout/header');
+        $data['module'] = 'human_resource';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/staff/permission', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function leaverequest()
@@ -1112,6 +1306,7 @@ class Staff extends Admin_Controller
         $data["staffrole"] = $staffRole;
         $data["status"]    = $this->status;
 		
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/staff/leaverequest", $data);
         $this->load->view("layout/footer", $data);
@@ -1119,6 +1314,9 @@ class Staff extends Admin_Controller
 
     public function getleaveapplyDatatable()
     {
+        if (!$this->rbac->hasPrivilege('apply_leave', 'can_view')) {
+            access_denied();
+        }
 		$superadmin_restriction      = $this->sch_setting_detail->superadmin_restriction;
 		
         $userdata    = $this->customlib->getUserData();
@@ -1153,11 +1351,11 @@ class Staff extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $action = "<a href='#leavedetails' onclick='getRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip'  role='button' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder'></i></a>";
+                $action = "<a href='#leavedetails' onclick='getRecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  role='button' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder'></i></a>";
 
                 if ($this->rbac->hasPrivilege('apply_leave', 'can_delete')) {
                     if ($value->status != "approve") {
-                        $action .= "<a href='#leavedetails' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                        $action .= "<a href='#leavedetails' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     }
                 }
                 $leave_date = date($this->customlib->YYYYMMDDTodateFormat($value->leave_from)) . ' - ' . date($this->customlib->YYYYMMDDTodateFormat($value->leave_to));
@@ -1236,7 +1434,10 @@ class Staff extends Admin_Controller
     }
 
     public function import()
-    {  
+    {
+        if (!$this->rbac->hasPrivilege('staff', 'can_add')) {
+            access_denied();
+        }
         $data['field'] = array(
             "staff_id"                 => "staff_id",
             "first_name"               => "first_name",
@@ -1264,9 +1465,10 @@ class Staff extends Admin_Controller
         $data["department"]  = $department;
 
         $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_handle_csv_upload');
-        $this->form_validation->set_rules('role', $this->lang->line('role'), 'required');
+        $this->form_validation->set_rules('role', $this->lang->line('role'), 'required|xss_clean');
 
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'human_resource';
             $this->load->view("layout/header", $data);
             $this->load->view("admin/staff/import/import", $data);
             $this->load->view("layout/footer", $data);

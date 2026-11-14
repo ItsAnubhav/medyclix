@@ -2,17 +2,14 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('ipd_discharged_patient'); ?></h3>
-                        <div class="box-tools pull-right"></div>    
-                    </div><!-- /.box-header -->
-                        <div class="box-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"> <?php echo $this->lang->line('ipd_discharged_patient'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end"></div>    
+                    </div><!-- /.card-header -->
+                        <div class="card-body">
                             <div class="download_label"> <?php echo $this->lang->line('ipd_discharged_patient'); ?></div>
                             <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('ipd_discharged_patient'); ?>">
                                 <thead>
@@ -26,9 +23,9 @@ $genderList = $this->customlib->getGender();
                                         <th><?php echo $this->lang->line('consultant_doctor') ?></th>
                                         <th><?php echo $this->lang->line('admission_date'); ?></th>
                                         <th><?php echo $this->lang->line('discharged_date'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")" ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")" ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")" ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")" ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")" ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")" ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -37,9 +34,7 @@ $genderList = $this->customlib->getGender();
                         </div>
                 </div>  
             </div>
-        </div> 
-    </section>
-</div>
+        </div>
 <script type="text/javascript">
     $(function () {
         //Initialize Select2 Elements

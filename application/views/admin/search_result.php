@@ -4,31 +4,28 @@ $genderList = $this->customlib->getGender();
 $marital_status = $this->config->item('marital_status');
 $bloodgroup = $this->config->item('bloodgroup');
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-info">
-                    <div class="box-header ptbnull">
-                            <h3 class="box-title titlefix"> <?php echo form_error('Opd'); ?> 
+                <div class="card">
+                    <div class="card-header ptbnull">
+                            <h3 class="card-title titlefix"> <?php echo form_error('Opd'); ?> 
                                 <?php
                                 echo $this->lang->line('patient_list');
                                 ?>
                             </h3>                        
-                        <div class="box-tools pull-right">
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                                <a data-toggle="modal" onclick="holdModal('myModalpa')" id="addp" class="btn btn-primary btn-sm newpatient"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_new_patient'); ?></a> 
+                                <a data-bs-toggle="modal" onclick="holdModal('myModalpa')" id="addp" class="btn btn-primary btn-sm newpatient"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_new_patient'); ?></a> 
                                 <?php
                             }
                             if ($this->rbac->hasPrivilege('patient_import', 'can_view')) {
                                 ?>
-                                <a data-toggle="" href="<?php echo base_url() ?>admin/patient/import" id="addp" class="btn btn-primary btn-sm"><i class="fa fa-upload"></i>  <?php echo $this->lang->line('import_patient'); ?></a> 
+                                <a data-bs-toggle="" href="<?php echo base_url() ?>admin/patient/import" id="addp" class="btn btn-primary btn-sm"><i class="fa fa-upload"></i>  <?php echo $this->lang->line('import_patient'); ?></a> 
                             <?php } ?>
                             <a  href="<?php echo base_url() ?>admin/admin/disablepatient" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('disabled_patient_list'); ?></a> 
                         </div>     
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('patient') . " " . $this->lang->line('list'); ?></div>
                         <table class="table table-striped table-bordered table-hover example"  >
                             <thead>
@@ -74,7 +71,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                                             <tr>
                                                 <td><?php echo $report['id']; ?></td>
                                                 <td>
-                                                    <a href="#" data-toggle="modal"  onclick="getpatientData('<?php echo $report['id'] ?>')" data-target="" class="" title="" ><?php echo $report['patient_name'] ?>
+                                                    <a href="#" data-bs-toggle="modal"  onclick="getpatientData('<?php echo $report['id'] ?>')" data-bs-target="" class="" title="" ><?php echo $report['patient_name'] ?>
                                                     </a>
                                                 </td>
                                                 <td><?php echo $age . " " . $month; ?></td>
@@ -100,13 +97,13 @@ $bloodgroup = $this->config->item('bloodgroup');
                                                 }
                                                 ?>
                                                 <td class="">
-                                                    <a href="#" data-toggle="modal"  onclick="getpatientData('<?php echo $report['id'] ?>')" data-target="" class="btn btn-default btn-xs" 
+                                                    <a href="#" data-bs-toggle="modal"  onclick="getpatientData('<?php echo $report['id'] ?>')" data-bs-target="" class="btn btn-secondary btn-sm" 
                                                        title="<?php echo $this->lang->line('show'); ?>" >
                                                         <i class="fa fa-reorder"></i>
                                                     </a>                                                   
                                                     <div class="btn-group">
                                                         <?php if (!empty($report['info'])) { ?>
-                                                            <a href="#" class="btn btn-default btn-xs" data-toggle="dropdown">
+                                                            <a href="#" class="btn btn-secondary btn-sm" data-bs-toggle="dropdown">
                                                                 <i class="fa fa-ellipsis-v"></i>
                                                             </a>
                                                             <ul class="dropdown-menu dropdown-menu2" role="menu">
@@ -135,31 +132,29 @@ $bloodgroup = $this->config->item('bloodgroup');
                 </div>
             </div>  
         </div>
-    </section>
-</div>
 
 <div class="modal fade" id="myModal"  role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content modal-media-content">
             <div class="modal-header modal-media-header">
-                <button type="button" class="close pt4" data-toggle="tooltip" title="<?php echo $this->lang->line('close'); ?>" data-dismiss="modal">&times;</button>
+                <button type="button" class="close pt4" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('close'); ?>" data-bs-dismiss="modal" aria-label="Close"></button>
                 <div class="modalicon"> 
                     <div id='edit_delete' class="pt4">
                         <?php if ($this->rbac->hasPrivilege('revisit', 'can_edit')) { ?>
-                            <a href="#"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ><i class="fa fa-pencil"></i></a>
+                            <a href="#"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ><i class="fa fa-pencil"></i></a>
                             <?php
                         }
                         if ($this->rbac->hasPrivilege('revisit', 'can_delete')) {
                             ?>
-                            <a href="#" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
+                            <a href="#" data-bs-toggle="tooltip" title="" title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
                         <?php } ?>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-4 col-xs-3">
+                    <div class="col-sm-4 col-3">
                         <div class="form-group15">
                             <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                                <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a> 
+                                <a data-bs-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a> 
 
                             <?php } ?> 
                         </div>
@@ -174,44 +169,44 @@ $bloodgroup = $this->config->item('bloodgroup');
                             <div class="row row-eq">
                                 <div class="col-lg-12 col-md-12 col-sm-12">
                                     <div class="row ptt10">
-                                        <div class="col-md-9 col-sm-9 col-xs-9" id="Myinfo">
+                                        <div class="col-md-9 col-sm-9 col-9" id="Myinfo">
                                             <ul class="singlelist">
                                                 <li class="singlelist24bold">
                                                     <span id="patient_name"></span></li>
                                                 <li>
-                                                    <i class="fas fa-user-secret" data-toggle="tooltip" data-placement="top" title="Patient"></i>
+                                                    <i class="fas fa-user-secret" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('patient') ?>"></i>
                                                     <span id="guardian"></span>
                                                 </li>
                                             </ul>   
                                             <ul class="multilinelist">   
                                                 <li>
-                                                    <i class="fas fa-venus-mars" data-toggle="tooltip" data-placement="top" title="Gender"></i>
+                                                    <i class="fas fa-venus-mars" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('gender') ?>"></i>
                                                     <span id="genders" ></span>
                                                 </li>
                                                 <li>
-                                                    <i class="fas fa-tint" data-toggle="tooltip" data-placement="top" title="Blood Group"></i>
+                                                    <i class="fas fa-tint" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('blood_group') ?>"></i>
                                                     <span id="blood_group"></span>
                                                 </li>
                                                 <li>
-                                                    <i class="fas fa-ring" data-toggle="tooltip" data-placement="top" title="Marital Status"></i>
+                                                    <i class="fas fa-ring" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('marital_status') ?>"></i>
                                                     <span id="marital_status"></span>
                                                 </li> 
                                             </ul>  
                                             <ul class="singlelist">  
                                                 <li>
-                                                    <i class="fas fa-hourglass-half" data-toggle="tooltip" data-placement="top" title="Age"></i>
+                                                    <i class="fas fa-hourglass-half" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('age') ?>"></i>
                                                     <span id="age"></span>
                                                 </li>  
                                                 <li>
-                                                    <i class="fa fa-phone-square" data-toggle="tooltip" data-placement="top" title="Phone"></i> 
+                                                    <i class="fa fa-phone-square" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('phone') ?>"></i> 
                                                     <span id="contact"></span>
                                                 </li>
                                                 <li>
-                                                    <i class="fa fa-envelope" data-toggle="tooltip" data-placement="top" title="Email"></i>
+                                                    <i class="fa fa-envelope" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('email') ?>"></i>
                                                     <span id="email"></span>
                                                 </li>
                                                 <li>
-                                                    <i class="fas fa-street-view" data-toggle="tooltip" data-placement="top" title="Address"></i>
+                                                    <i class="fas fa-street-view" data-bs-toggle="tooltip" data-placement="top" title="<?= $this->lang->line('address') ?>"></i>
                                                     <span id="address" ></span>
                                                 </li>
                                                 <li>
@@ -236,10 +231,10 @@ $bloodgroup = $this->config->item('bloodgroup');
                                                 </li>    
                                             </ul>                               
                                         </div><!-- ./col-md-9 -->
-                                        <div class="col-md-3 col-sm-3 col-xs-3"> 
-                                            <div class="pull-right">  
+                                        <div class="col-md-3 col-sm-3 col-3"> 
+                                            <div class="float-end">  
                                                 <?php $file = "uploads/patient_images/no_image.png"; ?>        
-                                                <img class="profile-user-img img-responsive" src="<?php echo $this->media_storage->getImageURL($file) ?>" id="image" alt="User profile picture">
+                                                <img class="profile-user-img img-fluid" src="<?php echo $this->media_storage->getImageURL($file) ?>" id="image" alt="User profile picture">
                                             </div>           
                                         </div><!-- ./col-md-3 --> 
                                     </div>
@@ -257,8 +252,8 @@ $bloodgroup = $this->config->item('bloodgroup');
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content modal-media-content">
             <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"> <?php echo $this->lang->line('patient_details'); ?></h4> 
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h4 class="card-title"> <?php echo $this->lang->line('patient_details'); ?></h4> 
             </div><!--./modal-header-->
             <div class="modal-body pt0 pb0">
                 <div class="row">
@@ -269,14 +264,14 @@ $bloodgroup = $this->config->item('bloodgroup');
                                 <div class="col-lg-12 col-md-12 col-sm-12">
                                     <div class="row ptt10">
                                         <div class="col-md-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small> 
                                                 <input id="ename" name="name" placeholder="" type="text" class="form-control"  value="<?php echo set_value('name'); ?>" />
                                                 <span class="text-danger"><?php echo form_error('name'); ?></span>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('guardian_name') ?></label>
                                                 <input type="text" name="guardian_name"  id="eguardian_name"placeholder="" value="" class="form-control">
                                             </div>
@@ -284,7 +279,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                                         <div class="col-md-6 col-sm-12">  
                                             <div class="row">  
                                                 <div class="col-sm-3">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label> <?php echo $this->lang->line('gender'); ?></label>
                                                         <select class="form-control" name="gender" id="egenders">
                                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -299,17 +294,17 @@ $bloodgroup = $this->config->item('bloodgroup');
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label for="dob"><?php echo $this->lang->line('date_of_birth'); ?></label> 
                                                         <input type="text" name="dob" id="ebirth_date" placeholder="" class="form-control date" /><?php echo set_value('dob'); ?>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-5" id="calculate">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label><?php echo $this->lang->line('age') ?></label>
-                                                        <div style="clear: both;overflow: hidden;">
-                                                            <input type="text" placeholder="<?php echo $this->lang->line('year') ?>" name="age" id="eage_year" value="" class="form-control" style="width: 43%; float: left;">
-                                                            <input type="text" id="eage_month" placeholder="<?php echo $this->lang->line('month') ?>" name="month" value="" class="form-control" style="width: 53%;float: left; margin-left: 4px;">
+                                                        <div class="sh-clear">
+                                                            <input type="text" placeholder="<?php echo $this->lang->line('year') ?>" name="age" id="eage_year" value="" class="form-control sh-print-left-40" >
+                                                            <input type="text" id="eage_month" placeholder="<?php echo $this->lang->line('month') ?>" name="month" value="" class="form-control sh-print-left-56" >
                                                         </div>
                                                     </div>
                                                 </div> 
@@ -318,7 +313,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                                         <div class="col-md-6 col-sm-12"> 
                                             <div class="row"> 
                                                 <div class="col-md-3">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label> <?php echo $this->lang->line('blood_group'); ?></label>
                                                         <select class="form-control" id="blood_groups" name="blood_group">
                                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -334,7 +329,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-3">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label for="pwd"><?php echo $this->lang->line('marital_status'); ?></label>
                                                         <select name="marital_status" id="marital_statuss" class="form-control">
                                                             <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -346,7 +341,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
-                                                    <div class="form-group">
+                                                    <div class="mb-3">
                                                         <label for="exampleInputFile">
                                                             <?php echo $this->lang->line('patient_photo'); ?>
                                                         </label>
@@ -359,43 +354,43 @@ $bloodgroup = $this->config->item('bloodgroup');
                                             </div> 
                                         </div><!--./col-md-6--> 
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="pwd"><?php echo $this->lang->line('phone'); ?></label>
                                                 <input id="emobileno" autocomplete="off" name="contact"  type="text" placeholder="" class="form-control"  value="<?php echo set_value('mobileno'); ?>" />
                                             </div>
                                         </div> 
                                         <div class="col-sm-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('email'); ?></label>
                                                 <input type="text" placeholder="" id="eemail" value="<?php echo set_value('email'); ?>" name="email" class="form-control">
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="address"><?php echo $this->lang->line('address'); ?></label> 
                                                 <input name="address" id="eaddress" placeholder="" class="form-control" /><?php echo set_value('address'); ?>
                                             </div> 
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="pwd"><?php echo $this->lang->line('remarks'); ?></label> 
                                                 <textarea name="note" id="enote" class="form-control" ><?php echo set_value('note'); ?></textarea>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="email"><?php echo $this->lang->line('any_known_allergies'); ?></label> 
                                                 <textarea name="known_allergies" id="eknown_allergies" placeholder="" class="form-control" ><?php echo set_value('address'); ?></textarea>
                                             </div> 
                                         </div>  
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="insurance_id"><?php echo $this->lang->line('insurance_id'); ?></label> 
                                                 <input name="insurance_id" placeholder="" class="form-control" /><?php echo set_value('insurance_id'); ?>
                                             </div> 
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="validity"><?php echo $this->lang->line('validity'); ?></label> 
                                                 <input name="validity" placeholder="" class="form-control date" /><?php echo set_value('validity'); ?>
                                             </div> 
@@ -407,9 +402,9 @@ $bloodgroup = $this->config->item('bloodgroup');
                                 </div><!--./col-md-8--> 
                             </div><!--./row--> 
                             <div class="row">            
-                                <div class="box-footer">
-                                    <div class="pull-right">
-                                        <button type="submit" id="formeditpabtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                                <div class="card-footer">
+                                    <div class="float-end">
+                                        <button type="submit" id="formeditpabtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                                     </div>
                                 </div>
                             </div><!--./row-->  
@@ -433,11 +428,7 @@ $bloodgroup = $this->config->item('bloodgroup');
     }
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }
 
     function capitalizeFirstLetter(string) {
@@ -452,9 +443,9 @@ $bloodgroup = $this->config->item('bloodgroup');
             dataType: 'json',
             success: function (data) {
                 if (data.is_active == 'yes') {
-                    var link = "<?php if ($this->rbac->hasPrivilege('enabled_disabled', 'can_view')) { ?><a href='#' data-toggle='tooltip'  onclick='patient_deactive(" + id + ")' data-original-title='<?php echo $this->lang->line('disable'); ?>'><i class='fa fa-thumbs-o-down'></i></a><?php } ?>";
+                    var link = "<?php if ($this->rbac->hasPrivilege('enabled_disabled', 'can_view')) { ?><a href='#' data-bs-toggle='tooltip'  onclick='patient_deactive(" + id + ")' title='<?php echo $this->lang->line('disable'); ?>'><i class='fa fa-thumbs-o-down'></i></a><?php } ?>";
                 } else {
-                    var link = "<?php if ($this->rbac->hasPrivilege('enabled_disabled', 'can_view')) { ?><a href='#' data-toggle='tooltip'  onclick='patient_active(" + id + ")' data-original-title='<?php echo $this->lang->line('enable'); ?>'><i class='fa fa-thumbs-o-up'></i></a> <?php } if ($this->rbac->hasPrivilege('patient', 'can_delete')) { ?><a href='#' data-toggle='tooltip'  onclick='delete_record(" + id + ")' data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a> <?php } ?>";
+                    var link = "<?php if ($this->rbac->hasPrivilege('enabled_disabled', 'can_view')) { ?><a href='#' data-bs-toggle='tooltip'  onclick='patient_active(" + id + ")' title='<?php echo $this->lang->line('enable'); ?>'><i class='fa fa-thumbs-o-up'></i></a> <?php } if ($this->rbac->hasPrivilege('patient', 'can_delete')) { ?><a href='#' data-bs-toggle='tooltip'  onclick='delete_record(" + id + ")' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a> <?php } ?>";
                 }
                 var table_html = '';
                 $.each(data.field_data, function (i, obj)
@@ -507,7 +498,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                 $("#validity").html(data.insurance_validity);
                 $("#note").html(data.note);
                 $("#image").attr("src", '<?php echo base_url() ?>' + data.image);
-                $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('patient', 'can_edit')) { ?><a href='#' onclick='editRecord(" + id + ")' data-toggle='tooltip' title='<?php echo $this->lang->line('edit'); ?>' data-target='' data-toggle='modal'  data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } ?> " + link + "");
+                $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('patient', 'can_edit')) { ?><a href='#' onclick='editRecord(" + id + ")' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('edit'); ?>' data-bs-target='' data-bs-toggle='modal'  title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } ?> " + link + "");
                 holdModal('myModal');
             },
         });
@@ -539,7 +530,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                 $('select[id="marital_statuss"] option[value="' + data.marital_status + '"]').attr("selected", "selected");
                 $("#insurance_id").val(data.insurance_id);
                 $("#insurance_validity").val(data.insurance_validity);
-                $("#myModal").modal('hide');
+                shModal('myModal').hide();
                 holdModal('editModal');
             },
         });
@@ -547,7 +538,7 @@ $bloodgroup = $this->config->item('bloodgroup');
 
     $(document).ready(function (e) {
         $("#formeditpa").on('submit', (function (e) {
-            $("#formeditpabtn").button('loading');
+            $("#formeditpabtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/patient/update',
@@ -568,7 +559,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formeditpabtn").button('reset');
+                    $("#formeditpabtn").btnReset();
                 },
                 error: function () {
                 }
@@ -599,7 +590,7 @@ $bloodgroup = $this->config->item('bloodgroup');
                 data: {id: id},
                 dataType: 'json',
                 success: function (data) {
-                    successMsg(<?php echo "'" . $this->lang->line('deactive_message') . "'"; ?>);                    
+                    successMsg(<?php echo "'" . $this->lang->line('record_deactivate') . "'"; ?>);                    
                     window.getpatientData(id);
                 }
             })
@@ -649,7 +640,7 @@ $bloodgroup = $this->config->item('bloodgroup');
     });
 
     function patient_active(id) {
-        if (confirm(<?php echo "'" . $this->lang->line('are_you_sure_active_account') . "'"; ?>)) {
+        if (confirm(<?php echo "'" . $this->lang->line('are_you_sure_to_active_account') . "'"; ?>)) {
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/patient/activePatient',
                 type: "POST",

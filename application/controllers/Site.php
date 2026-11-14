@@ -20,6 +20,7 @@ class Site extends Public_Controller
         $this->load->config('ci-blog');
         $this->load->library('captchalib');
 		$this->load->library('module_lib');
+        $this->load->library('mailgateway');
         $this->mailer;
     }
 
@@ -60,8 +61,9 @@ class Site extends Public_Controller
         $data["is_captcha"] = $is_captcha;
         $setting_result        = $this->setting_model->get();
         $data['sch_name']=$setting_result[0]['name'];
+        $data['sh_variant'] = in_array($setting_result[0]['theme'], ['a','b','c']) ? $setting_result[0]['theme'] : 'a';
         if ($is_captcha) {
-            $this->form_validation->set_rules('captcha', 'Captcha', 'trim|required|callback_check_captcha');
+            $this->form_validation->set_rules('captcha', $this->lang->line('captcha'), 'trim|required|callback_check_captcha');
         }
         $this->form_validation->set_rules('username', $this->lang->line('username'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('password', $this->lang->line('password'), 'trim|required|xss_clean');
@@ -79,7 +81,10 @@ class Site extends Public_Controller
 
             
             $result                = $this->staff_model->checkLogin($login_post);
-            $data['captcha_image'] = $this->captchalib->generate_captcha()['image'];
+            if ($is_captcha) {
+                $captcha_data          = $this->captchalib->generate_captcha();
+                $data['captcha_image'] = is_array($captcha_data) ? $captcha_data['image'] : '';
+            }
 
             if (!empty($result->language_id)) {
                 $lang_array = array('lang_id' => $result->language_id, 'language' => $result->language);               
@@ -118,14 +123,17 @@ class Site extends Public_Controller
                         'doctor_restriction'     => $setting_result[0]['doctor_restriction'],
                         'superadmin_restriction' => $setting_result[0]['superadmin_restriction'],
                         'theme'                  => $setting_result[0]['theme'],
+                        'sh_variant'             => (isset($result->sh_variant) && in_array($result->sh_variant, ['a','b','c'])) ? $result->sh_variant : (in_array($setting_result[0]['theme'], ['a','b','c']) ? $setting_result[0]['theme'] : 'a'),
                         'base_url'              => 	$setting_result[0]['base_url'],
                         'folder_path'            => $setting_result[0]['folder_path'],
                         'time_format'            => $check_time_format,
                         'prefix'                 => $prefix_array,
+                        'message_mode'           => isset($setting_result[0]['message_mode']) ? (int)$setting_result[0]['message_mode'] : 0,
                         'db_array'               => ['base_url'               => $setting_result[0]['base_url'],
                              'folder_path'            => $setting_result[0]['folder_path'],
                              'db_group'=>'default'
                             ],
+                        'saas_key'               => isset($setting_result[0]['saas_key']) ? $setting_result[0]['saas_key'] : '',
                     );
 
                     $this->session->set_userdata('hospitaladmin', $session_data);
@@ -166,9 +174,17 @@ class Site extends Public_Controller
     public function forgotpassword()
     {
         $this->form_validation->set_rules('email', $this->lang->line('email'), 'trim|valid_email|required|xss_clean');
+        $_fp_setting = $this->setting_model->get();
+        $_fp_variant = (isset($_fp_setting[0]['theme']) && in_array($_fp_setting[0]['theme'], ['a','b','c'])) ? $_fp_setting[0]['theme'] : 'a';
+
+        $notice_content   = $this->config->item('ci_front_notice_content');
+        $data             = array();
+        $data['sh_variant'] = $_fp_variant;
+        $data['sch_name'] = $_fp_setting[0]['name'];
+        $data['notice']   = $this->cms_program_model->getByCategory($notice_content, array('start' => 0, 'limit' => 5));
 
         if ($this->form_validation->run() == false) {
-            $this->load->view('admin/forgotpassword');
+            $this->load->view('admin/forgotpassword', $data);
         } else {
             $email  = $this->input->post('email');
             $result = $this->staff_model->getByEmail($email);
@@ -185,14 +201,12 @@ class Site extends Public_Controller
                 $body           = $this->forgotPasswordBody($usertype, $sender_details, $resetPassLink, $chk_mail_sms['template']);
 
                 if ($chk_mail_sms['mail']) {
-                    $result_new = $this->mailer->send_mail($result->email, $chk_mail_sms['subject'], $body);
+                    $this->mailgateway->sentMail('forgot_password', $result->email, $chk_mail_sms['subject'], $body);
                 }
                 $this->session->set_flashdata('message', $this->lang->line('recover_message'));
                 redirect('site/login', 'refresh');
             } else {
-                $data = array(
-                    'error_message' => $this->lang->line('invalid_email'),
-                );
+                $data['error_message'] = $this->lang->line('invalid_email');
             }
             $this->load->view('admin/forgotpassword', $data);
         }
@@ -288,8 +302,17 @@ class Site extends Public_Controller
     {
         $this->form_validation->set_rules('username', $this->lang->line('email'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('user', $this->lang->line('user_type'), 'trim|required|xss_clean');
+        $_uf_setting = $this->setting_model->get();
+        $_uf_variant = (isset($_uf_setting[0]['theme']) && in_array($_uf_setting[0]['theme'], ['a','b','c'])) ? $_uf_setting[0]['theme'] : 'a';
+
+        $notice_content   = $this->config->item('ci_front_notice_content');
+        $data             = array();
+        $data['sh_variant'] = $_uf_variant;
+        $data['name']     = $_uf_setting[0]['name'];
+        $data['notice']   = $this->cms_program_model->getByCategory($notice_content, array('start' => 0, 'limit' => 5));
+
         if ($this->form_validation->run() == false) {
-            $this->load->view('ufpassword');
+            $this->load->view('ufpassword', $data);
         } else {
             $email    = $this->input->post('username');
             $usertype = $this->input->post('user');
@@ -311,14 +334,12 @@ class Site extends Public_Controller
                 $body           = $this->forgotPasswordBody($usertype, $sender_details, $resetPassLink, $chk_mail_sms['template']);
 
                 if ($chk_mail_sms['mail']) {
-                    $result = $this->mailer->send_mail($result->email, $chk_mail_sms['subject'], $body);
+                    $this->mailgateway->sentMail('forgot_password', $result->email, $chk_mail_sms['subject'], $body,1);
                 }
                 $this->session->set_flashdata('message', $this->lang->line('recover_message'));
                 redirect('site/userlogin', 'refresh');
             } else {
-                $data = array(
-                    'error_message' => $this->lang->line('invalid_user_email'),
-                );
+                $data['error_message'] = $this->lang->line('invalid_user_email');
             }
             $this->load->view('ufpassword', $data);
         }
@@ -356,10 +377,40 @@ class Site extends Public_Controller
         echo json_encode($array);
     }
 
+    public function save_variant()
+    {
+        $variant = $this->input->post('variant', TRUE);
+        if (!in_array($variant, ['a', 'b', 'c'])) {
+            echo json_encode(['status' => 'fail', 'error' => $this->lang->line('invalid_variant'), 'message' => '']);
+            return;
+        }
+
+        $admin   = $this->session->userdata('hospitaladmin');
+        $patient = $this->session->userdata('patient');
+
+        if ($admin) {
+            $staff_id = isset($admin['id']) ? (int)$admin['id'] : 0;
+            if ($staff_id) {
+                $this->db->where('id', $staff_id)->update('staff', ['sh_variant' => $variant]);
+            }
+            $admin['sh_variant'] = $variant;
+            $this->session->set_userdata('hospitaladmin', $admin);
+        } elseif ($patient) {
+            $patient_id = isset($patient['patient_id']) ? (int)$patient['patient_id'] : 0;
+            if ($patient_id) {
+                $this->db->where('id', $patient_id)->update('patients', ['sh_variant' => $variant]);
+            }
+            $patient['sh_variant'] = $variant;
+            $this->session->set_userdata('patient', $patient);
+        }
+
+        echo json_encode(['status' => 'success', 'error' => '', 'message' => '']);
+    }
+
     public function getdoctor()
     {
-        $spec_id       = $this->input->post('id');
-        $active        = $this->input->post('active');
+        $spec_id       = $this->input->post('id', TRUE);
+        $active        = $this->input->post('active', TRUE);
         $result        = $this->staff_model->getdoctorbyspecilist($spec_id);
         $doctors_array = array();
         foreach ($result as $doctor) {
@@ -396,19 +447,20 @@ class Site extends Public_Controller
         $notice_content = $this->config->item('ci_front_notice_content');
         $notices        = $this->cms_program_model->getByCategory($notice_content, array('start' => 0, 'limit' => 5));
         $data['name'] = $setting_result[0]['name'];
-
+        $data['sh_variant'] = in_array($setting_result[0]['theme'], ['a','b','c']) ? $setting_result[0]['theme'] : 'a';
         $data['notice'] = $notices;
         $is_captcha         = $this->captchalib->is_captcha('userlogin');
         $data["is_captcha"] = $is_captcha;
         if ($is_captcha) {
-            $this->form_validation->set_rules('captcha', 'Captcha', 'trim|required|callback_check_captcha');
+            $this->form_validation->set_rules('captcha', $this->lang->line('captcha'), 'trim|required|callback_check_captcha');
         }
 
         $this->form_validation->set_rules('username', $this->lang->line('username'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('password', $this->lang->line('password'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             if($is_captcha){
-                $data['captcha_image'] = $this->captchalib->generate_captcha()['image'];
+                $captcha = $this->captchalib->generate_captcha();
+                $data['captcha_image'] = $captcha ? $captcha['image'] : '';
             }
             $this->load->view('userlogin', $data);
         } else {
@@ -419,7 +471,10 @@ class Site extends Public_Controller
             $login_details         = $this->user_model->checkLogin($login_post);
             
 
-            $data['captcha_image'] = $this->captchalib->generate_captcha()['image'];
+            if ($is_captcha) {
+                $captcha = $this->captchalib->generate_captcha();
+                $data['captcha_image'] = $captcha ? $captcha['image'] : '';
+            }
             if (isset($login_details) && !empty($login_details)) {
                 $user = $login_details[0];
                 if ($user->is_active == "yes") {
@@ -428,7 +483,6 @@ class Site extends Public_Controller
 
                     }
 
-                    // if ($result[0]->lang_id != 0) {
 					if (!empty($result[0]->lang_id)) {
                         $lang_array = array('lang_id' => $result['0']->lang_id, 'language' => $result['0']->language);                        
                     } else {
@@ -470,11 +524,13 @@ class Site extends Public_Controller
                                 'language'        => array('lang_id' => $setting_result[0]['lang_id'], 'language' => $setting_result[0]['language']),
                                 'is_rtl'          => $lang_data['is_rtl'],
                                 'theme'           => $setting_result[0]['theme'],
+                                'sh_variant'      => (isset($result[0]->sh_variant) && in_array($result[0]->sh_variant, ['a','b','c'])) ? $result[0]->sh_variant : (in_array($setting_result[0]['theme'], ['a','b','c']) ? $setting_result[0]['theme'] : 'a'),
                                 'doctor_restriction'     => $setting_result[0]['doctor_restriction'],
                                 'superadmin_restriction' => $setting_result[0]['superadmin_restriction'],
                                 'time_format'     => $check_time_format,
                                 'image'           => $result[0]->image,
                                 'prefix'          => $prefix_array,
+                                'saas_key'        => isset($setting_result[0]['saas_key']) ? $setting_result[0]['saas_key'] : '',
                             );
 
                             $this->session->set_userdata('patient', $session_data);
@@ -509,7 +565,7 @@ class Site extends Public_Controller
     public function refreshCaptcha()
     {
         $captcha = $this->captchalib->generate_captcha();
-        echo $captcha['image'];
+        echo $captcha ? $captcha['image'] : '';
     }
 
     public function getDoctorShift()
@@ -554,10 +610,11 @@ class Site extends Public_Controller
         $date           = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date"));
         $day            = date("l", strtotime($date));
         
-        $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor_id, $global_shift, $day);      
-        
-        $appointments   = $this->onlineappointment_model->getAppointments($doctor_id, $getDoctorShiftTimeId->id, $date);         
-        
+        $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor_id, $global_shift, $day);
+        $shiftTimeId    = !empty($getDoctorShiftTimeId->id) ? $getDoctorShiftTimeId->id : $shift;
+
+        $appointments   = $this->onlineappointment_model->getAppointments($doctor_id, $shiftTimeId, $date);
+
         $array_of_time  = $this->customlib->getSlotByDoctorShift($doctor_id, $shift);
  
         $this->load->model("charge_model");

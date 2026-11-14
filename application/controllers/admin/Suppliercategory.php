@@ -45,9 +45,10 @@ class Suppliercategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success"> ' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/Suppliercategory/supplier");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pharmacy';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pharmacy/supplier", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -98,9 +99,10 @@ class Suppliercategory extends Admin_Controller
         $data["title"]    = $this->lang->line('edit_category');
         $supplier         = $this->supplier_category_model->getMedicineCategory();
         $data["supplier"] = $supplier;
-        $this->load->view("layout/header");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/pharmacy/supplier", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function delete($id)

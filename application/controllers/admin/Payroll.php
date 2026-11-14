@@ -6,6 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Payroll extends Admin_Controller
 {
+    protected $config_attendance;
+    protected $notification;
+    protected $notificationurl;
+    protected $patient_notificationurl;
+    protected $payment_mode;
+    protected $payroll_status;
+    protected $search_type;
+    protected $staff_attendance;
+
 
     public function __construct()
     {
@@ -55,10 +64,10 @@ class Payroll extends Admin_Controller
 
         if (isset($submit) && $submit == "search") {
 
-            $month    = $this->input->post("month");
-            $year     = $this->input->post("year");
-            $emp_name = $this->input->post("name");
-            $role     = $this->input->post("role");
+            $month    = $this->input->post("month", TRUE);
+            $year     = $this->input->post("year", TRUE);
+            $emp_name = $this->input->post("name", TRUE);
+            $role     = $this->input->post("role", TRUE);
             $searchEmployee = $this->payroll_model->searchEmployee($month, $year, $emp_name, $role);
             $data["resultlist"] = $searchEmployee;
             $data["name"]       = $emp_name;
@@ -67,6 +76,7 @@ class Payroll extends Admin_Controller
         }
  
         $data["payroll_status"] = $this->payroll_status;
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/payroll/stafflist", $data);
         $this->load->view("layout/footer", $data);
@@ -74,6 +84,7 @@ class Payroll extends Admin_Controller
 
     public function create($month, $year, $id)
     {
+        if (!$this->rbac->hasPrivilege('staff_payroll', 'can_add')) { access_denied(); }
         $data["staff_id"]        = "";
         $data["basic"]           = "";
         $data["name"]            = "";
@@ -99,6 +110,7 @@ class Payroll extends Admin_Controller
         $data['monthLeaves']     = $this->monthLeaves($newdate, 3, $id);
         $data["attendanceType"]  = $this->staffattendancemodel->getStaffAttendanceType();
         $data["alloted_leave"]   = $alloted_leave[0]["alloted_leave"];
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/payroll/create", $data);
         $this->load->view("layout/footer", $data);
@@ -106,6 +118,7 @@ class Payroll extends Admin_Controller
 
     public function edit($id)
     {
+        if (!$this->rbac->hasPrivilege('staff_payroll', 'can_edit')) { access_denied(); }
         $data["staff_id"]         = "";
         $data["basic"]            = "";
         $data["name"]             = "";
@@ -137,12 +150,13 @@ class Payroll extends Admin_Controller
         $data['monthLeaves']     = $this->monthLeaves($newdate, 3, $employee_payroll['staff_id']);
         $data["attendanceType"]  = $this->staffattendancemodel->getStaffAttendanceType();
         $data["alloted_leave"]   = $alloted_leave[0]["alloted_leave"];
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/payroll/edit", $data);
         $this->load->view("layout/footer", $data);
     }
 
-    public function monthAttendance($st_month, $no_of_months, $emp)
+    protected function monthAttendance($st_month, $no_of_months, $emp)
     {
         $record = array();
         for ($i = 1; $i <= $no_of_months; $i++) {
@@ -162,7 +176,7 @@ class Payroll extends Admin_Controller
         return $record;
     }
 
-    public function monthLeaves($st_month, $no_of_months, $emp)
+    protected function monthLeaves($st_month, $no_of_months, $emp)
     {
         $record = array();
         for ($i = 1; $i <= $no_of_months; $i++) {
@@ -185,22 +199,22 @@ class Payroll extends Admin_Controller
 
     public function editpayroll()
     {
-        if (!$this->rbac->hasPrivilege('staff_payroll', 'can_add')) {
+        if (!$this->rbac->hasPrivilege('staff_payroll', 'can_edit')) {
             access_denied();
         }
 
-        $id              = $this->input->post("id");
-        $basic           = $this->input->post("basic");
-        $total_allowance = $this->input->post("total_allowance");
-        $total_deduction = $this->input->post("total_deduction");
-        $net_salary      = $this->input->post("net_salary");
-        $status          = $this->input->post("status");
-        $staff_id        = $this->input->post("staff_id");
-        $month           = $this->input->post("month");
-        $name            = $this->input->post("name");
-        $year            = $this->input->post("year");
-        $tax             = $this->input->post("tax_percent");
-        $leave_deduction = $this->input->post("leave_deduction");
+        $id              = $this->input->post("id", TRUE);
+        $basic           = $this->input->post("basic", TRUE);
+        $total_allowance = $this->input->post("total_allowance", TRUE);
+        $total_deduction = $this->input->post("total_deduction", TRUE);
+        $net_salary      = $this->input->post("net_salary", TRUE);
+        $status          = $this->input->post("status", TRUE);
+        $staff_id        = $this->input->post("staff_id", TRUE);
+        $month           = $this->input->post("month", TRUE);
+        $name            = $this->input->post("name", TRUE);
+        $year            = $this->input->post("year", TRUE);
+        $tax             = $this->input->post("tax_percent", TRUE);
+        $leave_deduction = $this->input->post("leave_deduction", TRUE);
         $this->form_validation->set_rules('net_salary', $this->lang->line('net_salary'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
 
@@ -219,7 +233,7 @@ class Payroll extends Admin_Controller
                 'month'           => $month,
                 'year'            => $year,
                 'tax'             => $tax,
-                'leave_deduction' => '0',
+                'leave_deduction' => $leave_deduction,
                 'generated_by'    => $this->customlib->getLoggedInUserID(),
             );
 
@@ -227,12 +241,12 @@ class Payroll extends Admin_Controller
             if (!$checkForUpdate) {
                 $insert_id         = $this->payroll_model->createPayslip($data);
                 $payslipid         = $insert_id;
-                $allowance_type    = $this->input->post("allowance_type");
-                $deduction_type    = $this->input->post("deduction_type");
-                $allowance_prev_id = $this->input->post("allowance_prev_id");
-                $deduction_prev_id = $this->input->post("deduction_prev_id");
-                $allowance_amount  = $this->input->post("allowance_amount");
-                $deduction_amount  = $this->input->post("deduction_amount");
+                $allowance_type    = $this->input->post("allowance_type", TRUE);
+                $deduction_type    = $this->input->post("deduction_type", TRUE);
+                $allowance_prev_id = $this->input->post("allowance_prev_id", TRUE);
+                $deduction_prev_id = $this->input->post("deduction_prev_id", TRUE);
+                $allowance_amount  = $this->input->post("allowance_amount", TRUE);
+                $deduction_amount  = $this->input->post("deduction_amount", TRUE);
 
                 if (!empty($allowance_type)) {
 
@@ -301,13 +315,13 @@ class Payroll extends Admin_Controller
                 }
 
                 $event_data = array(
-                    'role'         => $this->input->post('role'),
+                    'role'         => $this->input->post('role', TRUE),
                     'month'        => $month,
                     'year'         => $year,
                     'basic_salary' => number_format((float) $basic, 2, '.', ''),
                     'earning'      => $total_allowance,
                     'deduction'    => $total_deduction,
-                    'gross_salary' => $this->input->post('gross_salary'),
+                    'gross_salary' => $this->input->post('gross_salary', TRUE),
                     'tax_amount'   => $tax,
                     'net_salary'   => $net_salary,
                 );
@@ -330,17 +344,17 @@ class Payroll extends Admin_Controller
             access_denied();
         }
 
-        $basic           = $this->input->post("basic");
-        $total_allowance = $this->input->post("total_allowance");
-        $total_deduction = $this->input->post("total_deduction");
-        $net_salary      = $this->input->post("net_salary");
-        $status          = $this->input->post("status");
-        $staff_id        = $this->input->post("staff_id");
-        $month           = $this->input->post("month");
-        $name            = $this->input->post("name");
-        $year            = $this->input->post("year");
-        $tax             = $this->input->post("tax_percent");
-        $leave_deduction = $this->input->post("leave_deduction");
+        $basic           = $this->input->post("basic", TRUE);
+        $total_allowance = $this->input->post("total_allowance", TRUE);
+        $total_deduction = $this->input->post("total_deduction", TRUE);
+        $net_salary      = $this->input->post("net_salary", TRUE);
+        $status          = $this->input->post("status", TRUE);
+        $staff_id        = $this->input->post("staff_id", TRUE);
+        $month           = $this->input->post("month", TRUE);
+        $name            = $this->input->post("name", TRUE);
+        $year            = $this->input->post("year", TRUE);
+        $tax             = $this->input->post("tax_percent", TRUE);
+        $leave_deduction = $this->input->post("leave_deduction", TRUE);
         $this->form_validation->set_rules('net_salary', $this->lang->line('net_salary'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
 
@@ -364,10 +378,10 @@ class Payroll extends Admin_Controller
             if ($checkForUpdate == true) {
                 $insert_id        = $this->payroll_model->createPayslip($data);
                 $payslipid        = $insert_id;
-                $allowance_type   = $this->input->post("allowance_type");
-                $deduction_type   = $this->input->post("deduction_type");
-                $allowance_amount = $this->input->post("allowance_amount");
-                $deduction_amount = $this->input->post("deduction_amount");
+                $allowance_type   = $this->input->post("allowance_type", TRUE);
+                $deduction_type   = $this->input->post("deduction_type", TRUE);
+                $allowance_amount = $this->input->post("allowance_amount", TRUE);
+                $deduction_amount = $this->input->post("deduction_amount", TRUE);
                 if (!empty($allowance_type)) {
 
                     $i = 0;
@@ -404,13 +418,13 @@ class Payroll extends Admin_Controller
                 }
 
                 $event_data = array(
-                    'role'         => $this->input->post('role'),
+                    'role'         => $this->input->post('role', TRUE),
                     'month'        => $month,
                     'year'         => $year,
                     'basic_salary' => number_format((float) $basic, 2, '.', ''),
                     'earning'      => $total_allowance,
                     'deduction'    => $total_deduction,
-                    'gross_salary' => $this->input->post('gross_salary'),
+                    'gross_salary' => $this->input->post('gross_salary', TRUE),
                     'tax_amount'   => $tax,
                     'net_salary'   => $net_salary,
                 );
@@ -439,6 +453,7 @@ class Payroll extends Admin_Controller
         $data["payroll_status"] = $this->payroll_status;
         $data["resultlist"]     = $searchEmployee;
         $data["payment_mode"]   = $this->payment_mode;
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/payroll/stafflist", $data);
         $this->load->view("layout/footer", $data);
@@ -486,23 +501,23 @@ class Payroll extends Admin_Controller
     }
 
     public function paymentStatus($status)
-    {
-        $id          = $this->input->get('id');
+    {        
+		$id = $this->input->get('id', TRUE);
         $updateStaus = $this->payroll_model->updatePaymentStatus($status, $id);
         redirect("admin/payroll");
     }
 
     public function paymentSuccess()
     {
-        $pay_id          = $this->input->post("paymentid");
-        $payment_mode    = $this->input->post("payment_mode");
-        $date            = $this->input->post("payment_date");
+        $pay_id          = $this->input->post("paymentid", TRUE);
+        $payment_mode    = $this->input->post("payment_mode", TRUE);
+        $date            = $this->input->post("payment_date", TRUE);
         $payment_date    = $this->customlib->dateFormatToYYYYMMDD($date);
-        $remark          = $this->input->post("remarks");
-        $paymentmonth    = $this->input->post("paymentmonth");
-        $amount          = $this->input->post("amount");
+        $remark          = $this->input->post("remarks", TRUE);
+        $paymentmonth    = $this->input->post("paymentmonth", TRUE);
+        $amount          = $this->input->post("amount", TRUE);
         $status          = 'paid';
-        $staff_id        = $this->input->post("staff_id");
+        $staff_id        = $this->input->post("staff_id", TRUE);
         $notificationurl = $this->notificationurl;
         $url_link        = $notificationurl["salary"];
         $url             = base_url() . $url_link . '/' . $staff_id . '/' . $pay_id;
@@ -512,14 +527,14 @@ class Payroll extends Admin_Controller
             $staffname = $result['name'] . " " . $result['surname'];
         }
 
-        $staff_role = $this->input->post("staff_role");
-        $payslipid  = $this->input->post("paymentid");
+        $staff_role = $this->input->post("staff_role", TRUE);
+        $payslipid  = $this->input->post("paymentid", TRUE);
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');        
         
         if ($this->input->post("payment_mode") == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required');
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
         }
         if ($this->form_validation->run() == false) {
@@ -543,9 +558,9 @@ class Payroll extends Admin_Controller
                 move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payslip_document/" . $attachment);
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
-                $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($this->input->post('cheque_date'));
-                $data['cheque_no']       = $this->input->post('cheque_no');
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+                $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($this->input->post('cheque_date', TRUE));
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $data['attachment']      = $attachment;
                 $data['attachment_name'] = $attachment_name;
             }
@@ -555,12 +570,12 @@ class Payroll extends Admin_Controller
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
 
             $event_data = array(
-                'staff'          => $this->input->post('emp_name'),
-                'payment_amount' => $this->input->post('amount'),
-                'month'          => $this->input->post('paymentmonth'),
-                'year'           => $this->input->post('paymentyear'),
+                'staff'          => $this->input->post('emp_name', TRUE),
+                'payment_amount' => $this->input->post('amount', TRUE),
+                'month'          => $this->input->post('paymentmonth', TRUE),
+                'year'           => $this->input->post('paymentyear', TRUE),
                 'payment_date'   => $this->customlib->YYYYMMDDTodateFormat($payment_date),
-                'payment_mode'   => $this->input->post('payment_mode'),
+                'payment_mode'   => $this->input->post('payment_mode', TRUE),
             );
 
             $this->system_notification->send_system_notification('add_payroll_payment', $event_data);
@@ -593,6 +608,31 @@ class Payroll extends Admin_Controller
         }
     }
 
+    public function payslipPrint()
+    {
+        if (!$this->rbac->hasPrivilege('staff', 'can_view')) {
+            access_denied();
+        }
+        $data["payment_mode"]       = $this->payment_mode;
+        $setting_result             = $this->setting_model->get();
+        $data['settinglist']        = $setting_result[0];
+        $data['print_details']      = $this->printing_model->get('', 'payslip');
+        $id                         = $this->input->post("payslipid");
+        $result                     = $this->payroll_model->getPayslip($id);
+        $allowance                  = $this->payroll_model->getAllowance($result["id"]);
+        $data["allowance"]          = $allowance;
+        $positive_allowance         = $this->payroll_model->getAllowance($result["id"], "positive");
+        $data["positive_allowance"] = $positive_allowance;
+        $negative_allowance         = $this->payroll_model->getAllowance($result["id"], "negative");
+        $data["negative_allowance"] = $negative_allowance;
+        $data["result"]             = $result;
+        if (!empty($result)) {
+            $this->load->view("admin/payroll/payslip_print", $data);
+        } else {
+            echo $this->lang->line('no_record_found');
+        }
+    }
+
     public function payslippdf()
     {
         $setting_result             = $this->setting_model->get();
@@ -618,9 +658,9 @@ class Payroll extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'reports/human_resource');
         $this->session->set_userdata('subsub_menu', 'reports/human_resource/payrollreport');
 
-        $month                = $this->input->post("month");
-        $year                 = $this->input->post("year");
-        $role                 = $this->input->post("role");
+        $month                = $this->input->post("month", TRUE);
+        $year                 = $this->input->post("year", TRUE);
+        $role                 = $this->input->post("role", TRUE);
         $data["month"]        = $month;
         $data["year"]         = $year;
         $data["role_select"]  = $role;
@@ -630,11 +670,12 @@ class Payroll extends Admin_Controller
         $data["role"]         = $staffRole;
         $data["payment_mode"] = $this->payment_mode;
 
-        $this->form_validation->set_rules('year', 'Year', 'trim|required|xss_clean');
+        $this->form_validation->set_rules('year', $this->lang->line('year'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == true) {
             $result         = $this->payroll_model->getpayrollReport($month, $year, $role);
             $data["result"] = $result;
         }
+        $data['module'] = 'human_resource';
         $this->load->view("layout/header", $data);
         $this->load->view("admin/payroll/payrollreport", $data);
         $this->load->view("layout/footer", $data);
@@ -785,9 +826,10 @@ class Payroll extends Admin_Controller
         $search_type         = "";
         $data["searchlist"]  = $this->search_type;
         $data["search_type"] = $search_type;
-        $this->load->view('layout/header');
+        $data['module'] = 'human_resource';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/payroll/payrollsearch', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function download($payslip_id)

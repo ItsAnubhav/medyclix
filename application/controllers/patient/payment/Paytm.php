@@ -3,6 +3,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Paytm extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
 
     public $payment_method = array();
     public $pay_method     = array();

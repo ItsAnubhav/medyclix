@@ -6,12 +6,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
     <div id="html-2-pdfwrapper">
         <div class="row">
             <!-- left column -->
@@ -23,14 +18,14 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>
                     <table width="100%" class="printablea4">
                         <tr>
-                            <td class="text-left"><?php echo $this->lang->line('report') . "# "; ?><?php echo $result["bill_no"] ?>
+                            <td class="text-start"><?php echo $this->lang->line('report') . "# "; ?><?php echo $result["bill_no"] ?>
                             </td>
-                            <td class="text-right"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['reporting_date'])) ?>
+                            <td class="text-end"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['reporting_date'])) ?>
                             </td>
                         </tr>
                     </table>
@@ -40,7 +35,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <th><?php echo $this->lang->line('name'); ?></th>
                             <th><?php echo $this->lang->line('doctor'); ?></th>
                             <th><?php echo $this->lang->line('test') . " " . $this->lang->line('name'); ?></th> 
-                            <th><?php echo $this->lang->line('short') . " " . $this->lang->line('name'); ?></th>
+                            <th><?php echo $this->lang->line('short_name') ; ?></th>
                             <th><?php echo $this->lang->line('pathology') . " " . $this->lang->line('report'); ?></th>
                         </tr>
                         <tr>
@@ -53,7 +48,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 <td><?php echo $bill["test_name"]; ?></td>
                                 <td><?php echo $bill["short_name"]; ?></td>
                                 <td><?php if (!empty($bill['pathology_report'])){ ?>
-                                    <a  <?php if($print != 'yes'){ ?> href="<?php echo base_url().'admin/pathology/download/'. $bill["pathology_report"]; ?>" <?php } ?> class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a>
+                                    <a  <?php if($print != 'yes'){ ?> href="<?php echo base_url().'admin/pathology/download/'. $bill["pathology_report"]; ?>" <?php } ?> class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a>
                                     <?php }  ?>
                                 </td>                            
                             <?php
@@ -103,7 +98,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         ?>
                     </table> 
                    <div class="divider mb-10 mt-10"></div> 
-                    <table class="printablea4" width="100%" style="width:30%; float: right;">                     
+                    <table class="printablea4 sh-print-right-30" width="100%">                     
                             <tr id="generated_by">
 								<th><?php echo $this->lang->line('prepared_by'); ?></th>
 							</tr>

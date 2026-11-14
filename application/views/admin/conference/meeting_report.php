@@ -1,16 +1,14 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_live_consultation');?>
-                <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"></i><?php echo $this->lang->line('live_meeting_report'); ?></h3>
+                <div class="card-header ptbnull"></div>
+                    <div class="card-header">
+                        <h3 class="card-title"></i><?php echo $this->lang->line('live_meeting_report'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <?php if ($this->session->flashdata('msg')) {?>
                             <?php echo $this->session->flashdata('msg');
                             $this->session->unset_userdata('msg');
@@ -18,8 +16,8 @@
                         <?php }?>
                         <form id="form1" action="" method="post">
                         <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group"> 
+                            <div class="col-sm-6 col-md-3">
+                                <div class="mb-3">
                                      <label><?php echo $this->lang->line('search_type'); ?></label>
                                     <select class="form-control" name="search_type" onchange="showdate(this.value)"> 
                                         <option value=""><?php echo $this->lang->line('select'); ?></option> 
@@ -34,8 +32,8 @@
                                     </select>
                                  </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group"> 
+                            <div class="col-sm-6 col-md-3">
+                                <div class="mb-3">
                                      <label><?php echo $this->lang->line('created_by'); ?></label>
                                      <select name="created_by" id="created_by" class="form-control select2">
                                          <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -45,25 +43,28 @@
                                      </select>
                                  </div>
                             </div>
-                            <div class="col-sm-4" id="fromdate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-3 d-none" id="fromdate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_from'); ?></label>
                                     <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_from'); ?></span>
                                 </div>
                             </div> 
 
-                            <div class="col-sm-4" id="todate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-3 d-none" id="todate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_to'); ?></label>
                                     <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_to'); ?></span>
                                 </div>
                             </div>
-                           <div class="form-group">
-                                <div class="col-sm-12">
-                                      <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
-                                </div>
+                           <div class="col-sm-6 col-md-auto d-flex align-items-end">
+                              <div class="mb-3">
+                                  <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2">
+                                      <i class="fa fa-search"></i>
+                                      <?php echo $this->lang->line('search'); ?>
+                                  </button>
+                              </div>
                             </div>
 
                         </div>
@@ -78,7 +79,7 @@
                                         <th><?php echo $this->lang->line('api_used'); ?></th>
                                         <th><?php echo $this->lang->line('created_by'); ?> </th>
                                         <th><?php echo $this->lang->line('total_join'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -89,18 +90,21 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div id="viewerModal" class="modal fade modalmark" role="dialog">
-    <div class="modal-dialog modal-lg">
+<div id="viewerModal" class="modal fade sh-modal sh-modal-accent modalmark" tabindex="-1" aria-labelledby="viewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <!-- Modal content-->
         <div class="modal-content mx-2">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('join_list'); ?></h4>
+                <h5 class="modal-title" id="viewerModalLabel"><?php echo $this->lang->line('join_list'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
@@ -123,7 +127,7 @@
             data: {'recordid': recordid},
             dataType: 'JSON',
             beforeSend: function () {
-                $this.button('loading');
+                $this.btnLoading();
             },
             success: function (data) {
 
@@ -204,15 +208,15 @@
             ]
         });
                 //==================
-                $('#viewerModal').modal('show');
-                $this.button('reset');
+                shModal('viewerModal').show();
+                $this.btnReset();
             },
             error: function (xhr) { // if error occured
                 alert("Error occured.please try again");
-                $this.button('reset');
+                $this.btnReset();
             },
             complete: function () {
-                $this.button('reset');
+                $this.btnReset();
             }
         });
     });
@@ -256,11 +260,11 @@
 
 function showdate(value) {
     if (value == 'period') {
-        $('#fromdate').show();
-        $('#todate').show();
+        $('#fromdate').removeClass('d-none');
+        $('#todate').removeClass('d-none');
     } else {
-        $('#fromdate').hide();
-        $('#todate').hide();
+        $('#fromdate').addClass('d-none');
+        $('#todate').addClass('d-none');
     }
 }
 </script>

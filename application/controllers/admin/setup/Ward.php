@@ -22,7 +22,7 @@ class Ward extends Admin_Controller
         $data['floor_list'] = $this->floor_model->floor_list();
         $data['dept_list']  = $this->Ward_Model->getdepartment();
         $this->load->view('layout/header');
-        $this->load->view('setup/Ward', $data);
+        $this->load->view('setup/ward', $data);
         $this->load->view('layout/footer');
     }
 

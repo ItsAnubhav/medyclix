@@ -1,17 +1,15 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-2">
                 <?php
                     $this->load->view('admin/onlineappointment/appointmentSidebar');
                 ?>
             </div>
             <div class="col-md-10">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('doctor_shift'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('doctor_shift'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="table-responsive mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('doctor_shift'); ?></div>
                             <table class="table table-hover table-striped table-bordered example">
@@ -19,7 +17,7 @@
                                     <tr>
                                         <th><?php echo $this->lang->line("doctor_name"); ?></th>
                                         <?php foreach ($global_shift as $gkey => $gvalue) { ?>
-                                            <th class="rtl-text-right"><?php echo $gvalue['name']; ?></th>
+                                            <th class="rtl-text-end"><?php echo $gvalue['name']; ?></th>
                                         <?php } ?>
                                     </tr>
                                 </thead>
@@ -29,10 +27,10 @@
                                     ?>
                                     <tr>
                                         <td class="mailbox-name">
-                                            <a href="#" data-toggle="popover" class="detail_popover"><?php echo $shift_value['first_name']." ".$shift_value["surname"]; ?> (<?php echo $shift_value["employee_id"]; ?>)</a>
+                                            <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $shift_value['first_name']." ".$shift_value["surname"]; ?> (<?php echo $shift_value["employee_id"]; ?>)</a>
                                         </td>
                                         <?php foreach ($global_shift as $gkey => $gvalue) { ?>
-                                            <td class="rtl-text-right">
+                                            <td class="rtl-text-end">
                                                <?php  $doctor_shift = array_column($shift_value["doctor_shift"], "id"); ?>
                                                <input type="checkbox" 
                                                <?php if ($this->rbac->hasPrivilege('online_appointment_doctor_shift', 'can_edit')) { ?>
@@ -59,12 +57,10 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <script>
     function changeShift(doctor_id,shift_id,checkbox){

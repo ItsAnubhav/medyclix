@@ -8,6 +8,10 @@ require_once APPPATH . 'third_party/omnipay/vendor/autoload.php';
 
 class Zoom_api
 {
+	public $REDIRECT_URI;
+	public $REDIRECT_STAFF_URI;
+	public $CLIENT;
+
     public $CI;
     private $zoom_api_key    = '';
     private $zoom_api_secret = '';

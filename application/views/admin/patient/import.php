@@ -2,29 +2,20 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList = $this->customlib->getGender();
 ?>
-<style type="text/css">
-    #easySelectable {/*display: flex; flex-wrap: wrap;*/}
-    #easySelectable li {}
-    #easySelectable li.es-selected {background: #2196F3; color: #fff;}
-    .easySelectable {-webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;}
-</style>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('patient'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('patient'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('patient_import', 'can_view')) { ?>
                                 <a href="<?php echo site_url('admin/patient/exportformat') ?>">
                                     <button class="btn btn-primary btn-sm"><i class="fa fa-download"></i> <?php echo $this->lang->line('download_sample_data'); ?></button>
                                 </a>
                             <?php } ?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">      
+                    </div><!-- /.card-header -->
+                    <div class="card-body">      
                         <?php if ($this->session->flashdata('patient_import_msg')) { ?> <div>  <?php echo $this->session->flashdata('patient_import_msg') ?> </div>  <?php $this->session->unset_userdata('patient_import_msg'); }   ?>
                         <br/>           
                         1. <?php echo $this->lang->line('patient_import_instruction_one'); ?><br/>
@@ -33,7 +24,7 @@ $genderList = $this->customlib->getGender();
                         4. <?php echo $this->lang->line('patient_import_instruction_five'); ?><br/>
                         <hr/> 
                     </div>
-                    <div class="box-body table-responsive">
+                    <div class="card-body table-responsive">
                         <table class="table table-striped table-bordered table-hover" id="sampledata">
                             <thead>
                                 <tr>
@@ -81,11 +72,11 @@ $genderList = $this->customlib->getGender();
                         </table>        
                     </div>
                     <form action="<?php echo site_url('admin/patient/import') ?>" id="employeeform" name="employeeform" method="post" enctype="multipart/form-data"> 
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputFile"><?php echo $this->lang->line('blood_group'); ?></label>
                                         <div>
                                            <select name="blood_group" class="form-control" >
@@ -102,23 +93,21 @@ $genderList = $this->customlib->getGender();
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputFile"><?php echo $this->lang->line('select_csv_file'); ?></label><small class="req"> *</small>
                                         <div><input class="filestyle form-control" type='file' name='file' id="file" size='20' />
                                         <span class="text-danger"><?php echo form_error('file'); ?></span></div>
                                     </div>
                                 </div>
                                 <div class="col-md-12 pt20">
-                                    <button type="submit" class="btn btn-info pull-right"><i class="fa fa-upload"></i> <?php echo $this->lang->line('import'); ?></button>
+                                    <button type="submit" class="btn btn-info float-end"><i class="fa fa-upload"></i> <?php echo $this->lang->line('import'); ?></button>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>                                                    
             </div>                                                                                                                                          
-        </div>  
-    </section>
-</div>
+        </div>
 
 <script type="text/javascript">
     $(function () {
@@ -207,7 +196,7 @@ $genderList = $this->customlib->getGender();
             $(document).ready(function (e) {
                 $("#formadd").on('submit', (function (e) {
                     e.preventDefault();
-                    $("#formaddbtn").button('loading');
+                    $("#formaddbtn").btnLoading();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/pharmacy/add',
                         type: "POST",
@@ -227,7 +216,7 @@ $genderList = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formaddbtn").button('reset');
+                            $("#formaddbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -239,7 +228,7 @@ $genderList = $this->customlib->getGender();
             $(document).ready(function (e) {
                 $("#formimp").on('submit', (function (e) {
                     e.preventDefault();
-                    $("#formimpbtn").button('loading');
+                    $("#formimpbtn").btnLoading();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/pharmacy/import',
                         type: "POST",
@@ -259,7 +248,7 @@ $genderList = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formimpbtn").button('reset');
+                            $("#formimpbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -271,7 +260,7 @@ $genderList = $this->customlib->getGender();
             $(document).ready(function (e) {
                 $("#formstock").on('submit', (function (e) {
                     e.preventDefault();
-                    $("#formstockbtn").button('loading');
+                    $("#formstockbtn").btnLoading();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/pharmacy/addBadStock',
                         type: "POST",
@@ -291,7 +280,7 @@ $genderList = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formstockbtn").button('reset');
+                            $("#formstockbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -302,7 +291,7 @@ $genderList = $this->customlib->getGender();
             $(document).ready(function (e) {
                 $("#formedit").on('submit', (function (e) {
                     e.preventDefault();
-                    $("#formeditbtn").button('loading');
+                    $("#formeditbtn").btnLoading();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/pharmacy/update',
                         type: "POST",
@@ -322,7 +311,7 @@ $genderList = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formeditbtn").button('reset');
+                            $("#formeditbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -332,12 +321,7 @@ $genderList = $this->customlib->getGender();
 			
             $(document).ready(function (e) {
 
-                $('#expiry,#stockexpiry_date').datepicker({
-                    format: "M/yyyy",
-                    viewMode: "months",
-                    minViewMode: "months",
-                    autoclose: true
-                });
+                /* picker init removed - auto-init via class + event delegation in footer.php */
             });
 			
             function getRecord(id) {
@@ -362,7 +346,7 @@ $genderList = $this->customlib->getGender();
                         $("#pre_medicine_image").val(data.pre_medicine_image);
                         $("#vat_ac").val(data.vat_ac);
                         $("#updateid").val(id);
-                        $("#viewModal").modal('hide');
+                        shModal("viewModal").hide();
                         $(".select2").select2().select2('val', data.medicine_category_id);
                         holdModal('myModaledit');
                     },
@@ -403,7 +387,7 @@ $genderList = $this->customlib->getGender();
                         $("#unit_packings").html(data.unit_packing);
                         $("#suppliers").html(data.supplier);
                         $("#vat_acs").html(data.vat_ac);
-                        $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('medicine', 'can_edit')) { ?><a href='#'' onclick='getRecord(" + id + ")' data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } if ($this->rbac->hasPrivilege('medicine', 'can_delete')) { ?><a onclick='delete_record(" + id + ")'  href='#'  data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php } ?>");
+                        $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('medicine', 'can_edit')) { ?><a href='#'' onclick='getRecord(" + id + ")' data-bs-toggle='tooltip'  title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } if ($this->rbac->hasPrivilege('medicine', 'can_delete')) { ?><a onclick='delete_record(" + id + ")'  href='#'  data-bs-toggle='tooltip'  title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php } ?>");
                         holdModal('viewModal');
                     },
                 });
@@ -425,7 +409,7 @@ $genderList = $this->customlib->getGender();
             $(document).ready(function (e) {
                 $("#formbatch").on('submit', (function (e) {
                     e.preventDefault();
-                    $("#formbatchbtn").button("loading");
+                    $("#formbatchbtn").btnLoading();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/pharmacy/medicineBatch',
                         type: "POST",
@@ -445,7 +429,7 @@ $genderList = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formbatchbtn").button('reset');
+                            $("#formbatchbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -469,11 +453,7 @@ $genderList = $this->customlib->getGender();
             }
 			
             function holdModal(modalId) {
-                $('#' + modalId).modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                    show: true
-                });
+                (function(){var _el=document.getElementById(modalId); if(_el) bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
             }
 
             function addbadstock(id) {

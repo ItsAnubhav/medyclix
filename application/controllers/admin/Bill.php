@@ -5,6 +5,9 @@ if (!defined('BASEPATH')) {
 
 class Bill extends Admin_Controller
 {
+	public $notificationurl;
+	public $time_format;
+
     public $marital_status;
     public $payment_mode;
     public $yesno_condition;
@@ -35,16 +38,20 @@ class Bill extends Admin_Controller
         $this->time_format = $this->customlib->getHospitalTimeFormat();
         $this->load->library('system_notification');
         $this->load->library('mailsmsconf');
+        $this->load->library('SaasValidation');
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
     }
 
-    public function index($case_id)
+    public function index($case_id = null)
     {
         $this->session->set_userdata('top_menu', 'bill');
         $data["payment_mode"] = $this->payment_mode;
         $data['case_id']=$case_id;
-        $this->load->view("layout/header");
+        $data['module'] = 'billing';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/bill/index", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     } 
  
     public function dashboard()
@@ -65,9 +72,12 @@ class Bill extends Admin_Controller
             
         }
 
-        $this->load->view("layout/header");
-        $this->load->view("admin/bill/dashboard",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'billing';
+        $this->load->model('bill_model');
+        $this->bill_model->ensureServicePostingPermissions();
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/bill/dashboard", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function get()
@@ -88,6 +98,7 @@ class Bill extends Admin_Controller
     {
         $charges                = $this->charge_model->getopdChargesbyCaseId($case_id);
         $data["charges_detail"] = $charges;
+        $data["case_id"]        = $case_id;
         $page                   = $this->load->view('admin/bill/_opd_charges', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
     }
@@ -96,6 +107,7 @@ class Bill extends Admin_Controller
     {
         $charges                = $this->charge_model->getipdChargesbyCaseId($case_id);
         $data["charges_detail"] = $charges;
+        $data["case_id"]        = $case_id;
         $page                   = $this->load->view('admin/bill/_ipd_charges', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
     } 
@@ -114,10 +126,10 @@ class Bill extends Admin_Controller
                 $action = "<div class='rowoptionview'>";
                 if ($balance_amount > 0) {
                     if ($this->rbac->hasPrivilege('pharmacy_billing_payment', 'can_view')) {
-                        $action .= "<a href='#'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_pharmacypayment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
+                        $action .= "<a href='#'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm add_pharmacypayment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
                     }
                 }
-                $action .= "<a href='#' onclick='viewPharmacyDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='#' onclick='viewPharmacyDetail(" . $value->id . ")' class='btn btn-secondary btn-sm' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
 
                 $action .= "<div>";
 
@@ -161,13 +173,13 @@ class Bill extends Admin_Controller
                 //====================================
 
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' class='print_bill' data-toggle='tooltip' data-record-id=\"" . $value->id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' class='print_bill' data-bs-toggle='tooltip' data-record-id=\"" . $value->id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
                 $action .= "</div>";
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs view_pathology_detail' data-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm view_pathology_detail' data-bs-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
                 if ($balance_amount > 0) {
                     if ($this->rbac->hasPrivilege('pathology_billing_payment', 'can_view')) {
-                        $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_pathology_payment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
+                        $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm add_pathology_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
                     }
                 }
                 if ($value->case_reference_id > 0) {
@@ -179,7 +191,7 @@ class Bill extends Admin_Controller
                 $action .= "</div>";
 
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('pathology_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('pathology_billing') . $value->id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->customlib->getHospitalTimeFormat());
                 $row[] = $value->doctor_name;
                 $row[] = $value->note;
@@ -188,7 +200,7 @@ class Bill extends Admin_Controller
                 $row[] = $value->tax;
                 $row[] = amountFormat($value->net_amount);
                 $row[] = amountFormat($value->paid_amount);
-                $row[] = amountFormat($balance_amount);
+                $row[] = amountFormat($balance_amount) . $action;
                 //====================
 
                 $dt_data[] = $row;
@@ -215,27 +227,27 @@ class Bill extends Admin_Controller
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
 
-                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs view_radiodetail' data-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm view_radiodetail' data-bs-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
                 if ($balance_amount > 0) {
                     if ($this->rbac->hasPrivilege('radiology_billing_payment', 'can_view')) {
-                        $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_radio_payment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
+                        $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm add_radio_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
                     }
                 }
 
                 $action .= "</div>";
 
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('radiology_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('radiology_billing') . $value->id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->customlib->getHospitalTimeFormat());
                 $row[] = $value->doctor_name;
                 $row[] = $value->note;
                 $row[] = amountFormat($value->total);
-                $row[] = $value->discount." (".$value->discount_percentage." %)";				
-				$tax_per = ($value->tax*100)/($value->total-$value->discount) ;				
+                $row[] = $value->discount." (".$value->discount_percentage." %)";
+				$tax_per = ($value->tax*100)/($value->total-$value->discount) ;
                 $row[] = $value->tax . " (".  amountFormat($tax_per) .'%)' ;
                 $row[] = amountFormat($value->net_amount);
                 $row[] = amountFormat($value->paid_amount);
-                $row[] = amountFormat($balance_amount);
+                $row[] = amountFormat($balance_amount) . $action;
                 //====================
 
                 $dt_data[] = $row;
@@ -262,15 +274,15 @@ class Bill extends Admin_Controller
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
 
-                $action .= "<a href='#' onclick='printbloodbankData(" . $value->id . ")' class='btn btn-default btn-xs print_blood_issue'  data-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' onclick='printbloodbankData(" . $value->id . ")' class='btn btn-secondary btn-sm print_blood_issue'  data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
                 if ($this->rbac->hasPrivilege('blood_bank_billing_payment', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank'  data-record-id='" . $value->id . "' data-patient-id='" . $value->patient_id . "' class='btn btn-default btn-xs add_bloodbankpayment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-plus'></i></a>";
+                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank'  data-record-id='" . $value->id . "' data-patient-id='" . $value->patient_id . "' class='btn btn-secondary btn-sm add_bloodbankpayment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-plus'></i></a>";
                 }
 
                 $action .= "</div>";
                 
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date_of_issue, $this->time_format);
 
                 $row[]     = composePatientName($value->patient_name,$value->patient_id);
@@ -282,10 +294,10 @@ class Bill extends Admin_Controller
                 $percentage_amt = amountFormat(($value->amount * $value->discount_percentage)/100);
                 $row[]     = $percentage_amt.'('.$value->discount_percentage.'%)';
                 $tax_amt = amountFormat((($value->amount - $percentage_amt) * $value->tax_percentage)/100);
-                $row[]     = $tax_amt.'('.$value->tax_percentage.'%)';      
+                $row[]     = $tax_amt.'('.$value->tax_percentage.'%)';
                 $row[]     = $value->net_amount;
                 $row[]     = $value->paid_amount;
-                $row[]     = amountFormat($value->net_amount - $value->paid_amount);
+                $row[]     = amountFormat($value->net_amount - $value->paid_amount) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -310,19 +322,18 @@ class Bill extends Admin_Controller
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-default btn-xs viewDetail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm viewDetail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
 
                 if ($this->rbac->hasPrivilege('blood_bank_partial_payment', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment' data-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
+                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-secondary btn-sm add_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('issue_component', 'can_delete')) {
-                    $action .= "<a  class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_recordById(\"" . 'admin/bloodbank/deleteIssue/' . "$value->id\", \"" . $this->lang->line('delete_message') . "\")' data-original-title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_recordById(\"" . 'admin/bloodbank/deleteIssue/' . "$value->id\", \"" . $this->lang->line('delete_message') . "\")'><i class='fa fa-trash'></i></a>";
                 }
                 $action .= "</div>";
-                $prefix = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id . $action;
 
                 //==============================
-                $row[] = $prefix;
+                $row[] = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id;
                 $row[] = $value->case_reference_id;
                 $row[] = $this->customlib->dateyyyymmddToDateTimeformat($value->date_of_issue, false);
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
@@ -351,7 +362,7 @@ class Bill extends Admin_Controller
                 $row[]      = $tax_amt . '(' . $value->tax_percentage.'%)';                 
                 $row[]      = amountFormat($value->net_amount);
                 $row[]      = amountFormat($value->paid_amount);
-                $row[]      = amountFormat($value->net_amount - $value->paid_amount);
+                $row[]      = amountFormat($value->net_amount - $value->paid_amount) . $action;
                 $dt_data[]  = $row;
             }
         }
@@ -378,14 +389,14 @@ class Bill extends Admin_Controller
                 $action = "<div class='rowoptionview rowview-mt-19'>";
 
                 $action .= "<a href='#' onclick='printAmbulanceData(" . $value->id . ")'
-                       class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                       class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
                 if ($this->rbac->hasPrivilege('ambulance_billing_payment', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='ambulance'  data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_ambulancecallpayment' data-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
+                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='ambulance'  data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_ambulancecallpayment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
                 }
 
                 $action .= "</div>";
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('ambulance_call_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('ambulance_call_billing') . $value->id;
                 $row[] = $value->vehicle_no;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);              
                 $row[]     = amountFormat($value->amount);
@@ -402,6 +413,7 @@ class Bill extends Admin_Controller
                 $row[]     = amountFormat($value->net_amount);
                 $row[]     = amountFormat($value->paid_amount);
                 $row[]     = amountFormat($value->net_amount - $value->paid_amount);
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -413,10 +425,14 @@ class Bill extends Admin_Controller
         );
         echo json_encode($json_data);
     }
-    
-    
-    public function getDetailsByCaseId($case_id)
+
+
+    public function getDetailsByCaseId($case_id = null)
     {
+        if (empty($case_id)) {
+            echo json_encode(array('status' => 0, 'page' => ''));
+            return;
+        }
         $patient = $this->patient_model->getDetailsByCaseId($case_id);
 
         if (!array_filter($patient)) {
@@ -441,10 +457,11 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
         if ($_POST['payment_mode'] == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -460,30 +477,37 @@ class Bill extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $payment_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date"), $this->time_format);
-            $cheque_date  = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
-            $amount       = $this->input->post('amount');
-            $patient      = $this->patient_model->getDetailsByCaseId($this->input->post('case_reference_id'));
-            $patient_id   = $patient['patient_id'];
-            $module_data  = array(
-                'opd'        => array('opd_id', $this->input->post('module_id')),
-                'ipd'        => array('ipd_id', $this->input->post('module_id')),
-                'pharmacy'   => array('pharmacy_bill_basic_id', $this->input->post('module_id')),
-                'radiology'  => array('radiology_billing_id', $this->input->post('module_id')),
-                'pathology'  => array('pathology_billing_id', $this->input->post('module_id')),
-                'blood_bank' => array('blood_issue_id', $this->input->post('module_id')),
+            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date", TRUE), $this->time_format);
+            $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
+            $amount          = $this->input->post('amount', TRUE);
+            $module_id       = $this->input->post('module_id', TRUE);
+            $module_name     = $this->input->post('module_name', TRUE);
+            $case_ref_id     = $this->input->post('case_reference_id', TRUE);
+            $patient         = $this->patient_model->getDetailsByCaseId($case_ref_id);
+            $patient_id      = $patient['patient_id'];
+            $module_data     = array(
+                'opd'        => array('opd_id', $module_id),
+                'ipd'        => array('ipd_id', $module_id),
+                'pharmacy'   => array('pharmacy_bill_basic_id', $module_id),
+                'radiology'  => array('radiology_billing_id', $module_id),
+                'pathology'  => array('pathology_billing_id', $module_id),
+                'blood_bank' => array('blood_issue_id', $module_id),
             );
 
+            $payment_type = $this->input->post('payment_type', TRUE);
+            $amount_type  = ($payment_type === 'advance') ? 'advance' : null;
+
             $data = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
+                'case_reference_id' => $case_ref_id,
                 'amount'            => $amount,
                 'type'              => 'payment',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'amount_type'       => $amount_type,
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $payment_date,
                 'received_by'       => $this->customlib->getLoggedInUserID(),
                 'patient_id'        => $patient_id,
-                'section'           => $this->input->post('module_name'),
+                'section'           => $module_name,
             );
 
             $attachment      = "";
@@ -492,19 +516,28 @@ class Bill extends Admin_Controller
                 $fileInfo        = pathinfo($_FILES["document"]["name"]);
                 $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                 $attachment_name = $_FILES["document"]["name"];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment)) {
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill makepayment_or_revisit): ' . $e->getMessage());
+                    }
+                }
             }
-			
-            $cheque_date = $this->input->post("cheque_date");
-            if ($this->input->post('payment_mode') == "Cheque") {
 
+            $cheque_date = $this->input->post("cheque_date", TRUE);
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $data['attachment']      = $attachment;
                 $data['attachment_name'] = $attachment_name;
             }
-			
-            $data[$module_data[$this->input->post('module_name')][0]] = $module_data[$this->input->post('module_name')][1];
+
+            $this->load->model('bill_model');
+            $this->bill_model->ensureCreditBillingSchema();
+
+            $data[$module_data[$module_name][0]] = $module_data[$module_name][1];
             $insert_id                                                = $this->transaction_model->add($data);
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('record_saved_successfully'));
@@ -604,11 +637,360 @@ class Bill extends Admin_Controller
 	 
         $data['patient']          = $patient;
 		$data["ambulance_data"]  =  $this->patient_model->getPatientAmbulanceVisitDetails($patient['patient_id']);
-		$data["case_id"]  =  $case_id;	 
+		$data["case_id"]  =  $case_id;
+        $data['editable'] = true;
+
+        $opd_details = $this->patient_model->getDetailsopdByCaseId($case_id);
+        $ipd_details = $this->patient_model->getDetailsipdByCaseId($case_id);
+        $data['opd_id'] = !empty($opd_details['opdid']) ? $opd_details['opdid'] : '';
+        $data['ipd_id'] = !empty($ipd_details['ipdid']) ? $ipd_details['ipdid'] : '';
 		 
         $page                     = $this->load->view('admin/bill/_patient_bill', $data, true);
-        $modal_action             = "<a href='javascript:void(0);' data-case-id=" . $case_id . " class='print_bill d-inline' title=".$this->lang->line('print')."><i class='fa fa-print'></i></a>";
-        echo json_encode(array('status' => 1, 'page' => $page, 'modal_action' => $modal_action));
+        $modal_action             = "<a href='javascript:void(0);' data-case-id=" . $case_id . " class='btn btn-sm btn-light print_bill' title='".$this->lang->line('print')."'><i class='fa fa-print'></i></a> <a href='".site_url('admin/bill/download_patient_bill_pdf/'.$case_id)."' target='_blank' class='btn btn-sm btn-light' title='".$this->lang->line('view_pdf')."'><i class='fa fa-file-pdf'></i></a>";
+        echo json_encode(array(
+            'status'       => 1,
+            'page'         => $page,
+            'modal_action' => $modal_action,
+            'patient_name' => isset($patient['patient_name']) ? composePatientName($patient['patient_name'], $patient['patient_id']) : '',
+            'case_id'      => $case_id,
+            'patient_id'   => isset($patient['patient_id']) ? $patient['patient_id'] : '',
+            'opd_id'       => $data['opd_id'],
+            'ipd_id'       => $data['ipd_id'],
+        ));
+    }
+
+    /**
+     * Fetch a bill line for edit modal (final billing).
+     */
+    public function get_bill_item()
+    {
+        $module = $this->input->post('module');
+        $id     = (int) $this->input->post('id');
+
+        if ($module === 'pharmacy' || $id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('access_denied')));
+            return;
+        }
+
+        $result = null;
+        if ($module === 'opd' || $module === 'ipd') {
+            $row = $this->charge_model->getChargeById($id);
+            if ($row) {
+                $result = array(
+                    'id'                  => $row->id,
+                    'name'                => $row->charge_name,
+                    'qty'                 => $row->qty,
+                    'apply_charge'        => $row->apply_charge,
+                    'standard_charge'     => $row->standard_charge,
+                    'discount_percentage' => $row->discount_percentage,
+                    'tax'                 => $row->tax,
+                    'amount'              => $row->amount,
+                    'opd_id'              => $row->opd_id,
+                    'ipd_id'              => $row->ipd_id,
+                    'charge_id'           => $row->charge_id,
+                );
+            }
+        } elseif ($module === 'pathology') {
+            $row = $this->db->where('id', $id)->get('pathology_billing')->row();
+            if ($row) {
+                $tax_base = ($row->total - $row->discount);
+                $tax_pct  = ($tax_base > 0) ? (($row->tax * 100) / $tax_base) : 0;
+                $result   = array(
+                    'id'                  => $row->id,
+                    'name'                => $this->customlib->getSessionPrefixByType('pathology_billing') . $row->id,
+                    'qty'                 => 1,
+                    'apply_charge'        => $row->total,
+                    'discount_percentage' => $row->discount_percentage,
+                    'tax'                 => $tax_pct,
+                    'amount'              => $row->net_amount,
+                );
+            }
+        } elseif ($module === 'radiology') {
+            $row = $this->db->where('id', $id)->get('radiology_billing')->row();
+            if ($row) {
+                $tax_base = ($row->total - $row->discount);
+                $tax_pct  = ($tax_base > 0) ? (($row->tax * 100) / $tax_base) : 0;
+                $result   = array(
+                    'id'                  => $row->id,
+                    'name'                => $this->customlib->getSessionPrefixByType('radiology_billing') . $row->id,
+                    'qty'                 => 1,
+                    'apply_charge'        => $row->total,
+                    'discount_percentage' => $row->discount_percentage,
+                    'tax'                 => $tax_pct,
+                    'amount'              => $row->net_amount,
+                );
+            }
+        } elseif ($module === 'bloodissue' || $module === 'componentissue') {
+            $row = $this->db->where('id', $id)->get('blood_issue')->row();
+            if ($row) {
+                $result = array(
+                    'id'                  => $row->id,
+                    'name'                => $this->customlib->getSessionPrefixByType('blood_bank_billing') . $row->id,
+                    'qty'                 => 1,
+                    'apply_charge'        => $row->amount,
+                    'discount_percentage' => $row->discount_percentage,
+                    'tax'                 => $row->tax_percentage,
+                    'amount'              => $row->net_amount,
+                );
+            }
+        } elseif ($module === 'ambulance') {
+            $row = $this->db->where('id', $id)->get('ambulance_call')->row();
+            if ($row) {
+                $result = array(
+                    'id'                  => $row->id,
+                    'name'                => $this->customlib->getSessionPrefixByType('ambulance_call_billing') . $row->id,
+                    'qty'                 => 1,
+                    'apply_charge'        => $row->amount,
+                    'discount_percentage' => $row->discount_percentage,
+                    'tax'                 => $row->tax_percentage,
+                    'amount'              => $row->net_amount,
+                );
+            }
+        } else {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        if (empty($result)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        echo json_encode(array('status' => 1, 'result' => $result));
+    }
+
+    /**
+     * Update qty / price for a final-bill line. Pharmacy blocked.
+     */
+    public function update_bill_item()
+    {
+        $module              = $this->input->post('module');
+        $id                  = (int) $this->input->post('id');
+        $qty                 = $this->input->post('qty');
+        $apply_charge        = (float) $this->input->post('apply_charge');
+        $discount_percentage = $this->input->post('discount_percentage');
+
+        if ($module === 'pharmacy') {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('access_denied')));
+            return;
+        }
+
+        if ($id < 1 || $apply_charge < 0) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        if ($module === 'opd' || $module === 'ipd') {
+            $row = $this->charge_model->getChargeById($id);
+            if (empty($row)) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $qty = ($qty !== null && $qty !== '') ? (float) $qty : (float) $row->qty;
+            if ($qty <= 0) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+                return;
+            }
+            $discount_percentage = ($discount_percentage !== null && $discount_percentage !== '')
+                ? (float) $discount_percentage
+                : (float) $row->discount_percentage;
+            $tax_pct         = (float) $row->tax;
+            $discount_amount = ($apply_charge * $discount_percentage) / 100;
+            $tax_amount      = (($apply_charge - $discount_amount) * $tax_pct) / 100;
+            $amount          = ($apply_charge - $discount_amount) + $tax_amount;
+
+            $update = array(
+                'id'                  => $id,
+                'qty'                 => $qty,
+                'apply_charge'        => $apply_charge,
+                'discount_percentage' => $discount_percentage,
+                'amount'              => $amount,
+            );
+            $this->charge_model->add_charges($update);
+            echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => $amount));
+            return;
+        }
+
+        if ($module === 'pathology' || $module === 'radiology') {
+            $table = ($module === 'pathology') ? 'pathology_billing' : 'radiology_billing';
+            $row   = $this->db->where('id', $id)->get($table)->row();
+            if (empty($row)) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $discount_percentage = ($this->input->post('discount_percentage') !== null && $this->input->post('discount_percentage') !== '')
+                ? (float) $this->input->post('discount_percentage')
+                : (float) $row->discount_percentage;
+            $old_base = ($row->total - $row->discount);
+            $tax_pct  = ($old_base > 0) ? (($row->tax * 100) / $old_base) : 0;
+            $discount = ($apply_charge * $discount_percentage) / 100;
+            $tax      = (($apply_charge - $discount) * $tax_pct) / 100;
+            $net      = ($apply_charge - $discount) + $tax;
+            $this->db->where('id', $id)->update($table, array(
+                'total'               => $apply_charge,
+                'discount'            => $discount,
+                'discount_percentage' => $discount_percentage,
+                'tax'                 => $tax,
+                'net_amount'          => $net,
+            ));
+            echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => $net));
+            return;
+        }
+
+        if ($module === 'bloodissue' || $module === 'componentissue') {
+            $row = $this->db->where('id', $id)->get('blood_issue')->row();
+            if (empty($row)) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $discount_percentage = ($this->input->post('discount_percentage') !== null && $this->input->post('discount_percentage') !== '')
+                ? (float) $this->input->post('discount_percentage')
+                : (float) $row->discount_percentage;
+            $tax_pct  = (float) $row->tax_percentage;
+            $discount = ($apply_charge * $discount_percentage) / 100;
+            $tax      = (($apply_charge - $discount) * $tax_pct) / 100;
+            $net      = ($apply_charge - $discount) + $tax;
+            $this->bloodissue_model->update(array(
+                'id'                  => $id,
+                'amount'              => $apply_charge,
+                'discount_percentage' => $discount_percentage,
+                'net_amount'          => $net,
+            ));
+            echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => $net));
+            return;
+        }
+
+        if ($module === 'ambulance') {
+            $row = $this->db->where('id', $id)->get('ambulance_call')->row();
+            if (empty($row)) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $discount_percentage = ($this->input->post('discount_percentage') !== null && $this->input->post('discount_percentage') !== '')
+                ? (float) $this->input->post('discount_percentage')
+                : (float) $row->discount_percentage;
+            $tax_pct  = (float) $row->tax_percentage;
+            $discount = ($apply_charge * $discount_percentage) / 100;
+            $tax      = (($apply_charge - $discount) * $tax_pct) / 100;
+            $net      = ($apply_charge - $discount) + $tax;
+            $this->db->where('id', $id)->update('ambulance_call', array(
+                'amount'              => $apply_charge,
+                'discount'            => $discount,
+                'discount_percentage' => $discount_percentage,
+                'net_amount'          => $net,
+            ));
+            echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => $net));
+            return;
+        }
+
+        echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+    }
+
+    /**
+     * Delete a final-bill line. Pharmacy blocked.
+     */
+    public function delete_bill_item()
+    {
+        $module = $this->input->post('module');
+        $id     = (int) $this->input->post('id');
+
+        if ($module === 'pharmacy' || $id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('access_denied')));
+            return;
+        }
+
+        if ($module === 'opd') {
+            $this->charge_model->deleteOpdPatientCharge($id);
+        } elseif ($module === 'ipd') {
+            $this->charge_model->deleteIpdPatientCharge($id);
+        } elseif ($module === 'pathology') {
+            $this->pathology_model->deletePathologyBill($id);
+        } elseif ($module === 'radiology') {
+            $this->radio_model->deleteRadiologyBill($id);
+        } elseif ($module === 'bloodissue' || $module === 'componentissue') {
+            $this->bloodissue_model->delete($id);
+        } elseif ($module === 'ambulance') {
+            $this->vehicle_model->delete($id);
+        } else {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        echo json_encode(array('status' => 1, 'message' => $this->lang->line('delete_message')));
+    }
+
+    /**
+     * Add OPD/IPD charge to case from final billing. Other modules use their own create flows.
+     */
+    public function add_bill_item()
+    {
+        $module       = $this->input->post('module');
+        $case_id      = $this->input->post('case_id');
+        $charge_id    = (int) $this->input->post('charge_id');
+        $qty          = (float) $this->input->post('qty');
+        $apply_charge = (float) $this->input->post('apply_charge');
+        $discount_percentage = (float) $this->input->post('discount_percentage');
+        $note         = $this->input->post('note');
+
+        if ($module === 'pharmacy') {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('access_denied')));
+            return;
+        }
+
+        if (!in_array($module, array('opd', 'ipd'), true)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        if ($charge_id < 1 || $qty <= 0 || $apply_charge < 0 || empty($case_id)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        $charge = $this->charge_model->getDetails($charge_id, "");
+        if (empty($charge)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        $tax_pct         = isset($charge->percentage) ? (float) $charge->percentage : 0;
+        $discount_amount = ($apply_charge * $discount_percentage) / 100;
+        $tax_amount      = (($apply_charge - $discount_amount) * $tax_pct) / 100;
+        $amount          = ($apply_charge - $discount_amount) + $tax_amount;
+        $charge_date     = $this->parsePostedServiceDate($this->input->post('service_date'));
+
+        $insert = array(
+            'date'                => $charge_date,
+            'charge_id'           => $charge_id,
+            'qty'                 => $qty,
+            'apply_charge'        => $apply_charge,
+            'standard_charge'     => $charge->standard_charge,
+            'tpa_charge'          => 0,
+            'amount'              => $amount,
+            'discount_percentage' => $discount_percentage,
+            'tax'                 => $tax_pct,
+            'note'                => $note,
+            'created_at'          => date('Y-m-d'),
+        );
+
+        if ($module === 'opd') {
+            $opd = $this->patient_model->getDetailsopdByCaseId($case_id);
+            if (empty($opd['opdid'])) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $insert['opd_id'] = $opd['opdid'];
+        } else {
+            $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+            if (empty($ipd['ipdid'])) {
+                echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                return;
+            }
+            $insert['ipd_id'] = $ipd['ipdid'];
+        }
+
+        $this->charge_model->add_charges($insert);
+        echo json_encode(array('status' => 1, 'message' => $this->lang->line('record_saved_successfully')));
     }
 
     public function print_patient_bill()
@@ -626,20 +1008,31 @@ class Bill extends Admin_Controller
         $print_details         = $this->printing_model->get('', 'bill');
         $data['print_details'] = $print_details;
 
-        $patient         = $this->patient_model->getDetailsByCaseId($case_id);
+        $patient         = $this->enrichPatientBillDetails($case_id);
         $data['patient'] = $patient;
 
         $data['opd_data']         = $this->charge_model->getopdChargesbyCaseId($case_id);
         $data['ipd_data']         = $this->charge_model->getipdChargesbyCaseId($case_id);
         $data['pharmacy_data']    = $this->pharmacy_model->getpharmacybillByCaseId($case_id);
+        $data['pharmacy_medicines'] = $this->getPharmacyMedicinesByCaseId($case_id);
         $data['radiology_data']   = $this->radio_model->getradiologyByCaseId($case_id);
         $data['pathology_data']   = $this->pathology_model->getpathologyByCaseId($case_id);
+        $data['pathology_tests']  = $this->getPathologyTestsByCaseId($case_id);
         $data['bloodissue_data']  = $this->bloodissue_model->getbloodissueByCaseId($case_id);
         $data['transaction_data'] = $this->transaction_model->getTransactionByCaseId($case_id);
 
-        $data['componentissue_data']  = $this->bloodissue_model->getcomponentissueByCashId($case_id);  
+        $data['componentissue_data']  = $this->bloodissue_model->getcomponentissueByCashId($case_id);
         $data["ambulance_data"]  =  $this->patient_model->getPatientAmbulanceVisitDetails($patient['patient_id']);
-    
+        $this->load->model('bill_model');
+        $data['overall_discount'] = $this->bill_model->getOverallDiscountForCase($case_id);
+
+        $posting_type = strtolower(trim((string) $this->input->post('posting_type')));
+        if (!in_array($posting_type, array('opd', 'ipd'), true)) {
+            $posting_type = null;
+        }
+        $bill_presentation = $this->getPatientBillPresentationData($patient, $case_id, $posting_type);
+        $data = array_merge($data, $bill_presentation);
+
         $page                     = $this->load->view('admin/bill/_print_patient_bill', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
     }
@@ -656,6 +1049,7 @@ class Bill extends Admin_Controller
         $data['case_id']       = $case_id;
         $transaction           = $this->transaction_model->ipdopdPaymentByCaseId($case_id);
         $data['paid_amount']   = $transaction;
+        $data['advance_amount'] = $this->transaction_model->getAdvanceTotalByCaseId($case_id);
         $refund                = $this->transaction_model->getopdIpdrefundbyCaseId($case_id);
         if (!empty($refund)) {
             $data['refund'] = $refund['amount'];
@@ -681,6 +1075,7 @@ class Bill extends Admin_Controller
         $data['case_id']        = $case_id;
         $transaction            = $this->transaction_model->ipdopdPaymentByCaseId($case_id);
         $data['paid_amount']    = $transaction;
+        $data['advance_amount'] = $this->transaction_model->getAdvanceTotalByCaseId($case_id);
         $data['charge_details'] = $this->transaction_model->get_ipdopdchargebycaseId($case_id);
 
         $data['module_type'] = $module_type;
@@ -787,10 +1182,13 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
         if ($_POST['payment_mode'] == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
         }
+
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -799,31 +1197,32 @@ class Bill extends Admin_Controller
                 'payment_date' => form_error('payment_date'),
                 'cheque_date'  => form_error('cheque_date'),
                 'cheque_no'    => form_error('cheque_no'),
+                'document'     => form_error('document'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $payment_date = $this->customlib->dateFormatToYYYYMMDD($this->input->post("payment_date"));
-            $cheque_date  = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
-            $amount       = $this->input->post('amount');
+            $payment_date = $this->customlib->dateFormatToYYYYMMDD($this->input->post("payment_date", TRUE));
+            $cheque_date  = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
+            $amount       = $this->input->post('amount', TRUE);
 
             $data = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
-                'id'            	=> $this->input->post('id'),               
+                'case_reference_id' => $this->input->post('case_reference_id', TRUE),
+                'id'                => $this->input->post('id', TRUE),
                 'amount'            => $amount,
                 'type'              => 'refund',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $payment_date,
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if($this->input->post('ipd_id')!=""){
-                $data['ipd_id'] = $this->input->post('ipd_id');
+            if ($this->input->post('ipd_id', TRUE) != "") {
+                $data['ipd_id'] = $this->input->post('ipd_id', TRUE);
             }
-            if($this->input->post('opd_id')!=""){
-                $data['opd_id'] = $this->input->post('opd_id');
+            if ($this->input->post('opd_id', TRUE) != "") {
+                $data['opd_id'] = $this->input->post('opd_id', TRUE);
             }
 
             $insert_id = $this->transaction_model->add($data);
@@ -831,14 +1230,22 @@ class Bill extends Admin_Controller
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $fileInfo = pathinfo($_FILES["document"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name);
-                $data_img = array('id' => $insert_id, 'document' => $img_name);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'document' => $img_name);
+
+                    // SaaS: add the uploaded refund document size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill add_refund): ' . $e->getMessage());
+                    }
+                }
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['id']          = $insert_id;
                 $data['cheque_date'] = $cheque_date;
-                $data['cheque_no']   = $this->input->post('cheque_no');
+                $data['cheque_no']   = $this->input->post('cheque_no', TRUE);
                 $data['attachment']  = $img_name;
                 $this->transaction_model->add($data);
             }
@@ -894,7 +1301,7 @@ class Bill extends Admin_Controller
     {
         $this->form_validation->set_rules('discharge_date', $this->lang->line('discharge_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('death_status', $this->lang->line('discharge_status'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
 
         if ($_POST['death_status'] == "1") {
             $this->form_validation->set_rules('death_date', $this->lang->line('death_date'), 'trim|required|xss_clean');
@@ -943,33 +1350,33 @@ class Bill extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $discharge_date = $this->input->post("discharge_date");
+            $discharge_date = $this->input->post("discharge_date", TRUE);
 
             if ($discharge_date != "") {
-                $discharge_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('discharge_date'), $this->time_format);
+                $discharge_date = $this->customlib->dateFormatToYYYYMMDDHis($discharge_date, $this->time_format);
             } else {
                 $discharge_date != "";
             }
 
-            $death_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("death_date"), $this->time_format);
-            $refer_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("referral_date"), $this->time_format);
-            $opd_id     = $this->input->post('opd_id');
-            $ipd_id     = $this->input->post('ipd_id');
+            $death_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("death_date", TRUE), $this->time_format);
+            $refer_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("referral_date", TRUE), $this->time_format);
+            $opd_id     = $this->input->post('opd_id', TRUE);
+            $ipd_id     = $this->input->post('ipd_id', TRUE);
 
             $data = array(
-                'id'                  => $this->input->post('id'),
-                'case_reference_id'   => $this->input->post('case_reference_id'),
-                'discharge_status'    => $this->input->post('death_status'),
-                'operation'           => $this->input->post('operation'),
-                'diagnosis'           => $this->input->post('diagnosis'),
-                'investigations'      => $this->input->post('investigations'),
-                'treatment_home'      => $this->input->post('treatment_home'),
-                'note'                => $this->input->post('note'),
+                'id'                  => $this->input->post('id', TRUE),
+                'case_reference_id'   => $this->input->post('case_reference_id', TRUE),
+                'discharge_status'    => $this->input->post('death_status', TRUE),
+                'operation'           => $this->input->post('operation', TRUE),
+                'diagnosis'           => $this->input->post('diagnosis', TRUE),
+                'investigations'      => $this->input->post('investigations', TRUE),
+                'treatment_home'      => $this->input->post('treatment_home', TRUE),
+                'note'                => $this->input->post('note', TRUE),
                 'discharge_date'      => $discharge_date,
                 'death_date'          => $death_date,
                 'refer_date'          => $refer_date,
-                'refer_to_hospital'   => $this->input->post('hospital_name'),
-                'reason_for_referral' => $this->input->post('reason_for_referral'),
+                'refer_to_hospital'   => $this->input->post('hospital_name', TRUE),
+                'reason_for_referral' => $this->input->post('reason_for_referral', TRUE),
                 'discharge_by'        => $this->customlib->getLoggedInUserID(),
             );
 
@@ -993,7 +1400,7 @@ class Bill extends Admin_Controller
                 $custom_value_array = array();
                 if (!empty($custom_field_post)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[death_report][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[death_report][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => 0,
@@ -1003,14 +1410,14 @@ class Bill extends Admin_Controller
                         $custom_value_array[] = $array_custom;
                     }
                 }
-                $deathrecord_id = $this->input->post('deathrecord_id');
+                $deathrecord_id = $this->input->post('deathrecord_id', TRUE);
                 $death_data     = array(
                     'id'                => $deathrecord_id,
-                    'patient_id'        => $this->input->post('patient_id'),
-                    'guardian_name'     => $this->input->post('guardian_name'),
-                    'case_reference_id' => $this->input->post('case_reference_id'),
+                    'patient_id'        => $this->input->post('patient_id', TRUE),
+                    'guardian_name'     => $this->input->post('guardian_name', TRUE),
+                    'case_reference_id' => $this->input->post('case_reference_id', TRUE),
                     'death_date'        => $death_date,
-                    'death_report'      => $this->input->post('death_report'),
+                    'death_report'      => $this->input->post('death_report', TRUE),
                     'is_active'         => 'yes',
                 );
 
@@ -1020,23 +1427,33 @@ class Bill extends Admin_Controller
                     $fileInfo        = pathinfo($_FILES["document"]["name"]);
                     $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                     $attachment_name = $_FILES["document"]["name"];
-                    move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/death_image/" . $attachment);
-                    $death_data['attachment']      = $attachment;
-                    $death_data['attachment_name'] = $attachment_name;
+                    if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/death_image/" . $attachment)) {
+                        $death_data['attachment']      = $attachment;
+                        $death_data['attachment_name'] = $attachment_name;
+
+                        // SaaS: add the uploaded death-image document size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill add_discharge): ' . $e->getMessage());
+                        }
+                    }
+                    // closing braces of the wrapping move-success branch
+                    // (original $death_data assignments moved inside success block above)
                 }
 
                 $insert_ids = $this->birthordeath_model->addDeathdata($death_data);
 
                 //update death status in patient table
-                $patient_data = array('id' => $this->input->post('patient_id'), 'is_dead' => 'yes');
-                $this->patient_model->add($patient_data);               
-					
-				$this->customfield_model->insertRecord($custom_value_array, $insert_id);				
+                $patient_data = array('id' => $this->input->post('patient_id', TRUE), 'is_dead' => 'yes');
+                $this->patient_model->add($patient_data);
+
+                $this->customfield_model->insertRecord($custom_value_array, $insert_id);
 
                 $event_data = array(
-                    'patient_id' => $this->input->post('patient_id'),
-                    'case_id'    => $this->input->post('case_reference_id'),
-                    'death_date' => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post("death_date"), $this->time_format),
+                    'patient_id' => $this->input->post('patient_id', TRUE),
+                    'case_id'    => $this->input->post('case_reference_id', TRUE),
+                    'death_date' => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post("death_date", TRUE), $this->time_format),
                 );
 
                 $this->system_notification->send_system_notification('add_death_record', $event_data);
@@ -1122,7 +1539,7 @@ class Bill extends Admin_Controller
             $download = '&nbsp;<a title= ' . $this->lang->line('download') . ' href=' . site_url('admin/birthordeath/download_deathrecord/' . $deathrecord['id']) . '   class="" data-recordId=""  data-original-title=""><i class="fa fa-download"></i> </a>';
         }
 
-        $action = '<a href="javascript:void(0);" class=" print_dischargecard" data-toggle="tooltip" title=' . $this->lang->line('print') . ' data-module_type="' . $type . '" data-case_id="' . $case_id . '" data-recordId="' . $id . '" data-original-title=""><i class="fa fa-print"></i> </a>' . $download;
+        $action = '<a href="javascript:void(0);" class="btn btn-sm btn-light print_dischargecard" data-bs-toggle="tooltip" title="' . $this->lang->line('print') . '" data-module_type="' . $type . '" data-case_id="' . $case_id . '" data-recordId="' . $id . '"><i class="fa fa-print"></i></a>' . $download;
         $page   = $this->load->view('admin/bill/_printDischargeCard', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page, 'action' => $action));
     }
@@ -1336,9 +1753,10 @@ class Bill extends Admin_Controller
         $data["bloodgroup"]  = $this->bloodbankstatus_model->get_product(null, 1);
         $data['fields']      = $this->customfield_model->get_custom_fields('pathology', 1);
         $data['organisation']   = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'pathology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/pathology/pathology', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getPatientPathologyDetails()
@@ -1377,11 +1795,11 @@ class Bill extends Admin_Controller
         $actions                       = "";
 
         if (isset($is_bill)) {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_pathology_bill' data-toggle='tooltip' data-placement='bottom'  data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_pathology_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
         } else {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill' data-toggle='tooltip' data-record-id=\"" . $id . "\"  data-placement='bottom'  data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='edit_pathology' data-toggle='tooltip' data-placement='bottom' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('edit_pathology') . "'><i class='fa fa-pencil'></i></a>";
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_pathology' data-toggle='tooltip' data-placement='bottom' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('delete_pathology') . "'><i class='fa fa-trash'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='edit_pathology btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('edit_pathology') . "'><i class='fa fa-pencil'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_pathology btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('delete_pathology') . "'><i class='fa fa-trash'></i></a>";
         }
 
         echo json_encode(array('status' => 1, 'page' => $page, 'actions' => $actions));
@@ -1411,7 +1829,7 @@ class Bill extends Admin_Controller
 
     public function editpathology()
     {
-        $id                          = $this->input->post('id');
+        $id                          = $this->input->post('id', TRUE);
         $pathology_data              = $this->pathology_model->getPathologyBillByID($id);
         $data["pathology_data"]      = $pathology_data;
         $testlist                    = $this->pathology_model->getpathotestDetails();
@@ -1468,30 +1886,32 @@ class Bill extends Admin_Controller
         }
 		
         $transaction_data     = array();
-        $pathology_billing_id = $this->input->post('pathology_billing_id');
-        $prescription_no      = $this->input->post('is_prescription_no_exist');
+        $pathology_billing_id = $this->input->post('pathology_billing_id', TRUE);
+        $prescription_no      = $this->input->post('is_prescription_no_exist', TRUE);
 
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('total', $this->lang->line('total'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('patientid', $this->lang->line('patient'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('discount', $this->lang->line('discount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('tax', $this->lang->line('tax'), 'trim|required|xss_clean');
-        if ($pathology_billing_id == '') {
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+        $this->form_validation->set_rules('doctor_name', $this->lang->line('doctor'), 'trim|xss_clean');
+        if (empty($pathology_billing_id)) {
             $this->form_validation->set_rules(
                 'amount', $this->lang->line('amount'), array('trim', 'required', 'xss_clean', 'valid_amount',
                     array('check_exists', array($this->pathology_model, 'validate_paymentamount')),
                 )
             );
 			
-            if ($this->input->post("payment_mode") == "Cheque") {
+            if ($this->input->post("payment_mode", TRUE) == "Cheque") {
                 $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required');
                 $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required');
-                $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]');
+                $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
             }
         }
 
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $total_rows = $this->input->post('total_rows');
+        $total_rows = $this->input->post('total_rows', TRUE);
         if (!isset($total_rows) && !isset($pathology) && !isset($radiology)) {
             $this->form_validation->set_rules('no_records', $this->lang->line('no_records'), 'trim|required|xss_clean',
                 array('required' => $this->lang->line('no_test_selected')));
@@ -1500,8 +1920,8 @@ class Bill extends Admin_Controller
         if (isset($total_rows) && !empty($total_rows)) {
             foreach ($total_rows as $row_key => $row_value) {
 
-                $test_name              = $this->input->post('test_name_' . $row_value);
-                $reportdate             = $this->input->post('reportdate_' . $row_value);
+                $test_name              = $this->input->post('test_name_' . $row_value, TRUE);
+                $reportdate             = $this->input->post('reportdate_' . $row_value, TRUE);
                 $check_duplicate_test[] = $test_name;
 
                 if ($test_name == "") {
@@ -1535,9 +1955,9 @@ class Bill extends Admin_Controller
                 'total'          => form_error('total'),
             );
 
-            if ($pathology_billing_id == '') {
+            if (empty($pathology_billing_id)) {
 
-                if ($this->input->post("payment_mode") == "Cheque") {
+                if ($this->input->post("payment_mode", TRUE) == "Cheque") {
                     $msg['cheque_no']   = form_error('cheque_no');
                     $msg['cheque_date'] = form_error('cheque_date');
                 }
@@ -1559,11 +1979,11 @@ class Bill extends Admin_Controller
             }
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $patient_id        = $this->input->post('patientid');
-            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'));
-            $doctor_name       = $this->input->post('doctor_name');
-            $doctor_id         = $this->input->post('consultant_doctor');
-            $case_reference_id = $this->input->post('case_reference_id');
+            $patient_id        = $this->input->post('patientid', TRUE);
+            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE));
+            $doctor_name       = $this->input->post('doctor_name', TRUE);
+            $doctor_id         = $this->input->post('consultant_doctor', TRUE);
+            $case_reference_id = $this->input->post('case_reference_id', TRUE);
             if (empty($doctor_id)) {
                 $doctor_id = null;
             }
@@ -1578,15 +1998,15 @@ class Bill extends Admin_Controller
                 $prescription_no = null;
             }
 
-            $is_tpa = $this->input->post('is_tpa');
+            $is_tpa = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id    = null;
                 $insurance_id       = null;
                 $insurance_validity = null;
             }else{           
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
             if (empty($organisation_id)) {
                 $organisation_id = null;
@@ -1599,23 +2019,23 @@ class Bill extends Admin_Controller
                 'doctor_id'           => $doctor_id,
                 'case_reference_id'   => $case_reference_id,
                 'ipd_prescription_basic_id' => $prescription_no,
-                'total'               => $this->input->post('total'),
-                'discount'            => $this->input->post('discount'),
-                'discount_percentage' => $this->input->post('discount_percent'),
-                'tax'                 => $this->input->post('tax'),
-                'net_amount'          => $this->input->post('net_amount'),
-                'note'                => $this->input->post('note'),
+                'total'               => $this->input->post('total', TRUE),
+                'discount'            => $this->input->post('discount', TRUE),
+                'discount_percentage' => $this->input->post('discount_percent', TRUE),
+                'tax'                 => $this->input->post('tax', TRUE),
+                'net_amount'          => $this->input->post('net_amount', TRUE),
+                'note'                => $this->input->post('note', TRUE),
                 'generated_by'        => $this->customlib->getLoggedInUserID(),
                 'organisation_id'     => $organisation_id,
                 'insurance_validity'  => $insurance_validity,
                 'insurance_id'        => $insurance_id,
             );
 
-            $custom_field_post  = $this->input->post("custom_fields[pathology]");
+            $custom_field_post  = $this->input->post("custom_fields[pathology]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -1630,8 +2050,8 @@ class Bill extends Admin_Controller
                 $data['id'] = $pathology_billing_id;
             }
 
-            $total_rows                = $this->input->post('total_rows');
-            $prev_reports              = $this->input->post('prev_reports');
+            $total_rows                = $this->input->post('total_rows', TRUE);
+            $prev_reports              = $this->input->post('prev_reports', TRUE);
             $insert_array              = array();
             $update_array              = array();
             $prev_reports_array        = array();
@@ -1641,54 +2061,61 @@ class Bill extends Admin_Controller
             }
 
             foreach ($total_rows as $row_key => $row_value) {
-                $test_report_id = $this->input->post('inserted_id_' . $row_value);
+                $test_report_id = $this->input->post('inserted_id_' . $row_value, TRUE);
                 if ($test_report_id == 0) {
                     $report = array(
                         'pathology_bill_id' => 0,
                         'patient_id'        => $patient_id,
-                        'pathology_id'      => $this->input->post('test_name_' . $row_value),
-                        'tax_percentage'    => $this->input->post('taxpercent_' . $row_value),
-                        'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value)),
-                        'apply_charge'      => $this->input->post('amount_' . $row_value),
+                        'pathology_id'      => $this->input->post('test_name_' . $row_value, TRUE),
+                        'tax_percentage'    => $this->input->post('taxpercent_' . $row_value, TRUE),
+                        'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value, TRUE)),
+                        'apply_charge'      => $this->input->post('amount_' . $row_value, TRUE),
                     );
                     $insert_array[] = $report;
                 } else if ($test_report_id > 0) {
                     $report = array(
                         'id'             => $test_report_id,
                         'patient_id'     => $patient_id,
-                        'pathology_id'   => $this->input->post('test_name_' . $row_value),
-                        'tax_percentage' => $this->input->post('taxpercent_' . $row_value),
-                        'reporting_date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value)),
-                        'apply_charge'   => $this->input->post('amount_' . $row_value),
+                        'pathology_id'   => $this->input->post('test_name_' . $row_value, TRUE),
+                        'tax_percentage' => $this->input->post('taxpercent_' . $row_value, TRUE),
+                        'reporting_date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value, TRUE)),
+                        'apply_charge'   => $this->input->post('amount_' . $row_value, TRUE),
                     );
                     $prev_reports_update_array[] = $test_report_id;
                     $update_array[]              = $report;
                 }
             }
 
-            if ($pathology_billing_id == '') {
+            if (empty($pathology_billing_id)) {
 
-                $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+                $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
                 $payment_section  = $this->config->item('payment_section');
                 $transaction_data = array(
                     'pathology_billing_id' => 0,
                     'patient_id'           => $patient_id,
                     'case_reference_id'    => $case_reference_id,
                     'section'              => $payment_section['pathology'],
-                    'amount'               => $this->input->post('amount'),
+                    'amount'               => $this->input->post('amount', TRUE),
                     'type'                 => 'payment',
-                    'ipd_id'               => $this->input->post('ipdid'),
-                    'payment_mode'         => $this->input->post('payment_mode'),
+                    'ipd_id'               => $this->input->post('ipdid', TRUE),
+                    'payment_mode'         => $this->input->post('payment_mode', TRUE),
                     'payment_date'         => $bill_date,
                     'received_by'          => $this->customlib->getLoggedInUserID(),
                 );
-                if ($this->input->post('payment_mode') == "Cheque") {
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                     $transaction_data['cheque_date'] = $cheque_date;
-                    $transaction_data['cheque_no']   = $this->input->post('cheque_no');
+                    $transaction_data['cheque_no']   = $this->input->post('cheque_no', TRUE);
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $transaction_data['attachment']      = $file_name;
                         $transaction_data['attachment_name'] =  $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill add_pathology_bill): ' . $e->getMessage());
+                        }
                     }
                 }
             }
@@ -1699,7 +2126,7 @@ class Bill extends Admin_Controller
             if ($pathology_billing_id > 0) {
                 if (!empty($custom_fields)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $inserted,
@@ -1720,14 +2147,14 @@ class Bill extends Admin_Controller
 
                 $event_data     = array(
                     'patient_id'  => $patient_id,
-                    'case_id'     => $this->input->post('case_reference_id'),
-                    'bill_no'     => $this->input->post('bill_no'),
-                    'date'        => $this->customlib->YYYYMMDDTodateFormat($this->input->post('date')),                    
-                    'total'       => $this->input->post('total'),
-                    'discount'    => $this->input->post('discount'),
-                    'tax'         => $this->input->post('tax'),
-                    'net_amount'  => $this->input->post('net_amount'),
-                    'paid_amount' => $this->input->post('amount'),
+                    'case_id'     => $this->input->post('case_reference_id', TRUE),
+                    'bill_no'     => $this->input->post('bill_no', TRUE),
+                    'date'        => $this->customlib->YYYYMMDDTodateFormat($this->input->post('date', TRUE)),                    
+                    'total'       => $this->input->post('total', TRUE),
+                    'discount'    => $this->input->post('discount', TRUE),
+                    'tax'         => $this->input->post('tax', TRUE),
+                    'net_amount'  => $this->input->post('net_amount', TRUE),
+                    'paid_amount' => $this->input->post('amount', TRUE),
                 );
 
                 if ($doctor_id != "") {
@@ -1750,6 +2177,17 @@ class Bill extends Admin_Controller
         echo json_encode($array);
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
     public function delete_pathology_bill()
     {
         $id = $this->input->post('id');
@@ -1757,10 +2195,30 @@ class Bill extends Admin_Controller
             access_denied();
         }
         if (!empty($id)) {
+            // SaaS: release every linked transaction's attachment from storage quota before deletion.
+            $saas_transactions = $this->transaction_model->pathologyPayments($id);
+            if (!empty($saas_transactions)) {
+                foreach ($saas_transactions as $saas_transaction) {
+                    if (!empty($saas_transaction->attachment)) {
+                        $doc_path = $saas_transaction->attachment;
+                        $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                        $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (bill delete_pathology_bill transaction_id=' . $saas_transaction->id . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($doc_path, $dir);
+                    }
+                }
+            }
+
             $this->pathology_model->deletePathologyBill($id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
-            $array = array('status' => 'fail', 'error' => '', 'message' => 'Something went wrong');
+            $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
         }
         echo json_encode($array);
     }
@@ -1771,13 +2229,14 @@ class Bill extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'required|valid_amount');
-        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required');
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload_document');
+        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean|valid_amount');
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload_document|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -1792,45 +2251,52 @@ class Bill extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $pathology_billing_id     = $this->input->post('pathology_billing_id');
+            $pathology_billing_id     = $this->input->post('pathology_billing_id', TRUE);
             $pathology_billing_detail = $this->transaction_model->pathologyTotalPayments($pathology_billing_id);
             $net_amount               = $pathology_billing_detail->net_amount;
-            $amount_paying            = $this->input->post('amount');
+            $amount_paying            = $this->input->post('amount', TRUE);
             $total_paid               = $pathology_billing_detail->total_paid;
 
             if ($net_amount >= ($total_paid + $amount_paying)) {
                 $picture         = "";
-                $bill_date       = $this->input->post("payment_date");
+                $bill_date       = $this->input->post("payment_date", TRUE);
                 $payment_section = $this->config->item('payment_section');
                 $payment_array   = array(
-                    'amount'               => $this->input->post('amount'),
+                    'amount'               => $this->input->post('amount', TRUE),
                     'type'                 => 'payment',
-                    'patient_id'           => $this->input->post('patient_id'),
+                    'patient_id'           => $this->input->post('patient_id', TRUE),
                     'section'              => $payment_section['pathology'],
-                    'pathology_billing_id' => $this->input->post('pathology_billing_id'),
-                    'payment_mode'         => $this->input->post('payment_mode'),
-                    'note'                 => $this->input->post('note'),
+                    'pathology_billing_id' => $this->input->post('pathology_billing_id', TRUE),
+                    'payment_mode'         => $this->input->post('payment_mode', TRUE),
+                    'note'                 => $this->input->post('note', TRUE),
                     'payment_date'         => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->customlib->getHospitalTimeFormat()),
                     'received_by'          => $this->customlib->getLoggedInUserID(),
                 );
 
-                if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id');
+                if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
                 }
 
                 $attachment      = "";
                 $attachment_name = "";
 
-                $cheque_date = $this->input->post("cheque_date");
-                if ($this->input->post('payment_mode') == "Cheque") {
+                $cheque_date = $this->input->post("cheque_date", TRUE);
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
 
                     $payment_array['cheque_date'] = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                    $payment_array['cheque_no']   = $this->input->post('cheque_no');
+                    $payment_array['cheque_no']   = $this->input->post('cheque_no', TRUE);
                
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $payment_array['attachment']      = $file_name;
                         $payment_array['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill partial_bill): ' . $e->getMessage());
+                        }
                     }   
                 }
 
@@ -1901,9 +2367,10 @@ class Bill extends Admin_Controller
         $data["patients"]           = $patients;
         $data["bloodgroup"]         = $this->bloodbankstatus_model->get_product(null, 1);
         $data['fields']             = $this->customfield_model->get_custom_fields('radiology', 1);
-        $this->load->view('layout/header');
+        $data['module'] = 'radiology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/radiology/radiology', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getPatientRadiologyDetails()
@@ -1940,12 +2407,11 @@ class Bill extends Admin_Controller
         $page           = $this->load->view('admin/bill/radiology/_getPatientRadiologyDetails', $data, true);
         $actions        = "";
         if (isset($is_bill)) {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' class='print_radiology_bill' data-toggle='tooltip' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
-
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_radiology_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
         } else {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' class='print_bill' data-placement='bottom' data-toggle='tooltip' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
-            $actions .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' class='edit_radiology' data-placement='bottom' data-toggle='tooltip' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('edit_radiology') . "'><i class='fa fa-pencil'></i></a>";
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_radiology' data-placement='bottom' data-toggle='tooltip' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='edit_radiology btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('edit_radiology') . "'><i class='fa fa-pencil'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_radiology btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
         }
         echo json_encode(array('status' => 1, 'page' => $page, 'actions' => $actions));
     }
@@ -1977,14 +2443,15 @@ class Bill extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'required|valid_amount');
-        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required');
+        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean|valid_amount');
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
 
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -2000,41 +2467,48 @@ class Bill extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $radiology_billing_id     = $this->input->post('radiology_billing_id');
+            $radiology_billing_id     = $this->input->post('radiology_billing_id', TRUE);
             $radiology_billing_detail = $this->transaction_model->radiologyTotalPayments($radiology_billing_id);
             $net_amount               = $radiology_billing_detail->net_amount;
-            $amount_paying            = $this->input->post('amount');
+            $amount_paying            = $this->input->post('amount', TRUE);
             $total_paid               = $radiology_billing_detail->total_paid;
 
             if ($net_amount >= ($total_paid + $amount_paying)) {
 
                 $picture         = "";
-                $bill_date       = $this->input->post("payment_date");
+                $bill_date       = $this->input->post("payment_date", TRUE);
                 $payment_section = $this->config->item('payment_section');
                 $payment_array   = array(
-                    'amount'               => $this->input->post('amount'),
+                    'amount'               => $this->input->post('amount', TRUE),
                     'type'                 => 'payment',
-                    'patient_id'           => $this->input->post('patient_id'),
+                    'patient_id'           => $this->input->post('patient_id', TRUE),
                     'section'              => $payment_section['radiology'],
-                    'radiology_billing_id' => $this->input->post('radiology_billing_id'),
-                    'payment_mode'         => $this->input->post('payment_mode'),
-                    'note'                 => $this->input->post('note'),
+                    'radiology_billing_id' => $this->input->post('radiology_billing_id', TRUE),
+                    'payment_mode'         => $this->input->post('payment_mode', TRUE),
+                    'note'                 => $this->input->post('note', TRUE),
                     'payment_date'         => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->customlib->getHospitalTimeFormat()),
                     'received_by'          => $this->customlib->getLoggedInUserID(),
                 );
 
-                if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id');
+                if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
                 }
-				
-                $cheque_date = $this->input->post("cheque_date");
-                if ($this->input->post('payment_mode') == "Cheque") {
+
+                $cheque_date = $this->input->post("cheque_date", TRUE);
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                     $payment_array['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                    $payment_array['cheque_no']       = $this->input->post('cheque_no');
+                    $payment_array['cheque_no']       = $this->input->post('cheque_no', TRUE);
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $payment_array['attachment']      = $file_name;
                         $payment_array['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill partial_bill): ' . $e->getMessage());
+                        }
                     }   
                 }
 
@@ -2112,11 +2586,12 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('total', $this->lang->line('total'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('discount', $this->lang->line('discount'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('total', $this->lang->line('total'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('patientid', $this->lang->line('patient'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('tax', $this->lang->line('tax'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+        $this->form_validation->set_rules('doctor_name', $this->lang->line('doctor'), 'trim|xss_clean');
 
-        if ($radiology_billing_id == '') {
+        if (empty($radiology_billing_id)) {
             $this->form_validation->set_rules(
                 'amount', $this->lang->line('amount'), array('trim', 'required', 'xss_clean', 'valid_amount',
                     array('check_exists', array($this->radio_model, 'validate_paymentamount')),
@@ -2126,7 +2601,7 @@ class Bill extends Admin_Controller
             if ($this->input->post("payment_mode") == "Cheque") {
                 $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required');
                 $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required');
-                $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
+                $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
             }
         }
 
@@ -2175,7 +2650,7 @@ class Bill extends Admin_Controller
                 'tax'            => form_error('tax'),
             );
 
-            if ($radiology_billing_id == '') {
+            if (empty($radiology_billing_id)) {
                 if ($this->input->post("payment_mode") == "Cheque") {
                     $msg['cheque_no']   = form_error('cheque_no');
                     $msg['cheque_date'] = form_error('cheque_date');
@@ -2203,16 +2678,16 @@ class Bill extends Admin_Controller
 
         } else {
 
-            $patient_id        = $this->input->post('patientid');
-            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'));
-            $doctor_name       = $this->input->post('doctor_name');
-            $doctor_id         = $this->input->post('consultant_doctor');
-            $case_reference_id = $this->input->post('case_reference_id');
-			
+            $patient_id        = $this->input->post('patientid', TRUE);
+            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE));
+            $doctor_name       = $this->input->post('doctor_name', TRUE);
+            $doctor_id         = $this->input->post('consultant_doctor', TRUE);
+            $case_reference_id = $this->input->post('case_reference_id', TRUE);
+
             if (empty($case_reference_id)) {
                 $case_reference_id = null;
             }
-			
+
             if (empty($doctor_id)) {
                 $doctor_id = null;
             }
@@ -2224,17 +2699,17 @@ class Bill extends Admin_Controller
                 $prescription_no = null;
             }
 
-            $is_tpa = $this->input->post('is_tpa');
+            $is_tpa = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id    = null;
                 $insurance_id       = null;
                 $insurance_validity = null;
-            }else{           
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
-            } 
-			if (empty($organisation_id)) {
+            }else{
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
+            }
+            if (empty($organisation_id)) {
                 $organisation_id = null;
             }
 
@@ -2245,23 +2720,23 @@ class Bill extends Admin_Controller
                 'doctor_id'           => $doctor_id,
                 'case_reference_id'   => $case_reference_id,
                 'ipd_prescription_basic_id' => $prescription_no,
-                'total'               => $this->input->post('total'),
-                'discount'            => $this->input->post('discount'),
-                'discount_percentage' => $this->input->post('discount_percent'),
-                'tax'                 => $this->input->post('tax'),
-                'net_amount'          => $this->input->post('net_amount'),
-                'note'                => $this->input->post('note'),
+                'total'               => $this->input->post('total', TRUE),
+                'discount'            => $this->input->post('discount', TRUE),
+                'discount_percentage' => $this->input->post('discount_percent', TRUE),
+                'tax'                 => $this->input->post('tax', TRUE),
+                'net_amount'          => $this->input->post('net_amount', TRUE),
+                'note'                => $this->input->post('note', TRUE),
                 'generated_by'        => $this->customlib->getLoggedInUserID(),
                 'organisation_id'     => $organisation_id,
                 'insurance_id'        => $insurance_id,
                 'insurance_validity'  => $insurance_validity,
             );
 			
-            $custom_field_post  = $this->input->post("custom_fields[radiology]");
+            $custom_field_post  = $this->input->post("custom_fields[radiology]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[radiology][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[radiology][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -2276,8 +2751,8 @@ class Bill extends Admin_Controller
                 $data['id'] = $radiology_billing_id;
             }
 
-            $total_rows   = $this->input->post('total_rows');
-            $prev_reports = $this->input->post('prev_reports');
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            $prev_reports = $this->input->post('prev_reports', TRUE);
 
             $insert_array              = array();
             $update_array              = array();
@@ -2313,7 +2788,7 @@ class Bill extends Admin_Controller
                 }
             }
 
-            if ($radiology_billing_id == '') {
+            if (empty($radiology_billing_id)) {
                 $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
                 $payment_section  = $this->config->item('payment_section');
                 $transaction_data = array(
@@ -2336,6 +2811,13 @@ class Bill extends Admin_Controller
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $transaction_data['attachment']      = $file_name;
                         $transaction_data['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill add_radiology_bill): ' . $e->getMessage());
+                        }
                     }   
                 }
             }
@@ -2439,9 +2921,10 @@ class Bill extends Admin_Controller
         $data["doctor_select"]  = $doctorid;
         $data["disable_option"] = $disable_option;
         $data['organisation']   = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/opd/opd', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function add_opd(){      
@@ -2470,7 +2953,7 @@ class Bill extends Admin_Controller
         if ($payment_mode == 'Cheque') {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 		
 		$consult      = $this->input->post('live_consult');
@@ -2552,6 +3035,13 @@ class Bill extends Admin_Controller
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill payment_attachment): ' . $e->getMessage());
+                    }
                 }   
             }
 			
@@ -2621,6 +3111,11 @@ class Bill extends Admin_Controller
             }
 
             $opdn_id          = $this->patient_model->add_opd($opd_data, $transaction_data, $charge, $opd_visit_data);
+            $icd_ids = $this->input->post('icd_code_ids', TRUE);
+            if (!empty($icd_ids) && is_array($icd_ids)) {
+                $this->load->model('icd10_model');
+                $this->icd10_model->saveOpdCodes($opdn_id, $icd_ids);
+            }
             $visit_details_id = $this->patient_model->getvisitminid($opdn_id);
             $notificationurl  = $this->notificationurl;
             $url_link         = $notificationurl["opd"];
@@ -2694,9 +3189,17 @@ class Bill extends Admin_Controller
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $patient_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill add_opd): ' . $e->getMessage());
+                    }
+                }
             }
 
             $sender_details = array('patient_id' => $patient_id, 'patient_name' => $patient_name, 'opd_details_id' => $opdn_id, 'contact_no' => $mobileno, 'email' => $email, 'appointment_date' => $appointment_date);
@@ -2708,7 +3211,8 @@ class Bill extends Admin_Controller
 
     public function getopddatatable($type)
     {
-        $dt_response = $this->patient_model->getallopdvisits($type);
+        $show_antenatal = $this->rbac->hasPrivilege('antenatal', 'can_view');
+        $dt_response = $this->patient_model->getallopdvisits($type, $show_antenatal);
         $fields      = $this->customfield_model->get_custom_fields('opd', 1);
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -2718,7 +3222,7 @@ class Bill extends Admin_Controller
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href=" . base_url() . 'admin/bill/patient_profile/' . $value->pid . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "<a href=" . base_url() . 'admin/bill/patient_profile/' . $value->pid . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 $action .= "</div'>";
                 $first_action = "<a href=" . base_url() . 'admin/bill/patient_profile/' . $value->pid . ">";
 				
@@ -2729,7 +3233,7 @@ class Bill extends Admin_Controller
                 }
 				
                 //==============================
-                $row[] = $first_action . $value->patient_name . "</a>" . $action;
+                $row[] = $first_action . $value->patient_name . "</a>";
                 $row[] = $value->patientid;
                 $row[] = $value->guardian_name;
                 $row[] = $gender;
@@ -2755,7 +3259,8 @@ class Bill extends Admin_Controller
 				if ($this->rbac->hasPrivilege('antenatal', 'can_view')) {
                 $row[]  =  $value->is_antenatal==1 ?  "Yes" :  "No";
 				}
-				
+
+                $row[] = $action;
                 $dt_data[] = $row;
             }
         }
@@ -2801,12 +3306,12 @@ class Bill extends Admin_Controller
                     }
                 }
 
-                $action = "<div class='d-flex gap-1'>";
+                $action = "<div class='d-inline-flex gap-1'>";
                 if ($this->rbac->hasPrivilege('opd_print_bill', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs print_visit_bill'  data-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-sm btn-outline-secondary print_visit_bill'  data-bs-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
                 }
 
-                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-sm btn-outline-secondary get_opd_detail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
 
                 $action .= "</div>";
                 $first_action = "<a href=" . base_url() . 'admin/bill/opd_visit_detail/' . $value->pid . '/' . $opd_id . ">";
@@ -2916,9 +3421,10 @@ class Bill extends Admin_Controller
         $data['intervaldosage']  = $this->medicine_dosage_model->getIntervalDosage();
         $data['durationdosage']  = $this->medicine_dosage_model->getDurationDosage();
         $data['investigations']  = $this->patient_model->allinvestigationbypatientid($id);
-        $this->load->view("layout/header");
+        $data['module'] = 'opd';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/bill/opd/patient_profile", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
  
     public function opd_visit_detail($id, $opdid)
@@ -2991,9 +3497,10 @@ class Bill extends Admin_Controller
             $data["bloodgroup"]     = $this->bloodbankstatus_model->get_product(null, 1);
             $data["marital_status"] = $this->marital_status;
             $data['is_discharge']   = $this->customlib->checkDischargePatient($data["result"]['discharged']);
-            $this->load->view("layout/header");
+            $data['module'] = 'opd';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/bill/opd/opd_visit_detail", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
     
@@ -3029,9 +3536,9 @@ class Bill extends Admin_Controller
                     }
                 }
 
-                $action = "<div class=''>";
+                $action = "<div class='d-inline-flex gap-1'>";
 
-                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id=" . $visit_details_id . " class='btn btn-sm btn-outline-secondary get_opd_detail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
 
                 $action .= "</div>";
                 //=====================
@@ -3086,7 +3593,7 @@ class Bill extends Admin_Controller
         if ($payment_mode == 'Cheque') {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean|valid_amount');
@@ -3095,7 +3602,7 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('appointment_date', $this->lang->line('appointment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('discount_percentage', $this->lang->line('discount_percentage'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');	
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');	
 
 		$consult      = $this->input->post('live_consult');
 		if($consult == 'yes'){
@@ -3146,20 +3653,20 @@ class Bill extends Admin_Controller
             if (empty($check_patient_id)) {
                 $check_patient_id = 0;
             }
-            $patient_id        = $this->input->post('patientid');
-            $password          = $this->input->post('password');
-            $email             = $this->input->post('email');
-            $mobileno          = $this->input->post('mobileno');
+            $patient_id        = $this->input->post('patientid', TRUE);
+            $password          = $this->input->post('password', TRUE);
+            $email             = $this->input->post('email', TRUE);
+            $mobileno          = $this->input->post('mobileno', TRUE);
             $opdn_id           = $check_patient_id + 1;
             $custom_field_post = $this->input->post("custom_fields[opd]");
-            $appointment_date  = $this->input->post('appointment_date');
-            $consult           = $this->input->post('live_consult');
+            $appointment_date  = $this->input->post('appointment_date', TRUE);
+            $consult           = $this->input->post('live_consult', TRUE);
             if ($consult) {
-                $live_consult = $this->input->post('live_consult');
+                $live_consult = $this->input->post('live_consult', TRUE);
             } else {
                 $live_consult = 'no';
             }
-            $doctor_id = $this->input->post("consultant_doctor");
+            $doctor_id = $this->input->post("consultant_doctor", TRUE);
             $date      = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);
             $opd_data  = array(
                 'patient_id'   => $patient_id,
@@ -3169,7 +3676,7 @@ class Bill extends Admin_Controller
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -3187,26 +3694,33 @@ class Bill extends Admin_Controller
                 $fileInfo        = pathinfo($_FILES["document"]["name"]);
                 $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                 $attachment_name = $_FILES["document"]["name"];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment)) {
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill makepayment_or_revisit): ' . $e->getMessage());
+                    }
+                }
             }
 
-            $cheque_date      = $this->input->post("cheque_date");
+            $cheque_date      = $this->input->post("cheque_date", TRUE);
             $transaction_data = array(
                 'case_reference_id' => 0,
                 'opd_id'            => 0,
-                'amount'            => $this->input->post('paid_amount'),
+                'amount'            => $this->input->post('paid_amount', TRUE),
                 'type'              => 'payment',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $date,
-                'patient_id'        => $this->input->post('patientid'),
+                'patient_id'        => $patient_id,
                 'section'           => $payment_section['opd'],
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $transaction_data['attachment']      = $attachment;
                 $transaction_data['attachment_name'] = $attachment_name;
             }
@@ -3214,57 +3728,57 @@ class Bill extends Admin_Controller
             $staff_data = $this->staff_model->getStaffByID($doctor_id);
             $staff_name = composeStaffName($staff_data);
 
-            $is_tpa = $this->input->post('is_tpa');
-            if($is_tpa=="" || $is_tpa==0){
-                $organisation_id = null;
+            $is_tpa = $this->input->post('is_tpa', TRUE);
+            if ($is_tpa == "" || $is_tpa == 0) {
+                $organisation_id    = null;
                 $insurance_validity = null;
-                $insurance_id = null;
-            }else{           
-                $organisation_id = $this->input->post('organisation');
-                $insurance_id = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+                $insurance_id       = null;
+            } else {
+                $organisation_id    = $this->input->post('organisation', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
-           
+
             if (empty($organisation_id)) {
                 $organisation_id = null;
             }
 
-            $charge     = array(
-                'opd_id'                => 0,
-                'date'                  => $date,
-                'charge_id'             => $this->input->post('charge_id'),
-                'qty'                   => 1,
-                'apply_charge'          => $this->input->post('amount'),
-                'standard_charge'       => $this->input->post('standard_charge'),
-                'tpa_charge'            => $this->input->post('schedule_charge'),
-                'amount'                => $this->input->post('apply_amount'),
-                'tax'                   => $this->input->post('percentage'),
-                'discount_percentage'   => $this->input->post('discount_percentage'),
-                'created_at'            => date('Y-m-d'),
-                'note'                  => $staff_name,
-                'organisation_id'       => $organisation_id,
-                'insurance_validity'    => $insurance_validity,
-                'insurance_id'          => $insurance_id,
-            );        
-          
+            $charge = array(
+                'opd_id'              => 0,
+                'date'                => $date,
+                'charge_id'           => $this->input->post('charge_id', TRUE),
+                'qty'                 => 1,
+                'apply_charge'        => $this->input->post('amount', TRUE),
+                'standard_charge'     => $this->input->post('standard_charge', TRUE),
+                'tpa_charge'          => $this->input->post('schedule_charge', TRUE),
+                'amount'              => $this->input->post('apply_amount', TRUE),
+                'tax'                 => $this->input->post('percentage', TRUE),
+                'discount_percentage' => $this->input->post('discount_percentage', TRUE),
+                'created_at'          => date('Y-m-d'),
+                'note'                => $staff_name,
+                'organisation_id'     => $organisation_id,
+                'insurance_validity'  => $insurance_validity,
+                'insurance_id'        => $insurance_id,
+            );
+
             $opd_visit_data = array(
-                'appointment_date' => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),               
-                'symptoms'         => $this->input->post('symptoms'),
-                'known_allergies'  => $this->input->post('known_allergies'),
-                'patient_old'      => $this->input->post('old_patient'),
-                'refference'       => $this->input->post('refference'),
-                'cons_doctor'      => $this->input->post('consultant_doctor'),
-                'symptoms_type'    => $this->input->post('symptoms_type'),
-                'casualty'         => $this->input->post('casualty'),
-                'payment_mode'     => $this->input->post('payment_mode'),
-                'note'             => $this->input->post('note_remark'),
+                'appointment_date' => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),
+                'symptoms'         => $this->input->post('symptoms', TRUE),
+                'known_allergies'  => $this->input->post('known_allergies', TRUE),
+                'patient_old'      => $this->input->post('old_patient', TRUE),
+                'refference'       => $this->input->post('refference', TRUE),
+                'cons_doctor'      => $doctor_id,
+                'symptoms_type'    => $this->input->post('symptoms_type', TRUE),
+                'casualty'         => $this->input->post('casualty', TRUE),
+                'payment_mode'     => $this->input->post('payment_mode', TRUE),
+                'note'             => $this->input->post('note_remark', TRUE),
                 'live_consult'     => $live_consult,
                 'can_delete'       => 'no',
                 'generated_by'     => $this->customlib->getLoggedInUserID(),
             );
-			
-            if($this->input->post('is_for_antenatal')!=""){
-                $opd_visit_data['is_antenatal'] = $this->input->post('is_for_antenatal') ;
+
+            if ($this->input->post('is_for_antenatal', TRUE) != "") {
+                $opd_visit_data['is_antenatal'] = $this->input->post('is_for_antenatal', TRUE);
             }
 
             $opdn_id         = $this->patient_model->add_opd($opd_data, $transaction_data, $charge, $opd_visit_data);
@@ -3348,6 +3862,8 @@ class Bill extends Admin_Controller
 			}
 		}
 		
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
+
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'firstname'        => form_error('name'),
@@ -3357,6 +3873,7 @@ class Bill extends Admin_Controller
                 'apply_amount'     => form_error('apply_amount'),
                 'paid_amount'      => form_error('paid_amount'),
                 'zoom_live'        => form_error('zoom_live'),
+                'document'         => form_error('document'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
@@ -3367,106 +3884,114 @@ class Bill extends Admin_Controller
                 $check_patient_id = 0;
             }
             $opdn_id           = $check_patient_id + 1;
-            $patient_id        = $this->input->post('id');
-            $password          = $this->input->post('password');
+            $patient_id        = $this->input->post('id', TRUE);
+            $password          = $this->input->post('password', TRUE);
             $custom_field_post = $this->input->post("custom_fields[opdrecheckup]");
-            $appointment_date  = $this->input->post('appointment_date');
-            $consult           = $this->input->post('live_consult');
-            $doctor_id         = $this->input->post('consultant_doctor');
-            $opd_id            = $this->input->post('opd_id');
+            $appointment_date  = $this->input->post('appointment_date', TRUE);
+            $consult           = $this->input->post('live_consult', TRUE);
+            $doctor_id         = $this->input->post('consultant_doctor', TRUE);
+            $opd_id            = $this->input->post('opd_id', TRUE);
             if ($consult) {
-                $live_consult = $this->input->post('live_consult');
+                $live_consult = $this->input->post('live_consult', TRUE);
             } else {
                 $live_consult = "no";
             }
 
             $date            = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);          
-            $revisit_is_tpa  = $this->input->post('revisit_is_tpa');
+            $revisit_is_tpa = $this->input->post('revisit_is_tpa', TRUE);
 
-			if($revisit_is_tpa=="" || $revisit_is_tpa==0){
-				$organisation_id = null;
-				$insurance_validity = null;
-				$insurance_id = null;
-			}else{           
-				$organisation_id = $this->input->post('organisation');
-				$insurance_validity = $this->input->post('insurance_validity');
-				$insurance_id = $this->input->post('insurance_id');
-			}
+            if ($revisit_is_tpa == "" || $revisit_is_tpa == 0) {
+                $organisation_id    = null;
+                $insurance_validity = null;
+                $insurance_id       = null;
+            } else {
+                $organisation_id    = $this->input->post('organisation', TRUE);
+                $insurance_validity = $this->input->post('insurance_validity', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+            }
 
             $opd_data = array(
                 'appointment_date'  => $date,
-                'opd_details_id'    => $opd_id,                
-                'case_type'         => $this->input->post('revisit_case'),
-                'symptoms'          => $this->input->post('symptoms'),
-                'known_allergies'   => $this->input->post('known_allergies'),
-                'refference'        => $this->input->post('refference'),
-                'cons_doctor'       => $this->input->post('consultant_doctor'),
-                'casualty'          => $this->input->post('casualty'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note_remark'),
+                'opd_details_id'    => $opd_id,
+                'case_type'         => $this->input->post('revisit_case', TRUE),
+                'symptoms'          => $this->input->post('symptoms', TRUE),
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
+                'refference'        => $this->input->post('refference', TRUE),
+                'cons_doctor'       => $doctor_id,
+                'casualty'          => $this->input->post('casualty', TRUE),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note_remark', TRUE),
                 'live_consult'      => $live_consult,
                 'patient_charge_id' => null,
                 'transaction_id'    => null,
                 'can_delete'        => 'yes',
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
             );
-			
-            if($this->input->post('is_for_antenatal')!=""){
-                $opd_data['is_antenatal'] = $this->input->post('is_for_antenatal') ;
+
+            if ($this->input->post('is_for_antenatal', TRUE) != "") {
+                $opd_data['is_antenatal'] = $this->input->post('is_for_antenatal', TRUE);
             }
 
             $payment_section  = $this->config->item('payment_section');
             $transaction_data = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
-                'opd_id'            => $this->input->post('opd_id'),
-                'amount'            => $this->input->post('paid_amount'),
+                'case_reference_id' => $this->input->post('case_reference_id', TRUE),
+                'opd_id'            => $opd_id,
+                'amount'            => $this->input->post('paid_amount', TRUE),
                 'type'              => 'payment',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
-                'patient_id'        => $this->input->post('id'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
+                'patient_id'        => $patient_id,
                 'section'           => $payment_section['opd'],
                 'payment_date'      => $date,
                 'cheque_date'       => $date,
-                'cheque_no'         => $this->input->post('cheque_no'),
+                'cheque_no'         => $this->input->post('cheque_no', TRUE),
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
-                $cheque_date                     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+                $cheque_date                     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
                 $transaction_data['cheque_date'] = $cheque_date;
                 $transaction_data['cheque_no']   = $this->input->post('cheque_no');
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $fileInfo        = pathinfo($_FILES["document"]["name"]);
                     $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                     $attachment_name = $_FILES["document"]["name"];
-                    move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment);
-                    $transaction_data['attachment']      = $attachment;
-                    $transaction_data['attachment_name'] = $attachment_name;
+                    if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment)) {
+                        $transaction_data['attachment']      = $attachment;
+                        $transaction_data['attachment_name'] = $attachment_name;
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (bill addvisitDetails): ' . $e->getMessage());
+                        }
+                    }
                 }
             }
 
             $staff_data = $this->staff_model->getStaffByID($doctor_id);
             $staff_name = composeStaffName($staff_data);
             $charge     = array(
-                'opd_id'          => $this->input->post('opd_id'),
-                'date'            => $date,
-                'charge_id'       => $this->input->post('charge_id'),
-                'qty'             => 1,
-                'apply_charge'    => $this->input->post('amount'),
-                'standard_charge' => $this->input->post('standard_charge'),
-                'tpa_charge'      => $this->input->post('schedule_charge'),
-                'amount'          => $this->input->post('apply_amount'),
-                'created_at'      => date('Y-m-d'),
-                'note'            => $staff_name,
-                'organisation_id' => $organisation_id,
+                'opd_id'             => $opd_id,
+                'date'               => $date,
+                'charge_id'          => $this->input->post('charge_id', TRUE),
+                'qty'                => 1,
+                'apply_charge'       => $this->input->post('amount', TRUE),
+                'standard_charge'    => $this->input->post('standard_charge', TRUE),
+                'tpa_charge'         => $this->input->post('schedule_charge', TRUE),
+                'amount'             => $this->input->post('apply_amount', TRUE),
+                'created_at'         => date('Y-m-d'),
+                'note'               => $staff_name,
+                'organisation_id'    => $organisation_id,
                 'insurance_validity' => $insurance_validity,
-                'insurance_id'    => $insurance_id,
+                'insurance_id'       => $insurance_id,
             );
 
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -3514,14 +4039,14 @@ class Bill extends Admin_Controller
                     if (isset($response->id)) {
                         $insert_array['return_response'] = json_encode($response);
                         $conferenceid                    = $this->conference_model->add($insert_array);
-                        $sender_details                  = array('patient_id' => $patient_id, 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('contact'), 'email' => $this->input->post('email'));
+                        $sender_details                  = array('patient_id' => $patient_id, 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('contact', TRUE), 'email' => $this->input->post('email', TRUE));
 
                         $this->mailsmsconf->mailsms('live_consult', $sender_details);
                     }
                 }
             }
 
-            $sender_details = array('patient_id' => $patient_id, 'opd_no' => $this->customlib->getSessionPrefixByType('opd_no') . $opd_id, 'contact_no' => $this->input->post('contact'), 'email' => $this->input->post('email'));
+            $sender_details = array('patient_id' => $patient_id, 'opd_no' => $this->customlib->getSessionPrefixByType('opd_no') . $opd_id, 'contact_no' => $this->input->post('contact', TRUE), 'email' => $this->input->post('email', TRUE));
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -3545,9 +4070,10 @@ class Bill extends Admin_Controller
         $data['fields']       = $this->customfield_model->get_custom_fields('blood_issue', 1);
         $result               = $this->bloodissue_model->getBloodIssue();
         $data['result']       = $result;
-        $this->load->view('layout/header');
+        $data['module'] = 'blood_bank';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/bloodbank/bloodissue', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getbloodissueDatatable()
@@ -3563,12 +4089,12 @@ class Bill extends Admin_Controller
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-btn-top'>";
-                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-default btn-xs viewDetail' data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-default btn-xs viewDetail' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
 
-                $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment' data-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
+                $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
 
                 if ($this->rbac->hasPrivilege('blood_issue', 'can_delete')) {
-                    $action .= "<a  class='btn btn-default btn-xs delete_blood_issue' data-toggle='tooltip' title='" . $this->lang->line('delete_payment') . "' data-record-id='" . $value->id . "'  data-original-title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a class='btn btn-default btn-xs delete_blood_issue' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' data-record-id='" . $value->id . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div>";
@@ -3580,7 +4106,7 @@ class Bill extends Admin_Controller
                 }
 				
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id;
                 $row[] = $value->case_reference_id;
                 $row[] = $this->customlib->dateyyyymmddToDateTimeformat($value->date_of_issue, false);
                 $row[] = $value->patient_name . " (" . $value->patient_id . ")";
@@ -3613,8 +4139,8 @@ class Bill extends Admin_Controller
                 $row[]     = $tax_amt.'('.$value->tax_percentage.'%)';				
                 $row[]     = $value->net_amount;
                 $row[]     = $value->paid_amount;
-                $row[]     = amountFormat($value->net_amount - $value->paid_amount);
-				
+                $row[]     = amountFormat($value->net_amount - $value->paid_amount) . $action;
+
                 $dt_data[] = $row;
             }
         }
@@ -3643,7 +4169,7 @@ class Bill extends Admin_Controller
 
     public function save_blood_issue()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $this->form_validation->set_rules('date_of_issue', $this->lang->line('issue_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('reference', $this->lang->line('reference_name'), 'trim|required|xss_clean');
@@ -3653,18 +4179,21 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('charge_category', $this->lang->line('charge_category'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('discount', $this->lang->line('discount'), 'trim|required|xss_clean|numeric');
-        $this->form_validation->set_rules('discount_percent', $this->lang->line('discount_percentage'), 'required|numeric');
-        if (!isset($id)) {
+        $this->form_validation->set_rules('discount_percent', $this->lang->line('discount_percentage'), 'trim|required|xss_clean|numeric');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+        $this->form_validation->set_rules('technician', $this->lang->line('technician'), 'trim|xss_clean');
+        $this->form_validation->set_rules('consultant_doctor', $this->lang->line('doctor'), 'trim|xss_clean');
+        if (empty($id)) {
             $this->form_validation->set_rules(
                 'payment_amount', $this->lang->line('payment_amount'), array('trim', 'required', 'xss_clean', 'valid_amount',
                     array('check_exists', array($this->bloodbankstatus_model, 'validate_paymentamount')),
                 )
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
                 $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-                $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload');
+                $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload|callback_validateCanUploadFile[document]');
             }
         }
 
@@ -3692,7 +4221,7 @@ class Bill extends Admin_Controller
                 'charge_id'        => form_error('charge_id'),
                 'charge_category'  => form_error('charge_category'),
             );
-            if (!isset($id)) {
+            if (empty($id)) {
                 $msg['cheque_no']      = form_error('cheque_no');
                 $msg['cheque_date']    = form_error('cheque_date');
                 $msg['payment_amount'] = form_error('payment_amount');
@@ -3714,38 +4243,38 @@ class Bill extends Admin_Controller
             }
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $case_reference_id = $this->input->post('id_case_reference_id_exist');
-            $issue_date        = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date_of_issue'), $this->time_format);
-            $patient_id        = $this->input->post('patient_id');
-            $is_tpa            = $this->input->post('is_tpa');
+            $case_reference_id = $this->input->post('id_case_reference_id_exist', TRUE);
+            $issue_date        = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date_of_issue', TRUE), $this->time_format);
+            $patient_id        = $this->input->post('patient_id', TRUE);
+            $is_tpa            = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id    = null;
                 $insurance_validity = null;
                 $insurance_id       = null;
-            }else{           
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');                
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+            }else{
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
             if (empty($organisation_id)) {
-                $organisation_id = null;                
+                $organisation_id = null;
             }
-            
+
             $bloodissue        = array(
                 'date_of_issue'        => $issue_date,
                 'patient_id'           => $patient_id,
-                'technician'           => $this->input->post('technician'),
-                'hospital_doctor'      => $this->input->post('consultant_doctor'),
-                'reference'            => $this->input->post('reference'),
-                'blood_donor_cycle_id' => $this->input->post('bag_no'),
+                'technician'           => $this->input->post('technician', TRUE),
+                'hospital_doctor'      => $this->input->post('consultant_doctor', TRUE),
+                'reference'            => $this->input->post('reference', TRUE),
+                'blood_donor_cycle_id' => $this->input->post('bag_no', TRUE),
                 'generated_by'         => $this->session->userdata('hospitaladmin')['id'],
-                'remark'               => $this->input->post('note'),
-                'charge_id'            => $this->input->post('charge_id'),
-                'standard_charge'      => $this->input->post('standard_charge'),
-                'amount'               => $this->input->post('total'),
-                'net_amount'           => $this->input->post('net_amount'),
-                'tax_percentage'       => $this->input->post('tax_percentage'),
-                'discount_percentage'  => $this->input->post('discount_percent'),
+                'remark'               => $this->input->post('note', TRUE),
+                'charge_id'            => $this->input->post('charge_id', TRUE),
+                'standard_charge'      => $this->input->post('standard_charge', TRUE),
+                'amount'               => $this->input->post('total', TRUE),
+                'net_amount'           => $this->input->post('net_amount', TRUE),
+                'tax_percentage'       => $this->input->post('tax_percentage', TRUE),
+                'discount_percentage'  => $this->input->post('discount_percent', TRUE),
                 'organisation_id'      => $organisation_id,
                 'insurance_id'         => $insurance_id,
                 'insurance_validity'   => $insurance_validity,
@@ -3755,45 +4284,59 @@ class Bill extends Admin_Controller
                 $bloodissue['case_reference_id'] = $case_reference_id;
             }
 
-            $chequedate       = $this->input->post('cheque_date');
+            $chequedate       = $this->input->post('cheque_date', TRUE);
             $payment_section  = $this->config->item('payment_section');
             $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($chequedate);
             $transaction_data = array(
                 'patient_id'   => $patient_id,
                 'section'      => $payment_section['blood_bank'],
-                'amount'       => $this->input->post('payment_amount'),
+                'amount'       => $this->input->post('payment_amount', TRUE),
                 'type'         => 'payment',
-                'payment_mode' => $this->input->post('payment_mode'),
-                'note'         => $this->input->post('note'),
+                'payment_mode' => $this->input->post('payment_mode', TRUE),
+                'note'         => $this->input->post('note', TRUE),
                 'payment_date' => $issue_date,
                 'received_by'  => $this->session->userdata('hospitaladmin')['id'],
             );
-            if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                $payment_array['case_reference_id'] = $this->input->post('case_reference_id');
+            if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                $payment_array['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
             
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (bill save_blood_issue): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill save_blood_issue): ' . $e->getMessage());
+                    }
+                }
             }
 
-            if (isset($id)) {
+            if (!empty($id)) {
                 $bloodissue['id'] = $id;
                 $transaction_data = array();
             }
             $insert_id          = $this->bloodissue_model->add($bloodissue, $transaction_data);
-            $custom_field_post  = $this->input->post("custom_fields[blood_issue]");
+            $custom_field_post  = $this->input->post("custom_fields[blood_issue]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 if ($id > 0) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[blood_issue][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[blood_issue][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $id,
@@ -3898,9 +4441,10 @@ class Bill extends Admin_Controller
         $result               = $this->bloodissue_model->getBloodIssue();
         $data['fields']       = $this->customfield_model->get_custom_fields('component_issue', 1);
         $data['result']       = $result;
-        $this->load->view('layout/header');
+        $data['module'] = 'blood_bank';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/bloodbank/issuecomponent', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getcomponentissuebycashidDatatable($case_id)
@@ -3914,14 +4458,14 @@ class Bill extends Admin_Controller
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-default btn-xs printcomponentIssueBill'  data-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' data-record-id='" . $value->id . "' class='btn btn-default btn-xs printcomponentIssueBill'  data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
 
                 if ($this->rbac->hasPrivilege('blood_bank_partial_payment', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment_blood_component' data-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
+                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='blood_bank' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment_blood_component' data-bs-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
                 }                
 
                 $action .= "</div>";
-                $prefix = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id . $action;
+                $prefix = $this->customlib->getSessionPrefixByType('blood_bank_billing') . $value->id;
 
                 //==============================
                 $row[] = $prefix;
@@ -3943,7 +4487,7 @@ class Bill extends Admin_Controller
                 $row[]     = $tax_amt.'('.$value->tax_percentage.'%)';      
                 $row[]     = $value->net_amount;
                 $row[]     = $value->paid_amount;
-                $row[]     = amountFormat($value->net_amount - $value->paid_amount);
+                $row[]     = amountFormat($value->net_amount - $value->paid_amount) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -3996,16 +4540,18 @@ class Bill extends Admin_Controller
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('discount', $this->lang->line('discount'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('discount_percent', $this->lang->line('discount_percentage'), 'required|numeric');
-        if (!isset($id)) {
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+        $this->form_validation->set_rules('technician', $this->lang->line('technician'), 'trim|xss_clean');
+        if (empty($id)) {
             $this->form_validation->set_rules(
                 'payment_amount', $this->lang->line('payment_amount'), array('required', 'xss_clean', 'valid_amount',
                     array('check_exists', array($this->bloodbankstatus_model, 'validate_paymentamount')),
                 )
             );
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
                 $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-                $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload');
+                $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload|callback_validateCanUploadFile[document]');
             }
         }
 
@@ -4034,7 +4580,7 @@ class Bill extends Admin_Controller
                 'charge_category'  => form_error('charge_category'),
             );
 
-            if (!isset($id)) {
+            if (empty($id)) {
                 $msg['cheque_no']      = form_error('cheque_no');
                 $msg['cheque_date']    = form_error('cheque_date');
                 $msg['payment_amount'] = form_error('payment_amount');
@@ -4059,18 +4605,18 @@ class Bill extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $case_reference_id = $this->input->post('is_case_reference_idd');
-            $issue_date        = $this->input->post('date_of_issue');
-            $patient_id        = $this->input->post('patient_id');
-              $is_tpa = $this->input->post('is_tpa');
+            $case_reference_id = $this->input->post('is_case_reference_idd', TRUE);
+            $issue_date        = $this->input->post('date_of_issue', TRUE);
+            $patient_id        = $this->input->post('patient_id', TRUE);
+              $is_tpa = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id    = null;
                 $insurance_validity = null;
                 $insurance_id       = null;
-            }else{           
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+            }else{
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
             if (empty($organisation_id)) {
                 $organisation_id = null;
@@ -4078,18 +4624,18 @@ class Bill extends Admin_Controller
             $bloodissue        = array(
                 'date_of_issue'        => $this->customlib->dateFormatToYYYYMMDDHis($issue_date, $this->time_format),
                 'patient_id'           => $patient_id,
-                'technician'           => $this->input->post('technician'),
-                'reference'            => $this->input->post('reference'),
-                'blood_donor_cycle_id' => $this->input->post('bag_no'),
+                'technician'           => $this->input->post('technician', TRUE),
+                'reference'            => $this->input->post('reference', TRUE),
+                'blood_donor_cycle_id' => $this->input->post('bag_no', TRUE),
                 'generated_by'         => $this->session->userdata('hospitaladmin')['id'],
-                'remark'               => $this->input->post('note'),
-                'charge_id'            => $this->input->post('charge_id'),
-                'standard_charge'      => $this->input->post('standard_charge'),
-                'amount'               => $this->input->post('total'),
-                'net_amount'           => $this->input->post('net_amount'),
-                'tax_percentage'       => $this->input->post('tax_percentage'),
-                'remark'               => $this->input->post('note'),
-                'discount_percentage'  => $this->input->post('discount_percent'),
+                'remark'               => $this->input->post('note', TRUE),
+                'charge_id'            => $this->input->post('charge_id', TRUE),
+                'standard_charge'      => $this->input->post('standard_charge', TRUE),
+                'amount'               => $this->input->post('total', TRUE),
+                'net_amount'           => $this->input->post('net_amount', TRUE),
+                'tax_percentage'       => $this->input->post('tax_percentage', TRUE),
+                'remark'               => $this->input->post('note', TRUE),
+                'discount_percentage'  => $this->input->post('discount_percent', TRUE),
                 'organisation_id'      => $organisation_id,
                 'insurance_id'         => $insurance_id,
                 'insurance_validity'   => $insurance_validity,
@@ -4099,48 +4645,62 @@ class Bill extends Admin_Controller
                 $bloodissue['case_reference_id'] = $case_reference_id;
             }
 
-            $chequedate       = $this->input->post('cheque_date');
+            $chequedate       = $this->input->post('cheque_date', TRUE);
             $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($chequedate);
             $payment_section  = $this->config->item('payment_section');
             $transaction_data = array(
-                'amount'       => $this->input->post('payment_amount'),
-                'patient_id'   => $this->input->post('patient_id'),
+                'amount'       => $this->input->post('payment_amount', TRUE),
+                'patient_id'   => $this->input->post('patient_id', TRUE),
                 'section'      => $payment_section['blood_bank'],
                 'type'         => 'payment',
-                'payment_mode' => $this->input->post('payment_mode'),
+                'payment_mode' => $this->input->post('payment_mode', TRUE),
                 'payment_date' => $this->customlib->dateFormatToYYYYMMDD($issue_date),
                 'received_by'  => $this->session->userdata('hospitaladmin')['id'],
             );
 
-            if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                $transaction_data['case_reference_id'] = $this->input->post('case_reference_id');
+            if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                $transaction_data['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
             }
-          
-            if ($this->input->post('payment_mode') == "Cheque") {
+
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (bill save_issue_component): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (bill save_issue_component): ' . $e->getMessage());
+                    }
+                }
 
             }
 
-            if (isset($id)) {
+            if (!empty($id)) {
                 $bloodissue['id'] = $id;
                 $transaction_data = array();
             }
 
             $insert_id           = $this->bloodissue_model->add($bloodissue, $transaction_data);
             $blood_issue_details = $this->bloodissue_model->getcomponentDetail($insert_id);
-            $custom_field_post   = $this->input->post("custom_fields[component_issue]");
+            $custom_field_post   = $this->input->post("custom_fields[component_issue]", TRUE);
             $custom_value_array  = array();
             if (!empty($custom_field_post)) {
                 if ($id > 0) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[component_issue][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[component_issue][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $id,
@@ -4151,7 +4711,7 @@ class Bill extends Admin_Controller
                     }
                 } else {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[component_issue][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[component_issue][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $insert_id,
@@ -4229,15 +4789,16 @@ class Bill extends Admin_Controller
         $data['fields']         = $this->customfield_model->get_custom_fields('appointment', 1);
         $data['payment_mode']   = $this->payment_mode;        
         $data['organisation']       = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/bill/appointment/appointment', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getappointmentdatatabletodays()
     {
         $dt_response = $this->appointment_model->getAllappointmentRecord(1);
-       
+
         $fields      = $this->customfield_model->get_custom_fields('appointment', 1);
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -4245,55 +4806,55 @@ class Bill extends Admin_Controller
             foreach ($dt_response->data as $key => $value) {
 
                 $row = array();
-                $label = "";               
-                
+                $label = "";
+                $status = "";
+
                 if ($value->appointment_status == "approved") {
-                    $label  = "class='label label-success'";
+                    $label  = "class='badge bg-success text-white'";
                     $status = $this->customlib->getSessionPrefixByType('appointment') . $value->id;
                 } else if ($value->appointment_status == "pending") {
-                    $label  = "class='label label-warning'";
+                    $label  = "class='badge bg-warning text-dark'";
                     $status = $this->lang->line($value->appointment_status);
                 } else if ($value->appointment_status == "cancel") {
-                    $label  = "class='label label-danger'";
+                    $label  = "class='badge bg-danger text-white'";
                     $status = $this->lang->line($value->appointment_status);
-                }               
+                }
 
                 $action = "<div class='rowoptionview rowview-btn-top'>";
-                $action .= "<a href='#' data-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-default btn-xs'   data-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
-                $action .="<a href='#'  class='btn btn-default btn-xs' data-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' data-original-title=".$this->lang->line('print')."><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-secondary btn-sm'   data-bs-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
+                $action .="<a href='#'  class='btn btn-secondary btn-sm' data-bs-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' title='".$this->lang->line('print')."'><i class='fa fa-print'></i></a>";
 
-                $action .= " <a href='#' data-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-default btn-xs'   data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
+                $action .= " <a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-secondary btn-sm'   data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
 
                 if ($value->appointment_status == 'pending') {
                     if ($value->source != 'Online') {
-                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {                           
-                            
-                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-default btn-xs'  data-toggle='tooltip' title='' data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' data-original-title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";                            
+                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {
+
+                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-secondary btn-sm'  data-bs-toggle='tooltip' data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";
 
                         }
                     }
                 }
 
                 $action .= "</div>";
-                $first_action = "<a  href='javascript:void(0)' data-toggle='tooltip'  data-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
+                $first_action = "<a  href='javascript:void(0)' data-bs-toggle='tooltip'  data-bs-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
 
                 if (!empty($value->live_consult)) {$live_consult = $this->lang->line($value->live_consult);} else { $live_consult = '';};
-				
+
 				if ($value->gender) {
                     $gender = $this->lang->line(strtolower($value->gender));
                 } else {
                     $gender = '';
                 }
-				
+
                 //==============================
-                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>" . $action;
+                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>";
                 $row[] = $status;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
                 $row[] = $value->mobileno;
                 $row[] = $gender;
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
                 $row[] = $this->lang->line(strtolower($value->source));
-                $row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
 
                 $row[] = $value->priorityname;
                 if ($this->module_lib->hasActive('live_consultation')) {
@@ -4310,12 +4871,13 @@ class Bill extends Admin_Controller
                     }
                 }
                 //====================
+				$row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
+                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
                 $dicount_amt=0;
                 $dicount_amt=(($value->standard_amount*$value->discount_percentage)/100);
                 $row[]     = amountFormat($value->standard_amount);
                 $row[]     = amountFormat($dicount_amt)." (".$value->discount_percentage." %)";
-                $row[]     = amountFormat($value->paid_amount);
-                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
+                $row[]     = amountFormat($value->paid_amount) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -4327,11 +4889,11 @@ class Bill extends Admin_Controller
         );
         echo json_encode($json_data);
     }
-	
+
 	public function getappointmentdatatableupcoming()
     {
         $dt_response = $this->appointment_model->getAllappointmentRecord(2);
-       
+
         $fields      = $this->customfield_model->get_custom_fields('appointment', 1);
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -4339,55 +4901,55 @@ class Bill extends Admin_Controller
             foreach ($dt_response->data as $key => $value) {
 
                 $row = array();
-                $label = "";               
-                
+                $label = "";
+                $status = "";
+
                 if ($value->appointment_status == "approved") {
-                    $label  = "class='label label-success'";
+                    $label  = "class='badge bg-success text-white'";
                     $status = $this->customlib->getSessionPrefixByType('appointment') . $value->id;
                 } else if ($value->appointment_status == "pending") {
-                    $label  = "class='label label-warning'";
+                    $label  = "class='badge bg-warning text-dark'";
                     $status = $this->lang->line($value->appointment_status);
                 } else if ($value->appointment_status == "cancel") {
-                    $label  = "class='label label-danger'";
+                    $label  = "class='badge bg-danger text-white'";
                     $status = $this->lang->line($value->appointment_status);
-                }               
+                }
 
                 $action = "<div class='rowoptionview rowview-btn-top'>";
-                $action .= "<a href='#' data-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-default btn-xs'   data-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
-                $action .="<a href='#'  class='btn btn-default btn-xs' data-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' data-original-title=".$this->lang->line('print')."><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-secondary btn-sm'   data-bs-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
+                $action .="<a href='#'  class='btn btn-secondary btn-sm' data-bs-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' title='".$this->lang->line('print')."'><i class='fa fa-print'></i></a>";
 
-                $action .= " <a href='#' data-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-default btn-xs'   data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
+                $action .= " <a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-secondary btn-sm'   data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
 
                 if ($value->appointment_status == 'pending') {
                     if ($value->source != 'Online') {
-                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {                           
-                            
-                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-default btn-xs'  data-toggle='tooltip' title='' data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' data-original-title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";                            
+                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {
+
+                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-secondary btn-sm'  data-bs-toggle='tooltip' data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";
 
                         }
                     }
                 }
 
                 $action .= "</div>";
-                $first_action = "<a  href='javascript:void(0)' data-toggle='tooltip'  data-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
+                $first_action = "<a  href='javascript:void(0)' data-bs-toggle='tooltip'  data-bs-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
 
                 if (!empty($value->live_consult)) {$live_consult = $this->lang->line($value->live_consult);} else { $live_consult = '';};
-				
+
 				if ($value->gender) {
                     $gender = $this->lang->line(strtolower($value->gender));
                 } else {
                     $gender = '';
                 }
-				
+
                 //==============================
-                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>" . $action;
+                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>";
                 $row[] = $status;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
                 $row[] = $value->mobileno;
                 $row[] = $gender;
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
                 $row[] = $this->lang->line(strtolower($value->source));
-                $row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
 
                 $row[] = $value->priorityname;
                 if ($this->module_lib->hasActive('live_consultation')) {
@@ -4404,12 +4966,13 @@ class Bill extends Admin_Controller
                     }
                 }
                 //====================
-                 $dicount_amt=0;
+			    $row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
+                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
+                $dicount_amt=0;
                 $dicount_amt=(($value->standard_amount*$value->discount_percentage)/100);
                 $row[]     = amountFormat($value->standard_amount);
                 $row[]     = amountFormat($dicount_amt)." (".$value->discount_percentage." %)";
-                $row[]     = amountFormat($value->paid_amount);
-                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
+                $row[]     = amountFormat($value->paid_amount) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -4421,11 +4984,11 @@ class Bill extends Admin_Controller
         );
         echo json_encode($json_data);
     }
-	
+
 	public function getappointmentdatatableold()
     {
         $dt_response = $this->appointment_model->getAllappointmentRecord(3);
-       
+
         $fields      = $this->customfield_model->get_custom_fields('appointment', 1);
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -4433,37 +4996,38 @@ class Bill extends Admin_Controller
             foreach ($dt_response->data as $key => $value) {
 
                 $row = array();
-                $label = "";               
-                
+                $label = "";
+                $status = "";
+
                 if ($value->appointment_status == "approved") {
-                    $label  = "class='label label-success'";
+                    $label  = "class='badge bg-success text-white'";
                     $status = $this->customlib->getSessionPrefixByType('appointment') . $value->id;
                 } else if ($value->appointment_status == "pending") {
-                    $label  = "class='label label-warning'";
+                    $label  = "class='badge bg-warning text-dark'";
                     $status = $this->lang->line($value->appointment_status);
                 } else if ($value->appointment_status == "cancel") {
-                    $label  = "class='label label-danger'";
+                    $label  = "class='badge bg-danger text-white'";
                     $status = $this->lang->line($value->appointment_status);
-                }               
+                }
 
                 $action = "<div class='rowoptionview rowview-btn-top'>";
-                $action .= "<a href='#' data-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-default btn-xs'   data-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
-                $action .="<a href='#'  class='btn btn-default btn-xs' data-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' data-original-title=".$this->lang->line('print')."><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' class='btn btn-secondary btn-sm'   data-bs-target='#viewModal' onclick='viewDetail(" . $value->id . ")'>  <i class='fa fa-reorder'></i> </a>";
+                $action .="<a href='#'  class='btn btn-secondary btn-sm' data-bs-toggle='tooltip'  onclick='printAppointment(" . $value->id .")' title='".$this->lang->line('print')."'><i class='fa fa-print'></i></a>";
 
-                $action .= " <a href='#' data-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-default btn-xs'   data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
+                $action .= " <a href='#' data-bs-toggle='tooltip' title='" . $this->lang->line('reschedule') . "' class='btn btn-secondary btn-sm'   data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",1)'>  <i class='fa fa-calendar'></i> </a>";
 
                 if ($value->appointment_status == 'pending') {
                     if ($value->source != 'Online') {
-                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {                           
-                            
-                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-default btn-xs'  data-toggle='tooltip' title='' data-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' data-original-title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";                            
+                        if ($this->rbac->hasPrivilege('appointment_approve', 'can_view')) {
+
+                            $action .= "<span class='large-tooltip'><a href='#' class='btn btn-secondary btn-sm'  data-bs-toggle='tooltip' data-bs-target='#rescheduleModal' onclick='viewreschedule(" . $value->id . ",2)' title='" . $this->lang->line('approve_appointment') . "'><i class='fa fa-check' aria-hidden='true'></i></a></span>";
 
                         }
                     }
                 }
 
                 $action .= "</div>";
-                $first_action = "<a  href='javascript:void(0)' data-toggle='tooltip'  data-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
+                $first_action = "<a  href='javascript:void(0)' data-bs-toggle='tooltip'  data-bs-target='#viewModal' title=''  onclick='viewDetail(" . $value->id . ")'>";
 
                 if (!empty($value->live_consult)) {$live_consult = $this->lang->line($value->live_consult);} else { $live_consult = '';};
 				
@@ -4474,14 +5038,13 @@ class Bill extends Admin_Controller
                 }
 				
                 //==============================
-                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>" . $action;
+                $row[] = $first_action . composePatientName($value->patient_name, $value->pid) . "</a>";
                 $row[] = $status;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
                 $row[] = $value->mobileno;
                 $row[] = $gender;
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
                 $row[] = $this->lang->line(strtolower($value->source));
-                $row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
                 $row[] = $value->priorityname;
                 if ($this->module_lib->hasActive('live_consultation')) {
                     $row[] = $live_consult;
@@ -4497,12 +5060,13 @@ class Bill extends Admin_Controller
                     }
                 }
                 //====================
-                 $dicount_amt=0;
+			    $row[] = composeStaffNameByString($value->created_by_name, $value->created_by_surname, $value->created_by_employee_id);
+                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
+                $dicount_amt=0;
                 $dicount_amt=(($value->standard_amount*$value->discount_percentage)/100);
                 $row[]     = amountFormat($value->standard_amount);
                 $row[]     = amountFormat($dicount_amt)." (".$value->discount_percentage." %)";
-                $row[]     = amountFormat($value->paid_amount);
-                $row[]     = "<small " . $label . ">" . $this->lang->line($value->appointment_status) . "</small>";
+                $row[]     = amountFormat($value->paid_amount) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -4517,11 +5081,16 @@ class Bill extends Admin_Controller
 
     public function get_appointment_detail()
     {
-        $id     = $this->input->get("appointment_id");
+        $id     = $this->input->get("appointment_id", TRUE);
         $result = $this->appointment_model->getDetailsAppointment($id);   
- 
-        $result['appointment_no'] = $this->customlib->getSessionPrefixByType('appointment') . $id;        
-        if($result['start_time']){
+        
+		if ($result['appointment_status'] == 'approved') {
+			$result['appointment_no'] = $this->customlib->getSessionPrefixByType('appointment') . $id;        
+        }else{
+            $result['appointment_no']="";
+        }
+
+	   if($result['start_time']){
             if($this->time_format){
                 $result["doctor_shift_name"]       = date('G:i:s', strtotime($result['start_time'])) ." - ". date('G:i:s', strtotime($result['end_time'])) ;
             }else{
@@ -4641,6 +5210,1027 @@ class Bill extends Admin_Controller
     public function getcaseid(){
         $caseidlist = $this->casereference_model->get($this->input->get('caseid'));
         echo json_encode($caseidlist);
+    }
+
+    /**
+     * Unified Service Posting page (cashier desk).
+     * Prefer typed entry points: opd_service_posting / ipd_service_posting.
+     */
+    public function service_posting($case_id = null)
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureServicePostingPermissions();
+
+        if ($this->rbac->hasPrivilege('ipd_service_posting', 'can_view')) {
+            redirect('admin/bill/ipd_service_posting' . ($case_id ? '/' . $case_id : ''));
+            return;
+        }
+        if ($this->rbac->hasPrivilege('opd_service_posting', 'can_view')) {
+            redirect('admin/bill/opd_service_posting' . ($case_id ? '/' . $case_id : ''));
+            return;
+        }
+        access_denied();
+    }
+
+    public function opd_service_posting($case_id = null)
+    {
+        $this->renderServicePostingPage('opd', $case_id);
+    }
+
+    public function ipd_service_posting($case_id = null)
+    {
+        $this->renderServicePostingPage('ipd', $case_id);
+    }
+
+    /**
+     * Render OPD or IPD Service Posting page.
+     */
+    private function renderServicePostingPage($type, $case_id = null)
+    {
+        $type = ($type === 'opd') ? 'opd' : 'ipd';
+        $this->load->model('bill_model');
+        $this->bill_model->ensureUnifiedBillTables();
+        $this->bill_model->ensureCreditBillingSchema();
+        $this->bill_model->ensureServicePostingPermissions();
+
+        if (!$this->rbac->hasPrivilege($type . '_service_posting', 'can_view')) {
+            access_denied();
+            return;
+        }
+
+        $this->session->set_userdata('top_menu', 'bill');
+        $perms = $this->getServicePostingPermissionFlags($type);
+
+        $data['payment_mode'] = $this->payment_mode;
+        $data['case_id']      = $case_id;
+        $data['module']       = 'billing';
+        $data['posting_type'] = $type;
+        $data['sp_permissions'] = $perms;
+        $data['title']        = ($type === 'opd')
+            ? $this->lang->line('opd_service_posting')
+            : $this->lang->line('ipd_service_posting');
+        $data['doctors']      = $this->staff_model->getStaffbyrole(3);
+        $data['organisation'] = $this->organisation_model->get();
+        $data['charge_types'] = $this->getServicePostingChargeTypes();
+
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/bill/service_posting', $data);
+        $this->load->view('layout/footer', $data);
+    }
+
+    private function getServicePostingPermissionFlags($type)
+    {
+        $type = ($type === 'opd') ? 'opd' : 'ipd';
+        $prefix = $type . '_service_posting';
+        return array(
+            'can_view'    => $this->rbac->hasPrivilege($prefix, 'can_view'),
+            'can_edit'    => $this->rbac->hasPrivilege($prefix . '_edit', 'can_view'),
+            'can_save'    => $this->rbac->hasPrivilege($prefix . '_save', 'can_view'),
+            'can_confirm' => $this->rbac->hasPrivilege($prefix . '_confirm', 'can_view'),
+        );
+    }
+
+    /**
+     * Active charge types for Service Posting service-code dropdown.
+     */
+    private function getServicePostingChargeTypes()
+    {
+        $types = $this->chargetype_model->get();
+        if (empty($types)) {
+            return array();
+        }
+        $active = array();
+        foreach ($types as $row) {
+            if (isset($row->is_active) && $row->is_active === 'yes') {
+                $active[] = $row;
+            }
+        }
+        usort($active, function ($a, $b) {
+            return strcasecmp($a->charge_type, $b->charge_type);
+        });
+        return $active;
+    }
+
+    private function resolveServicePostingType($fallback = 'ipd')
+    {
+        $type = strtolower(trim((string) $this->input->post('posting_type')));
+        if ($type === '' || $type === null) {
+            $type = strtolower(trim((string) $this->input->get('posting_type')));
+        }
+        if (!in_array($type, array('opd', 'ipd'), true)) {
+            $type = ($fallback === 'opd') ? 'opd' : 'ipd';
+        }
+        return $type;
+    }
+
+    /**
+     * Ensure caller has the given service posting privilege. Returns false after JSON error when $json.
+     */
+    private function requireServicePostingPrivilege($type, $action = 'view', $json = true)
+    {
+        $type = ($type === 'opd') ? 'opd' : 'ipd';
+        $code = $type . '_service_posting';
+        if ($action !== 'view' && $action !== '') {
+            $code .= '_' . $action;
+        }
+        if ($this->rbac->hasPrivilege($code, 'can_view')) {
+            return true;
+        }
+        if ($json) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('access_denied')));
+            return false;
+        }
+        access_denied();
+        return false;
+    }
+
+    /**
+     * Verify case has OPD or IPD matching posting type.
+     */
+    private function caseMatchesPostingType($case_id, $type)
+    {
+        $case_id = (int) $case_id;
+        if ($case_id < 1) {
+            return false;
+        }
+        if ($type === 'ipd') {
+            $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+            return !empty($ipd['ipdid']);
+        }
+        $opd = $this->patient_model->getDetailsopdByCaseId($case_id);
+        return !empty($opd);
+    }
+
+    /**
+     * Resolve Case ID from case / IP / MR and return patient + lines.
+     */
+    public function load_service_posting()
+    {
+        $this->load->model(array('bill_model', 'indent_model', 'transaction_model'));
+        $this->bill_model->ensureServicePostingPermissions();
+
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'view', true)) {
+            return;
+        }
+
+        $case_id = $this->bill_model->resolveCaseReference(
+            $this->input->post('case_id'),
+            $this->input->post('ip_number'),
+            $this->input->post('mr_number')
+        );
+
+        if ($case_id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        if (!$this->caseMatchesPostingType($case_id, $posting_type)) {
+            $msg = ($posting_type === 'ipd')
+                ? $this->lang->line('case_not_ipd_service_posting')
+                : $this->lang->line('case_not_opd_service_posting');
+            if ($msg === 'case_not_ipd_service_posting' || $msg === 'case_not_opd_service_posting') {
+                $msg = ($posting_type === 'ipd')
+                    ? 'This case has no IPD admission. Use OPD Service Posting.'
+                    : 'This case has no OPD visit. Use IPD Service Posting.';
+            }
+            echo json_encode(array('status' => 0, 'message' => $msg));
+            return;
+        }
+
+        $patient = $this->patient_model->getDetailsByCaseId($case_id, $posting_type === 'ipd' ? 'ipd' : null);
+        if (empty($patient['patient_id'])) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        $lines = $this->bill_model->getServicePostingLines($case_id);
+        $confirmation = $this->bill_model->getLatestConfirmationByCaseId($case_id);
+        $draft = $this->bill_model->getDraftConfirmationByCaseId($case_id);
+        $is_confirmed = $this->bill_model->isCaseBillConfirmed($case_id);
+        $finance = $this->bill_model->getServicePostingFinancials($case_id, $lines);
+        $advance = $finance['advance_amount'];
+
+        $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+        $patient['patient_unique_id'] = '';
+        $prow = $this->db->select('patient_unique_id,insurance_id,insurance_validity,organisation_id')->where('id', (int) $patient['patient_id'])->get('patients')->row_array();
+        if (!empty($prow['patient_unique_id'])) {
+            $patient['patient_unique_id'] = $prow['patient_unique_id'];
+        }
+        if (isset($prow['insurance_id'])) {
+            $patient['insurance_id'] = $prow['insurance_id'];
+        }
+        if (isset($prow['insurance_validity'])) {
+            $patient['insurance_validity'] = $prow['insurance_validity'];
+        }
+        if (isset($prow['organisation_id'])) {
+            $patient['organisation_id'] = $prow['organisation_id'];
+        }
+
+        // Prefer IPD doctor / reporting doctor fields when IPD exists on the case
+        if (!empty($ipd['ipdid'])) {
+            $patient['ipdid'] = $ipd['ipdid'];
+            $patient['bed_name'] = isset($ipd['bed_name']) ? $ipd['bed_name'] : (isset($patient['bed_name']) ? $patient['bed_name'] : '');
+            $patient['bed_group_id'] = isset($ipd['bed_group_id']) ? $ipd['bed_group_id'] : (isset($patient['bed_group_id']) ? $patient['bed_group_id'] : '');
+            $patient['bedgroup_name'] = isset($ipd['bedgroup_name']) ? $ipd['bedgroup_name'] : (isset($patient['bedgroup_name']) ? $patient['bedgroup_name'] : '');
+            $patient['floor_name'] = isset($ipd['floor_name']) ? $ipd['floor_name'] : (isset($patient['floor_name']) ? $patient['floor_name'] : '');
+            $patient['cons_doctor'] = isset($ipd['cons_doctor']) ? $ipd['cons_doctor'] : '';
+            $patient['doctor_name'] = isset($ipd['doctor_name']) ? $ipd['doctor_name'] : '';
+            $patient['doctor_surname'] = isset($ipd['doctor_surname']) ? $ipd['doctor_surname'] : '';
+            $patient['doctor_employee_id'] = isset($ipd['doctor_employee_id']) ? $ipd['doctor_employee_id'] : '';
+            $patient['reporting_doctor'] = isset($ipd['reporting_doctor']) ? $ipd['reporting_doctor'] : '';
+            $patient['reporting_doctor_name'] = isset($ipd['reporting_doctor_name']) ? $ipd['reporting_doctor_name'] : '';
+            $patient['reporting_doctor_surname'] = isset($ipd['reporting_doctor_surname']) ? $ipd['reporting_doctor_surname'] : '';
+            $patient['reporting_doctor_employee_id'] = isset($ipd['reporting_doctor_employee_id']) ? $ipd['reporting_doctor_employee_id'] : '';
+            $patient['department_name'] = isset($ipd['department_name']) ? $ipd['department_name'] : '';
+            $patient['discharge_date'] = isset($ipd['discharge_date']) ? $ipd['discharge_date'] : '';
+            $patient['discharged'] = isset($ipd['discharged']) ? $ipd['discharged'] : (isset($patient['discharged']) ? $patient['discharged'] : '');
+            $patient['patient_type'] = !empty($ipd['patient_type']) ? $ipd['patient_type'] : (isset($patient['patient_type']) ? $patient['patient_type'] : '');
+            $patient['case_type'] = !empty($ipd['case_type']) ? $ipd['case_type'] : (isset($patient['case_type']) ? $patient['case_type'] : '');
+            if (!empty($ipd['organisation_name'])) {
+                $patient['organisation_name'] = $ipd['organisation_name'];
+            }
+            if (!empty($ipd['organisation_id'])) {
+                $patient['organisation_id'] = $ipd['organisation_id'];
+            }
+            if (!empty($ipd['insurance_id'])) {
+                $patient['insurance_id'] = $ipd['insurance_id'];
+            }
+            if (!empty($ipd['date'])) {
+                $patient['date'] = $ipd['date'];
+            }
+            if (!empty($ipd['mobileno'])) {
+                $patient['mobileno'] = $ipd['mobileno'];
+            }
+            if (!empty($ipd['address'])) {
+                $patient['address'] = $ipd['address'];
+            }
+            if (!empty($ipd['gender'])) {
+                $patient['gender'] = $ipd['gender'];
+            }
+        }
+
+        $discharge_display = '';
+        if (!empty($patient['discharge_date']) && $patient['discharge_date'] != '0000-00-00' && $patient['discharge_date'] != '0000-00-00 00:00:00') {
+            $discharge_display = $this->customlib->YYYYMMDDHisTodateFormat($patient['discharge_date'], $this->customlib->getHospitalTimeFormat());
+        }
+        $patient['discharge_date_display'] = $discharge_display;
+
+        $ipd_id = !empty($ipd['ipdid']) ? $ipd['ipdid'] : '';
+        $ipd_no = $ipd_id !== '' ? ($this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id) : '';
+
+        $mapped_charge_type = '';
+        if ($posting_type === 'ipd') {
+            $bed_group_id = 0;
+            if (!empty($ipd['bed_group_id'])) {
+                $bed_group_id = (int) $ipd['bed_group_id'];
+            } elseif (!empty($patient['bed_group_id'])) {
+                $bed_group_id = (int) $patient['bed_group_id'];
+            }
+            if ($bed_group_id > 0) {
+                $mapped_charge_type = $this->bedgroup_model->getChargeTypeByBedGroupId($bed_group_id);
+            }
+        }
+
+        echo json_encode(array(
+            'status'         => 1,
+            'case_id'        => $case_id,
+            'posting_type'   => $posting_type,
+            'patient'        => $patient,
+            'ipd_id'         => $ipd_id,
+            'ipd_no'         => $ipd_no,
+            'mapped_charge_type' => $mapped_charge_type,
+            'lines'          => $lines,
+            'is_confirmed'   => $is_confirmed ? 1 : 0,
+            'confirmation'   => $confirmation,
+            'draft'          => $draft,
+            'remarks'        => !empty($draft['remarks']) ? $draft['remarks'] : (!empty($confirmation['remarks']) ? $confirmation['remarks'] : ''),
+            'advance_amount' => $advance,
+            'permissions'    => $this->getServicePostingPermissionFlags($posting_type),
+            'totals'         => array(
+                'total_amount'             => $finance['total_amount'],
+                'line_discount'            => $finance['line_discount'],
+                'line_net'                 => $finance['line_net'],
+                'overall_discount_percent' => $finance['overall_discount_percent'],
+                'overall_discount_amount'  => $finance['overall_discount_amount'],
+                'overall_discount_mode'    => $finance['overall_discount_mode'],
+                'total_discount'           => $finance['total_discount'],
+                'total_net'                => $finance['total_net'],
+                'total_paid'               => $finance['total_paid'],
+                'total_refund'             => $finance['total_refund'],
+                'balance'                  => $finance['balance'],
+            ),
+        ));
+    }
+
+    public function search_service_items()
+    {
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'view', true)) {
+            return;
+        }
+        $this->load->model('bill_model');
+        $service_code = $this->input->get_post('service_code');
+        $term         = $this->input->get_post('term');
+        $list         = $this->bill_model->searchServiceItems($service_code, $term);
+        echo json_encode(array('status' => 1, 'result' => $list));
+    }
+
+    public function add_service_line()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'edit', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        if ($this->bill_model->isCaseBillConfirmed($case_id)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('bill_already_confirmed')));
+            return;
+        }
+
+        $service_code = strtolower(trim($this->input->post('service_code')));
+        $item_id      = (int) $this->input->post('item_id');
+        $qty          = (float) $this->input->post('qty');
+        $rate         = $this->input->post('rate');
+        $discount_pct = (float) $this->input->post('discount_percentage');
+        $note         = $this->input->post('remarks');
+        $reporting_doctor = $this->input->post('reporting_doctor');
+        $service_date = $this->parsePostedServiceDate($this->input->post('service_date'));
+        $patient      = $this->patient_model->getDetailsByCaseId($case_id);
+
+        if ($case_id < 1 || empty($patient['patient_id']) || $item_id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        if ($qty <= 0) {
+            $qty = 1;
+        }
+
+        $staff_id = $this->customlib->getLoggedInUserID();
+        $created_module = null;
+        $created_id = null;
+
+        if ($service_code === 'pharmacy') {
+            $result = $this->bill_model->createPharmacyBillLine(
+                $case_id,
+                $patient['patient_id'],
+                $item_id,
+                $staff_id,
+                $qty,
+                $rate,
+                $discount_pct,
+                $note,
+                $service_date
+            );
+            if (!empty($result['status'])) {
+                $created_id = !empty($result['module_id']) ? $result['module_id'] : null;
+                if ($created_id) {
+                    $this->bill_model->setLineReportingDoctor($case_id, 'pharmacy', $created_id, $reporting_doctor);
+                }
+            }
+            echo json_encode($result['status']
+                ? array('status' => 1, 'message' => $this->lang->line('record_saved_successfully'), 'result' => $result)
+                : array('status' => 0, 'message' => $result['message']));
+            return;
+        }
+
+        if ($this->bill_model->isChargeTypeServiceCode($service_code)) {
+            $_POST['module'] = $posting_type;
+            $_POST['charge_id'] = $item_id;
+            $_POST['qty'] = $qty;
+            $_POST['apply_charge'] = ($rate !== null && $rate !== '') ? (float) $rate : 0;
+            $_POST['discount_percentage'] = $discount_pct;
+            $_POST['note'] = $note;
+            $_POST['case_id'] = $case_id;
+            $_POST['reporting_doctor'] = $reporting_doctor;
+            $_POST['service_date'] = $service_date;
+
+            if ($_POST['apply_charge'] <= 0) {
+                $charge = $this->charge_model->getDetails($item_id, '');
+                if (empty($charge)) {
+                    echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+                    return;
+                }
+                $_POST['apply_charge'] = (float) $charge->standard_charge;
+            }
+
+            // Capture output from add_bill_item to attach reporting doctor after insert
+            ob_start();
+            $this->add_bill_item();
+            $raw = ob_get_clean();
+            $decoded = json_decode($raw, true);
+            if (!empty($decoded['status']) && (int) $decoded['status'] === 1) {
+                // Reload latest line for this module to get module_id
+                $lines = $this->bill_model->getServicePostingLines($case_id);
+                $latest = null;
+                foreach ($lines as $line) {
+                    if ($line['module'] === $posting_type) {
+                        $latest = $line;
+                    }
+                }
+                if ($latest) {
+                    $this->bill_model->setLineReportingDoctor($case_id, $posting_type, $latest['module_id'], $reporting_doctor);
+                }
+            }
+            echo $raw;
+            return;
+        }
+
+        echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+    }
+
+    public function update_service_line()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'edit', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        if ($this->bill_model->isCaseBillConfirmed($case_id)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('bill_already_confirmed')));
+            return;
+        }
+
+        $module = $this->input->post('module');
+        $id     = (int) $this->input->post('id');
+        $reporting_doctor = $this->input->post('reporting_doctor');
+
+        // Always persist per-line reporting doctor (even if only doctor changed)
+        if ($module && $id > 0) {
+            $this->bill_model->setLineReportingDoctor($case_id, $module, $id, $reporting_doctor);
+        }
+
+        if ($module === 'pharmacy') {
+            $result = $this->bill_model->updatePharmacyBillLine(
+                $id,
+                $this->input->post('qty'),
+                $this->input->post('apply_charge'),
+                $this->input->post('discount_percentage'),
+                $this->input->post('remarks')
+            );
+            echo json_encode($result['status']
+                ? array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => isset($result['amount']) ? $result['amount'] : null)
+                : array('status' => 0, 'message' => $result['message']));
+            return;
+        }
+
+        // For OPD/IPD charges (and other modules handled by update_bill_item)
+        if ($module === 'opd' || $module === 'ipd') {
+            $this->update_bill_item();
+            return;
+        }
+
+        // Pathology / Radiology: reporting doctor already saved above
+        echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message')));
+    }
+
+    public function delete_service_line()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'edit', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        if ($this->bill_model->isCaseBillConfirmed($case_id)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('bill_already_confirmed')));
+            return;
+        }
+
+        $module = $this->input->post('module');
+        $id     = (int) $this->input->post('id');
+        if ($module === 'pharmacy') {
+            $result = $this->bill_model->deletePharmacyBillLine($id);
+            if (!empty($result['status'])) {
+                $this->bill_model->deleteLineReportingDoctor($case_id, 'pharmacy', $id);
+            }
+            echo json_encode($result['status']
+                ? array('status' => 1, 'message' => $this->lang->line('delete_message'))
+                : array('status' => 0, 'message' => $result['message']));
+            return;
+        }
+
+        ob_start();
+        $this->delete_bill_item();
+        $raw = ob_get_clean();
+        $decoded = json_decode($raw, true);
+        if (!empty($decoded['status']) && ((int) $decoded['status'] === 1 || $decoded['status'] === '1')) {
+            $this->bill_model->deleteLineReportingDoctor($case_id, $module, $id);
+        }
+        echo $raw;
+    }
+
+    public function save_service_bill()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'save', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        $remarks = $this->input->post('remarks');
+        $overall_percent = $this->input->post('overall_discount_percent');
+        $overall_amount = $this->input->post('overall_discount_amount');
+        $overall_mode = $this->input->post('overall_discount_mode');
+
+        if ($case_id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        $lines = $this->bill_model->getServicePostingLines($case_id);
+        $result = $this->bill_model->saveDraftUnifiedBill(
+            $case_id,
+            $this->customlib->getLoggedInUserID(),
+            $lines,
+            $remarks,
+            $overall_percent,
+            $overall_amount,
+            $overall_mode
+        );
+
+        if (empty($result['status'])) {
+            echo json_encode(array('status' => 0, 'message' => $result['message']));
+            return;
+        }
+
+        echo json_encode(array(
+            'status'          => 1,
+            'message'         => $this->lang->line('bill_saved_successfully'),
+            'confirmation_id' => $result['confirmation_id'],
+            'saved_at'        => $result['saved_at'],
+            'line_count'      => $result['line_count'],
+            'total_net'       => $result['total_net'],
+        ));
+    }
+
+    public function confirm_service_bill()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'confirm', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        $remarks = $this->input->post('remarks');
+        $overall_percent = $this->input->post('overall_discount_percent');
+        $overall_amount = $this->input->post('overall_discount_amount');
+        $overall_mode = $this->input->post('overall_discount_mode');
+
+        if ($case_id < 1) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        $lines = $this->bill_model->getServicePostingLines($case_id);
+        if (empty($lines)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        $result = $this->bill_model->confirmUnifiedBill(
+            $case_id,
+            $this->customlib->getLoggedInUserID(),
+            $lines,
+            $remarks,
+            $overall_percent,
+            $overall_amount,
+            $overall_mode
+        );
+
+        if (empty($result['status'])) {
+            echo json_encode(array('status' => 0, 'message' => $result['message']));
+            return;
+        }
+
+        $finance = $this->bill_model->getServicePostingFinancials($case_id, $lines);
+
+        echo json_encode(array(
+            'status'          => 1,
+            'message'         => $this->lang->line('bill_confirmed_successfully'),
+            'confirmation_id' => $result['confirmation_id'],
+            'total_net'       => $finance['total_net'],
+            'total_amount'    => $finance['total_amount'],
+            'total_discount'  => $finance['total_discount'],
+            'advance_amount'  => $finance['advance_amount'],
+            'balance'         => $finance['balance'],
+        ));
+        return;
+    }
+
+    public function reopen_service_bill()
+    {
+        $this->load->model('bill_model');
+        $posting_type = $this->resolveServicePostingType('ipd');
+        // Reopen requires edit permission
+        if (!$this->requireServicePostingPrivilege($posting_type, 'edit', true)) {
+            return;
+        }
+        $case_id = (int) $this->input->post('case_id');
+        $result  = $this->bill_model->reopenUnifiedBill($case_id, $this->customlib->getLoggedInUserID());
+        echo json_encode(array(
+            'status'  => !empty($result['status']) ? 1 : 0,
+            'message' => $result['message'],
+        ));
+    }
+
+    /**
+     * Record payment after Service Posting confirmation (Cash / UPI / Credit / Insurance / etc).
+     */
+    public function service_posting_payment()
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $posting_type = $this->resolveServicePostingType('ipd');
+        if (!$this->requireServicePostingPrivilege($posting_type, 'view', true)) {
+            return;
+        }
+
+        $case_id = (int) $this->input->post('case_reference_id');
+        if ($case_id < 1) {
+            echo json_encode(array('status' => 'fail', 'error' => array('case_id' => $this->lang->line('invalid_input')), 'message' => ''));
+            return;
+        }
+
+        if (!$this->bill_model->isCaseBillConfirmed($case_id)) {
+            echo json_encode(array('status' => 'fail', 'error' => array('confirm' => $this->lang->line('confirm_bill_first')), 'message' => ''));
+            return;
+        }
+
+        $payment_mode = $this->input->post('payment_mode', true);
+        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+        if ($payment_mode === 'Credit') {
+            $this->form_validation->set_rules('credit_doctor_id', $this->lang->line('credit_doctor'), 'trim|required|xss_clean');
+        }
+        if ($payment_mode === 'Insurance') {
+            $this->form_validation->set_rules('organisation_id', $this->lang->line('tpa'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('insurance_id', $this->lang->line('insurance_id'), 'trim|required|xss_clean');
+        }
+
+        if ($this->form_validation->run() == false) {
+            echo json_encode(array(
+                'status'  => 'fail',
+                'error'   => array(
+                    'amount'            => form_error('amount'),
+                    'payment_mode'      => form_error('payment_mode'),
+                    'payment_date'      => form_error('payment_date'),
+                    'credit_doctor_id'  => form_error('credit_doctor_id'),
+                    'organisation_id'   => form_error('organisation_id'),
+                    'insurance_id'      => form_error('insurance_id'),
+                ),
+                'message' => '',
+            ));
+            return;
+        }
+
+        $patient = $this->patient_model->getDetailsByCaseId($case_id);
+        if (empty($patient['patient_id'])) {
+            echo json_encode(array('status' => 'fail', 'error' => array('patient' => $this->lang->line('no_record_found')), 'message' => ''));
+            return;
+        }
+
+        // Prefer IPD linkage when present on case
+        $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+        if (!empty($ipd['ipdid'])) {
+            $patient['ipdid'] = $ipd['ipdid'];
+        }
+
+        if ($payment_mode === 'Insurance') {
+            $organisation_id = (int) $this->input->post('organisation_id', true);
+            $insurance_id    = trim($this->input->post('insurance_id', true));
+            $this->db->where('id', (int) $patient['patient_id'])->update('patients', array(
+                'organisation_id' => $organisation_id > 0 ? $organisation_id : null,
+                'insurance_id'    => $insurance_id,
+            ));
+        }
+
+        $payment_type = $this->input->post('payment_type');
+        $amount_type  = ($payment_type === 'advance') ? 'advance' : null;
+        $payment_date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('payment_date', true), $this->time_format);
+
+        $data = array(
+            'case_reference_id' => $case_id,
+            'amount'            => $this->input->post('amount', true),
+            'type'              => 'payment',
+            'amount_type'       => $amount_type,
+            'payment_mode'      => $payment_mode,
+            'note'              => $this->input->post('note', true),
+            'payment_date'      => $payment_date,
+            'received_by'       => $this->customlib->getLoggedInUserID(),
+            'patient_id'        => $patient['patient_id'],
+            'section'           => 'Service Posting',
+        );
+
+        if ($payment_mode === 'Credit') {
+            $data['credit_doctor_id'] = (int) $this->input->post('credit_doctor_id', true);
+        }
+
+        if (!empty($patient['ipdid'])) {
+            $data['ipd_id'] = $patient['ipdid'];
+        } elseif (!empty($patient['opdid'])) {
+            $data['opd_id'] = $patient['opdid'];
+        }
+
+        $this->transaction_model->add($data);
+        echo json_encode(array('status' => 'success', 'error' => '', 'message' => $this->lang->line('record_saved_successfully')));
+    }
+
+    /**
+     * Download categorized inpatient final bill as PDF.
+     */
+    public function download_patient_bill_pdf($case_id = null)
+    {
+        $case_id = $case_id ? (int) $case_id : (int) $this->input->get_post('case_id');
+        if ($case_id < 1) {
+            show_error($this->lang->line('invalid_input'));
+            return;
+        }
+
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $print_details         = $this->printing_model->get('', 'bill');
+        $data['print_details'] = $print_details;
+        $data['case_id']       = $case_id;
+        $data['patient']       = $this->enrichPatientBillDetails($case_id);
+        $data['charge_details'] = $this->transaction_model->get_ipdopdchargebycaseId($case_id);
+        $data['pharmacy_medicines'] = $this->getPharmacyMedicinesByCaseId($case_id);
+        $data['pathology_tests'] = $this->getPathologyTestsByCaseId($case_id);
+        $data['paid_amount']   = $this->transaction_model->ipdopdPaymentByCaseId($case_id);
+        $data['advance_amount'] = $this->transaction_model->getAdvanceTotalByCaseId($case_id);
+        $data['transaction_data'] = $this->transaction_model->getTransactionByCaseId($case_id);
+        $refund = $this->transaction_model->getopdIpdrefundbyCaseId($case_id);
+        $data['refund'] = !empty($refund) ? $refund['amount'] : 0;
+        $data['hospital'] = $this->setting_model->getSetting();
+        $data['printed_by'] = $this->customlib->getAdminSessionUserName();
+        $data['overall_discount'] = $this->bill_model->getOverallDiscountForCase($case_id);
+
+        $posting_type = strtolower(trim((string) $this->input->get('posting_type')));
+        $bill_presentation = $this->getPatientBillPresentationData($data['patient'], $case_id, $posting_type);
+        $data = array_merge($data, $bill_presentation);
+
+        $html = $this->load->view('admin/bill/_pdf_inpatient_final_bill', $data, true);
+
+        require_once APPPATH . 'third_party/omnipay/vendor/autoload.php';
+        try {
+            $mpdf = new \Mpdf\Mpdf(array(
+                'mode'          => 'utf-8',
+                'format'        => 'A4',
+                'margin_left'   => 10,
+                'margin_right'  => 10,
+                'margin_top'    => 40,
+                'margin_bottom' => 24,
+            ));
+            $mpdf->WriteHTML($html);
+            $mpdf->Output($bill_presentation['pdf_filename'], \Mpdf\Output\Destination::INLINE);
+        } catch (Exception $e) {
+            log_message('error', 'Final bill PDF failed: ' . $e->getMessage());
+            show_error($this->lang->line('error_occurred_please_try_again'));
+        }
+    }
+
+    /**
+     * Merge IPD admission fields onto case patient details for billing print/PDF.
+     */
+    private function enrichPatientBillDetails($case_id)
+    {
+        $case_id = (int) $case_id;
+        $patient = $this->patient_model->getDetailsByCaseId($case_id, 'ipd');
+        if (empty($patient['patient_id'])) {
+            $patient = $this->patient_model->getDetailsByCaseId($case_id);
+        }
+
+        $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+        if (!empty($ipd['ipdid'])) {
+            $merge_keys = array(
+                'ipdid', 'bed_name', 'bed_id', 'bedgroup_name', 'floor_name', 'cons_doctor',
+                'doctor_name', 'doctor_surname', 'doctor_employee_id', 'reporting_doctor',
+                'reporting_doctor_name', 'reporting_doctor_surname', 'reporting_doctor_employee_id',
+                'department_name', 'discharge_date', 'discharged', 'date', 'patient_type',
+                'case_type', 'organisation_name', 'organisation_id', 'insurance_id',
+                'insurance_validity', 'patient_unique_id', 'mobileno', 'address', 'gender',
+                'credit_limit', 'case_reference_id',
+            );
+            foreach ($merge_keys as $key) {
+                if (isset($ipd[$key]) && ($ipd[$key] !== '' && $ipd[$key] !== null)) {
+                    $patient[$key] = $ipd[$key];
+                }
+            }
+            if (empty($patient['appointment_date']) && !empty($ipd['date'])) {
+                $patient['appointment_date'] = $ipd['date'];
+            }
+        }
+
+        if (empty($patient['patient_unique_id']) && !empty($patient['patient_id'])) {
+            $prow = $this->db->select('patient_unique_id,insurance_id,organisation_id')->where('id', (int) $patient['patient_id'])->get('patients')->row_array();
+            if (!empty($prow['patient_unique_id'])) {
+                $patient['patient_unique_id'] = $prow['patient_unique_id'];
+            }
+            if (empty($patient['insurance_id']) && !empty($prow['insurance_id'])) {
+                $patient['insurance_id'] = $prow['insurance_id'];
+            }
+            if (empty($patient['organisation_id']) && !empty($prow['organisation_id'])) {
+                $patient['organisation_id'] = $prow['organisation_id'];
+            }
+        }
+
+        return $patient;
+    }
+
+    /**
+     * Bill title and filename for patient print/PDF (IPD vs OPD).
+     */
+    private function getPatientBillPresentationData($patient, $case_id = 0, $posting_type = null)
+    {
+        $patient = is_array($patient) ? $patient : array();
+        $posting_type = strtolower(trim((string) $posting_type));
+        if ($posting_type === 'opd') {
+            $is_ipd = false;
+        } elseif ($posting_type === 'ipd') {
+            $is_ipd = true;
+        } else {
+            $is_ipd = !empty($patient['ipdid']) && (int) $patient['ipdid'] > 0;
+        }
+        $case_id = (int) $case_id;
+        if ($case_id < 1 && !empty($patient['case_reference_id'])) {
+            $case_id = (int) $patient['case_reference_id'];
+        }
+
+        return array(
+            'is_ipd_bill'  => $is_ipd,
+            'bill_title'   => $is_ipd ? $this->lang->line('inpatient_bill') : $this->lang->line('opd_bill'),
+            'pdf_filename' => ($is_ipd ? 'Inpatient' : 'OPD') . '_Final_Bill_' . $case_id . '.pdf',
+        );
+    }
+
+    /**
+     * Flatten pathology bill tests for a case (test/service name rows, not bill numbers).
+     */
+    private function getPathologyTestsByCaseId($case_id)
+    {
+        $case_id = (int) $case_id;
+        if ($case_id < 1) {
+            return array();
+        }
+
+        $rows = $this->db->select(
+            'pathology_billing.id as bill_id, pathology_billing.date as bill_date,
+             pathology_billing.discount_percentage,
+             pathology_report.apply_charge, pathology_report.tax_percentage,
+             pathology.test_name'
+        )
+            ->from('pathology_billing')
+            ->join('pathology_report', 'pathology_report.pathology_bill_id = pathology_billing.id', 'inner')
+            ->join('pathology', 'pathology.id = pathology_report.pathology_id', 'left')
+            ->where('pathology_billing.case_reference_id', $case_id)
+            ->order_by('pathology_billing.date', 'asc')
+            ->order_by('pathology_report.id', 'asc')
+            ->get()
+            ->result_array();
+
+        return $rows ? $rows : array();
+    }
+
+    /**
+     * Flatten pharmacy bill medicines for a case (medicine name rows, not bill numbers).
+     */
+    private function getPharmacyMedicinesByCaseId($case_id)
+    {
+        $case_id = (int) $case_id;
+        if ($case_id < 1) {
+            return array();
+        }
+
+        $rows = $this->db->select(
+            'pharmacy_bill_basic.id as bill_id, pharmacy_bill_basic.date as bill_date,
+             pharmacy_bill_detail.quantity, pharmacy_bill_detail.sale_price, pharmacy_bill_detail.amount,
+             medicine_batch_details.tax as batch_tax,
+             pharmacy.medicine_name'
+        )
+            ->from('pharmacy_bill_basic')
+            ->join('pharmacy_bill_detail', 'pharmacy_bill_detail.pharmacy_bill_basic_id = pharmacy_bill_basic.id', 'inner')
+            ->join('medicine_batch_details', 'medicine_batch_details.id = pharmacy_bill_detail.medicine_batch_detail_id', 'left')
+            ->join('pharmacy', 'pharmacy.id = medicine_batch_details.pharmacy_id', 'left')
+            ->where('pharmacy_bill_basic.case_reference_id', $case_id)
+            ->order_by('pharmacy_bill_basic.date', 'asc')
+            ->order_by('pharmacy_bill_detail.id', 'asc')
+            ->get()
+            ->result_array();
+
+        return $rows ? $rows : array();
+    }
+
+    /**
+     * Admin list of Credit payment bills.
+     */
+    public function credit_bills()
+    {
+        if (!$this->rbac->hasPrivilege('opd_ipd_billing_through_case_id', 'can_view') && !$this->rbac->hasPrivilege('bill', 'can_view')) {
+            // Fall through with top menu; still allow if billing accessible
+        }
+        $this->session->set_userdata('top_menu', 'bill');
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $status = $this->input->get('status');
+        if (!in_array($status, array('outstanding', 'settled', 'all'), true)) {
+            $status = 'outstanding';
+        }
+
+        $data['status']            = $status;
+        $data['credit_bills']      = $this->transaction_model->getCreditBills($status);
+        $data['total_to_collect']  = $this->transaction_model->getCreditOutstandingTotal();
+        $data['currency_symbol']   = $this->customlib->getHospitalCurrencyFormat();
+        $this->load->view('layout/header');
+        $this->load->view('admin/bill/credit_bills', $data);
+        $this->load->view('layout/footer');
+    }
+
+    /**
+     * Update reporting doctor for IPD linked to a case (Service Posting).
+     */
+    public function update_reporting_doctor()
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $case_id = (int) $this->input->post('case_reference_id');
+        $reporting_doctor = $this->input->post('reporting_doctor');
+        $reporting_doctor = ($reporting_doctor === '' || $reporting_doctor === null) ? null : (int) $reporting_doctor;
+
+        if ($case_id < 1) {
+            echo json_encode(array('status' => 'fail', 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        $ipd = $this->patient_model->getDetailsipdByCaseId($case_id);
+        if (empty($ipd['ipdid'])) {
+            echo json_encode(array('status' => 'fail', 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
+
+        $this->db->where('id', (int) $ipd['ipdid'])->update('ipd_details', array(
+            'reporting_doctor' => $reporting_doctor,
+        ));
+
+        echo json_encode(array('status' => 'success', 'message' => $this->lang->line('record_saved_successfully')));
+    }
+
+    /**
+     * Settle a Credit transaction to Cash.
+     */
+    public function settle_credit_payment()
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $transaction_id = (int) $this->input->post('transaction_id');
+        if ($transaction_id < 1) {
+            echo json_encode(array('status' => 'fail', 'message' => $this->lang->line('invalid_input')));
+            return;
+        }
+
+        $ok = $this->transaction_model->settleCreditPayment($transaction_id, $this->customlib->getLoggedInUserID());
+        if ($ok) {
+            echo json_encode(array('status' => 'success', 'message' => $this->lang->line('credit_settled_successfully')));
+        } else {
+            echo json_encode(array('status' => 'fail', 'message' => $this->lang->line('no_record_found')));
+        }
+    }
+
+    /**
+     * Convert posted hospital-format service date to Y-m-d H:i:s.
+     */
+    private function parsePostedServiceDate($posted)
+    {
+        $posted = trim((string) $posted);
+        if ($posted === '' || $posted === 'false') {
+            return date('Y-m-d H:i:s');
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $posted)) {
+            return $posted;
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $posted)) {
+            return $posted . ':00';
+        }
+
+        $parsed = $this->customlib->dateFormatToYYYYMMDDHis($posted, $this->time_format);
+        if (!empty($parsed) && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $parsed) && strpos($parsed, '0000') !== 0) {
+            return $parsed;
+        }
+
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $posted, $m)) {
+            return $m[1] . ' ' . date('H:i:s');
+        }
+
+        return date('Y-m-d H:i:s');
     }
 
 }

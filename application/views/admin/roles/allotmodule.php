@@ -5,203 +5,146 @@ if($uri){
     $uri = 0 ;
 }
 ?>
-<div class="content-wrapper"> 
-    <!-- Main content -->
-    <section class="content">
-		<?php  if ($this->session->flashdata('msg')) { ?> <div>  <?php echo $this->session->flashdata('msg') ?> </div> <?php $this->session->unset_userdata('msg'); }   ?>
+<?php  if ($this->session->flashdata('msg')) { ?> <div>  <?php echo $this->session->flashdata('msg') ?> </div> <?php $this->session->unset_userdata('msg'); }   ?>
         <div class="row">
             <div class="col-md-3">
-                <div class="box border0">
-                    <ul class="tablists">        
+                <div class="card border0">
+                    <ul class="tablists nav flex-column" role="tablist">
                     <?php
-                        $count_tab=0;
+                        $count_tab = 0;
                         foreach ($role_permission as $key => $value) {
-                    ?>                                         
-                        <li class="<?php echo ($count_tab == $open_tab) ?"active":""?>" ><a onclick="activeurl(<?php echo $count_tab;?>,'<?php echo $value->name ?>')" class="tab" id="tab_<?php echo $count_tab;?>" href="#tab<?php echo $count_tab;?>" data-toggle="pill" data-act-tab="<?php echo $count_tab;?>"><?php echo $value->name; ?></a></li>                                         
+                            $isActive = ($count_tab == $open_tab);
+                    ?>
+                        <li class="<?php echo $isActive ? 'active' : ''; ?>" role="presentation">
+                            <a onclick="activeurl(<?php echo $count_tab; ?>,'<?php echo $value->name; ?>')"
+                               class="tab <?php echo $isActive ? 'active' : ''; ?>"
+                               id="tab_<?php echo $count_tab; ?>"
+                               href="#tab<?php echo $count_tab; ?>"
+                               data-bs-toggle="pill"
+                               data-bs-target="#tab<?php echo $count_tab; ?>"
+                               data-act-tab="<?php echo $count_tab; ?>"
+                               role="tab"
+                               aria-controls="tab<?php echo $count_tab; ?>"
+                               aria-selected="<?php echo $isActive ? 'true' : 'false'; ?>"><?php echo $value->name; ?></a>
+                        </li>
                     <?php
-                        $count_tab++;
+                            $count_tab++;
                         }
-                    ?>      
+                    ?>
                     </ul>
                 </div>
             </div>            
-            <div class="col-md-9"><div class="box box-primary">
-                <div class="box-header ptbnull">
-                    <h3 class="box-title titlefix"><span id="permissionname"> 
-                    <?php
-                        $count_tab=0;
-                        foreach ($role_permission as $key => $value) {
-                    ?>                                         
-                         <?php if($count_tab == $open_tab){ echo $value->name . " Permissions"; } ?>                                          
-                    <?php
-                        $count_tab++;
-                        }
-                    ?>                   
-                    
-                    </span></h3>
-                        <div class="box-tools pull-right">
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="">                
-                        <div class="box-body">
-							<div class="modal_loader_div" style="display: none;"></div>
-                            <div class="tab-content">
-                            <?php echo $this->customlib->getCSRF(); ?> 
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h5 class="card-title mb-0">
+                            <span id="permissionname">
+                                <?php
+                                $count_tab = 0;
+                                foreach ($role_permission as $key => $value) {
+                                    if ($count_tab == $open_tab) {
+                                        echo $value->name . " Permissions";
+                                    }
+                                    $count_tab++;
+                                }
+                                ?>
+                            </span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="modal_loader_div" style="display: none;"></div>
+                        <div class="tab-content">
+                            <?php echo $this->customlib->getCSRF(); ?>
                             <?php
-                                $tab_content_counter=0;                              
-                                for ($i = 0; $i < count($role_permission); $i++) {
-                                $value=$role_permission[$i];                              
-                            ?>
-                                <div class="tab-pane <?php echo ($tab_content_counter == $open_tab) ?"active":""?>" id="tab<?php echo $tab_content_counter?>">
-                                    <input type="hidden" name="open_tab" id="open_tab" class="open_tab" value="<?php echo  $uri ; ?>" />
-                                    <input type="hidden" name="role_id" value="<?php echo $role['id'] ?>"/>
-                                        <table class="table table-stripped">
+                            $tab_content_counter = 0;
+                            for ($i = 0; $i < count($role_permission); $i++) {
+                                $value = $role_permission[$i];
+                                ?>
+                                <div class="tab-pane <?php echo ($tab_content_counter == $open_tab) ? "active" : ""; ?>" id="tab<?php echo $tab_content_counter; ?>">
+                                    <input type="hidden" name="open_tab" id="open_tab" class="open_tab" value="<?php echo $uri; ?>" />
+                                    <input type="hidden" name="role_id" value="<?php echo $role['id'] ?>" />
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover align-middle mb-0">
                                             <thead>
-                                                <tr>                                    
+                                                <tr>
                                                     <th><?php echo $this->lang->line('feature'); ?></th>
-                                                    <th><?php echo $this->lang->line('view'); ?></th>
-                                                    <th><?php echo $this->lang->line('add'); ?></th>
-                                                    <th><?php echo $this->lang->line('edit'); ?></th>
-                                                    <th><?php echo $this->lang->line('delete'); ?></th>
+                                                    <th class="text-center sh-th-90"><?php echo $this->lang->line('view'); ?></th>
+                                                    <th class="text-center sh-th-90"><?php echo $this->lang->line('add'); ?></th>
+                                                    <th class="text-center sh-th-90"><?php echo $this->lang->line('edit'); ?></th>
+                                                    <th class="text-center sh-th-90"><?php echo $this->lang->line('delete'); ?></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr>                                           
-                                            <?php
-                                            if (!empty($value->permission_category)) {
-                                                ?>
-                                                <td width="60%">
-                                                    <input type="hidden" name="per_cat[]" value="<?php echo $value->permission_category[0]->id; ?>" />
-                                                    <input type="hidden" name="<?php echo "roles_permissions_id_" . $value->permission_category[0]->id; ?>" value="<?php echo $value->permission_category[0]->roles_permissions_id; ?>" />
-                                                    <?php echo $value->permission_category[0]->name ?></td>
-                                                <td width="10%">
-                                                    <?php
-                                                    if ($value->permission_category[0]->enable_view == 1) {
-                                                        ?>
-                                                        <label class="">
-                                                            <input class="permission_chk" data-action="can_view" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $value->permission_category[0]->id; ?>" type="checkbox" name="<?php echo "can_view-perm_" . $value->permission_category[0]->id; ?>" value="<?php echo $value->permission_category[0]->id; ?>" <?php echo set_checkbox("can_view-perm_" . $value->permission_category[0]->id, $value->permission_category[0]->id, ($value->permission_category[0]->can_view == 1) ? TRUE : FALSE); ?>> 
-                                                        </label>															
-                                                        <?php
-                                                    }
+                                                <?php if (!empty($value->permission_category)) {
+                                                    $first = $value->permission_category[0];
                                                     ?>
-                                                </td>
-                                               <td width="10%">
+                                                    <tr>
+                                                        <td>
+                                                            <input type="hidden" name="per_cat[]" value="<?php echo $first->id; ?>" />
+                                                            <input type="hidden" name="<?php echo "roles_permissions_id_" . $first->id; ?>" value="<?php echo $first->roles_permissions_id; ?>" />
+                                                            <?php echo $first->name; ?>
+                                                        </td>
+                                                        <?php foreach (['can_view' => 'enable_view', 'can_add' => 'enable_add', 'can_edit' => 'enable_edit', 'can_delete' => 'enable_delete'] as $action => $enableKey) { ?>
+                                                            <td class="text-center">
+                                                                <?php if ($first->$enableKey == 1) { ?>
+                                                                    <div class="form-check form-switch d-inline-flex m-0">
+                                                                        <input class="form-check-input permission_chk" type="checkbox" role="switch"
+                                                                               data-action="<?php echo $action; ?>"
+                                                                               data-role_id="<?php echo $role['id'] ?>"
+                                                                               data-per_cat="<?php echo $first->id; ?>"
+                                                                               name="<?php echo $action . "-perm_" . $first->id; ?>"
+                                                                               value="<?php echo $first->id; ?>"
+                                                                               <?php echo ($first->$action == 1) ? 'checked' : ''; ?>>
+                                                                    </div>
+                                                                <?php } ?>
+                                                            </td>
+                                                        <?php } ?>
+                                                    </tr>
                                                     <?php
-                                                    if ($value->permission_category[0]->enable_add == 1) {
-                                                        ?>
-                                                        <label class="">
-                                                            <?php 
-                                                             ?>
-                                                            <input class="permission_chk" data-action="can_add" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $value->permission_category[0]->id; ?>" type="checkbox" name="<?php echo "can_add-perm_" . $value->permission_category[0]->id; ?>" value="<?php echo $value->permission_category[0]->id; ?>" <?php echo set_checkbox("can_view-perm_" . $value->permission_category[0]->id, $value->permission_category[0]->id, ($value->permission_category[0]->can_add == 1) ? TRUE : FALSE); ?>> 
-                                                        </label> 
-                                                        <?php
-                                                    }
+                                                } else {
                                                     ?>
-                                                </td>
-                                                 <td width="10%">
+                                                    <tr><td colspan="5"></td></tr>
                                                     <?php
-                                                    if ($value->permission_category[0]->enable_edit == 1) {
-                                                        ?>
-                                                        <label class="">
-                                                            <input class="permission_chk" data-action="can_edit" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $value->permission_category[0]->id; ?>" type="checkbox" name="<?php echo "can_edit-perm_" . $value->permission_category[0]->id; ?>" value="<?php echo $value->permission_category[0]->id; ?>" <?php echo set_checkbox("can_view-perm_" . $value->permission_category[0]->id, $value->permission_category[0]->id, ($value->permission_category[0]->can_edit == 1) ? TRUE : FALSE); ?>> 
-                                                        </label> 
-                                                        <?php
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td width="10%">
-                                                    <?php
-                                                    if ($value->permission_category[0]->enable_delete == 1) {
-                                                        ?>
-                                                        <label class="">
-                                                            <input class="permission_chk" data-action="can_delete" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $value->permission_category[0]->id; ?>" type="checkbox" name="<?php echo "can_delete-perm_" . $value->permission_category[0]->id; ?>" value="<?php echo $value->permission_category[0]->id; ?>" <?php echo set_checkbox("can_view-perm_" . $value->permission_category[0]->id, $value->permission_category[0]->id, ($value->permission_category[0]->can_delete == 1) ? TRUE : FALSE); ?>> 
-                                                        </label> 
-                                                        <?php
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <?php
-                                            } else {
-                                                ?>
-                                                <td colspan="5"></td>
-                                                <?php
-                                            }
-                                            ?>
-                                        </tr>
-                                        <?php
-                                        if (!empty($value->permission_category) && count($value->permission_category) > 1) {
-                                            unset($value->permission_category[0]);
-                                            foreach ($value->permission_category as $new_feature_key => $new_feature_value) {
-                                                ?>
-                                                <tr>
-                                                    <td width="60%">
-                                                        <input type="hidden" name="per_cat[]" value="<?php echo $new_feature_value->id; ?>" />
-                                                        <input type="hidden" name="<?php echo "roles_permissions_id_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->roles_permissions_id; ?>" />
-                                                        <?php echo $new_feature_value->name ?></td>
-                                                   <td width="10%">
-                                                        <?php
-                                                        if ($new_feature_value->enable_view == 1) {
-                                                            ?>
-                                                            <label class="">
-                                                                <input class="permission_chk" data-action="can_view" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $new_feature_value->id; ?>" type="checkbox" name="<?php echo "can_view-perm_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->id; ?>" <?php echo set_checkbox("can_view-perm_" . $new_feature_value->id, $new_feature_value->id, ( $new_feature_value->can_view == 1) ? TRUE : FALSE); ?>> 
-                                                            </label> 
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </td>
-                                                <td width="10%">
-                                                        <?php
-                                                        if ($new_feature_value->enable_add == 1) {
-                                                            ?>
-                                                            <label class="">
-                                                                <input class="permission_chk" data-action="can_add" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $new_feature_value->id; ?>" type="checkbox" name="<?php echo "can_add-perm_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->id; ?>" <?php echo set_checkbox("can_view-perm_" . $new_feature_value->id, $new_feature_value->id, ( $new_feature_value->can_add == 1) ? TRUE : FALSE); ?>> 
-                                                            </label> 
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </td>
-                                                <td width="10%">
-                                                        <?php
-                                                        if ($new_feature_value->enable_edit == 1) {
-                                                            ?>
-                                                            <label class="">
-                                                                <input class="permission_chk" data-action="can_edit" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $new_feature_value->id; ?>" type="checkbox" name="<?php echo "can_edit-perm_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->id; ?>" <?php echo set_checkbox("can_view-perm_" . $new_feature_value->id, $new_feature_value->id, ( $new_feature_value->can_edit == 1) ? TRUE : FALSE); ?>> 
-                                                            </label> 
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </td>
-                                                <td width="10%">
-                                                        <?php
-                                                        if ($new_feature_value->enable_delete == 1) {
-                                                            ?>
-                                                            <label class="">
-                                                                <input class="permission_chk" data-action="can_delete" data-role_id="<?php echo $role['id'] ?>" data-per_cat="<?php echo $new_feature_value->id; ?>" type="checkbox" name="<?php echo "can_delete-perm_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->id; ?>" <?php echo set_checkbox("can_view-perm_" . $new_feature_value->id, $new_feature_value->id, ( $new_feature_value->can_delete == 1) ? TRUE : FALSE); ?>> 
-                                                            </label> 
-                                                            <?php
-                                                        }
-                                                        ?>
-                                                    </td>
-                                                </tr>
-                                                <?php
-                                            }
-                                        }
-                                        ?>
+                                                } ?>
+                                                <?php if (!empty($value->permission_category) && count($value->permission_category) > 1) {
+                                                    unset($value->permission_category[0]);
+                                                    foreach ($value->permission_category as $new_feature_value) { ?>
+                                                        <tr>
+                                                            <td>
+                                                                <input type="hidden" name="per_cat[]" value="<?php echo $new_feature_value->id; ?>" />
+                                                                <input type="hidden" name="<?php echo "roles_permissions_id_" . $new_feature_value->id; ?>" value="<?php echo $new_feature_value->roles_permissions_id; ?>" />
+                                                                <?php echo $new_feature_value->name; ?>
+                                                            </td>
+                                                            <?php foreach (['can_view' => 'enable_view', 'can_add' => 'enable_add', 'can_edit' => 'enable_edit', 'can_delete' => 'enable_delete'] as $action => $enableKey) { ?>
+                                                                <td class="text-center">
+                                                                    <?php if ($new_feature_value->$enableKey == 1) { ?>
+                                                                        <div class="form-check form-switch d-inline-flex m-0">
+                                                                            <input class="form-check-input permission_chk" type="checkbox" role="switch"
+                                                                                   data-action="<?php echo $action; ?>"
+                                                                                   data-role_id="<?php echo $role['id'] ?>"
+                                                                                   data-per_cat="<?php echo $new_feature_value->id; ?>"
+                                                                                   name="<?php echo $action . "-perm_" . $new_feature_value->id; ?>"
+                                                                                   value="<?php echo $new_feature_value->id; ?>"
+                                                                                   <?php echo ($new_feature_value->$action == 1) ? 'checked' : ''; ?>>
+                                                                        </div>
+                                                                    <?php } ?>
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                    <?php }
+                                                } ?>
                                             </tbody>
-                                        </table>                             
+                                        </table>
+                                    </div>
                                 </div>
                                 <?php
-                                    $tab_content_counter++; 
-                                }
-                                ?>
-                            </div>
-                        </div>  
+                                $tab_content_counter++;
+                            } ?>
+                        </div>
                     </div>
                 </div>
-            </div>            
-        </div> 
-    </section>
-</div>
+            </div>
+        </div>
 
 <script type="text/javascript">
 (function () {

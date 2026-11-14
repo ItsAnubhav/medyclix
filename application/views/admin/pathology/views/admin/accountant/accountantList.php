@@ -1,27 +1,19 @@
-<style type="text/css">
-    @media print
-    {
-        .no-print, .no-print *
-        {
-            display: none !important;
-        }
-    }
-</style>
+
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            <i class="fa fa-money"></i> <?php echo $this->lang->line('fees_collection'); ?></h1>
+            <i class="fa fa-money"></i></h1>
     </section>
     <!-- Main content -->
     <section class="content">
         <div class="row">
             <div class="col-md-4">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('add_accountant'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0"><?php echo $this->lang->line('add_accountant'); ?></h3>
                     </div>
                     <form id="form1" action="<?php echo site_url('admin/accountant/index') ?>" id="employeeform" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php if ($this->session->flashdata('msg')) {?>
                                 <?php 
                                     echo $this->session->flashdata('msg');
@@ -58,7 +50,7 @@ foreach ($genderList as $key => $value) {
                             </div>
                             <div class="form-group">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('date_of_birth'); ?></label>
-                                <input id="dob" name="dob" placeholder="" type="text" class="form-control" value="<?php echo set_value('dob'); ?>" readonly="readonly"/>
+                                <input id="dob" name="dob" placeholder="" type="text" class="form-control date" value="<?php echo set_value('dob'); ?>" readonly="readonly"/>
                                 <span class="text-danger"><?php echo form_error('dob'); ?></span>
                             </div>
                             <div class="form-group">
@@ -76,18 +68,18 @@ foreach ($genderList as $key => $value) {
                                 <input class="filestyle form-control" data-height="40" type='file' name='file' id="file" size='20' />
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>
                     </form>
                 </div>
             </div>
             <div class="col-md-8">
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('accountant_list'); ?></h3>
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title mb-0 titlefix"><?php echo $this->lang->line('accountant_list'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">
                         </div>
                         <div class="table-responsive mailbox-messages">
@@ -116,14 +108,14 @@ foreach ($genderList as $key => $value) {
                                                 <td class="mailbox-name"><?php echo $librarian['email'] ?></td>
                                                 <td class="mailbox-name"><?php echo date($this->customlib->getSchoolDateFormat(), $this->customlib->dateyyyymmddTodateformat($librarian['dob'])); ?></td>
                                                 <td class="mailbox-name"><?php echo $librarian['phone'] ?></td>
-                                                <td class="mailbox-date pull-right no-print">
-                                                    <a href="<?php echo base_url(); ?>admin/accountant/view/<?php echo $librarian['id'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('show'); ?>">
+                                                <td class="mailbox-date float-end no-print">
+                                                    <a href="<?php echo base_url(); ?>admin/accountant/view/<?php echo $librarian['id'] ?>" class="btn btn-default btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('show'); ?>">
                                                         <i class="fa fa-list"></i>
                                                     </a>
-                                                    <a href="<?php echo base_url(); ?>admin/accountant/edit/<?php echo $librarian['id'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                    <a href="<?php echo base_url(); ?>admin/accountant/edit/<?php echo $librarian['id'] ?>" class="btn btn-default btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <a href="<?php echo base_url(); ?>admin/accountant/delete/<?php echo $librarian['id'] ?>"class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>')";>
+                                                    <a href="<?php echo base_url(); ?>admin/accountant/delete/<?php echo $librarian['id'] ?>"class="btn btn-default btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>')";>
                                                         <i class="fa fa-remove"></i>
                                                     </a>
                                                 </td>
@@ -146,10 +138,7 @@ foreach ($genderList as $key => $value) {
 <script type="text/javascript">
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getSchoolDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('#dob,#admission_date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* picker init removed - auto-init via class + event delegation in footer.php */
         $("#btnreset").click(function () {
             $("#form1")[0].reset();
         });

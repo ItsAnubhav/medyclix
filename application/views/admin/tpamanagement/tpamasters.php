@@ -1,147 +1,146 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
-            <div class="col-md-3">                
-                <div class="box box-primary">
-                    <div class="box-body box-profile">
-                        <?php 
-                        $file = "no_image.png";
-                        ?>
-                        <ul class="list-group list-group-unbordered">
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('tpa_name'); ?></b> <a class="pull-right text-aqua"><?php echo $result['organisation_name']; ?></a>
-                            </li>
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('code'); ?></b> <a class="pull-right text-aqua"><?php echo $result['code']; ?></a>
-                            </li>
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('contact_no'); ?></b> <a class="pull-right text-aqua"><?php echo $result['contact_no']; ?></a>
-                            </li>
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('address'); ?></b> <a class="pull-right text-aqua"><?php echo $result['address']; ?></a>
-                            </li>
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('contact_person_name'); ?></b> <a class="pull-right text-aqua"><?php echo $result['contact_person_name']; ?></a>
-                            </li>
-                            <li class="list-group-item listnoback">
-                                <b><?php echo $this->lang->line('contact_person_phone'); ?></b> <a class="pull-right text-aqua"><?php echo $result['contact_person_phone']; ?></a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+<div class="row">
+    <!-- ── Top row: TPA details card ────────────────────────────────────── -->
+    <div class="col-12">
+        <div class="sh-form-card">
+            <div class="sh-card-header">
+                <span class="sh-card-header-title"><i class="fa fa-hospital-o"></i><?php echo $this->lang->line('tpa_name'); ?></span>
             </div>
-            <div class="col-md-9">
-                       <div class="row">
-            <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('tpa_details'); ?></h3>
-                    </div> 
-                        <div class="box-body">
-                             <div class="row">
-                                 <div class="col-md-12">
-                                      <form id="form1" action="" method="post" class="form-inline">
-                            <?php echo $this->customlib->getCSRF(); ?>
-                            <div class="form-group">
-                                <div class=""> 
-                                    <label><?php echo $this->lang->line('charge_type'); ?> : </label>
-                                        <select class=" form-control select2" name="charge_type" >
-                                            <option value=""><?php echo $this->lang->line('select') ?></option>
-                                             <?php foreach ($charge_type as $ckey => $value) {
-                                                ?> 
-                                                <option value="<?php echo $value['id'];  ?>" ><?php echo $value['charge_type'] ?></option>
-                                            <?php } ?>
-                                        </select>
-                                        <input type="hidden" value="<?php echo $result['id'];?>" name="charge_type_master_id" />
-                                    <span class="text-danger" id="error_search_type"><?php echo form_error('search_type'); ?></span>
-                                    
-                                </div>    
-                              </div>
-                            <div class="form-group">
-                                <div class=""> 
-                                   <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
-                                </div>     
-                            </div>       
-                            </form>
-                                 </div>
-                             </div>
-                        </div>
-                    
-                    <div class="box border0 clear">
-                        <div class="box-header ptbnull"></div>
-                        <div class="box-body table-responsive">
-                            <div class="download_label"><?php echo $this->lang->line('tpa_report'); ?></div>
-                            <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('tpa_details'); ?>" cellspacing="0" width="100%">
-                                <thead>
-                                        <th><?php echo $this->lang->line('charge_type'); ?></th> 
-                                        <th><?php echo $this->lang->line('charge_category'); ?></th>
-                                        <th><?php echo $this->lang->line('charge_name'); ?></th>
-                                        <th><?php echo $this->lang->line('description'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tpa_charge') . " (" . $currency_symbol . ")"; ?></th>
-                                </thead>    
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
+            <div class="sh-info-grid tpa-info">
+                <div class="row g-0">
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-building-o"></i><?php echo $this->lang->line('tpa_name'); ?></span>
+                        <span class="sh-info-value highlight"><?php echo html_escape($result['organisation_name']); ?></span>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-hashtag"></i><?php echo $this->lang->line('code'); ?></span>
+                        <span class="sh-info-value"><?php echo html_escape($result['code']) ?: '—'; ?></span>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-phone"></i><?php echo $this->lang->line('contact_no'); ?></span>
+                        <span class="sh-info-value"><?php echo html_escape($result['contact_no']) ?: '—'; ?></span>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-user"></i><?php echo $this->lang->line('contact_person_name'); ?></span>
+                        <span class="sh-info-value"><?php echo html_escape($result['contact_person_name']) ?: '—'; ?></span>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-mobile"></i><?php echo $this->lang->line('contact_person_phone'); ?></span>
+                        <span class="sh-info-value"><?php echo html_escape($result['contact_person_phone']) ?: '—'; ?></span>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2 sh-info-item">
+                        <span class="sh-info-label"><i class="fa fa-map-marker"></i><?php echo $this->lang->line('address'); ?></span>
+                        <span class="sh-info-value"><?php echo html_escape($result['address']) ?: '—'; ?></span>
                     </div>
                 </div>
-            </div> 
-        </div>  
             </div>
         </div>
-    </section>
+    </div>
+    <!-- ── Below row: filter + charges table ────────────────────────────── -->
+    <div class="col-12">
+        <div class="sh-form-card">
+            <div class="sh-card-header">
+                <span class="sh-card-header-title"><i class="fa fa-list"></i><?php echo $this->lang->line('tpa_details'); ?></span>
+            </div>
+            <div class="card-body">
+                <form id="form1" action="" method="post">
+                    <?php echo $this->customlib->getCSRF(); ?>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label"><?php echo $this->lang->line('charge_type'); ?></label>
+                            <select class="form-control select2" name="charge_type">
+                                <option value=""><?php echo $this->lang->line('select') ?></option>
+                                <?php foreach ($charge_type as $ckey => $value) { ?>
+                                    <option value="<?php echo $value['id']; ?>"><?php echo $value['charge_type'] ?></option>
+                                <?php } ?>
+                            </select>
+                            <input type="hidden" value="<?php echo $result['id']; ?>" name="charge_type_master_id" />
+                            <span class="text-danger" id="error_search_type"><?php echo form_error('search_type'); ?></span>
+                        </div>
+                        <div class="col-12 col-md-auto ps-md-3">
+                            <button type="submit" name="search" value="search_filter" class="btn btn-primary checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body table-responsive border-top pt-3">
+                <div class="download_label"><?php echo $this->lang->line('tpa_report'); ?></div>
+                <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('tpa_details'); ?>" cellspacing="0" width="100%">
+                    <thead>
+                        <th><?php echo $this->lang->line('charge_type'); ?></th>
+                        <th><?php echo $this->lang->line('charge_category'); ?></th>
+                        <th><?php echo $this->lang->line('charge_name'); ?></th>
+                        <th><?php echo $this->lang->line('description'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('tpa_charge') . " (" . $currency_symbol . ")"; ?></th>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="modal fade edit_org" tabindex="-1" role="dialog" aria-labelledby="follow_up">
-    <div class="modal-dialog modal-mid modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close"  data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_tpa_charge'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent edit_org" tabindex="-1" aria-labelledby="editTpaChargeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTpaChargeLabel"><?php echo $this->lang->line('edit_tpa_charge'); ?></h5>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
             <form id="edit_org_form" method="POST" action="<?php echo base_url(); ?>admin/tpa/edit_org">
-               <div class="modal-body pt0 pb0" >                
-                    <div class="table-responsive ptt10">
-                        <table class="table table-striped table-bordered">                     
-                            <thead>
-                            <th><?php echo $this->lang->line('charge_type'); ?></th>
-                            <th><?php echo $this->lang->line('charge_category'); ?></th>
-                            <th><?php echo $this->lang->line('charge_name'); ?></th>
-                            <th><?php echo $this->lang->line('description'); ?></th>
-                            <th class="text-right"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
-                            <th class="text-right white-space-nowrap" width="10"><?php echo $this->lang->line('tpa_charge') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></th>       
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td id="charge_type"></td>
-                                    <td id="charge_category"></td>
-                                    <td id="charge_name"></td>
-                                    <td id="description"></td>
-                                    <td class="text-right" id="standard_charge_data"></td>
-                                    <td class="text-right" width="100">                                                
-                                        <input type="text" name="org_charge" id="org_charge_data" class="form-control text-right">
-                                        <input type="hidden" name="org_charge_id" id="org_charge_id_data" class="form-control">                                       
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>   
-                </div>               
-                <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="edit_org_btn" data-loading-text="<?php echo $this->lang->line('processing') ?>"  class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><i class="fa fa-list me-1"></i><?php echo $this->lang->line('charge_details'); ?></span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th><?php echo $this->lang->line('charge_type'); ?></th>
+                                            <th><?php echo $this->lang->line('charge_category'); ?></th>
+                                            <th><?php echo $this->lang->line('charge_name'); ?></th>
+                                            <th><?php echo $this->lang->line('description'); ?></th>
+                                            <th class="text-end"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
+                                            <th class="text-end white-space-nowrap" width="10"><?php echo $this->lang->line('tpa_charge') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td id="charge_type"></td>
+                                            <td id="charge_category"></td>
+                                            <td id="charge_name"></td>
+                                            <td id="description"></td>
+                                            <td class="text-end" id="standard_charge_data"></td>
+                                            <td class="text-end" width="100">
+                                                <input type="text" name="org_charge" id="org_charge_data" class="form-control form-control-sm text-end">
+                                                <input type="hidden" name="org_charge_id" id="org_charge_id_data">
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            
-            </div> 
-         </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="edit_org_btn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script type="text/javascript">
+var table;
 $(function () {
     $('.select2').select2()
 });
@@ -167,7 +166,7 @@ $(function () {
             dataType: 'json',
             success: function (res) {
                 $('.edit_org').attr("id", 'edit_org_data');
-                $('#edit_org_data').modal({backdrop:"static"});
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('edit_org_data'),{backdrop:'static',keyboard:false}).show();
                 $('#org_charge_id_data').val(res.org_charge_id);
                 $('#description').html('<label>' + res.description + '</label>');
                 $('#charge_type').html('<label>' + res.charge_type + '</label>');
@@ -181,7 +180,7 @@ $(function () {
 
     $(document).ready(function (e) {
         $('#edit_org_form').on('submit', (function (e) {
-            $("#edit_org_btn").button('loading');
+            $("#edit_org_btn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -202,22 +201,14 @@ $(function () {
                     } else {
                         successMsg(data.message);
                         table.ajax.reload();
-                         $('#edit_org_data').modal('hide');
+                         shModal('edit_org_data').hide();
                     }
-                    $("#edit_org_btn").button('reset');
+                    $("#edit_org_btn").btnReset();
                 },
                 error: function () {}
             });
         }));
     });
-
-    $(document).ready(function (e) {
-        var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
-        $('#timeline_date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
-    });   
 
   ( function ( $ ) {
     'use strict';
@@ -241,10 +232,10 @@ $(function () {
                     });
                 } else {
 
-                initDatatable('allajaxlist', 'admin/tpa/tpadetails/',data.param,[],100,[
-                       {  "sWidth": "120px", "aTargets": [ -1,-2 ] ,'sClass': 'dt-body-right'},
-                       
-                    ]);
+                table = initDatatable('allajaxlist', 'admin/tpa/tpadetails/',data.param,[],100,[
+                    { "bSortable": false, "aTargets": [ -1 ], "sClass": "dt-body-right" },
+                    { "sWidth": "120px", "aTargets": [ -2, -3 ], "sClass": "dt-body-right" }
+                ]);
                 }
             }
         });

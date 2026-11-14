@@ -1,1942 +1,1295 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender();
-$total=0;
-$total_payment=0;
+$total           = 0;
+$total_payment   = 0;
+if (!empty($charges_detail)) {
+    foreach ($charges_detail as $cv) { $total += $cv['amount']; }
+}
+if (!empty($payment_details)) {
+    foreach ($payment_details as $pv) { if (!empty($pv['amount'])) $total_payment += $pv['amount']; }
+}
 ?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="nav-tabs-custom">
-                    <ul class="nav nav-tabs navlistscroll">
-                        <li class="active"><a href="#overview"><i class="fa fa-th"></i> <?php echo $this->lang->line('overview'); ?></a></li>
-                        <li><a href="#activity" data-toggle="tab" aria-expanded="true"><i class="far fa-caret-square-down"></i> <?php echo $this->lang->line('visits'); ?></a></li>
-                        <li><a href="#medication" data-toggle="tab" aria-expanded="true"><i class="fa fa-medkit"></i> <?php echo $this->lang->line('medication'); ?></a></li>
-                        <li><a href="#labinvestigation" data-toggle="tab" aria-expanded="true"><i class="fas fa-diagnoses"></i> <?php echo $this->lang->line('lab_investigation'); ?></a></li>
-                        <li><a href="#operationtheatre" data-toggle="tab" aria-expanded="true"><i class="fas fa-cut"></i> <?php echo $this->lang->line('operations'); ?></a></li>
-                        <li><a href="#charges" data-toggle="tab" aria-expanded="true"><i class="fas fa-donate"></i> <?php echo $this->lang->line('charges'); ?></a></li>
-                        <li><a href="#payment" data-toggle="tab" aria-expanded="true"><i class="fas fa-hand-holding-usd"></i> <?php echo $this->lang->line('payment'); ?></a></li>
-                        <li><a href="#live_consult" data-toggle="tab" aria-expanded="true"><i class="fa fa-video-camera ftlayer"></i> <?php echo $this->lang->line('live_consultation'); ?></a></li>
-                        <li><a href="#timeline" data-toggle="tab" aria-expanded="true"><i class="far fa-calendar-check"></i> <?php echo $this->lang->line('timeline'); ?></a></li>                        
-						<li><a href="#vitals" data-toggle="tab" aria-expanded="true"><i class="fa fa-blood-pressure">&#xf21e;</i> <?php echo $this->lang->line('vitals'); ?></a></li>             
-                    </ul>
-                    <div class="tab-content">
-                         <div class="tab-pane tab-content-height active" id="overview">
-                            <div class="row">
-                                <div class="col-lg-6 col-md-6 col-sm-12 border-r">
-                                    <div class="box-header border-b mb10 pl-0 pt0">
-                                        <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo composePatientName($result['patient_name'],$result['pid']); ?></h3>
-                                    </div> 
-                                      <div class="row">
-                                            <div class="col-lg-3 col-md-4 col-sm-12 ptt10">
-                                                
-                                                <?php
+<div class="container-fluid px-3 py-3">
+<?php if (empty($result)) { ?>
+    <h4 class="text-center"><?php echo $this->lang->line('no_record_found'); ?></h4>
+<?php } else {
+    $image        = $result['image'];
+    $vd_has_image = !empty($image) && strpos($image, 'no_image') === false;
+    $file         = $vd_has_image ? $image : 'uploads/patient_images/no_image.png';
+    if (!$vd_has_image) {
+        $_vd_parts    = preg_split('/\s+/', trim($result['patient_name'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+        $_vd_initials = count($_vd_parts) === 0 ? '?' : (count($_vd_parts) === 1
+            ? mb_strtoupper(mb_substr($_vd_parts[0], 0, 1))
+            : mb_strtoupper(mb_substr($_vd_parts[0], 0, 1) . mb_substr($_vd_parts[count($_vd_parts) - 1], 0, 1)));
+    }
+?>
+<div class="opd-profile-wrap">
 
-                                                    $image = $result['image'];
-                                                    if (!empty($image)) {
-                                                        $file = $result['image'];
-                                                    } else {
-                                                        $file = "uploads/patient_images/no_image.png";
-                                                    }
-                                                   
-                                                    ?>
-                                                    <img width="115" height="115" class="profile-user-img img-responsive img-rounded" src="<?php echo $this->media_storage->getImageURL($file); ?>" >
-                                            
-                                            </div><!--./col-lg-5-->
-                                            <div class="col-lg-9 col-md-8 col-sm-12">
-                                                <table class="table table-bordered mb0">
-                                                   <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('gender'); ?></td>
-                                                        <td><?php echo $this->lang->line(strtolower($result['gender'])); ?></td>
-                                                    </tr>
-                                                     <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('age'); ?></td>
-                                                        <td><?php echo $this->customlib->get_patient_current_age($result['pid']); ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('guardian_name')?></td>
-                                                        <td><?php echo $result['guardian_name']; ?></td>
-                                                    </tr>
-                                                     
-                                                    <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('phone'); ?></td>
-                                                        <td><?php echo $result['mobileno']; ?></td>
-                                                    </tr>
-                                                     <?php
-                                                    if (file_exists("./uploads/patient_id_card/barcodes/" . $patient_id . ".png")) { ?>
-                                                   <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('barcode'); ?></td>
-                                                        <td>
-                                                            <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/" . $patient_id . ".png"); ?>" target="_blank">
-                                                            <img src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/" . $patient_id . ".png"); ?>" width="100" height="30" />
-                                                            </a>
-                                                        </td>
-                                                    </tr>
-                                                    <?php } ?>
-                                                    <?php
-                                                    if (file_exists("./uploads/patient_id_card/qrcode/" . $patient_id . ".png")) { ?>
-                                                    <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('qrcode'); ?></td>
-                                                        <td>
-                                                            <a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/" . $patient_id . ".png"); ?>" target="_blank">
-                                                            <img class="max-h-50" src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/" . $patient_id . ".png"); ?>"  width="70" height="70"  />
-                                                            </a>
-                                                        </td>
-                                                    </tr>   
-                                                    <?php }  ?> 
-                                                </table>
-                                            </div><!--./col-lg-7-->
-                                        </div><!--./row-->
+    <!-- ── Page header ───────────────────────────────────────────── -->
+    <header class="page-head">
+        <div class="ph-title-row">
+            <div class="ph-title">
+                <?php if ($vd_has_image): ?>
+                <img src="<?php echo $this->media_storage->getImageURL($file); ?>" alt="Patient" class="ph-av" style="width:52px;height:52px;object-fit:cover;">
+                <?php else: ?>
+                <div class="ph-av"><?php echo html_escape($_vd_initials); ?></div>
+                <?php endif; ?>
+                <div>
+                    <h1><?php echo composePatientName($result['patient_name'], $result['pid']); ?></h1>
+                    <div class="sub">
+                        <?php echo $this->lang->line(strtolower($result['gender'])); ?>
+                        <span class="dot-sep"><?php echo $this->customlib->get_patient_current_age($result['pid']); ?></span>
+                        <span class="dot-sep"><?php echo html_escape($result['mobileno']); ?></span>
+                        <span class="dot-sep"><?php echo $this->lang->line('guardian'); ?>: <?php echo html_escape($result['guardian_name']); ?></span>
+                    </div>
+                </div>
+            </div>
+            <div class="ph-actions"></div>
+        </div>
 
-                                        <hr class="hr-panel-heading hr-10">
-                                            <div class="row">
-                                            <div class="col-lg-8 col-md-8 col-sm-12">
-                                                <div class="align-content-center pt25">
-                                                    <table class="table table-bordered">
-                                                         <tr>
-                                                            <td class="bolds"><?php echo $this->lang->line('case_id') ?></td>
-                                                             <td><?php echo $result['case_reference_id']?></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td class="bolds"><?php echo $this->lang->line('opd_no'); ?></td>
-                                                             <td><?php echo $this->customlib->getPatientSessionPrefixByType('opd_no').$opd_details_id; ?></td>
-                                                        </tr>
-                                                    </table>
-                                                </div>    
-                                            </div>
-                                        </div>
-                                        
-                                        <?php if(!empty($patientcurrentvital)){ ?>
-                                         <br/> <hr class="hr-panel-heading">
-                                          <p><b><i class="fa fa-tag rtl-ms-0-7-5"></i> <?php echo $this->lang->line('current_vitals'); ?>:</b></p>
-                                            <div class="row">
-                                            <div class="col-lg-8 col-md-8 col-sm-12">
-                                                <div class="align-content-center ">
-                                                    <table class="table table-bordered">
-                                                        
-                                                    <?php  
-                                                    $height=""; $weight="";
-                                                      foreach($patientcurrentvital as $value){ 
-                                                         $class= "label label-success";
-                                                          $vitalrange=$this->lang->line('normal'); 
-                                                          $bmi=""; 
-                                                         $reference_range = $value['reference_range'];
-                                                         
-                                                         if(strpos($value['reference_range'], '-') !== false){
-                                                             
-                                                                $range = explode("-",$value['reference_range']);
-                                                                $min_val = $range[0];
-                                                                $max_val = $range[1];
-                                                        
-                                                            if(strpos($value['patient_range'], '-') !== false){
-                                                            
-                                                                $vital = explode("-",$value['patient_range']);
-                                                                $min_vital = $vital[0];
-                                                                $max_vital = $vital[1]; 
-                                                                $vitalrange= $this->lang->line('normal');
-                                                                $class= "label label-success";
-                                                                if($min_vital < $min_val){
-                                                                    $vitalrange = $this->lang->line('low'); 
-                                                                    $class= "label label-danger";
-                                                                }
-                                                                if($max_vital > $max_val){
-                                                                    $vitalrange = $this->lang->line('high');
-                                                                    $class= "label label-danger";
-                                                                }
-                                                            }else{
-																if($value['patient_range'] < $min_val){
-                                                                    $vitalrange = $this->lang->line('low'); 
-                                                                    $class= "label label-danger";
-                                                                }
-                                                                if($value['patient_range'] > $max_val){
-                                                                    $vitalrange = $this->lang->line('high');
-                                                                    $class= "label label-danger";
-                                                                }
-															}
-                                                         }
-                                                         
-                                                        if( ($value['id']=='1') && $value['patient_range']!="" ){
-															
-															if(strpos($value['patient_range'], '-') !== false){
-																$range = explode("-",$value['patient_range']);
-                                                                $height = $range[0];																 
-															}else{
-																$height = $value['patient_range'];
-															}
-															
-                                                        }
-														
-                                                        if( ($value['id']=='2') && $value['patient_range']!="" ){
-															
-															if(strpos($value['patient_range'], '-') !== false){
-																$range = explode("-",$value['patient_range']);
-                                                                $weight = $range[0];																 
-															}else{
-																$weight = $value['patient_range'];
-															}
-															
-                                                        }
-                                                         
-														if($weight!="" && $height !="" ){															 
-															$height1 = $height * 0.01;
-															$bmiheight = ($height1 * $height1)  ;
-															if($bmiheight > 0 ){
-																$bmi = round( $weight / $bmiheight, 2 ) ;
-															}else{
-																$bmi = '';	
-															}
-                                                            $class1= "label label-success";
-                                                        }
-                                                        
-                                                        ?>
-                                                    <tr>
-                                                        <td class="bolds"><?php echo $value['name']; ?></td>
-                                                        <td><?php echo $value['patient_range'] ; ?> <?php echo $value['unit']; ?></td>
-														<td><small class="<?php echo $class ; ?>"><?php echo $vitalrange ; ?></small></td>
-                                                        <td ><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['messure_date'],$this->customlib->getHospitalTimeFormat()); ?>
-                                                        </td>
-                                                    </tr>
-                                                    <?php }   ?>
-                                                    <?php  if($weight!="" && $height !="" ){ ?>
-                                                    <tr>
-                                                        <td class="bolds"><?php echo $this->lang->line('bmi'); ?></td>
-                                                        <td><small class="<?php echo $class1 ; ?>"><?php  echo $bmi ; ?></small></td>
-                                                    </tr>
-                                                    <?php } ?>
-                                                   
-                                                    </table>
-                                                </div>    
-                                            </div>                                           
-                                        </div>
-                                        <?php } ?>                                        
-                                        
-                                    <hr class="hr-panel-heading hr-10">
-                                    <p><b><i class="fa fa-tag"></i> <?php echo $this->lang->line('known_allergies'); ?>:</b></p>  
-                                    <ul>
-                                    <?php 
-                                        if(!empty($patientdetails['patient']['allergy'])){
-                                    foreach($patientdetails['patient']['allergy'] as $row){ ?>
-                                          <li><div ><?php echo $row['known_allergies']; ?></div></li>
-                                    <?php } } ?>
-                                </ul>
-                                    <hr class="hr-panel-heading hr-10">
-                                    <p><b><i class="fa fa-tag"></i> <?php echo $this->lang->line('findings'); ?>:</b></p>  
-                                    <ul>
-                                    <?php 
-                                     if(!empty($patientdetails['patient']['findings'])){
-                                    foreach($patientdetails['patient']['findings'] as $row){ ?>
-                                         <li><div ><?php echo $row['finding_description']; ?></div></li>
-                                    <?php } } ?>
-                                </ul>
-                                    <hr class="hr-panel-heading hr-10">
-                                    <p><b><i class="fa fa-tag"></i> <?php echo $this->lang->line('symptoms'); ?>:</b></p> 
-                                     <ul> 
-                                    <?php if(!empty($patientdetails['patient']['symptoms'])){
-                                    foreach($patientdetails['patient']['symptoms'] as $row){ ?>
-                                          <li><div ><?php echo $row['symptoms']; ?></div></li>
-                                    <?php } } ?>
-                                </ul>
-                                <?php  ?>
-                                    <hr class="hr-panel-heading hr-10"> 
-                                    <div class="box-header mb10 pl-0">
-                                        <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('consultant_doctor'); ?></h3>
-                                        <div class="pull-right">
-                                            <div class="editviewdelete-icon pt8">
-                                              
-                                            </div>  
-                                        </div>
-                                    </div> 
+        <div class="bcard-grid sh-border-top-light" >
+            <div class="field"><div class="l"><?php echo $this->lang->line('gender'); ?></div><div class="v"><?php echo $this->lang->line(strtolower($result['gender'])); ?></div></div>
+            <div class="field"><div class="l"><?php echo $this->lang->line('age'); ?></div><div class="v"><?php echo $this->customlib->get_patient_current_age($result['pid']); ?></div></div>
+            <div class="field"><div class="l"><?php echo $this->lang->line('guardian_name'); ?></div><div class="v"><?php echo html_escape($result['guardian_name']); ?></div></div>
+            <div class="field"><div class="l"><?php echo $this->lang->line('phone'); ?></div><div class="v"><?php echo html_escape($result['mobileno']); ?></div></div>
+            <div class="field"><div class="l"><?php echo $this->lang->line('case_id'); ?></div><div class="v"><?php echo html_escape($result['case_reference_id']); ?></div></div>
+            <div class="field"><div class="l"><?php echo $this->lang->line('opd_no'); ?></div><div class="v"><?php echo $this->customlib->getPatientSessionPrefixByType('opd_no') . $opd_details_id; ?></div></div>
+            <?php if (file_exists("./uploads/patient_id_card/barcodes/" . $patient_id . ".png")) { ?>
+            <div class="field"><div class="l"><?php echo $this->lang->line('barcode'); ?></div><div class="v"><a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/" . $patient_id . ".png"); ?>" target="_blank"><img class="patient-id-img sh-qr-code" src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/" . $patient_id . ".png"); ?>" width="90" height="24"></a></div></div>
+            <?php } ?>
+            <?php if (file_exists("./uploads/patient_id_card/qrcode/" . $patient_id . ".png")) { ?>
+            <div class="field"><div class="l"><?php echo $this->lang->line('qrcode'); ?></div><div class="v"><a href="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/" . $patient_id . ".png"); ?>" target="_blank"><img class="patient-id-img sh-qr-code" src="<?php echo $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/" . $patient_id . ".png"); ?>" width="40" height="40"></a></div></div>
+            <?php } ?>
+        </div>
 
-                                    <div class="staff-members">
-                                       <?php 
-                                        if(!empty($patientdetails['patient']['doctor'])){
-                                        foreach($patientdetails['patient']['doctor'] as $value ){  ?>
-                                            <div class="media">
-                                                <div class="media-left">
-                                                    <?php if($value['image']!=""){ ?>
-                                                        <a href="#">
-                                                        <img src="<?php echo $this->media_storage->getImageURL("uploads/staff_images/".$value['image']); ?>" class="member-profile-small media-object"></a>
-                                                    <?php }else{ ?>
-                                                          <img src="<?php echo $this->media_storage->getImageURL("uploads/staff_images/no_image.png") ?>" class="member-profile-small media-object"></a>
-                                                    <?php } ?>
-                                                </div>
-                                                <div class="media-body">
-                                                    <a href="#" class="pull-right text-danger pt4" data-toggle="tooltip" data-placement="top" ></a>
-                                                    <h5 class="media-heading"><a href="#"><?php echo $value["name"] . " " . $value["surname"]."  (".$value["employee_id"].")" ?></a>
-                                                       
-                                                    </h5>
-                                                </div>
-                                            </div><!--./media-->
-                                             <?php } } ?>
-                                     </div><!--./staff-members-->
-                                    <div class="box-tab-header">
-                                        <h3 class="box-tab-title"><?php echo $this->lang->line('timeline'); ?></h3>
-                                    </div>
-                                    <div class="timeline-header no-border">
-                                        <div id="timeline_list">
-                                            <?php
-                                        if (empty($timeline_list)) {
-                                                ?>
-                                               
-                                            <?php } else {
-        ?>
-                                                <ul class="timeline timeline-inverse">
-                                                    <?php $i=0 ;
-                                                        foreach ($timeline_list as $key => $value) {
+        <nav class="ph-tabs" role="tablist">
+            <a class="active" data-bs-toggle="tab" data-bs-target="#overview"       href="#overview"><i class="fa fa-th"></i> <?php echo $this->lang->line('overview'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#activity"         href="#activity"><i class="far fa-caret-square-down"></i> <?php echo $this->lang->line('visits'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#medication"       href="#medication"><i class="fa fa-medkit"></i> <?php echo $this->lang->line('medication'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#labinvestigation" href="#labinvestigation"><i class="fas fa-diagnoses"></i> <?php echo $this->lang->line('lab_investigation'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#operationtheatre" href="#operationtheatre"><i class="fas fa-cut"></i> <?php echo $this->lang->line('operations'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#charges"          href="#charges"><i class="fas fa-donate"></i> <?php echo $this->lang->line('charges'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#payment"          href="#payment"><i class="fas fa-hand-holding-usd"></i> <?php echo $this->lang->line('payment'); ?></a>
+            <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+            <a data-bs-toggle="tab" data-bs-target="#live_consult"     href="#live_consult"><i class="fa fa-video-camera"></i> <?php echo $this->lang->line('live_consultation'); ?></a>
+            <?php } ?>
+            <a data-bs-toggle="tab" data-bs-target="#timeline"         href="#timeline"><i class="far fa-calendar-check"></i> <?php echo $this->lang->line('timeline'); ?></a>
+            <a data-bs-toggle="tab" data-bs-target="#vitals"           href="#vitals"><i class="fas fa-heartbeat"></i> <?php echo $this->lang->line('vitals'); ?></a>
+        </nav>
+    </header>
 
-                                                             ++$i;
-                                                            if($i <= $recent_record_count)
-                                                            {
-                                                            ?>
-                                                        <li class="time-label">
-                                                            <span class="bg-blue">    <?php if($value['timeline_date']){ echo $this->customlib->YYYYMMDDTodateFormat($value['timeline_date']); } ?>
-                                                            </span>
-                                                        </li>
-                                                        <li>
-                                                            <i class="fa fa-list-alt bg-blue"></i>
-                                                            <div class="timeline-item">
+    <!-- ── Tab content ───────────────────────────────────────────── -->
+    <div class="tab-content p-3">
 
-                                                                <?php if (!empty($value["document"])) {?>
-                                                                    <span class="time"><a class="defaults-c text-right" data-toggle="tooltip" title="" href="<?php echo base_url() . "patient/dashboard/download_patient_timeline/" . $value["id"] . "/" . $value["document"] ?>" data-original-title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a></span>
-                                                                <?php }?>
-                                                                <h3 class="timeline-header text-aqua"> <?php echo $value['title']; ?> </h3>
-                                                                <div class="timeline-body">
-                                                                    <?php echo $value['description']; ?>
+        <!-- ── Overview ─────────────────────────────────────────── -->
+        <div class="tab-pane show active" id="overview">
+        <div class="rellist-wrap">
 
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    <?php } } ?>
-                                                    <li><i class="fa fa-clock-o bg-gray"></i></li>
-                                                <?php } ?>
-                                            </ul>
-                                        </div>
-                                    </div>
+        <?php
+        $has_allergy  = !empty($patientdetails['patient']['allergy']);
+        $has_findings = !empty($patientdetails['patient']['findings']);
+        $has_symptoms = !empty($patientdetails['patient']['symptoms']);
+        if ($has_allergy || $has_findings || $has_symptoms) { ?>
+        <div class="rellist" style="border-color:var(--red);">
+            <div class="rellist-head" style="background:var(--red-soft);">
+                <div class="l">
+                    <div class="ic" style="background:var(--red);color:#fff;font-weight:700;font-size:14px;">!</div>
+                    <div class="title sh-text-danger" ><?php echo $this->lang->line('known_allergies'); ?> / <?php echo $this->lang->line('findings'); ?> / <?php echo $this->lang->line('symptoms'); ?></div>
+                </div>
+            </div>
+            <div class="rellist-body pad d-flex gap-2 flex-wrap">
+                <?php if ($has_allergy) { foreach ($patientdetails['patient']['allergy'] as $row) { ?>
+                <div style="padding:8px 12px;background:var(--red-soft);color:var(--red);border-radius:var(--radius-md);font-size:13px;"><?php echo html_escape($row['known_allergies']); ?></div>
+                <?php } } ?>
+                <?php if ($has_findings) { foreach ($patientdetails['patient']['findings'] as $row) { ?>
+                <div style="padding:8px 12px;background:var(--amber-soft);color:var(--amber);border-radius:var(--radius-md);font-size:13px;"><?php echo html_escape($row['finding_description']); ?></div>
+                <?php } } ?>
+                <?php if ($has_symptoms) { foreach ($patientdetails['patient']['symptoms'] as $row) { ?>
+                <div style="padding:8px 12px;background:var(--surface-2);color:var(--ink);border-radius:var(--radius-md);font-size:13px;"><?php echo html_escape($row['symptoms']); ?></div>
+                <?php } } ?>
+            </div>
+        </div>
+        <?php } ?>
 
-                                </div><!--./col-lg-6-->
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                         <div class="row">
-											<?php if ($this->module_lib->hasActive('opd')) { if ($this->module_lib->hasPatientActive('opd')) { ?>
-                                            <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                       <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('opd_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['opd']['opd_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill($graph['opd']['payment']['total_payment'],$graph['opd']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['opd']['opd_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div><!--./row-->
-                                           </div><!--./col-lg-6-->
-										   <?php } } 
-										   if ($this->module_lib->hasActive('pharmacy')) {  if ($this->module_lib->hasPatientActive('pharmacy')) { ?>
-                                           <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                        <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('pharmacy_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['pharmacy']['pharmacy_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill(($graph['pharmacy']['payment']['total_payment']-$graph['pharmacy']['payment_refund']['total_payment']),$graph['pharmacy']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['pharmacy']['pharmacy_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>    
-                                           </div><!--./col-lg-6-->
-										   <?php } } ?>										   
-                                        </div><!--./row-->										
-										
-                                        <div class="row">
-											<?php if ($this->module_lib->hasActive('pathology')) { if ($this->module_lib->hasPatientActive('pathology')) { ?>
-                                            <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                       <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('pathology_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['pathology']['pathology_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill($graph['pathology']['payment']['total_payment'],$graph['pathology']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['pathology']['pathology_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div><!--./row-->
-                                           </div><!--./col-lg-6-->
-										   <?php } } 
-										   if ($this->module_lib->hasActive('radiology')) {  if ($this->module_lib->hasPatientActive('radiology')) { ?>
-                                           <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                        <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('radiology_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['radiology']['radiology_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill($graph['radiology']['payment']['total_payment'],$graph['radiology']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['radiology']['radiology_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>    
-                                           </div><!--./col-lg-6-->
-										   <?php } } ?>
-                                        </div><!--./row-->
-                                        <div class="row">
-											<?php if ($this->module_lib->hasActive('blood_bank')) {  if ($this->module_lib->hasPatientActive('blood_bank')) { ?>
-                                            <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                       <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('blood_bank_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['blood_bank']['blood_bank_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill($graph['blood_bank']['payment']['total_payment'],$graph['blood_bank']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['blood_bank']['blood_bank_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div><!--./row-->
-                                           </div><!--./col-lg-6-->
-										   <?php } } 
-										   if ($this->module_lib->hasActive('ambulance')) { if ($this->module_lib->hasPatientActive('ambulance')) { ?>
-                                           <div class="col-md-6 project-progress-bars">
-                                                <div class="row">
-                                                    <div class="col-md-12 mtop5">
-                                                        <div class="topprograssstart">
-                                                            <h5 class="text-uppercase mt5 bolds"><?php echo $this->lang->line('ambulance_billing_payment_graph'); ?>
-                                                            </h5>
-                                                            <p class="text-muted bolds"><?php echo $graph['ambulance']['ambulance_bill_payment_ratio'];?>%<span class="pull-right"> <?php echo $this->customlib->get_payment_bill($graph['ambulance']['payment']['total_payment'],$graph['ambulance']['bill']['total_bill']);?></span></p>
-                                                            <div class="progress-group">
-                                                                <div class="progress progress-minibar">
-                                                                    <div class="progress-bar progress-bar-aqua" style="width: <?php echo $graph['ambulance']['ambulance_bill_payment_ratio'];?>%"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>    
-                                           </div><!--./col-lg-6-->
-										   <?php } } ?>
-                                        </div><!--./row-->                                       
-                                        <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('medication'); ?></h3>
-                                           <div class="pull-right">
-                                          </div>
-                                        </div>
-                                        <div class="box-header mb10 pl-0">
-                                            <div class="table-responsive">
-                                                 <?php
+        <!-- Bill Summary -->
+        <div class="rellist">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('bill_summary'); ?></div>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body pad">
+                <div class="row g-3">
+                    <?php if ($this->module_lib->hasActive('opd') && $this->module_lib->hasPatientActive('opd')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('opd_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['opd']['opd_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill($graph['opd']['payment']['total_payment'], $graph['opd']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['opd']['opd_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                    <?php if ($this->module_lib->hasActive('pharmacy') && $this->module_lib->hasPatientActive('pharmacy')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('pharmacy_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['pharmacy']['pharmacy_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill(($graph['pharmacy']['payment']['total_payment'] - $graph['pharmacy']['payment_refund']['total_payment']), $graph['pharmacy']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['pharmacy']['pharmacy_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                    <?php if ($this->module_lib->hasActive('pathology') && $this->module_lib->hasPatientActive('pathology')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('pathology_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['pathology']['pathology_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill($graph['pathology']['payment']['total_payment'], $graph['pathology']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['pathology']['pathology_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                    <?php if ($this->module_lib->hasActive('radiology') && $this->module_lib->hasPatientActive('radiology')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('radiology_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['radiology']['radiology_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill($graph['radiology']['payment']['total_payment'], $graph['radiology']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['radiology']['radiology_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                    <?php if ($this->module_lib->hasActive('blood_bank') && $this->module_lib->hasPatientActive('blood_bank')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('blood_bank_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['blood_bank']['blood_bank_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill($graph['blood_bank']['payment']['total_payment'], $graph['blood_bank']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['blood_bank']['blood_bank_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                    <?php if ($this->module_lib->hasActive('ambulance') && $this->module_lib->hasPatientActive('ambulance')) { ?>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-1 sh-tag-heading" ><?php echo $this->lang->line('ambulance_billing_payment_graph'); ?></h6>
+                        <p class="text-muted small mb-1"><?php echo $graph['ambulance']['ambulance_bill_payment_ratio']; ?>%<span class="float-end"><?php echo $this->customlib->get_payment_bill($graph['ambulance']['payment']['total_payment'], $graph['ambulance']['bill']['total_bill']); ?></span></p>
+                        <div class="progress sh-h-6" ><div class="progress-bar bg-info" style="width:<?php echo $graph['ambulance']['ambulance_bill_payment_ratio']; ?>%"></div></div>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
 
-                                                  if(!empty($medicationreport_overview)){ ?>
-                                              <table class="table table-striped table-bordered table-hover " >
-                                                        <thead>
-                                                            <tr>
-                                                            <th><?php echo $this->lang->line('date');?></th>
-                                                            <th><?php echo $this->lang->line('medicine_name');?></th>
-                                                            <th><?php echo $this->lang->line('dose');?></th>
-                                                            <th><?php echo $this->lang->line('time');?></th>
-                                                            <th><?php echo $this->lang->line('remark');?></th>
-                                                          <tr>
-                                                        </thead>
-                                                        <tbody>
-                                                             <?php 
-                                                          for ($i=0; $i <$recent_record_count; $i++) { 
-                                                            if(!empty($medicationreport_overview[$i])){
-                                                   ?>
-                                                   <tr>
-                                                       <td><?php if($medicationreport_overview[$i]['date']){ echo $this->customlib->YYYYMMDDTodateFormat($medicationreport_overview[$i]['date']); } ?></td>
-                                                       <td><?php echo $medicationreport_overview[$i]['medicine_name']?></td>
-                                                        <td><?php echo $medicationreport_overview[$i]['medicine_dosage']." (".$medicationreport_overview[$i]['unit'].")";?></td>
-                                                       <td><?php echo $this->customlib->getHospitalTime_Format($medicationreport_overview[$i]['time'])  ;?> </td>
-                                                       <td><?php echo $medicationreport_overview[$i]['remark'];?></td>
-                                                   </tr>
-                                                   <?php                                               
-                                                        }
-                                                     }
-                                                ?>                                                        
-                                                        </tbody>                                              
-                                                </table>
-                                                <?php  }  ?>   
-                                            </div>                                         
-                                        </div>
-                                         <!---lab investigation-->
-                                        <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('lab_investigation'); ?></h3>
-                                           <div class="pull-right">                                               
-                                          </div>
-                                        </div>
-                                         <div class="box-header mb10 pl-0">
-                                             <div class="table-responsive"> 
-                                                <?php if(!empty($investigations)){ ?>
-                                             <table class="table table-striped table-bordered table-hover" data-export-title="<?php echo $this->lang->line('lab_investigation'); ?>">
-                                                <thead>
-                                                    <th><?php echo $this->lang->line('test_name'); ?></th>
-                                                    <th><?php echo $this->lang->line('lab'); ?></th>
-                                                    <th><?php echo $this->lang->line('sample_collected'); ?></th>
-                                                    <td><strong><?php echo $this->lang->line('expected_date'); ?></strong></td>
-                                                    <th><?php echo $this->lang->line('approved_by'); ?></th>                                                   
-                                                </thead>
-                                                <tbody id="">
-                                                    <?php
-                                                    $i=0;
-                                                     foreach($investigations as $row ){ 
-                                                        ++$i;
-                                                              if($i <= $recent_record_count){
-                                                        ?>
-                                                        <tr>
-                                                            <td><?php echo $row['test_name']; ?><br/>
-                                                           <?php echo "(".$row['short_name'].")"; ?></td>
-                                                            <td><?php echo $this->lang->line($row['type']); ?></td>
-                                                            <td><label>
-                                                             <?php echo composeStaffNameByString($row['collection_specialist_staff_name'],$row['collection_specialist_staff_surname'],$row['collection_specialist_staff_employee_id']); ?>
-                                                             </label>                                                
-                                                             <br/>
-                                                             <label for=""><?php if($row['type']=='pathology'){ echo $this->lang->line('pathology');  }else{ echo $this->lang->line('radiology');
-                                                             }  ?> : </label>                                                
-                                                                    <?php
-                                                               echo $row['test_center']; 
-                                                                ?>
-                                                                <br/>
-                                                                 <?php if($row['collection_date']){ echo $this->customlib->YYYYMMDDTodateFormat($row['collection_date']); } ?></td>                                                                   
-                                                             <td>
-                                                            <?php
-                                                            if($row['reporting_date']){
-                                                            echo  $this->customlib->YYYYMMDDTodateFormat($row['reporting_date']); 
-                                                            } ?>                                                                
-                                                            </td>
-                                                            <td class="text-left">
-                                                                 <label for=""><?php echo $this->lang->line('approved_by'); ?> : </label>
-                                                                <?php      
-                                                            echo composeStaffNameByString($row['approved_by_staff_name'],$row['approved_by_staff_surname'],$row['approved_by_staff_employee_id']);
-                                                             ?>
-                                                             <br/>
-                                                            <?php if($row['parameter_update']){                                
-                                                            echo  $this->customlib->YYYYMMDDTodateFormat($row['parameter_update']);
-                                                            } ?>                                         
-                                                            </td>                                                           
-                                                            </tr>
-                                                             <?php } } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    <?php } ?>
-                                            </div>                                         
-                                        </div>
-                                           <!---lab investigation-->
+        <!-- Current Vitals -->
+        <?php if (!empty($patientcurrentvital)) { ?>
+        <div class="rellist">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('current_vitals'); ?></div>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body pad">
+            <div class="row g-2">
+            <?php
+            $height = ""; $weight = ""; $bmi = ""; $class1 = "";
+            foreach ($patientcurrentvital as $value) {
+                $class = "badge bg-success";
+                $vitalrange = $this->lang->line('normal');
+                if (strpos($value['reference_range'], '-') !== false) {
+                    $range = explode("-", $value['reference_range']);
+                    $min_val = $range[0]; $max_val = $range[1];
+                    if (strpos($value['patient_range'], '-') !== false) {
+                        $vital = explode("-", $value['patient_range']);
+                        $min_vital = $vital[0]; $max_vital = $vital[1];
+                        $vitalrange = $this->lang->line('normal'); $class = "badge bg-success";
+                        if ($min_vital < $min_val) { $vitalrange = $this->lang->line('low');  $class = "badge bg-danger"; }
+                        if ($max_vital > $max_val) { $vitalrange = $this->lang->line('high'); $class = "badge bg-danger"; }
+                    } else {
+                        if ($value['patient_range'] < $min_val) { $vitalrange = $this->lang->line('low');  $class = "badge bg-danger"; }
+                        if ($value['patient_range'] > $max_val) { $vitalrange = $this->lang->line('high'); $class = "badge bg-danger"; }
+                    }
+                }
+                if ($value['id'] == '1' && $value['patient_range'] != "") {
+                    $height = strpos($value['patient_range'], '-') !== false ? (float)explode("-", $value['patient_range'])[0] : (float)$value['patient_range'];
+                }
+                if ($value['id'] == '2' && $value['patient_range'] != "") {
+                    $weight = strpos($value['patient_range'], '-') !== false ? (float)explode("-", $value['patient_range'])[0] : (float)$value['patient_range'];
+                }
+                if ($weight != "" && $height != "") {
+                    $h1 = $height * 0.01; $bmiH = $h1 * $h1;
+                    $bmi = $bmiH > 0 ? round($weight / $bmiH, 2) : '';
+                    $class1 = "badge bg-success";
+                }
+            ?>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="sh-ipd-vital-card-sm">
+                    <div class="sh-tag-muted"><?php echo html_escape($value['name']); ?></div>
+                    <div class="sh-vital-value"><?php echo html_escape($value['patient_range']); ?><span style="font-size:11px;color:var(--muted);"> <?php echo html_escape($value['unit']); ?></span></div>
+                    <div class="sh-caption-11-top"><span class="<?php echo $class; ?>"><?php echo $vitalrange; ?></span> <span class="text-muted sh-fs-10" ><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['messure_date'], $this->customlib->getHospitalTimeFormat()); ?></span></div>
+                </div>
+            </div>
+            <?php } ?>
+            <?php if ($weight != "" && $height != "") { ?>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="sh-ipd-vital-card-sm">
+                    <div class="sh-tag-muted"><?php echo $this->lang->line('bmi'); ?></div>
+                    <div class="sh-vital-value"><?php echo $bmi; ?></div>
+                    <div class="sh-caption-11-top"><span class="<?php echo $class1; ?>"><?php echo $bmi; ?></span></div>
+                </div>
+            </div>
+            <?php } ?>
+            </div>
+            </div>
+        </div>
+        <?php } ?>
 
-                                        <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('operation'); ?></h3>
-                                           <div class="pull-right">
-                                               
-                                          </div>
-                                        </div>
-                                         <div class="box-header mb10 pl-0">
-                                             <div class="table-responsive"> 
-                                                <?php if (!empty($operation_theatre)) { ?>
-                                                 <table class="table table-striped table-bordered table-hover" >
-                                                    <thead>
-                                                        <th><?php echo $this->lang->line("reference_no"); ?></th>
-                                                        <th><?php echo $this->lang->line("operation_date"); ?></th>
-                                                        <th><?php echo $this->lang->line("operation_name"); ?></th>
-                                                        <th><?php echo $this->lang->line("operation_category"); ?></th>
-                                                        <th><?php echo $this->lang->line("ot_technician"); ?></th>
-                                                    </thead>
-                                                        <tbody id="">
-                                                                <?php
-                                                                $i=0;
-                                                            
-                                                                foreach ($operation_theatre as $ot_key => $ot_value) {
+        <!-- Consultant Doctor -->
+        <div class="rellist">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('consultant_doctor'); ?></div>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body pad">
+                <div class="d-flex flex-column gap-2">
+                <?php if (!empty($patientdetails['patient']['doctor'])) {
+                    foreach ($patientdetails['patient']['doctor'] as $value) { ?>
+                <div class="d-flex align-items-center gap-2">
+                    <img src="<?php echo $this->media_storage->getImageURL(!empty($value['image']) ? 'uploads/staff_images/' . $value['image'] : 'uploads/staff_images/no_image.png'); ?>"
+                         style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">
+                    <span style="font-size:13px;color:var(--ink);"><?php echo html_escape($value['name'] . " " . $value['surname'] . " (" . $value['employee_id'] . ")"); ?></span>
+                </div>
+                    <?php } } else { ?>
+                <div class="text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+                </div>
+            </div>
+        </div>
 
-                                                                    $i++;
-                                                                     if($i <= $recent_record_count){
-                                                                    ?>  
-                                                                    <tr>    
-                                                                        <td><?php echo $this->customlib->getPatientSessionPrefixByType('operation_theater_reference_no'). $ot_value["id"] ?></td>
-                                                         <td><?php echo 
-                                                            $this->customlib->YYYYMMDDHisTodateFormat($ot_value["date"],$this->customlib->getHospitalTimeFormat());
-                                                            ?></td>
-                                                                        <td><?php echo $ot_value["operation"]; ?></td>
-                                                                        <td><?php echo $ot_value["category"] ?></td>
-                                                                        <td><?php echo $ot_value['ot_technician'] ?></td>                     
-                                                                        
-                                                                    </tr>
-                                                                
-                                                                <?php } } ?>
-                                                        </tbody>
-                                                    </table>
-                                                <?php }  ?>
-                                            </div>                                          
-                                        </div>                                        
-                                         <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('charges'); ?></h3>
-                                           <div class="pull-right">
-                                               
-                                          </div>
-                                        </div>
-                                        <div class="box-header mb10 pl-0">
-                                             <div class="table-responsive"> 
-                                                <?php if (!empty($charges_detail)) { ?>
-                                         <table class="table table-striped table-bordered table-hover ">
-                                    <thead>                                   
-                                        <th><?php echo $this->lang->line('name'); ?></th>
-                                        <th><?php echo $this->lang->line('charge_type'); ?></th>										
-                                        <th class=""><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?> </th>
-										<th class="text-right"><?php echo $this->lang->line('discount'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tax'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
-                                    </thead>
-                                    <tbody>
-                                       <?php 
-                                            $total = 0; $i=0;                                            
-                                                foreach ($charges_detail as $charges_key => $charges_value) {
-                                                    ++$i; $discount_amt=0;
-                                                    if($i <= $recent_record_count)
-                                                    {
-														$discount_amt=(($charges_value['apply_charge']*$charges_value["discount_percentage"])/100);
-														$tax_amount = (($charges_value['apply_charge']-$discount_amt)*$charges_value['tax']/100) ;
-                                                        $taxamount = amountFormat($tax_amount);
-                                                        $total += $charges_value["amount"];
-														
-														$discount_amt=(($charges_value['apply_charge']*$charges_value["discount_percentage"])/100);
-														
-                                                        ?>  
-                                                        <tr> 
-                                                            <td class="">
-                                                                <?php echo $charges_value["name"]; ?>
-                                                                 <div class="bill_item_footer text-muted"> <?php echo $charges_value["note"]; ?></div>
-                                                            </td>
-                                                            <td style="text-transform: capitalize;"><?php echo $charges_value["charge_type"] ?></td>
-                                                            <td class="text-right"><?php echo $charges_value["standard_charge"] ?></td>
-															<td class="text-right"><?php echo amountFormat($discount_amt)." (".$charges_value["discount_percentage"]."%) " ;?></td>
-                                                            <td class="text-right"><?php echo amountFormat($taxamount)." (".$charges_value["tax"]."%) ";?></td>
-															<td class="text-right"><?php echo $charges_value["apply_charge"] ?></td>
-															<td class="text-right"><?php echo $charges_value["amount"] ?></td>
-                                                        </tr>
-                                                        <?php
-                                                    }
-                                                }                                            
-                                            ?> 
-                                    </tbody>
-                                </table>
-                            <?php } ?>
-                                            </div>
-                                        </div>
-                                        <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('payment'); ?></h3>
-                                           <div class="pull-right">                                               
-                                          </div>
-                                        </div>
-                                         <div class="box-header mb10 pl-0">
-                                             <div class="table-responsive"> 
-                                                <?php                                              
-                                                    if (!empty($payment_details)) { ?>
-                                      <table class="table table-striped table-bordered table-hover">
-                                            <thead>
-                                                <th><?php echo $this->lang->line('transaction_id'); ?></th>
-                                                <th><?php echo $this->lang->line('date'); ?></th>
-                                                <th><?php echo $this->lang->line('note'); ?></th>
-                                                <th><?php echo $this->lang->line('payment_mode'); ?></th>
-                                                <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                                            </thead>
-                                            <tbody>
+        <!-- Medication overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 12.5l8-8a4.94 4.94 0 1 1 7 7l-8 8a4.94 4.94 0 1 1-7-7Z"/><path d="m8.5 8.5 7 7"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('medication'); ?></div>
+                    <?php if (!empty($medicationreport_overview)) { ?><div class="count"><?php echo count($medicationreport_overview); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($medicationreport_overview)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('medicine_name'); ?></th>
+                        <th><?php echo $this->lang->line('dose'); ?></th>
+                        <th><?php echo $this->lang->line('time'); ?></th>
+                        <th><?php echo $this->lang->line('remark'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php for ($i = 0; $i < $recent_record_count; $i++) {
+                            if (!empty($medicationreport_overview[$i])) { ?>
+                        <tr>
+                            <td><?php if ($medicationreport_overview[$i]['date']) { echo $this->customlib->YYYYMMDDTodateFormat($medicationreport_overview[$i]['date']); } ?></td>
+                            <td><?php echo $medicationreport_overview[$i]['medicine_name']; ?></td>
+                            <td><?php echo $medicationreport_overview[$i]['medicine_dosage'] . " (" . $medicationreport_overview[$i]['unit'] . ")"; ?></td>
+                            <td><?php echo $this->customlib->getHospitalTime_Format($medicationreport_overview[$i]['time']); ?></td>
+                            <td><?php echo $medicationreport_overview[$i]['remark']; ?></td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
 
-                                                <?php
-                                                $total_payment = 0;                                                 
-                                                        $total_payment = 0; $i=0;
-                                                        foreach ($payment_details as $payment) {
-                                                             ++$i ;
-                                                                 if($i <= $recent_record_count){
-                                                                    if (!empty($payment['amount'])) {
-                                                                        $total_payment += $payment['amount'];
-                                                                    }
-                                                            ?> 
-                                                            <tr>
-                                                                <td><?php echo $this->customlib->getPatientSessionPrefixByType('transaction_id').$payment['id']; ?></td>
-                                                                <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($payment['payment_date'],$this->customlib->getHospitalTimeFormat()); ?></td>
-                                                                <td><?php echo $payment["note"] ?></td>
-                                                                <td ><?php echo $this->lang->line(strtolower($payment["payment_mode"]))."<br>";
+        <!-- Lab Investigations overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v7l-5 9a2 2 0 0 0 1.73 3h12.54A2 2 0 0 0 20 18L15 9V2"/><path d="M8 2h8M7 16h10"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('lab_investigation'); ?></div>
+                    <?php if (!empty($investigations)) { ?><div class="count"><?php echo count($investigations); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($investigations)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('test_name'); ?></th>
+                        <th><?php echo $this->lang->line('lab'); ?></th>
+                        <th><?php echo $this->lang->line('sample_collected'); ?></th>
+                        <th><?php echo $this->lang->line('expected_date'); ?></th>
+                        <th><?php echo $this->lang->line('approved_by'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php for ($i = 0; $i < $recent_record_count; $i++) {
+                            if (!empty($investigations[$i])) { ?>
+                        <tr>
+                            <td><?php echo $investigations[$i]['test_name']; ?><br><small>(<?php echo $investigations[$i]['short_name']; ?>)</small></td>
+                            <td><?php echo $this->lang->line($investigations[$i]['type']); ?></td>
+                            <td>
+                                <?php echo composeStaffNameByString($investigations[$i]['collection_specialist_staff_name'], $investigations[$i]['collection_specialist_staff_surname'], $investigations[$i]['collection_specialist_staff_employee_id']); ?><br>
+                                <small><?php echo $investigations[$i]['test_center']; ?></small>
+                                <?php if ($investigations[$i]['collection_date']) { ?><br><?php echo $this->customlib->YYYYMMDDTodateFormat($investigations[$i]['collection_date']); } ?>
+                            </td>
+                            <td><?php if ($investigations[$i]['reporting_date']) { echo $this->customlib->YYYYMMDDTodateFormat($investigations[$i]['reporting_date']); } ?></td>
+                            <td>
+                                <?php echo composeStaffNameByString($investigations[$i]['approved_by_staff_name'], $investigations[$i]['approved_by_staff_surname'], $investigations[$i]['approved_by_staff_employee_id']); ?>
+                                <?php if ($investigations[$i]['parameter_update']) { ?><br><?php echo $this->customlib->YYYYMMDDTodateFormat($investigations[$i]['parameter_update']); } ?>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
 
-                                                                if($payment['payment_mode'] == "Cheque"){
-                                                                     if($payment['cheque_no']!=''){
-                                               echo $this->lang->line('cheque_no') . ": ".$payment['cheque_no'];
-                                              
-                                            echo "<br>";
-                                        }
-                                            if($payment['cheque_date']!='' && $payment['cheque_date']!='0000-00-00'){
-                                               echo $this->lang->line('cheque_date') .": ".$this->customlib->YYYYMMDDTodateFormat($payment['cheque_date']); 
-                                           } 
-                                             }
-                                                                ?>                                                                   
+        <!-- Operations overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 7 10 10M7 17 17 7"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('operation'); ?></div>
+                    <?php if (!empty($operation_theatre)) { ?><div class="count"><?php echo count($operation_theatre); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($operation_theatre)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('reference_no'); ?></th>
+                        <th><?php echo $this->lang->line('operation_date'); ?></th>
+                        <th><?php echo $this->lang->line('operation_name'); ?></th>
+                        <th><?php echo $this->lang->line('operation_category'); ?></th>
+                        <th><?php echo $this->lang->line('ot_technician'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php for ($i = 0; $i < $recent_record_count; $i++) {
+                            if (!empty($operation_theatre[$i])) { ?>
+                        <tr>
+                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('operation_theater_reference_no') . $operation_theatre[$i]["id"]; ?></td>
+                            <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($operation_theatre[$i]["date"], $this->customlib->getHospitalTimeFormat()); ?></td>
+                            <td><?php echo $operation_theatre[$i]["operation"]; ?></td>
+                            <td><?php echo $operation_theatre[$i]["category"]; ?></td>
+                            <td><?php echo $operation_theatre[$i]['ot_technician']; ?></td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
 
-                                                                </td>
-                                                                <td class="text-right"><?php echo $payment["amount"] ?></td>
-                                                            </tr>
-                                                <?php } 
-                                            } ?> 
-                                        </tbody>                                               
-                                     </table>
-                                 <?php } ?>
-                                 </div>                                          
-                                </div>                              
+        <!-- Charges overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('charges'); ?></div>
+                    <?php if (!empty($charges_detail)) { ?><div class="count"><?php echo count($charges_detail); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($charges_detail)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('name'); ?></th>
+                        <th><?php echo $this->lang->line('charge_type'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('discount'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('tax'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php $ov_total = 0;
+                        for ($i = 0; $i < $recent_record_count; $i++) {
+                            if (!empty($charges_detail[$i])) {
+                                $cv = $charges_detail[$i];
+                                $d_amt = amountFormat($cv['apply_charge'] * $cv['discount_percentage'] / 100);
+                                $t_amt = amountFormat(($cv['apply_charge'] - $d_amt) * $cv['tax'] / 100);
+                                $ov_total += $cv['amount']; ?>
+                        <tr>
+                            <td><?php echo $cv['name']; ?><div class="bill_item_footer text-muted"><?php echo $cv['note']; ?></div></td>
+                            <td class="text-capitalize"><?php echo $cv['charge_type']; ?></td>
+                            <td class="text-end"><?php echo $cv['standard_charge']; ?></td>
+                            <td class="text-end"><?php echo $d_amt . " (" . $cv['discount_percentage'] . "%)"; ?></td>
+                            <td class="text-end"><?php echo $t_amt . " (" . $cv['tax'] . "%)"; ?></td>
+                            <td class="text-end"><?php echo $cv['apply_charge']; ?></td>
+                            <td class="text-end"><?php echo $cv['amount']; ?></td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
 
-                                        <div class="box-header mb10 pl-0">
-                                           <h3 class="text-uppercase bolds mt0 ptt10 pull-left font14"><?php echo $this->lang->line('live_consultation'); ?></h3>
-                                           <div class="pull-right">
-                                               
-                                          </div>
-                                        </div>
-                                         <div class="box-header mb10 pl-0">
-                                             <div class="table-responsive"> 
-                                                <?php if(!empty($visitconferences)){ ?>
-                                            <table class="table table-striped table-bordered table-hover">
-                                    <thead>
-                                        <th><?php echo $this->lang->line('consultation_title') ; ?></th>
-                                        <th><?php echo $this->lang->line('date'); ?></th>
-                                        <th><?php echo $this->lang->line('created_by'); ?> </th>
-                                        <th><?php echo $this->lang->line('created_for'); ?></th>
-                                        <th><?php echo $this->lang->line('patient'); ?></th>
-                                    </thead>
-                                    <tbody>
-                                        <?php                                       
-                                            
-                                            foreach ($visitconferences as $conference_key => $conference_value) {
-												if($conference_value->return_response){
-													$return_response = json_decode($conference_value->return_response);
-												}else{
-													$return_response = '';
-												}
-                                                ?>
-                                            <tr>
-                                                <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $conference_value->title; ?></a>
-                                                    <div class="fee_detail_popover" style="display: none">
-                                                        <?php
-                                                                if ($conference_value->description == "") {
-                                                                            ?>
-                                                                        <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
-                                                                        <?php
-                                                                    } else {
-                                                                                ?>
-                                                                        <p class="text text-info"><?php echo $conference_value->description; ?></p>
-                                                                        <?php
-                                                        }
-                                                                ?>
-                                                    </div>
-                                                </td>
-                                                <td class="mailbox-name">
-                                                <?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($conference_value->date)) ?>
-                                                </td>
-                                                 <td class="mailbox-name">
-                                                    <?php
-                                                        $name = ($conference_value->create_by_surname == "") ? $conference_value->create_by_name : $conference_value->create_by_name . " " . $conference_value->create_by_surname;
-                                                       
-                                                        if ($name == 'Super Admin') {
-                                                            echo $name;
-                                                            # code...
-                                                        } else {
-                                                            echo $name . " (" . $conference_value->create_by_role_name . ": " . $conference_value->for_create_employee_id . ")";
-                                                        }
+        <!-- Payment overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('payment'); ?></div>
+                    <?php if (!empty($payment_details)) { ?><div class="count"><?php echo count($payment_details); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($payment_details)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('transaction_id'); ?></th>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('note'); ?></th>
+                        <th><?php echo $this->lang->line('payment_mode'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php for ($i = 0; $i < $recent_record_count; $i++) {
+                            if (!empty($payment_details[$i]) && !empty($payment_details[$i]['amount'])) { ?>
+                        <tr>
+                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('transaction_id') . $payment_details[$i]['id']; ?></td>
+                            <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($payment_details[$i]['payment_date'], $this->customlib->getHospitalTimeFormat()); ?></td>
+                            <td><?php echo $payment_details[$i]['note']; ?></td>
+                            <td class="text-capitalize"><?php echo $this->lang->line(strtolower($payment_details[$i]['payment_mode']));
+                                if ($payment_details[$i]['payment_mode'] == "Cheque") {
+                                    if ($payment_details[$i]['cheque_no'] != '') { echo "<br>" . $this->lang->line('cheque_no') . ": " . $payment_details[$i]['cheque_no']; }
+                                    if ($payment_details[$i]['cheque_date'] != '' && $payment_details[$i]['cheque_date'] != '0000-00-00') { echo "<br>" . $this->lang->line('cheque_date') . ": " . $this->customlib->YYYYMMDDTodateFormat($payment_details[$i]['cheque_date']); }
+                                } ?></td>
+                            <td class="text-end"><?php echo $payment_details[$i]['amount']; ?></td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
 
-                                                        ?></td>
-                                                <td class="mailbox-name">
-                                                    <?php
-                                                    $name = ($conference_value->create_for_surname == "") ? $conference_value->create_for_name : $conference_value->create_for_name . " " . $conference_value->create_for_surname;
-                                                    echo $name . " (" . $conference_value->for_create_role_name . ": " . $conference_value->for_create_employee_id . ")";
-                                                    ?>
-                                                </td>
-                                                <td class="mailbox-name">
-                                                     <?php   $name = ($conference_value->patient_name == "") ? $conference_value->patient_name : $conference_value->patient_name;
-                                                    echo $name . " (" . $conference_value->patientid . ")";
-                                                    ?>
-                                                </td> 
-                                            </tr>
-                                            <?php
-                                        }                                  
-                                 ?>
-                                    </tbody>
-                                </table>
-                            <?php } ?>
-                                            </div>                                          
-                                        </div>                                             
-                                    </div><!--./col-lg-6-->
-                            </div><!--./row-->  
-                        </div><!--#/overview-->        
-                        <div class="tab-pane " id="activity">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('checkups'); ?></h3>
-                            </div>                            
-                            <div class="table-responsive">
-                                  <h5><?php echo $this->customlib->getPatientSessionPrefixByType('opd_no').$opd_details_id; ?></h5> 
-                                <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%" >
-                                    <thead>
-                                    <th><?php echo $this->lang->line('checkup_id'); ?></th>
-                                    <th><?php echo $this->lang->line('appointment_date'); ?></th>
-                                    <th><?php echo $this->lang->line('consultant'); ?></th>
-                                    <th><?php echo $this->lang->line('reference'); ?></th>
-                                    <th><?php echo $this->lang->line('symptoms'); ?></th>
-                                    <?php if (is_array($fields) || is_object($fields))
-                                    {
-                                        foreach ($fields as $fields_key => $fields_value)
-                                        { ?>
-                                        <th><?php echo ucfirst($fields_value->name); ?></th>
-                                        <?php }
-                                    }
-                                    ?>   
-                                    <th class="text-right noExport" ><?php echo $this->lang->line('action') ?></th>
-                                    </thead>
-                                    <tbody>                                    
+        <!-- Live Consultation overview -->
+        <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('live_consultation'); ?></div>
+                    <?php if (!empty($visitconferences)) { ?><div class="count"><?php echo count($visitconferences); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body">
+                <?php if (!empty($visitconferences)) { ?>
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('consultation_title'); ?></th>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('created_by'); ?></th>
+                        <th><?php echo $this->lang->line('created_for'); ?></th>
+                        <th><?php echo $this->lang->line('patient'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php foreach ($visitconferences as $cv) { ?>
+                        <tr>
+                            <td><?php echo $cv->title; ?></td>
+                            <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($cv->date)); ?></td>
+                            <td><?php $n = ($cv->create_by_surname == "") ? $cv->create_by_name : $cv->create_by_name . " " . $cv->create_by_surname; echo $n . " (" . $cv->create_by_role_name . ": " . $cv->for_create_employee_id . ")"; ?></td>
+                            <td><?php $n = ($cv->create_for_surname == "") ? $cv->create_for_name : $cv->create_for_name . " " . $cv->create_for_surname; echo $n . " (" . $cv->for_create_role_name . ": " . $cv->for_create_employee_id . ")"; ?></td>
+                            <td><?php echo $cv->patient_name . " (" . $cv->patientid . ")"; ?></td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+                <?php } else { ?>
+                <div class="p-3 text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
+        <?php } ?>
 
+        <!-- Timeline overview -->
+        <div class="rellist collapsed">
+            <div class="rellist-head">
+                <div class="l">
+                    <div class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="title"><?php echo $this->lang->line('timeline'); ?></div>
+                    <?php if (!empty($timeline_list)) { ?><div class="count"><?php echo count($timeline_list); ?></div><?php } ?>
+                </div>
+                <div class="r">
+                    <button class="expand" onclick="toggleRellist(this)">
+                        <span class="expand-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg></span>
+                        <span class="expand-closed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                </div>
+            </div>
+            <div class="rellist-body pad">
+                <?php if (!empty($timeline_list)) { ?>
+                <ul class="overview-timeline">
+                    <?php for ($i = 0; $i < $recent_record_count; $i++) {
+                        if (!empty($timeline_list[$i])) { ?>
+                    <li>
+                        <div class="tl-date"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($timeline_list[$i]['timeline_date'])); ?></div>
+                        <div class="tl-body">
+                            <div class="tl-dot"></div>
+                            <div>
+                                <div class="tl-title"><?php echo $timeline_list[$i]['title']; ?></div>
+                                <div class="tl-desc"><?php echo $timeline_list[$i]['description']; ?></div>
+                                <?php if (!empty($timeline_list[$i]["document"])) { ?>
+                                <a class="tl-dl" href="<?php echo base_url() . "patient/dashboard/download_patient_timeline/" . $timeline_list[$i]["id"]; ?>" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i> <?php echo $this->lang->line('download'); ?></a>
+                                <?php } ?>
+                            </div>
+                        </div>
+                    </li>
+                    <?php } } ?>
+                </ul>
+                <?php } else { ?>
+                <div class="text-muted small"><?php echo $this->lang->line('no_record_found'); ?></div>
+                <?php } ?>
+            </div>
+        </div>
+
+        </div><!-- /rellist-wrap -->
+        </div><!-- /overview -->
+
+        <!-- ── Visits (checkups) tab ─────────────────────────────── -->
+        <div class="tab-pane card" id="activity">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('checkups'); ?></h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('checkup_id'); ?></th>
+                        <th><?php echo $this->lang->line('appointment_date'); ?></th>
+                        <th><?php echo $this->lang->line('consultant'); ?></th>
+                        <th><?php echo $this->lang->line('reference'); ?></th>
+                        <th><?php echo $this->lang->line('symptoms'); ?></th>
+                        <?php if (is_array($fields) || is_object($fields)) {
+                            foreach ($fields as $fv) { ?>
+                        <th><?php echo ucfirst($fv->name); ?></th>
+                        <?php } } ?>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
                         <?php if (!empty($visit_details)) {
-                            foreach ($visit_details as $key => $visit) {
-                                ?>
-                                                <tr>
-                                                    <td><?php echo $this->customlib->getPatientSessionPrefixByType('checkup_id') .$visit["id"] ; ?></td>
-                                                    <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($visit['appointment_date'])); ?>                                                    
-                                                    </td>
-                                                    <td><?php echo composeStaffNameByString($visit["name"],$visit["surname"],$visit['employee_id']); ?></td>
-                                                    <td><?php echo $visit['refference']; ?></td>
-                                                    <td><?php echo $visit['symptoms']; ?></td>
-                                                    <?php if (is_array($fields) || is_object($fields))
-                                                    {
-                                                        foreach ($fields as $fields_key => $fields_value)
-                                                        { 
-                                                                $display_field = $visit[$fields_value->name];
-                                                              
-                                                                    ?>
-                                                                <td>
-                                                                    <?php echo $display_field; ?>
-                                                                            
-                                                                </td>
-                                                                <?php
-                                                        }
-                                                    }
-                                                    ?>
-                                                    <td class="pull-right" >
-                                                         <?php
-                                                          if ($visit["prescription"] == 'yes') {
-                                                             ?>    
-                                                                    <a href="#" class="btn btn-default btn-xs" data-toggle='tooltip' onclick="view_prescription('<?php echo $visit["id"] ?>')" title="<?php echo $this->lang->line('view_prescription'); ?>">
-                                                                        <i class="fas fa-file-prescription"></i>
-                                                                    </a>
-                                                            <?php 
-                                                        }
-                                                        ?> 
-                                                    <?php if($result['gender'] == 'Female' && $visit["is_antenatal"] == 1 && $visit['visit_details_id']!=''){ ?>
-                  
-                                                        <a href='#' onclick='viewantenatal("<?php echo $visit["id"]; ?>")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='<?php echo $this->lang->line('view_antenatal_finding'); ?>'><img width='15' src='<?php echo base_url().'uploads/patient_images/ultrasound-machine.png' ?> '></a>      
-                                                        <?php } ?>                                                         
-                                                        
-                                                        <a href="#"  class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('show'); ?>" onclick="getRecord('<?php echo $visit["id"]; ?>')" >
-                                                            <i class="fa fa-reorder"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php }
-}
-?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                         <!-- Charges -->
-                        <div class="tab-pane" id="charges">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('charges'); ?></h3>
-                            </div>
-                            <div class="download_label"><?php echo composePatientName($result['patient_name'],$result['patient_id']) . " " . $this->lang->line('opd_details'); ?></div>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover example">
-                                    <thead>
-                                        <th><?php echo $this->lang->line('date'); ?></th>
-                                        <th><?php echo $this->lang->line('charge_name'); ?> / <?php echo $this->lang->line('charge_note'); ?></th>
-                                        <th><?php echo $this->lang->line('charge_type'); ?></th>
-                                        <th><?php echo $this->lang->line('charge_category'); ?></th>
-                                        <th><?php echo $this->lang->line('qty'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?> </th>
-										<th class="text-right"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('tpa_charge') . ' (' . $currency_symbol . ')'; ?></th>
-										<th class="text-right"><?php echo $this->lang->line('discount'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('tax'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>                                  
-                                    </thead>
-                                    <tbody>
-                                       <?php 
-                                            $total = 0;
-                                            if (!empty($charges_detail)) {
-                                                foreach ($charges_detail as $charges_key => $charges_value) {
-													$discount_amount = amountFormat(($charges_value['apply_charge']*$charges_value['discount_percentage']/100)) ;
-                                                    $tax_amount = (($charges_value['apply_charge']-$discount_amount)*$charges_value['tax']/100) ;
-                                                    $taxamount = amountFormat($tax_amount);
-                                                    $total += $charges_value["amount"];													
-													
-                                                    ?>  
-                                                    <tr>                                                       
-                                                        <td>
-                                                         <?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($charges_value['date'])); ?>
-                                                         </td>
-                                                        <td class="">
-                                                            <?php echo $charges_value["name"]; ?>
-                                                             <div class="bill_item_footer text-muted"> <?php echo $charges_value["note"]; ?></div>
-                                                        </td>
-                                                        <td style="text-transform: capitalize;"><?php echo $charges_value["charge_type"] ?></td>
-                                                        <td style="text-transform: capitalize;"><?php echo $charges_value["charge_category_name"] ?></td>
-                                                        <td style="text-transform: capitalize;"><?php echo $charges_value['qty']//." ".$charges_value["unit"]; ?></td>			
-                                                        <td class="text-right"><?php echo $charges_value["standard_charge"] ?></td>
-														<td class="text-right"><?php echo $charges_value["apply_charge"] ?></td>
-														<td class="text-right"><?php if($charges_value["org_charge"]!="") { echo $charges_value["org_charge"]; }else{ echo '0.00' ; } ?></td>
-														<td class="text-right"><?php echo $discount_amount." (".$charges_value["discount_percentage"]."%) " ;?></td> 
-                                                        <td class="text-right"><?php echo $taxamount."(".$charges_value["tax"]."%)" ;?></td>
-                                                        <td class="text-right"><?php echo $charges_value["amount"] ?></td>
-                                                        <td class="text-right">  <a href="javascript:void(0);" class="btn btn-default btn-xs print_charge" data-toggle="tooltip" title="" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>" data-record-id="<?php echo $charges_value['id']; ?>"  data-original-title="<?php echo $this->lang->line('print'); ?>">
-    <i class="fa fa-print"></i>
-    </a> </td>
-                                                    </tr>
-                                                    <?php
-                                                }
-                                            }
-                                            ?> 
-                                    </tbody>
-                                    <tr class="box box-solid total-bg">
-                                        <td colspan='11' class="text-right rtl-text-left"><?php echo $this->lang->line('total') . " : " . $currency_symbol . amountFormat($total); ?> <input type="hidden" id="charge_total" name="charge_total" value="<?php echo $total ?>">
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- -->
-                        <!--payment -->
-                         <div class="tab-pane" id="payment">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('payment'); ?></h3>
-                                <div class="box-tab-tools">
-                                    <button type="button" class="btn btn-info btn-sm" data-result_id="<?php echo $result['id'] ?>" data-backdrop="static" data-toggle="modal" data-target="#payMoney"><i class="fa fa-plus"></i> <?php echo $this->lang->line('make_payment'); ?></button>
-                                </div>
-                            </div>
-                            <div class="download_label"><?php echo $this->lang->line('payment'); ?></div>                                    
-                                <div class="table-responsive">                                    
-                                        <table class="table table-striped table-bordered table-hover example">
-                                            <thead>
-                                            <th ><?php echo $this->lang->line('transaction_id'); ?></th>
-                                            <th ><?php echo $this->lang->line('date'); ?></th>
-                                            <th ><?php echo $this->lang->line('note'); ?></th>
-                                            <th ><?php echo $this->lang->line('payment_mode'); ?></th>
-                                            <th  class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                                            <th  class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
-                                            </thead>
-                                            <tbody>
-                                            <?php
-                                        if (!empty($payment_details)) {
-                                                $total_payment = 0;
-                                                foreach ($payment_details as $payment) {
-                                                    if (!empty($payment['amount'])) {
-                                                        $total_payment += $payment['amount'];
-                                                    }
-                                                    ?>
-                                                        <tr>
-                                                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('transaction_id').$payment["id"] ?></td>
-                                                            <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($payment['payment_date'], $this->customlib->getHospitalTimeFormat());?></td>
-                                                            <td><?php echo $payment["note"] ?></td>
-                                                            <td><?php echo $this->lang->line(strtolower($payment["payment_mode"]))."<br />";
-                                                                if($payment['payment_mode'] == "Cheque"){
-                                                                    if($payment['cheque_no']!=''){
-                                                                        echo $this->lang->line('cheque_no') . ": ".$payment['cheque_no'];
-                                                                        echo "<br>";
-                                                                    }
-                                                                    if($payment['cheque_date']!='' && $payment['cheque_date']!='0000-00-00'){
-                                                                       echo $this->lang->line('cheque_date') .": ".$this->customlib->YYYYMMDDTodateFormat($payment['cheque_date']);
-                                                                   }
-                                                                }
-                                                            ?></td>
-                                                           <td class="text-right"><?php echo $payment["amount"] ?></td> 
-                                                           <td class="text-right">
-                                                             <?php         if ($payment['payment_mode'] == "Cheque" && $payment['attachment'] != "")  {  ?>
-                                                                 <a href='<?php echo site_url('patient/dashboard/downloadreceipt/'.$payment['id']);?>' class='btn btn-default btn-xs'  title='<?php echo $this->lang->line('download'); ?>'><i class='fa fa-download'></i></a>
-                                                                <?php
-                                                            }
-                                                                     ?>
-                                                            <a href="javascript:void(0);" class="btn btn-default btn-xs print_trans" data-toggle="tooltip" title="" data-loading-text="<i class='fa fa-circle-o-notch fa-spi'></i>" data-module-type="opd" data-record-id="<?php echo $payment['id']; ?>"  data-original-title="<?php echo $this->lang->line('print'); ?>"><i class="fa fa-print"></i></td>
-                                                        </tr>
-                                                <?php }?>
-                                                </tbody>
-                                                    <tr class="box box-solid total-bg">
-                                                        <td></td>
-                                                        <td></td>
-                                                        <td></td>
-                                                        <td colspan="2" class="text-right rtl-text-left"><?php echo $this->lang->line('total') . " : " . $currency_symbol. amountFormat($total_payment); ?>
-                                                        </td>
-                                                        <td></td>                                                        
-                                                    </tr>                                               
-
-                                    <?php }?>
-                                        </table>
-                                </div>
-                        </div>
-                        <!-- -->
-                        <!--Diagnosis -->
-                        <div class="tab-pane" id="labinvestigation">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('lab_investigation'); ?></h3>
-                            </div>
-                            <div class="download_label"><?php echo $result['lab_investigation'] ; ?></div>
-                            <div class="table-responsive">
-                                 <table class="table table-striped table-bordered table-hover example" data-export-title="<?php echo $this->lang->line('opd_details'); ?>">
-                                    <thead>
-                                        <th><?php echo $this->lang->line('test_name'); ?></th>
-                                         <th><?php echo $this->lang->line('lab'); ?></th>
-                                        <th><?php echo $this->lang->line('sample_collected'); ?></th>
-                                        <td><strong><?php echo $this->lang->line('expected_date'); ?></strong></td>
-                                         <th><?php echo $this->lang->line('approved_by'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
-                                    </thead>
-                                    <tbody id="">
-                                        <?php foreach($investigations as $row ){ ?>
-                                            <tr>
-                                            <td><?php echo $row['test_name']; ?><br/>
-                                           <?php echo "(".$row['short_name'].")"; ?></td>
-                                            <td><?php echo $this->lang->line($row['type']); ?></td>
-                                            <td><label>
-                                 <?php echo composeStaffNameByString($row['collection_specialist_staff_name'],$row['collection_specialist_staff_surname'],$row['collection_specialist_staff_employee_id']); ?>
-                                 </label>                                    
-                                     <br/>
-                                     <label for=""><?php if($row['type']=='pathology'){ echo $this->lang->line('pathology');  }else{ echo $this->lang->line('radiology');
-                                     }  ?> : </label>                                    
-                                        <?php
-                                   echo $row['test_center']; 
-                                    ?>
-                                    <br/>
-                                     <?php if($row['collection_date']){ echo $this->customlib->YYYYMMDDTodateFormat($row['collection_date']); } ?></td>                                       
-                                       <td>
-                                    <?php
-                                    if($row['reporting_date']){
-                                    echo  $this->customlib->YYYYMMDDTodateFormat($row['reporting_date']); } ?>
-                                        
-                                    </td>
-                                    <td class="text-left">
-                                         <label for=""><?php echo $this->lang->line('approved_by'); ?> : </label>
-                                        <?php      
-                                    echo composeStaffNameByString($row['approved_by_staff_name'],$row['approved_by_staff_surname'],$row['approved_by_staff_employee_id']);
-                                     ?>
-                                     <br/>
-                                    <?php  if($row['parameter_update']){                              
-                                    echo  $this->customlib->YYYYMMDDTodateFormat($row['parameter_update']);
-                                    } ?>                                         
-                                    </td>
-                                    <td class="text-right"><a href='javascript:void(0)'  data-loading-text='<i class="fa fa-reorder"></i>' data-record-id='<?php echo $row['report_id'];?>' data-type-id='<?php echo $row['type'];?>' data-test-id='<?php echo $row['test_name']. " (".$row['short_name'].")"; ?>'  class='btn btn-default btn-xs view_report' data-toggle='tooltip' title='<?php echo $this->lang->line("show"); ?>'><i class='fa fa-reorder'></i></a></td>
-                                    </tr>
-                                     <?php } ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                            <!-- Timeline -->
-                                <div class="tab-pane" id="timeline">
-                                    <div class="box-tab-header">
-                                        <h3 class="box-tab-title"><?php echo $this->lang->line('timeline'); ?></h3>
-                                    </div>
-                                    <div class="timeline-header no-border">
-                                        <div id="timeline_list">
-                                            <?php
-                                        if (empty($timeline_list)) {
-                                                ?>
-                                                <br/>
-                                                <div class="alert alert-info"><?php echo $this->lang->line('no_record_found'); ?></div>
-                                            <?php } else {
-        ?>
-                                                <ul class="timeline timeline-inverse">
-                                                    <?php
-foreach ($timeline_list as $key => $value) {
-            ?>
-                                                        <li class="time-label">
-                                                            <span class="bg-blue">    
-                                                            <?php 
-                                                            if($value['timeline_date']){ 
-                                                                echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($value['timeline_date'])); 
-                                                            } ?>
-                                                            </span>
-                                                        </li>
-                                                        <li>
-                                                            <i class="fa fa-list-alt bg-blue"></i>
-                                                            <div class="timeline-item">
-                                                                <?php if (!empty($value["document"])) {?>
-                                                                    <span class="time"><a class="defaults-c text-right" data-toggle="tooltip" title="" href="<?php echo base_url() . "patient/dashboard/download_patient_timeline/" . $value["id"];?>" data-original-title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a></span>
-                                                                <?php }?>
-                                                                <h3 class="timeline-header text-aqua"> <?php echo $value['title']; ?> </h3>
-                                                                <div class="timeline-body">
-                                                                    <?php echo $value['description']; ?>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    <?php }?>
-                                                    <li><i class="fa fa-clock-o bg-gray"></i></li>
-                                                <?php }?>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                        <!-- -->                         
-                        
-                        <div class="tab-pane" id="vitals">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('vitals'); ?></h3>                                
-                            </div>
-                            <div class="timeline-header no-border">
-                                <div id="vital_list">
-                                    <?php
-                                    if (empty($patient_vital_date)) {
-                                        ?>
-                                        <br/>
-                                        <div class="alert alert-info"><?php echo $this->lang->line('no_record_found'); ?></div>
-                                    <?php } else {   ?>
-										<div class="table_inner"> 
-											<table class="table table-striped table-bordered ">												 
-												<thead>
-													<tr>
-														<th><?php echo $this->lang->line("date"); ?> </th>													
-														<?php foreach($vital_list as $vl){ ?>
-														<th ><?php echo $vl["name"]; ?> <br> (<?php echo $vl["reference_range"]; ?> <?php echo $vl["unit"]; ?>) </th>
-														<?php } ?>
-													</tr>
-												</thead>
-												<tbody> 													 
-													<?php foreach($patient_vital_date as $pvd){ //$messure_date = $pvd['messure_date']?>
-													<tr>
-														<th><?php echo $date = $this->customlib->YYYYMMDDTodateFormat($pvd['messure_date']);
-															$messure_date = date('Y-m-d', strtotime($pvd['messure_date']));
-														?></th>														
-														<?php foreach($vital_list as $vl){ 														
-															$id = $vl["id"]; 													 
-															 
-															  ?>														
-																<td class="tablehovericon">
-                                                                    <div class="relative">
-																	<?php 
-																	foreach($patientvital[$messure_date][$id] as $pmi){				
-																		echo $pmi['patient_range'];									 
-																		$datetime = $this->customlib->YYYYMMDDHisTodateFormat($pmi['messure_date'],$this->customlib->getHospitalTimeFormat()); 
-																		$str2 = substr($datetime, 10);
-																		echo  " (".$str2 .")";																		
-																		echo "<br>";																		
-																	} 
-																	?>
-																	</div>																
-																</td>															 
-														<?php }  ?>															
-													</tr>
-													<?php } ?>	
-												</tbody>								   
-											</table>
-										</div>
-									<?php } ?> 
-                                </div>
-                            </div>
-                        </div> 
-                                
-                        <div class="tab-pane" id="medication">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('medication'); ?></h3>
-                            </div>
-                                    <div class="table_inner"> 
-                                          <?php if(!empty($medication)){
-                                            ?>
-                                        <table class="table table-striped table-bordered table-hover">
-                                          <thead>
-                                             <th class="hard_left"><?php echo $this->lang->line("date"); ?> </th>
-                                             <th class="next_left"><?php echo $this->lang->line("medicine_name"); ?></th>
-                                            <?php 
-                                            if (!empty($max_dose)) {
-                                                $dosage_count = $max_dose;
-                                             } else{
-                                                $dosage_count = 0;
-                                             }
-                                            
-                                            for ($x = 1; $x <= $dosage_count; $x++) { ?>                                              
-                                              <th class="sticky-col" width="150"><?php echo $this->lang->line("dose").''.$x  ;?></th>
-                                           <?php }
-                                            ?> 
-                                    </thead> 
-                                    <tbody> 
-                                        <?php 
-                                         $count = 1;
-                                    foreach ($medication as $medication_key => $medication_value) 
-                                    {
-                                    $pharmacy_id = $medication_value['pharmacy_id'];
-                                    $medicine_category_id = $medication_value['medicine_category_id'];
-                                    $date = $medication_value['date'];                                            
-                                        ?>
-                                    <tr>
-                                        <?php $subcount = 1; foreach ($medication_value['dosage'][$date] as $mkey => $mvalue) { 
-                                        $date = $this->customlib->YYYYMMDDTodateFormat($medication_value['date']);
-                                            ?>
-                                            <td class="hard_left"><?php 
-
-                                            if($subcount==1){
-
-                                                echo $date."<br>(".$this->lang->line(strtolower(date('l', strtotime($medication_value['date'])))).")";
-                                         
-                                            }else{
-                                                echo "<span class='fa-level-span'><i class='fa fa-level-up fa-level-roated' aria-hidden='true'></i></span>";
-                                            } ?></td>
-
-                                          <td class="next_left"><?php echo $mvalue['name'] ?></td>  
-                                          <?php 
-                                          for ($x = 0; $x <= $dosage_count; $x++){
-                                            if (array_key_exists($x,$mvalue['dose_list']))
-                                                  {
-                                                    $add_index=$x;
-                                                   
-                                                  ?>
-                                                   <td class="dosehover"><?php echo $this->lang->line('time').": ".$this->customlib->getHospitalTime_Format($mvalue['dose_list'][$x]['time'])."</a></br>". $mvalue['dose_list'][$x]['medicine_dosage']." ".$mvalue['dose_list'][$x]['unit']; if($mvalue['dose_list'][$x]['remark']!=''){ echo " <br>".$this->lang->line('remark').": ".$mvalue['dose_list'][$x]['remark'] ;}?>
-                                                   <br>
-                                                   <?php echo $this->lang->line('created_by').': '.$mvalue['dose_list'][$x]['staff_name'].' '.$mvalue['dose_list'][$x]['staff_surname'].'  ('.$mvalue['dose_list'][$x]['staff_employee_id'].")"; ?>
-                                                   </td>
-                                                  <?php
-                                                  }
-                                                else
-                                                  {
-                                                  ?>
-                                                  <td class="dosehover"> <?php 
-                                                  if($add_index+1==$x){
-                                                    ?>
-                                               
-                                                    <?php
-                                                  }
-                                                  ?></td>
-                                                  <?php
-                                                  }
-                                            ?>                                        
-                                       <?php }   ?>                                       
-                                   
-                                    </tr> 
-                                <?php $subcount++; }
-                                          }
-                                           ?>
-                                    </tbody>
-                                    </table>
-                                            <?php
-                                          }else{
-                                            ?>
-<div class="alert alert-info">
-    <?php  echo $this->lang->line('no_record_found');?>
-</div>
-                                            <?php
-                                          }
-                                          ?>                                  
-                                </div> 
-                            </div>
-
-                            <div class="tab-pane" id="operationtheatre">
-                                <div class="box-tab-header">
-                                    <h3 class="box-tab-title"><?php echo $this->lang->line('operation'); ?></h3>
-                                </div>                           
-                            <div class="download_label"><?php echo $result['patient_name'] . " " . $this->lang->line('opd_details'); ?></div>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover example" data-export-title="<?php echo $this->lang->line('opd_visit_details'); ?>">
-                                    <thead>
-                                        <th><?php echo $this->lang->line("reference_no"); ?></th>
-                                        <th><?php echo $this->lang->line("operation_date"); ?></th>
-                                        <th><?php echo $this->lang->line("operation_name"); ?></th>
-                                        <th><?php echo $this->lang->line("operation_category"); ?></th>
-                                        <th><?php echo $this->lang->line("ot_technician"); ?></th>
-                                        <?php if (is_array($fields_ot) || is_object($fields)){
-                                                foreach ($fields_ot as $fields_key => $fields_value)
-                                                { ?>
-                                                   <th><?php echo ucfirst($fields_value->name); ?></th>
-                                                <?php }
-                                            }?>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
-                                    </thead>
-                                    <tbody id="">
-                                            <?php
-                                        if (!empty($operation_theatre)) {
-                                            foreach ($operation_theatre as $ot_key => $ot_value) {
-                                                ?>  
-                                                <tr>    
-                                                    <td><?php echo $this->customlib->getPatientSessionPrefixByType('operation_theater_reference_no').$ot_value["id"] ?></td>
-                                                    <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($ot_value["date"],$this->customlib->getHospitalTimeFormat())?></td>
-                                                    <td><?php echo $ot_value["operation"] ?></td>
-                                                    <td><?php echo $ot_value["category"] ?></td>
-                                                    <td><?php echo $ot_value['ot_technician'] ?></td>
-                                                   <?php
-                                                    if (!empty($fields_ot)) {
-                                                        foreach ($fields_ot as $fields_key => $fields_value) {
-                                                            $display_field = $ot_value[$fields_value->name];
-                                                            if ($fields_value->type == "link") {
-                                                                $display_field = "<a href=" . $ot_value[$fields_value->name] . " target='_blank'>" . $ot_value[$fields_value->name] . "</a>";
-                                                            }
-                                                            ?>
-                                                            <td>
-                                                                <?php echo $display_field; ?>
-                                                            </td>
-                                                            <?php
-                                                        }
-                                                    }
-                                                    ?>
-                                                    <td class="text-right">
-                                                        <a href='javascript:void(0);' class='btn btn-default btn-xs viewot' data-backdrop="static" data-keyboard="false" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' data-toggle='tooltip' data-record-id='<?php echo $ot_value['id']; ?>'  title="<?php echo  $this->lang->line('show')?>"><i class='fa fa-reorder'></i></a>   
-                                                    </td>
-                                                </tr>                                            
-                                            <?php } }?>
-                                    </tbody>
-                                </table>
-                            </div> 
-                        </div> 
-
-                         <div class="tab-pane" id="live_consult">
-                            <div class="box-tab-header">
-                                <h3 class="box-tab-title"><?php echo $this->lang->line('live_consultation'); ?></h3>
-                            </div>
-                           <?php if (empty($visitconferences)) {
-    ?>
-    <div class="alert alert-danger"><?php echo $this->lang->line('no_record_found'); ?></div>
-                                        <?php
-} else { ?>
-                            <div class="table-responsive">
-                                 <table class="table table-striped table-bordered table-hover example">
-                                    <thead>
-                                        <th><?php echo $this->lang->line('consultation_title') ; ?></th>
-                                        <th><?php echo $this->lang->line('date'); ?></th>
-                                        <th><?php echo $this->lang->line('created_by'); ?> </th>
-                                        <th><?php echo $this->lang->line('created_for'); ?></th>
-                                        <th><?php echo $this->lang->line('patient'); ?></th>
-                                        <th><?php echo $this->lang->line('status'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
-                                    </thead>
-                                    <tbody>
-                                        <?php  
-
-    foreach ($visitconferences as $conference_key => $conference_value) {
-        $return_response = isJSON($conference_value->return_response) ? json_decode($conference_value->return_response):false;
-
-    
-       
-        ?>
-                                            <tr>
-                                                <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $conference_value->title; ?></a>
-                                                    <div class="fee_detail_popover" style="display: none">
-                                                        <?php
-if ($conference_value->description == "") {
-            ?>
-                                                            <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
-                                                            <?php
-} else {
-            ?>
-                                                            <p class="text text-info"><?php echo $conference_value->description; ?></p>
-                                                            <?php
-}
-        ?>
-                                                    </div>
-                                                </td>
-                                                <td class="mailbox-name">
-                                                <?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($conference_value->date)) ?>
-                                                </td>
-                                                 <td class="mailbox-name">
-                                                    <?php
-        $name = ($conference_value->create_by_surname == "") ? $conference_value->create_by_name : $conference_value->create_by_name . " " . $conference_value->create_by_surname ;       
-        if ($conference_value->staff_create_by_role_id == 7  ) {
-            if($superadmin_restriction == 'enabled'){
-                echo  $name. " (" . $conference_value->create_by_employee_id.')';
-            }
-        } else {
-
-            if(IsNullOrEmptyString($conference_value->create_by_name)){              
-              echo $this->lang->line('patient');              
-            }else{
-                echo  $name . " (" . $conference_value->create_by_role_name . ": " . $conference_value->create_by_employee_id . ")";                 
-            }           
-        }
-        ?>            
-        </td>
-                                                <td class="mailbox-name">
-                                                    <?php
-
-        $name = ($conference_value->create_for_surname == "") ? $conference_value->create_for_name : $conference_value->create_for_name . " " . $conference_value->create_for_surname;
-        echo $name . " (" . $conference_value->for_create_role_name . ": " . $conference_value->for_create_employee_id . ")";
-
-        ?>
-                                                </td>
-                                                <td class="mailbox-name">
-                                                     <?php
-
-        $name = ($conference_value->patient_name == "") ? $conference_value->patient_name : $conference_value->patient_name;
-        echo $name . " (" . $conference_value->patientid . ")";
-
-        ?>
-                                                </td>
-                                            <td class="mailbox-name">
-                                                    <?php if ($conference_value->status == 0) { ?>
-                                                        <span class="label label-warning font-w-normal"><?php echo $this->lang->line('awaited'); ?></span>
-                                                    <?php } ?>
-                                                    <?php if ($conference_value->status == 1) { ?>
-                                                        <span class="label label-danger font-w-normal"><?php echo $this->lang->line('cancelled'); ?></span>
-                                                    <?php } ?>
-                                                    <?php if ($conference_value->status == 2) { ?>
-                                                        <span class="label label-success font-w-normal"><?php echo $this->lang->line('finished'); ?></span>
-                                                    <?php } ?>
-                                            </td>
-                                            <td class="mailbox-date pull-right">
-                                                    <?php
- if($conference_value->status == 0 && $conference_value->live_consult_link){ 
-            ?>
-                                           <a href="<?php echo $return_response->join_url; ?>" class="btn btn-xs label-success p0"  data-id="<?php echo $conference_value->id; ?>">
-                                                      <span class="label" ><i class="fa fa-video-camera"></i> <?php echo $this->lang->line('join') ?></span>
-                                            <?php
-}
-        ?>
-                                                </td>
-                                            </tr>
-                                            <?php
-}
-}
-?>
-                                    </tbody>
-                                </table>
-                            </div> 
-                        </div> 
-                    </div>
-                </div>
-            </div>
-    </section>
-</div>
-<!-- Add Charges -->
-<!-- -->
-<!-- Add Diagnosis -->
-<!-- -->
-<div class="modal fade" id="addBillModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add') . " " . $this->lang->line('bill'); ?></h4>
-            </div>
-            <div class="modal-body pt0 pb0">
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
-                        <form id="add_billform" accept-charset="utf-8" enctype="multipart/form-data" method="post" class="ptt10">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('total_charges'); ?></label><small class="req"> *</small>
-                                        <input type="hidden" name="patient_id" id="patient_id" value="<?php echo $patient_id ?>" />
-                                        <input  name="total_charges" id="totalopdcharges"  type="text" class="form-control"  />
-                                        <span class="text-danger"><?php echo form_error('total_amount'); ?></span> 
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('total_payment'); ?></label><small class="req"> *</small>
-                                        <input  name="total_payment" id="total_payment"  placeholder="" type="text" class="form-control "  />
-                                        <input  name="opdidhide" id="opdidhide" value="" placeholder="" type="hidden" class="form-control "  />
-                                        <span class="text-danger"><?php echo form_error('total_payment'); ?></span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('gross_total'); ?></label>
-                                        <input type="text" name="gross_total" id="gross_total" placeholder=""  class="form-control"/>
-                                        <span class="text-danger"><?php echo form_error('gross_total'); ?></span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('discount'); ?></label>
-                                        <div class="" style="margin-top:-5px; border:0; outline:none;"><input  name="discount" id="discount" placeholder="" type="text"  class="form-control"   />
-                                            <span class="text-danger"><?php echo form_error('discount'); ?></span></div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('other') . " " . $this->lang->line('charge'); ?></label>
-                                        <input   name="other_charge" id="other_charge" placeholder="" type="text" class="form-control"  />
-
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('tax'); ?></label>
-                                        <input   name="tax" id="tax"  placeholder="" type="text" class="form-control"  />
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('net_amount'); ?></label>
-                                        <input   name="net_amount" id="net_amount"   placeholder="" type="text" class="form-control"  />
-                                    </div>                                   
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>    
+                            foreach ($visit_details as $key => $visit) { ?>
+                        <tr>
+                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('checkup_id') . $visit["id"]; ?></td>
+                            <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($visit['appointment_date'])); ?></td>
+                            <td><?php echo composeStaffNameByString($visit["name"], $visit["surname"], $visit['employee_id']); ?></td>
+                            <td><?php echo $visit['refference']; ?></td>
+                            <td><?php echo $visit['symptoms']; ?></td>
+                            <?php if (is_array($fields) || is_object($fields)) {
+                                foreach ($fields as $fv) { ?>
+                            <td><?php echo $visit[$fv->name]; ?></td>
+                            <?php } } ?>
+                            <td class="text-end">
+                                <?php if ($visit["prescription"] == 'yes') { ?>
+                                <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" onclick="view_prescription('<?php echo $visit["id"]; ?>')" title="<?php echo $this->lang->line('view_prescription'); ?>">
+                                    <i class="fas fa-file-prescription"></i>
+                                </a>
+                                <?php } ?>
+                                <?php if ($result['gender'] == 'Female' && $visit["is_antenatal"] == 1 && $visit['visit_details_id'] != '') { ?>
+                                <a href="#" onclick="viewantenatal('<?php echo $visit["id"]; ?>')" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('view_antenatal_finding'); ?>"><img width="15" src="<?php echo base_url() . 'uploads/patient_images/ultrasound-machine.png'; ?>"></a>
+                                <?php } ?>
+                                <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('show'); ?>" onclick="getRecord('<?php echo $visit["id"]; ?>')">
+                                    <i class="fa fa-reorder"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-</div>
-<!-- -->
-<div class="modal fade" id="viewModal" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg" role="document">
-        <div class="modal-content ">
+
+        <!-- ── Medication tab ────────────────────────────────────── -->
+        <div class="tab-pane card" id="medication">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('medication'); ?></h3>
+            </div>
+            <div class="download_label"><?php echo composePatientName($result['patient_name'], $result['pid']) . " " . $this->lang->line('opd_details'); ?></div>
+            <div class="opd-med-v2">
+                <?php if (!empty($medication)):
+                    $med_by_date = [];
+                    foreach ($medication as $mv) { $med_by_date[$mv['date']][] = $mv; }
+                    krsort($med_by_date);
+                    foreach ($med_by_date as $group_date => $group_items):
+                        $display_date = $this->customlib->YYYYMMDDTodateFormat($group_date);
+                        $day_name     = $this->lang->line(strtolower(date('l', strtotime($group_date))));
+                ?>
+                <div class="med-date-group">
+                    <div class="med-date-header">
+                        <div class="med-date-badge"><i class="fa fa-calendar"></i> <?php echo $display_date; ?></div>
+                        <span class="med-date-day"><?php echo $day_name; ?></span>
+                        <div class="med-date-line"></div>
+                    </div>
+                    <div class="med-col-header">
+                        <div class="med-name-col"><?php echo $this->lang->line('medicine_name'); ?></div>
+                        <div class="med-doses-label"><?php echo $this->lang->line('dose'); ?></div>
+                    </div>
+                    <?php foreach ($group_items as $med_value):
+                        foreach ($med_value['dosage'][$group_date] as $mkey => $mvalue): ?>
+                    <div class="med-row">
+                        <div class="med-name-col">
+                            <div class="med-name"><?php echo html_escape($mvalue['name']); ?></div>
+                        </div>
+                        <div class="med-doses">
+                            <?php foreach ($mvalue['dose_list'] as $didx => $dose): ?>
+                            <div class="dose-chip">
+                                <div class="dose-time"><i class="fa fa-clock-o"></i> <?php echo $this->customlib->getHospitalTime_Format($dose['time']); ?></div>
+                                <div class="dose-amount"><?php echo html_escape($dose['medicine_dosage'] . ' ' . $dose['unit']); ?></div>
+                                <?php if (!empty($dose['remark'])): ?><div class="dose-remark"><?php echo html_escape($dose['remark']); ?></div><?php endif; ?>
+                                <div class="dose-creator"><?php echo html_escape($dose['staff_name'] . ' ' . $dose['staff_surname'] . ' (' . $dose['staff_employee_id'] . ')'); ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; endforeach; ?>
+                </div>
+                <?php endforeach;
+                else: ?>
+                <div class="dataTables_empty">
+                    No data available in table <br><br>
+                    <img src="<?php echo base_url('backend/images/addnewitem.svg'); ?>" width="150" alt=""><br><br>
+                    <span class="text-success bolds"><i class="fa fa-arrow-left"></i> Search with different criteria.</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- ── Lab Investigation tab ─────────────────────────────── -->
+        <div class="tab-pane card" id="labinvestigation">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('lab_investigation'); ?></h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example" data-export-title="<?php echo $this->lang->line('opd_details'); ?>">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('test_name'); ?></th>
+                        <th><?php echo $this->lang->line('lab'); ?></th>
+                        <th><?php echo $this->lang->line('sample_collected'); ?></th>
+                        <th><?php echo $this->lang->line('expected_date'); ?></th>
+                        <th><?php echo $this->lang->line('approved_by'); ?></th>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php foreach ($investigations as $row) { ?>
+                        <tr>
+                            <td><?php echo $row['test_name']; ?><br><small>(<?php echo $row['short_name']; ?>)</small></td>
+                            <td><?php echo $this->lang->line($row['type']); ?></td>
+                            <td>
+                                <?php echo composeStaffNameByString($row['collection_specialist_staff_name'], $row['collection_specialist_staff_surname'], $row['collection_specialist_staff_employee_id']); ?><br>
+                                <?php echo $row['test_center']; ?><br>
+                                <?php if ($row['collection_date']) { echo $this->customlib->YYYYMMDDTodateFormat($row['collection_date']); } ?>
+                            </td>
+                            <td><?php if ($row['reporting_date']) { echo $this->customlib->YYYYMMDDTodateFormat($row['reporting_date']); } ?></td>
+                            <td>
+                                <?php echo composeStaffNameByString($row['approved_by_staff_name'], $row['approved_by_staff_surname'], $row['approved_by_staff_employee_id']); ?><br>
+                                <?php if ($row['parameter_update']) { echo $this->customlib->YYYYMMDDTodateFormat($row['parameter_update']); } ?>
+                            </td>
+                            <td class="text-end">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-outline-secondary view_report" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('show'); ?>"
+                                   data-record-id="<?php echo $row['report_id']; ?>" data-type-id="<?php echo $row['type']; ?>" data-test-id="<?php echo $row['test_name'] . ' (' . $row['short_name'] . ')'; ?>">
+                                    <i class="fa fa-reorder"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Operation Theatre tab ─────────────────────────────── -->
+        <div class="tab-pane card" id="operationtheatre">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('operation'); ?></h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example" data-export-title="<?php echo $this->lang->line('opd_visit_details'); ?>">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line("reference_no"); ?></th>
+                        <th><?php echo $this->lang->line("operation_date"); ?></th>
+                        <th><?php echo $this->lang->line("operation_name"); ?></th>
+                        <th><?php echo $this->lang->line("operation_category"); ?></th>
+                        <th><?php echo $this->lang->line("ot_technician"); ?></th>
+                        <?php if (is_array($fields_ot) || is_object($fields_ot)) {
+                            foreach ($fields_ot as $fv) { ?>
+                        <th><?php echo ucfirst($fv->name); ?></th>
+                        <?php } } ?>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php if (!empty($operation_theatre)) {
+                            foreach ($operation_theatre as $ot) { ?>
+                        <tr>
+                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('operation_theater_reference_no') . $ot["id"]; ?></td>
+                            <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($ot["date"], $this->customlib->getHospitalTimeFormat()); ?></td>
+                            <td><?php echo $ot["operation"]; ?></td>
+                            <td><?php echo $ot["category"]; ?></td>
+                            <td><?php echo $ot['ot_technician']; ?></td>
+                            <?php if (!empty($fields_ot)) {
+                                foreach ($fields_ot as $fv) {
+                                    $df = $ot[$fv->name];
+                                    if ($fv->type == "link") { $df = "<a href=" . $ot[$fv->name] . " target='_blank'>" . $ot[$fv->name] . "</a>"; } ?>
+                            <td><?php echo $df; ?></td>
+                            <?php } } ?>
+                            <td class="text-end">
+                                <a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary viewot" data-bs-toggle="tooltip" data-record-id="<?php echo $ot['id']; ?>" title="<?php echo $this->lang->line('show'); ?>">
+                                    <i class="fa fa-reorder"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Charges tab ───────────────────────────────────────── -->
+        <div class="tab-pane card" id="charges">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('charges'); ?></h3>
+            </div>
+            <div class="download_label"><?php echo composePatientName($result['patient_name'], $result['pid']) . " " . $this->lang->line('opd_details'); ?></div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('charge_name'); ?> / <?php echo $this->lang->line('charge_note'); ?></th>
+                        <th><?php echo $this->lang->line('charge_type'); ?></th>
+                        <th><?php echo $this->lang->line('charge_category'); ?></th>
+                        <th><?php echo $this->lang->line('qty'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('standard_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('tpa_charge') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('discount'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('tax'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php $tab_total = 0;
+                        if (!empty($charges_detail)) {
+                            foreach ($charges_detail as $cv) {
+                                $d_amt = amountFormat($cv['apply_charge'] * $cv['discount_percentage'] / 100);
+                                $t_amt = amountFormat(($cv['apply_charge'] - $d_amt) * $cv['tax'] / 100);
+                                $tab_total += $cv['amount']; ?>
+                        <tr>
+                            <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($cv['date'])); ?></td>
+                            <td class="text-capitalize"><?php echo $cv['name']; ?><div class="bill_item_footer text-muted"><?php echo $cv['note']; ?></div></td>
+                            <td class="text-capitalize"><?php echo $cv['charge_type']; ?></td>
+                            <td class="text-capitalize"><?php echo $cv['charge_category_name']; ?></td>
+                            <td class="text-capitalize"><?php echo $cv['qty']; ?></td>
+                            <td class="text-end"><?php echo $cv['standard_charge']; ?></td>
+                            <td class="text-end"><?php echo $cv['apply_charge']; ?></td>
+                            <td class="text-end"><?php echo !empty($cv['org_charge']) ? $cv['org_charge'] : '0.00'; ?></td>
+                            <td class="text-end"><?php echo $d_amt . " (" . $cv['discount_percentage'] . "%)"; ?></td>
+                            <td class="text-end"><?php echo $t_amt . " (" . $cv['tax'] . "%)"; ?></td>
+                            <td class="text-end"><?php echo $cv['amount']; ?></td>
+                            <td class="text-end">
+                                <a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary print_charge" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('print'); ?>" data-record-id="<?php echo $cv['id']; ?>">
+                                    <i class="fa fa-print"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                    <tr class="table-active fw-semibold">
+                        <td colspan="11" class="text-end"><?php echo $this->lang->line('total') . ": " . $currency_symbol . amountFormat($tab_total); ?><input type="hidden" id="charge_total" name="charge_total" value="<?php echo $tab_total; ?>"></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Payment tab ───────────────────────────────────────── -->
+        <div class="tab-pane card" id="payment">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('payment'); ?></h3>
+                <div class="box-tab-tools">
+                    <button type="button" class="btn btn-sm btn-primary" data-result_id="<?php echo $result['id']; ?>" data-bs-toggle="modal" data-bs-target="#payMoney">
+                        <i class="fa fa-plus"></i> <?php echo $this->lang->line('make_payment'); ?>
+                    </button>
+                </div>
+            </div>
+            <div class="download_label"><?php echo $this->lang->line('payment'); ?></div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('transaction_id'); ?></th>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('note'); ?></th>
+                        <th><?php echo $this->lang->line('payment_mode'); ?></th>
+                        <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php $tab_total_pay = 0;
+                        if (!empty($payment_details)) {
+                            foreach ($payment_details as $payment) {
+                                if (!empty($payment['amount'])) { $tab_total_pay += $payment['amount']; } ?>
+                        <tr>
+                            <td><?php echo $this->customlib->getPatientSessionPrefixByType('transaction_id') . $payment['id']; ?></td>
+                            <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($payment['payment_date'], $this->customlib->getHospitalTimeFormat()); ?></td>
+                            <td><?php echo $payment['note']; ?></td>
+                            <td><?php echo $this->lang->line(strtolower($payment['payment_mode'])) . "<br>";
+                                if ($payment['payment_mode'] == "Cheque") {
+                                    if ($payment['cheque_no'] != '') { echo $this->lang->line('cheque_no') . ": " . $payment['cheque_no'] . "<br>"; }
+                                    if ($payment['cheque_date'] != '' && $payment['cheque_date'] != '0000-00-00') { echo $this->lang->line('cheque_date') . ": " . $this->customlib->YYYYMMDDTodateFormat($payment['cheque_date']); }
+                                } ?></td>
+                            <td class="text-end"><?php echo $payment['amount']; ?></td>
+                            <td class="text-end">
+                                <?php if ($payment['payment_mode'] == "Cheque" && $payment['attachment'] != "") { ?>
+                                <a href="<?php echo site_url('patient/dashboard/downloadreceipt/' . $payment['id']); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a>
+                                <?php } ?>
+                                <a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary print_trans" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('print'); ?>" data-module-type="opd" data-record-id="<?php echo $payment['id']; ?>"><i class="fa fa-print"></i></a>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                    <?php if (!empty($payment_details)) { ?>
+                    <tr class="table-active fw-semibold">
+                        <td colspan="4" class="text-end"><?php echo $this->lang->line('total') . ": " . $currency_symbol . amountFormat($tab_total_pay); ?></td>
+                        <td></td><td></td>
+                    </tr>
+                    <?php } ?>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Live Consult tab ──────────────────────────────────── -->
+        <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+        <div class="tab-pane card" id="live_consult">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('live_consultation'); ?></h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover example">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line('consultation_title'); ?></th>
+                        <th><?php echo $this->lang->line('date'); ?></th>
+                        <th><?php echo $this->lang->line('created_by'); ?></th>
+                        <th><?php echo $this->lang->line('created_for'); ?></th>
+                        <th><?php echo $this->lang->line('patient'); ?></th>
+                        <th><?php echo $this->lang->line('status'); ?></th>
+                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php if (empty($visitconferences)) { ?>
+                        <tr><td colspan="7" class="dataTables_empty">
+                            No data available in table <br><br>
+                            <img src="<?php echo base_url('backend/images/addnewitem.svg'); ?>" width="150" alt=""><br><br>
+                            <span class="text-success bolds"><i class="fa fa-arrow-left"></i> Search with different criteria.</span>
+                        </td></tr>
+                        <?php } else {
+                            foreach ($visitconferences as $cv) {
+                            $return_response = isJSON($cv->return_response) ? json_decode($cv->return_response) : false; ?>
+                        <tr>
+                            <td>
+                                <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $cv->title; ?></a>
+                                <div class="fee_detail_popover d-none" >
+                                    <?php if ($cv->description == "") { ?>
+                                    <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
+                                    <?php } else { ?>
+                                    <p class="text text-info"><?php echo $cv->description; ?></p>
+                                    <?php } ?>
+                                </div>
+                            </td>
+                            <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($cv->date)); ?></td>
+                            <td><?php
+                                $n = ($cv->create_by_surname == "") ? $cv->create_by_name : $cv->create_by_name . " " . $cv->create_by_surname;
+                                if ($cv->staff_create_by_role_id == 7) {
+                                    if ($superadmin_restriction == 'enabled') { echo $n . " (" . $cv->create_by_employee_id . ")"; }
+                                } else {
+                                    if (IsNullOrEmptyString($cv->create_by_name)) { echo $this->lang->line('patient'); }
+                                    else { echo $n . " (" . $cv->create_by_role_name . ": " . $cv->create_by_employee_id . ")"; }
+                                } ?></td>
+                            <td><?php $n = ($cv->create_for_surname == "") ? $cv->create_for_name : $cv->create_for_name . " " . $cv->create_for_surname;
+                                echo $n . " (" . $cv->for_create_role_name . ": " . $cv->for_create_employee_id . ")"; ?></td>
+                            <td><?php $n = ($cv->patient_name == "") ? $cv->patient_name : $cv->patient_name;
+                                echo $n . " (" . $cv->patientid . ")"; ?></td>
+                            <td>
+                                <form class="chgstatus_form" method="POST" action="<?php echo site_url('admin/conference/chgstatus'); ?>">
+                                    <input type="hidden" name="conference_id" value="<?php echo $cv->id; ?>">
+                                    <select class="form-select form-select-sm chgstatus_dropdown" disabled name="chg_status">
+                                        <option value="0" <?php if ($cv->status == 0) echo "selected"; ?>><?php echo $this->lang->line('awaited'); ?></option>
+                                        <option value="1" <?php if ($cv->status == 1) echo "selected"; ?>><?php echo $this->lang->line('cancelled'); ?></option>
+                                        <option value="2" <?php if ($cv->status == 2) echo "selected"; ?>><?php echo $this->lang->line('finished'); ?></option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <?php if ($cv->status == 0 && $return_response) { ?>
+                                <a href="<?php echo $return_response->start_url; ?>" class="btn btn-sm btn-success" target="_blank"><i class="fa fa-sign-in"></i> <?php echo $this->lang->line('join'); ?></a>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php } ?>
+
+        <!-- ── Timeline tab ──────────────────────────────────────── -->
+        <div class="tab-pane card" id="timeline">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('timeline'); ?></h3>
+            </div>
+            <div class="timeline-header no-border">
+                <div id="timeline_list">
+                    <?php if (empty($timeline_list)): ?>
+                    <div class="dataTables_empty">
+                        No data available in table <br><br>
+                        <img src="<?php echo base_url('backend/images/addnewitem.svg'); ?>" width="150" alt=""><br><br>
+                        <span class="text-success bolds"><i class="fa fa-arrow-left"></i> Search with different criteria.</span>
+                    </div>
+                    <?php else: ?>
+                    <div class="rl-tl sh-pt-8" >
+                        <?php foreach ($timeline_list as $value): ?>
+                        <div class="rl-tl-item">
+                            <div class="rl-tl-dot"></div>
+                            <div class="rl-tl-card">
+                                <div class="rl-tl-meta">
+                                    <span class="rl-tl-date"><i class="far fa-clock me-1"></i><?php if ($value['timeline_date']) { echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($value['timeline_date'])); } ?></span>
+                                    <span class="rl-tl-actions">
+                                        <?php if (!empty($value['document'])): ?>
+                                        <a class="btn btn-sm btn-secondary" href="<?php echo base_url() . 'patient/dashboard/download_patient_timeline/' . $value['id']; ?>" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>"><i class="fa fa-download"></i></a>
+                                        <?php endif; ?>
+                                        <?php if ($value['generated_users_type'] == 'patient'): ?>
+                                        <a class="btn btn-sm btn-secondary" onclick="editTimeline('<?php echo $value['id']; ?>')" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
+                                        <a class="btn btn-sm btn-secondary text-danger" onclick="delete_timeline('<?php echo $value['id']; ?>')" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                                <div class="rl-tl-title"><?php echo html_escape($value['title']); ?></div>
+                                <?php if (!empty($value['description'])): ?><div class="rl-tl-body"><?php echo $value['description']; ?></div><?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Vitals tab ────────────────────────────────────────── -->
+        <div class="tab-pane card" id="vitals">
+            <div class="box-tab-header">
+                <h3 class="box-tab-title"><?php echo $this->lang->line('vitals'); ?></h3>
+            </div>
+            <div class="table_inner table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead><tr>
+                        <th><?php echo $this->lang->line("date"); ?></th>
+                        <?php foreach ($vital_list as $vl) { ?>
+                        <th><?php echo $vl["name"]; ?><br>(<?php echo $vl["reference_range"]; ?> <?php echo $vl["unit"]; ?>)</th>
+                        <?php } ?>
+                    </tr></thead>
+                    <tbody>
+                        <?php if (empty($patient_vital_date)) { ?>
+                        <tr><td colspan="<?php echo (is_array($vital_list) ? count($vital_list) : 0) + 1; ?>" class="dataTables_empty">
+                            No data available in table <br><br>
+                            <img src="<?php echo base_url('backend/images/addnewitem.svg'); ?>" width="150" alt=""><br><br>
+                            <span class="text-success bolds"><i class="fa fa-arrow-left"></i> Search with different criteria.</span>
+                        </td></tr>
+                        <?php } else {
+                            foreach ($patient_vital_date as $pvd) { ?>
+                        <tr>
+                            <th><?php $messure_date = date('Y-m-d', strtotime($pvd['messure_date']));
+                                echo $this->customlib->YYYYMMDDTodateFormat($pvd['messure_date']); ?></th>
+                            <?php foreach ($vital_list as $vl) {
+                                $vid = $vl["id"]; ?>
+                            <td class="tablehovericon">
+                                <div class="relative">
+                                    <?php foreach ($patientvital[$messure_date][$vid] as $pmi) {
+                                        echo $pmi['patient_range'];
+                                        $dt = $this->customlib->YYYYMMDDHisTodateFormat($pmi['messure_date'], $this->customlib->getHospitalTimeFormat());
+                                        echo " (" . substr($dt, 10) . ")<br>";
+                                    } ?>
+                                </div>
+                            </td>
+                            <?php } ?>
+                        </tr>
+                        <?php } } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /tab-content -->
+</div><!-- /opd-profile-wrap -->
+<?php } ?>
+
+<!-- ── Modals ────────────────────────────────────────────────────── -->
+<div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('close'); ?>" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('visit_details'); ?></h4>
+                <h5 class="modal-title"><?php echo $this->lang->line('visit_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">               
+            <div class="pup-scroll-area">
+                <div class="modal-body modal-background"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="viewModalsummary"  role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='edit_deletebill'>
-                    </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('discharged_summary'); ?></h4>
-            </div>
-            <div class="modal-body pt0 pb0">
-                <div id="reportdata"></div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- -->
-<div class="modal fade" id="prescriptionview" tabindex="-1" role="dialog" aria-labelledby="follow_up">
-    <div class="modal-dialog modal-mid modal-lg" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close"  data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='edit_deleteprescription'>
-
-                    </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('prescription'); ?></h4>
-            </div>
-            <div class="modal-body pt0 pb0" id="getdetails_prescription">
-            </div>
-        </div>
-    </div>
-</div>
-</form>
-<!-- -->
-
-<div id="payMoney" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content mx-2">
+<div class="modal fade sh-modal sh-modal-accent" id="prescriptionview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('make_payment') ?></h4>
+                <h5 class="modal-title"><?php echo $this->lang->line('prescription'); ?></h5>
+                <div id="edit_deleteprescription" class="d-flex align-items-center gap-2"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body modal-background" id="getdetails_prescription"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-accent" id="findingview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><?php echo $this->lang->line('antenatal_finding'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="getdetails_finding"></div>
+        </div>
+    </div>
+</div>
+
+<div id="payMoney" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><?php echo $this->lang->line('make_payment'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="payment_form" class="form-horizontal modal_payment" method="POST">
-                <div class="modal-body pb0">
-                    <div class="form-group">
-                        <label for="amount" class="col-sm-3 control-label"><?php echo $this->lang->line('payment_amount'); ?> (<?php echo $currency_symbol; ?>) <small class="req">*</small></label>
-                        <div class="col-sm-7">
-                            <input type="text" class="form-control" value="<?= amountFormat($total-$total_payment); ?>" name="deposit_amount" id="amount_total_paid" >
-                            <input type="hidden" class="form-control" value="<?= amountFormat($total-$total_payment); ?>" name="net_amount"  >
-                            <span id="deposit_amount_error" class="text text-danger"><?php echo form_error('deposit_amount'); ?></span>
-                            <input type="hidden" name="payment_for" value="opd">
-                            <input type="hidden" name="id" value="<?php echo $visit_details[0]["opd_details_id"]; ?>">
+                <div class="modal-body modal-background">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('make_payment'); ?></span>
+                        </div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="mb-3 col-12">
+                                    <label class="form-label"><?php echo $this->lang->line('payment_amount'); ?> (<?php echo $currency_symbol; ?>) <small class="req">*</small></label>
+                                    <input type="text" class="form-control" value="<?php echo amountFormat($total - $total_payment); ?>" name="deposit_amount" id="amount_total_paid">
+                                    <input type="hidden" name="net_amount" value="<?php echo amountFormat($total - $total_payment); ?>">
+                                    <input type="hidden" name="payment_for" value="opd">
+                                    <input type="hidden" name="id" value="<?php echo !empty($visit_details[0]["opd_details_id"]) ? $visit_details[0]["opd_details_id"] : ''; ?>">
+                                    <span id="deposit_amount_error" class="text-danger"><?php echo form_error('deposit_amount'); ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </form>
                 <div class="modal-footer">
-                    <button id="pay_button" class="btn btn-info pull-right"><?php echo $this->lang->line('add'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button id="pay_button" class="btn btn-primary"><?php echo $this->lang->line('add'); ?></button>
                 </div>
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="prescriptionview" tabindex="-1" role="dialog" aria-labelledby="follow_up">   
-    <div class="modal-dialog modal-mid modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close"  data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='edit_deleteprescription'>
-                
-                    </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('prescription'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="viewDetailReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_head"><?php echo $this->lang->line('lab_investigation_details'); ?></h5>
+                <div id="action_detail_report_modal"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0" id="getdetails_prescription">
-            </div>
-        </div>
-    </div>
-</div>
-<!--lab investigation modal-->
-<div class="modal fade" id="viewDetailReportModal" role="dialog" aria-labelledby="myModalLabel" >
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='action_detail_report_modal'>
-
-                   </div>
-                </div>
-                <h4 class="modal-title" id="modal_head"></h4> 
-            </div>
-            <div class="modal-body ptt10 pb0">
+            <div class="modal-body modal-background">
                 <div id="reportbilldata"></div>
             </div>
-        </div>
-    </div>    
-</div>
-<!-- end lab investigation modal-->
-<!-- -->
-
-<div class="modal fade" id="view_ot_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='action_detail_modal'></div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('operation_details'); ?></h4>
-            </div>
-            <div class="modal-body min-h-3">
-               <div id="show_ot_data"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="findingview" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='action_detail_modal'></div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('operation_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="view_ot_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><?php echo $this->lang->line('operation_details'); ?></h5>
+                <div id="action_detail_modal"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body min-h-3">
-               <div id="getdetails_finding"></div>
+            <div class="pup-scroll-area">
+                <div class="modal-body modal-background">
+                    <div id="show_ot_data"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
             </div>
         </div>
     </div>
-</div> 
+</div>
 
-<script type="text/javascript">
-    function viewantenatal(visitid) {
-        $.ajax({
-            url: '<?php echo base_url(); ?>patient/antenatal/getantenatalprescription/' + visitid ,
-            success: function (res) {
-                $("#getdetails_finding").html(res);
-            },
-            error: function () {
-                alert("<?php echo $this->lang->line('fail'); ?>")
-            }
-        }); 
-
-        holdModal('findingview');
-    }
-    
-    $('#payMoney').on('hidden.bs.modal', function () {
-        $(this).find('form').trigger('reset');
-    })
-
-    $(function () {
-        //Initialize Select2 Elements
-        $(function () {
-            var hash = window.location.hash;
-            hash && $('ul.nav-tabs a[href="' + hash + '"]').tab('show');
-
-            $('.nav-tabs a').click(function (e) {
-                $(this).tab('show');
-                var scrollmem = $('body').scrollTop();
-                window.location.hash = this.hash;
-                $('html,body').scrollTop(scrollmem);
-            });
-        });
-    });
-
-    $(function () {
-        $("#compose-textareas,#compose-textareanew").wysihtml5();
-    });   
-
-    $(document).on('click','.print_charge',function(){
-        var $this = $(this);
-        var record_id=$this.data('recordId')
-       $this.button('loading');
-      $.ajax({
-          url: '<?php echo base_url(); ?>patient/dashboard/printCharge',
-          type: "POST",
-          data:{'id':record_id,'type':'opd'},
-          dataType: 'json',
-           beforeSend: function() {
-                 $this.button('loading');      
-          },
-          success: function(res) {
-           popup(res.page);
-          },
-             error: function(xhr) { // if error occured
-          alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  $this.button('reset');
-              
-         },
-              complete: function() {
-                   $this.button('reset');                 
-             }
-      });
-  });
-
-    $(document).on('click','.print_trans',function(){
-        var $this = $(this);
-        var record_id=$this.data('recordId');
-        var module_type = $(this).attr('data-module-type');
-        $this.button('loading');
-        $.ajax({
-          url: '<?php echo base_url(); ?>patient/dashboard/printTransaction',
-          type: "POST",
-          data:{'id':record_id,'module_type':module_type},
-          dataType: 'json',
-           beforeSend: function() {
-                 $this.button('loading');      
-          },
-          success: function(res) {
-           popup(res.page);
-          },
-             error: function(xhr) { // if error occured
-          alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  $this.button('reset');
-              
-         },
-              complete: function() {
-                   $this.button('reset');                 
-             }
-        });
-  });    
-    
-    function getRecord(visitid) {      
-     
-       var $this = $(this);   
-        $.ajax({
-            url: base_url+'patient/dashboard/getopdrecheckupDetails',
-            type: "POST",
-            data: {visit_id: visitid},
-            dataType: 'json',
-               beforeSend: function() {             
-               
-               },
-            success: function (data) {                
-               
-                $('#viewModal .modal-body').html(data.page);
-				$('#viewModal').modal('show');
-
-            },
-
-             error: function(xhr) { // if error occured
-          alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
-               
-          },
-          complete: function() {
-                $this.button('reset');
-         
-          }
-        });
-}
-
-    function delete_record(opdid) {
-        if (confirm(<?php echo "'" . $this->lang->line('delete_conform') . "'"; ?>)) {
-            $.ajax({
-                url: '<?php echo base_url(); ?>admin/patient/deleteOPD',
-                type: "POST",
-                data: {opdid: opdid},
-                dataType: 'json',
-                success: function (data) {
-                    successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
-                    window.location.reload(true);
-                }
-            })
-        }
-    }
-
-    function delete_patient(id) {
-        if (confirm(<?php echo "'" . $this->lang->line('delete_conform') . "'"; ?>)) {
-            $.ajax({
-                url: '<?php echo base_url(); ?>admin/patient/deleteOPDPatient',
-                type: "POST",
-                data: {id: id},
-                dataType: 'json',
-                success: function (data) {
-                    successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
-                    window.location.href = '<?php echo base_url() ?>admin/patient/search';
-                }
-            })
-        }
-    }
-
-    function getEditRecord(id) {
-        $.ajax({
-            url: '<?php echo base_url(); ?>admin/patient/getDetails',
-            type: "POST",
-            data: {patient_id: id},
-            dataType: 'json',
-            success: function (data) {
-                $("#patientids").val(data.patient_unique_id);
-                $("#patient_names").val(data.patient_name);
-                $("#contacts").val(data.mobileno);
-                $("#emails").val(data.email);
-                $("#ages").val(data.age);
-                $("#address").text(data.address);
-                $("#months").val(data.month);
-                $("#guardian_names").val(data.guardian_name);
-                $("#amounts").val(data.amount);
-                $("#updateids").val(id);
-                $('select[id="blood_groups"] option[value="' + data.blood_group + '"]').attr("selected", "selected");
-                $('select[id="genders"] option[value="' + data.gender + '"]').attr("selected", "selected");
-                $('select[id="marital_statuss"] option[value="' + data.marital_status + '"]').attr("selected", "selected");
-                $('select[id="consultant_doctors"] option[value="' + data.cons_doctor + '"]').attr("selected", "selected");
-                holdModal('myModaledit');
-            },
-        });
-    }
-
-    $(document).ready(function (e) {
-        $("#formeditrecord").on('submit', (function (e) {
-            $("#formeditrecordbtn").button('loading');
-            e.preventDefault();
-            $.ajax({
-                url: '<?php echo base_url(); ?>admin/patient/update',
-                type: "POST",
-                data: new FormData(this),
-                dataType: 'json',
-                contentType: false,
-                cache: false,
-                processData: false,
-                success: function (data) {
-                    if (data.status == "fail") {
-                        var message = "";
-                        $.each(data.error, function (index, value) {
-                            message += value;
-                        });
-                        errorMsg(message);
-                    } else {
-                        successMsg(data.message);
-                        window.location.reload(true);
-                    }
-                    $("#formeditrecordbtn").button('reset');
-                },
-                error: function () {
-
-                }
-            });
-        }));
-    });
-	
-    function getRecord_id(id) {
-        $('#prescription_id').val(id);
-        $('#pres_patient_id').val(id);        
-        holdModal('add_prescription');
-    }
-
-    function view_prescription(visitid) {
-
-        $.ajax({
-            url: '<?php echo base_url(); ?>patient/prescription/getPrescription/' + visitid,
-            success: function (res) {
-                $("#edit_deleteprescription").html("<a href='#' data-toggle='tooltip' data-original-title='Print' onclick='printprescription(" + visitid + ")' id='print_id' data-toggle='modal' ><i class='fa fa-print'></i></a>");
-                $("#getdetails_prescription").html(res);
-                holdModal('prescriptionview');
-            },
-            error: function () {
-                alert("<?php echo $this->lang->line('fail'); ?>");
-            }
-        });
-    }
-
-    function getRevisitRecord(id) {
-        $.ajax({
-            url: '<?php echo base_url(); ?>admin/patient/getDetails',
-            type: "POST",
-            data: {patient_id: id},
-            dataType: 'json',
-            success: function (data) {
-                $("#revisit_id").val(data.patient_unique_id);
-                $("#revisit_name").val(data.patient_name);
-                $('#revisit_guardian').val(data.guardian_name);
-                $("#revisit_contact").val(data.mobileno);
-                $("#revisit_case").val(data.case_type);
-                $("#revisit_organisation").val(data.orgid);
-                $("#pid").val(id);
-                $("#revisit_allergies").val(data.known_allergies);
-                $("#revisit_refference").val(data.refference);
-                $("#revisit_email").val(data.email);
-                $("#revisit_amount").val(data.amount);
-                $("#standard_chargevisit").val(data.standard_charge);
-                $("#revisit_symptoms").val(data.symptoms);
-                $("#revisit_age").val(data.age);
-                $("#revisit_month").val(data.month);
-                $("#revisit_height").val(data.height);
-                $("#revisit_blood_group").val(data.blood_group);
-                $("#revisi_tax").val(data.tax);
-                $("#revisit_address").val(data.address);
-                $('select[id="revisit_old_patient"] option[value="' + data.old_patient + '"]').attr("selected", "selected");
-                $('select[id="revisit_doctor"] option[value="' + data.cons_doctor + '"]').attr("selected", "selected");
-                $('select[id="revisit_gender"] option[value="' + data.gender + '"]').attr("selected", "selected");
-                $('select[id="revisit_marital_status"] option[value="' + data.marital_status + '"]').attr("selected", "selected");
-                holdModal('revisitModal');
-            },
-        })
+<!-- ── JavaScript ────────────────────────────────────────────────── -->
+<script>
+    function toggleRellist(btn) {
+        btn.closest('.rellist').classList.toggle('collapsed');
     }
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
+        var el = document.getElementById(modalId);
+        if (el) { bootstrap.Modal.getOrCreateInstance(el, {backdrop: 'static', keyboard: false}).show(); }
+    }
+
+    function viewantenatal(visitid) {
+        $.ajax({
+            url: '<?php echo base_url(); ?>patient/antenatal/getantenatalprescription/' + visitid,
+            success: function (res) { $("#getdetails_finding").html(res); },
+            error: function () { alert("<?php echo $this->lang->line('fail'); ?>"); }
         });
+        holdModal('findingview');
+    }
+
+    function getRecord(visitid) {
+        $.ajax({
+            url: base_url + 'patient/dashboard/getopdrecheckupDetails',
+            type: "POST",
+            data: {visit_id: visitid},
+            dataType: 'json',
+            success: function (data) {
+                $('#viewModal .modal-body').html(data.page);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('viewModal')).show();
+            },
+            error: function () { alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>"); }
+        });
+    }
+
+    function view_prescription(visitid) {
+        $.ajax({
+            url: '<?php echo base_url(); ?>patient/prescription/getPrescription/' + visitid,
+            success: function (res) {
+                $("#edit_deleteprescription").html("<a href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('print'); ?>' onclick='printprescription(" + visitid + ")'><i class='fa fa-print'></i></a>");
+                $("#getdetails_prescription").html(res);
+                holdModal('prescriptionview');
+            },
+            error: function () { alert("<?php echo $this->lang->line('fail'); ?>"); }
+        });
+    }
+
+    function printprescription(visitid) {
+        $.ajax({
+            url: '<?php echo base_url(); ?>patient/prescription/getPrescription/' + visitid,
+            type: 'POST',
+            data: {payslipid: visitid, print: 'yes'},
+            success: function (result) { popup(result); }
+        });
+    }
+
+    function delete_record(opdid) {
+        if (confirm(<?php echo "'" . $this->lang->line('delete_confirm') . "'"; ?>)) {
+            $.ajax({
+                url: '<?php echo base_url(); ?>admin/patient/deleteOPD',
+                type: "POST", data: {opdid: opdid}, dataType: 'json',
+                success: function () {
+                    successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
+                    window.location.reload(true);
+                }
+            });
+        }
     }
 
     function deleteOpdPatientDiagnosis(patient_id, id) {
         if (confirm(<?php echo "'" . $this->lang->line('delete_confirm') . "'"; ?>)) {
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/patient/deleteOpdPatientDiagnosis/' + patient_id + '/' + id,
-                success: function (res) {
+                success: function () {
                     successMsg(<?php echo "'" . $this->lang->line('delete_message') . "'"; ?>);
                     window.location.reload(true);
                 }
-            })
+            });
         }
     }
 
     function deleteOpdPatientDiagnosis1(url, Msg) {
-        if (confirm(<?php echo "'" . $this->lang->line('delete_conform') . "'"; ?>)) {
+        if (confirm(<?php echo "'" . $this->lang->line('delete_confirm') . "'"; ?>)) {
             $.ajax({
                 url: url,
-                success: function (res) {
-                    successMsg(Msg);
-                    window.location.reload(true);
-                }
-            })
+                success: function () { successMsg(Msg); window.location.reload(true); }
+            });
         }
     }
 
-    var attr = {};
-
     function getMedicineName(id) {
-        console.log(id);
         var category_selected = $("#medicine_cat" + id).val();
-        var arr = category_selected.split('-');
-        var category_set = arr[0];
         div_data = '';
-        $("#search-query" + id).html("<option value='l'><?php echo $this->lang->line('loading') ?></option>");
+        $("#search-query" + id).html("<option value='l'><?php echo $this->lang->line('loading'); ?></option>");
         $('#search-query' + id).select2("val", 'l');
         $.ajax({
             type: "POST",
@@ -1944,222 +1297,124 @@ if ($conference_value->description == "") {
             data: {'medicine_category_id': category_selected},
             dataType: 'json',
             success: function (res) {
-                console.log(res);
-                $.each(res, function (i, obj)
-                {
-                    var sel = "";
-                    div_data += "<option value='" + obj.medicine_name + "'>" + obj.medicine_name + "</option>";
-                });
-                $("#search-query" + id).html("<option value=''>Select</option>");
+                $.each(res, function (i, obj) { div_data += "<option value='" + obj.medicine_name + "'>" + obj.medicine_name + "</option>"; });
+                $("#search-query" + id).html("<option value=''><?= $this->lang->line('select') ?></option>");
                 $('#search-query' + id).append(div_data);
                 $('#search-query' + id).select2("val", '');
-
-            }
-        });
-    };
-
-    function printprescription(visitid) {
-        var base_url = '<?php echo  base_url() ?>';
-        $.ajax({
-            url: base_url + 'patient/prescription/getPrescription/' + visitid ,
-            type: 'POST',
-            data: {payslipid: visitid, print: 'yes'},
-            success: function (result) {
-
-                $("#testdata").html(result);
-                popup(result);
-                
             }
         });
     }
 
-        $(document).ready(function (e) {
-                $("#add_payment").on('submit', (function (e) {
-                    e.preventDefault();
-                
-                $.ajax({
-                    url: '<?php echo base_url(); ?>patient/pay/opdpay',
-                    type: "POST",
-                    data: new FormData(this),
-                    dataType: 'json',
-                    contentType: false,
-                    cache: false,
-                    processData: false,
-               
-                     beforeSend: function(){
-                     $("#add_paymentbtn").button("loading");
-                     },
-                       success: function (data) {
-                        if (data.status == "fail") {
-                            var message = "";
-                            $.each(data.error, function (index, value) {
-                                message += value;
-                            });
-                            errorMsg(message);
-                        } else {
-                            successMsg(data.message);
-                            window.location.reload(true);
-                        }
-                        $("#add_paymentbtn").button("reset");
-                    },
-                    error: function () {
-                     $("#add_paymentbtn").button('reset');
-                    },
-      
-                    complete: function(){
-                     $("#add_paymentbtn").button('reset');
-                    }
-                });
-            }));
-        });
-  
-</script>
-<script>
-     $(document).on('click','.view_report',function(){
-         var id=$(this).data('recordId');
-         var lab=$(this).data('typeId');
-         var test = $(this).data('testId');
-         getinvestigationparameter(id,$(this),lab,test);
-       });
-
-        function getinvestigationparameter(id,btn_obj,lab,test){
-         var modal_view=$('#viewDetailReportModal');
-         var $this = btn_obj;   
-        $.ajax({
-            url: base_url+'patient/dashboard/getinvestigationparameter',
-            type: "POST",
-            data: {'id': id,'lab':lab},
-            dataType: 'json',
-            beforeSend: function() {
-              $this.button('loading');
-                modal_view.addClass('modal_loading');                
-               },
-            success: function (data) {                      
-             $('#viewDetailReportModal .modal-body').html(data.page);  
-             $('#viewDetailReportModal #action_detail_report_modal').html(data.actions);  
-             $('#viewDetailReportModal #modal_head').html(test);  
-             $('#viewDetailReportModal').modal({backdrop:'static'});
-              modal_view.removeClass('modal_loading');
-            },
-
-             error: function(xhr) { // if error occured
-             alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
-                modal_view.removeClass('modal_loading');
-           },
-           complete: function() {
-            $this.button('reset');
-                modal_view.removeClass('modal_loading');
-          
-           }
-        });  
-        }
-</script>
-<script type="text/javascript">
-    $(document).on('click','.print_bill',function(){
-      var id=$(this).data('recordId');
-      
-        var $this = $(this);
-        var lab   = $(this).data('typeId');
-        $.ajax({
-            url: base_url+'patient/dashboard/printpathoparameter',
-            type: "POST",
-            data: {'id': id,'lab':lab},
-            dataType: 'json',
-               beforeSend: function() {
-              $this.button('loading');
-               },
-            success: function (data) {       
-           popup(data.page);
-
-            },
-
-             error: function(xhr) { // if error occured
-          alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
-               
-      },
-      complete: function() {
-            $this.button('reset');     
-      }
-        });
-    });
-
-    $('#pay_button').click(function(){
-        var formdata = new FormData($('#payment_form')[0]);
-        $.ajax({
-            url: base_url+'patient/pay/checkvalidate',
-            type: "POST",
-            data: formdata,
-            dataType: 'json',
-            cache : false,
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                if (data.status == "fail") {
-                    var message = "";
-                    $.each(data.error, function (index, value) {
-                        message += value;
-                    });
-                    errorMsg(message);
-                } else {
-                    window.location.replace(base_url+'patient/pay');
-                }
-            }
-        })
-    })
-
-    $(document).on('click','.viewot',function(){
-        var $this = $(this);
-        var record_id=$this.data('recordId');
-          
+    $(document).on('click', '.print_charge', function () {
+        var $this = $(this), record_id = $this.data('recordId');
         $this.button('loading');
         $.ajax({
-              url: base_url+'patient/dashboard/otdetails',
-              type: "POST",
-              data: {ot_id: record_id},
-              dataType: 'json',
-               beforeSend: function() {
-                    $this.button('loading');
-              },
-              success: function(data) {
-                   $('#view_ot_modal').modal({backdrop:'static'});
-                   $('#show_ot_data').html(data.page);     
-                   $('#action_detail_modal').html(data.actions); 
-              },
-                 error: function(xhr) { // if error occured
-                 alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                      $this.button('reset');
-             },
-                  complete: function() {
-                       $this.button('reset');  
-                 }
+            url: '<?php echo base_url(); ?>patient/dashboard/printCharge',
+            type: "POST", data: {'id': record_id, 'type': 'opd'}, dataType: 'json',
+            success: function (res) { popup(res.page); },
+            error: function () { alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>"); $this.button('reset'); },
+            complete: function () { $this.button('reset'); }
         });
     });
 
-    $(document).on('click','.print_ot_bill',function(){
-         var $this = $(this);
-         var record_id=$this.data('recordId');
-       $this.button('loading');
-      $.ajax({
-          url: '<?php echo base_url(); ?>patient/dashboard/print_otdetails',
-          type: "POST",
-          data:{'id':record_id},
-          dataType: 'json',
-           beforeSend: function() {
-                 $this.button('loading');      
-          },
-          success: function(res) {
-           popup(res.page);
-          },
-             error: function(xhr) { // if error occured
-          alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  $this.button('reset');              
-         },
-              complete: function() {
-                   $this.button('reset');
-                 
-             }
-      });
-  });
+    $(document).on('click', '.print_trans', function () {
+        var $this = $(this), record_id = $this.data('recordId'), module_type = $(this).attr('data-module-type');
+        $this.button('loading');
+        $.ajax({
+            url: '<?php echo base_url(); ?>patient/dashboard/printTransaction',
+            type: "POST", data: {'id': record_id, 'module_type': module_type}, dataType: 'json',
+            success: function (res) { popup(res.page); },
+            error: function () { alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>"); $this.button('reset'); },
+            complete: function () { $this.button('reset'); }
+        });
+    });
+
+    $(document).on('click', '.view_report', function () {
+        var id = $(this).data('recordId'), lab = $(this).data('typeId'), test = $(this).data('testId');
+        getinvestigationparameter(id, $(this), lab, test);
+    });
+
+    function getinvestigationparameter(id, btn_obj, lab, test) {
+        var $this = btn_obj, modal_view = $('#viewDetailReportModal');
+        $.ajax({
+            url: base_url + 'patient/dashboard/getinvestigationparameter',
+            type: "POST", data: {'id': id, 'lab': lab}, dataType: 'json',
+            beforeSend: function () { $this.button('loading'); modal_view.addClass('modal_loading'); },
+            success: function (data) {
+                $('#viewDetailReportModal .modal-body').html(data.page);
+                $('#viewDetailReportModal #action_detail_report_modal').html(data.actions).find('a, button').not('.btn-close').addClass('btn btn-sm btn-light');
+                $('#viewDetailReportModal #modal_head').html(test);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('viewDetailReportModal'), {backdrop: 'static'}).show();
+                modal_view.removeClass('modal_loading');
+            },
+            error: function () { alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>"); $this.button('reset'); modal_view.removeClass('modal_loading'); },
+            complete: function () { $this.button('reset'); modal_view.removeClass('modal_loading'); }
+        });
+    }
+
+    $(document).on('click', '.viewot', function () {
+        var $this = $(this), record_id = $this.data('recordId');
+        $this.button('loading');
+        $.ajax({
+            url: base_url + 'patient/dashboard/otdetails',
+            type: "POST", data: {ot_id: record_id}, dataType: 'json',
+            success: function (data) {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('view_ot_modal'), {backdrop: 'static'}).show();
+                $('#show_ot_data').html(data.page);
+                $('#action_detail_modal').html(data.actions).find('a, button').not('.btn-close').addClass('btn btn-sm btn-light');
+            },
+            error: function () { alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>"); $this.button('reset'); },
+            complete: function () { $this.button('reset'); }
+        });
+    });
+
+    $('#payMoney').on('hidden.bs.modal', function () { $(this).find('form').trigger('reset'); });
+
+    $('#pay_button').click(function () {
+        $.ajax({
+            url: base_url + 'patient/pay/checkvalidate',
+            type: "POST", data: new FormData($('#payment_form')[0]),
+            dataType: 'json', cache: false, processData: false, contentType: false,
+            success: function (data) {
+                if (data.status == "fail") {
+                    var message = ""; $.each(data.error, function (i, v) { message += v; }); errorMsg(message);
+                } else {
+                    window.location.replace(base_url + 'patient/pay');
+                }
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        $("#add_payment").on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '<?php echo base_url(); ?>patient/pay/opdpay',
+                type: "POST", data: new FormData(this), dataType: 'json',
+                contentType: false, cache: false, processData: false,
+                beforeSend: function () { $("#add_paymentbtn").button("loading"); },
+                success: function (data) {
+                    if (data.status == "fail") {
+                        var message = ""; $.each(data.error, function (i, v) { message += v; }); errorMsg(message);
+                    } else {
+                        successMsg(data.message); window.location.reload(true);
+                    }
+                    $("#add_paymentbtn").button("reset");
+                },
+                error: function () { $("#add_paymentbtn").button('reset'); },
+                complete: function () { $("#add_paymentbtn").button('reset'); }
+            });
+        });
+
+        /* BS5 tab hash support */
+        var hash = window.location.hash;
+        if (hash) {
+            var t = document.querySelector('.ph-tabs a[href="' + hash + '"]');
+            if (t) { bootstrap.Tab.getOrCreateInstance(t).show(); }
+        }
+        $(document).on('shown.bs.tab', '.ph-tabs a[data-bs-toggle="tab"]', function (e) {
+            history.replaceState(null, null, $(e.target).attr('href'));
+        });
+    });
 </script>
+</div>

@@ -7,15 +7,15 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <section class="content">
         <div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('operation_theatre'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0 titlefix"> <?php echo $this->lang->line('operation_theatre'); ?></h3>
 
-                    </div><!-- /.box-header -->
+                    </div><!-- /.card-header -->
                     <?php
                     if (isset($resultlist)) {
                     ?>
-                        <div class="box-body">
+                        <div class="card-body">
                             <div class="download_label"><?php echo $this->lang->line('operation_theatre'); ?></div>
                             <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%">
                                 <thead>
@@ -29,7 +29,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         <th><?php echo $this->lang->line('operation') . " " . $this->lang->line('type'); ?></th>
                                         <th><?php echo $this->lang->line('consultant'); ?></th>
                                         <th><?php echo $this->lang->line('operation') . " " . $this->lang->line('date'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('applied') . " " . $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
+                                        <th class="text-right"><?php echo $this->lang->line('applied_charge') . " (" . $currency_symbol . ")"; ?></th>
                                         <th class="text-right"><?php echo $this->lang->line('action') ?></th>
                                     </tr>
                                 </thead>
@@ -58,7 +58,7 @@ if (empty($resultlist)) {
                                                 <td class="text-right">
                                                     <a href="#"
                                                        onclick="viewDetailBill('<?php echo $optpatient['id']; ?>')"
-                                                       class="btn btn-default btn-xs"  data-toggle="tooltip"
+                                                       class="btn btn-default btn-sm"  data-bs-toggle="tooltip"
                                                        title="<?php echo $this->lang->line('print'); ?>" >
                                                         <i class="fa fa-print"></i>
                                                     </a>
@@ -83,12 +83,12 @@ $count++;
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content modal-media-content">
             <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('close'); ?>" data-bs-dismiss="modal">&times;</button>
                 <div class="modalicon">
                     <div id='edit_deletebill'>
-                        <a href="#"  data-target="#edit_prescription"  data-toggle="modal" title="" data-original-title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
+                        <a href="#"  data-bs-target="#edit_prescription" data-bs-toggle="modal" title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
 
-                        <a href="#" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
+                        <a href="#" data-bs-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
                     </div>
                 </div>
                 <h4 class="modal-title"><?php echo $this->lang->line('bill') . " " . $this->lang->line('details'); ?></h4>
@@ -104,15 +104,15 @@ $count++;
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content modal-media-content">
             <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
                 <div class="modalicon">
                     <div id='edit_delete'>
 
-                        <a href="#" data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ><i class="fa fa-pencil"></i></a>
-                        <a href="#" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
+                        <a href="#" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ><i class="fa fa-pencil"></i></a>
+                        <a href="#" data-bs-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
                     </div>
                 </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('operation') . " " . $this->lang->line('information'); ?></h4>
+                <h4 class="modal-title"><?php echo $this->lang->line('operation_information'); ?></h4>
             </div>
             <div class="modal-body pt0 pb0">
                 <div class="row">
@@ -183,12 +183,12 @@ $count++;
                                             <td><span id='cons_doctors'></span></td>
                                         </tr>
                                         <tr>
-                                            <th><?php echo $this->lang->line('assistent') . " " . $this->lang->line('consultant') . " " . '1'; ?></th>
+                                            <th><?php echo $this->lang->line('assistant_consultant') . " " . '1'; ?></th>
                                             <td><span id="ass_consultants_1"></span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><?php echo $this->lang->line('assistent') . " " . $this->lang->line('consultant') . " " . '2'; ?></th>
+                                            <th><?php echo $this->lang->line('assistant_consultant') . " " . '2'; ?></th>
                                             <td><span id='ass_consultants_2'></span></td>
                                         </tr>
                                         <tr>
@@ -197,16 +197,16 @@ $count++;
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><?php echo $this->lang->line('anaethesia') . " " . $this->lang->line('type'); ?></th>
+                                            <th><?php echo $this->lang->line('anesthesia_type'); ?></th>
                                             <td><span id='anaethesia_types'></span></td>
                                         </tr>
                                         <tr>
-                                            <th><?php echo $this->lang->line('ot') . " " . $this->lang->line('technician'); ?></th>
+                                            <th><?php echo $this->lang->line('ot_technician') ; ?></th>
                                             <td><span id="ot_techniciandata"></span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><?php echo $this->lang->line('ot') . " " . $this->lang->line('assistent'); ?></th>
+                                            <th><?php echo $this->lang->line('ot_assistant'); ?></th>
                                             <td><span id='ot_assistent'></span></td>
                                         </tr>
                                         <tr>
@@ -226,7 +226,7 @@ $count++;
                                                 <span id="description"></span>
                                             </td>
                                         </tr>
-                                        <th><?php echo $this->lang->line('applied') . " " . $this->lang->line('charge') . ' (' . $currency_symbol . ')'; ?></th>
+                                        <th><?php echo $this->lang->line('applied_charge') . ' (' . $currency_symbol . ')'; ?></th>
                                         <td><span id='apply_chargeview'></span> (<span id="stdcharge"></span>)
                                             </tr>
                                     </table>
@@ -249,7 +249,7 @@ $count++;
             data: {id: id},
             success: function (data) {
                 $('#reportdataot').html(data);
-                $('#edit_deletebill').html("<a href='#' data-toggle='tooltip' onclick='printData(" + id + ")'   data-original-title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a> ");
+                $('#edit_deletebill').html("<a href='#' data-bs-toggle='tooltip' onclick='printData(" + id + ")'   data-original-title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a> ");
                 holdModal('viewModalBill');
             },
         });

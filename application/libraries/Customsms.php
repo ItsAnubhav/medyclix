@@ -6,6 +6,8 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 class Customsms {
+	public $template_id;
+
 
     private $_CI;
     var $AUTH_KEY = ""; //your AUTH_KEY here

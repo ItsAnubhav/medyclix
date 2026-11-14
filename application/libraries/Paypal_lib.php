@@ -47,6 +47,8 @@ if (!defined('BASEPATH'))
  */
 // ------------------------------------------------------------------------
 class paypal_lib {
+	public $paypal_url;
+
 
     var $last_error;   // holds the last error encountered
     var $ipn_log;    // bool: log IPN results to text file?

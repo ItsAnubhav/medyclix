@@ -1,8 +1,6 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content" style="position: relative;">
-        <div class="row">
+    <div class="row">
             <div class="col-md-12">
                 <!-- general form elements -->
                 <div id="frame">
@@ -14,7 +12,7 @@
                         <div id="search">
                             <label><?php echo $this->lang->line('chat_system'); ?></label>  
                             <div id="bottom-bar">
-                                <button id="addcontact" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus"></i></button>
+                                <button id="addcontact" data-bs-toggle="modal" data-bs-target="#myModal"><i class="fa fa-plus"></i></button>
 
                             </div>
                         </div>
@@ -40,28 +38,32 @@
                         </div>
                     </div>
                 </div>
-            </div><!-- /.box-header -->
-        </div><!-- /.box-header -->
-    </section>
-</div><!-- /.box-body -->
+            </div><!-- /.card-header -->
+        </div><!-- /.card-header --><!-- /.card-body -->
 </div>
 </div><!--/.col (left) -->
 <!-- right column -->
 </div>
-</section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+
+
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
+<div id="myModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="display: block; width: 600px; max-width: 92vw;">
         <!-- Modal content-->
         <form id="addUser" action="<?php echo site_url('admin/chat/adduser') ?>" method="POST">
-            <div class="modal-content mx-2">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title"><?php echo $this->lang->line('add_contact'); ?><small style="color:red;"> *</small></h4>
+                    <h5 class="modal-title"><?php echo $this->lang->line('add_contact'); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="pup-scroll-area">
                 <div class="modal-body">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                        </div>
+                    <div class="p-2">
                     <div id="custom-search-input">
                         <div class="input-group col-md-12">
                             <input type="text" class="search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
@@ -69,7 +71,10 @@
                     </div>
                     <div class="usersearchlist">
                     </div>
+                    </div><!--./p-2-->
+                    </div><!--./sh-form-card-->
                 </div>
+                </div><!--./pup-scroll-area-->
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary btn-sm"  data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></button>
                 </div>
@@ -80,11 +85,7 @@
 
 <script>  
     $(document).ready(function (e) {
-        $('#myModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal');
     });
 </script>    
 <script>    
@@ -230,7 +231,7 @@ $(document).on('input','.chat_input',function(){
                 $this.addClass('active').siblings().removeClass('active');
             },
             success: function (data) {
-                $this.find('span.notification_count').css("display", "none");
+                $this.find('span.notification_count').addClass("d-none");
                 $(".messages ul").html(data.page);
                 $("input[name='chat_connection_id']").val(data.chat_connection_id);
                 $("input[name='chat_to_user']").val(data.chat_to_user);
@@ -359,7 +360,7 @@ $(document).on('input','.chat_input',function(){
             dataType: "JSON",
 
             beforeSend: function () {
-                $button.button('loading');
+                $button.btnLoading();
 
             },
             success: function (data) {
@@ -396,16 +397,16 @@ $(document).on('input','.chat_input',function(){
                     clearInterval(interval);
                     interval = setInterval(getChatsUpdates, 2000);
 
-                    $('#myModal').modal('hide');
+                    shModal('myModal').hide();
                     successMsg(data.message);
                 }
-                $button.button('reset');
+                $button.btnReset();
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                $button.button('reset');
+                $button.btnReset();
             },
             complete: function (data) {
-                $button.button('reset');
+                $button.btnReset();
             }
         });
 
@@ -434,7 +435,7 @@ $(document).on('input','.chat_input',function(){
         newli += "<p class='preview'>"+new_connection_msg+"</p>";
         newli += "</div>";
         newli += "</div>";
-        newli += "<span class='chatbadge notification_count' style='display: none;'>0</span>";
+        newli += "<span class='chatbadge notification_count d-none'>0</span>";
         newli += "</li>";
         return newli;
     }
@@ -453,7 +454,7 @@ $(document).on('input','.chat_input',function(){
                 if (data.notifications.length > 0) {
                     $.each(data.notifications, function (index, value) {
                         if (active_user.data('chatConnectionId') != value.chat_connection_id) {
-                            $('#contacts').find("ul li[data-chat-connection-id='" + value.chat_connection_id + "']").find('span.notification_count').text(value.no_of_notification).css("display", "block");
+                            $('#contacts').find("ul li[data-chat-connection-id='" + value.chat_connection_id + "']").find('span.notification_count').text(value.no_of_notification).removeClass("d-none");
                         }
                     });
                 }

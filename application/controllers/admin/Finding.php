@@ -24,6 +24,7 @@ class Finding extends Admin_Controller
         $data['findingresult']     = $finding_result;
         $findingresult             = $this->finding_model->getfindingcategory();
         $data['findingresulttype'] = $findingresult;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/finding/findinglist', $data);
         $this->load->view('layout/footer', $data);
@@ -40,6 +41,7 @@ class Finding extends Admin_Controller
         $data['title']         = $this->lang->line('finding_type_list');
         $finding_result        = $this->finding_model->getfindingcategory();
         $data['findingresult'] = $finding_result;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/finding/categorylist', $data);
         $this->load->view('layout/footer', $data);
@@ -50,6 +52,7 @@ class Finding extends Admin_Controller
         $data['title']    = $this->lang->line('finding_head_list');
         $category         = $this->finding_model->get($id);
         $data['category'] = $category;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/finding/findingShow', $data);
         $this->load->view('layout/footer', $data);
@@ -82,13 +85,14 @@ class Finding extends Admin_Controller
         $data['categorylist'] = $category_result;
         $this->form_validation->set_rules('finding', $this->lang->line('finding_head'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'setup';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/finding/findingList', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'name'        => $this->input->post('name'),
-                'description' => $this->input->post('description'),
+                'name'        => $this->input->post('name', TRUE),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->finding_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('income_head_added_successfully') . '</div>');
@@ -110,9 +114,9 @@ class Finding extends Admin_Controller
         } else {
 
             $data = array(
-                'name'                => $this->input->post('name'),
-                'finding_category_id' => $this->input->post('type'),
-                'description'         => $this->input->post('description'),
+                'name'                => $this->input->post('name', TRUE),
+                'finding_category_id' => $this->input->post('type', TRUE),
+                'description'         => $this->input->post('description', TRUE),
             );
             $this->finding_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('new_income_head_successfully_inserted'));
@@ -145,7 +149,7 @@ class Finding extends Admin_Controller
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                  
                 
-                $data  = array('category' => $this->input->post('finding_category_'.$row_values));
+                $data  = array('category' => $this->input->post('finding_category_'.$row_values, TRUE));
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
                 $this->finding_model->addfindingtype($data);
 
@@ -178,9 +182,9 @@ class Finding extends Admin_Controller
         } else {
             $data = array(
                 'id'                  => $id,
-                'name'                => $this->input->post('name'),
-                'finding_category_id' => $this->input->post('type'),
-                'description'         => $this->input->post('description'),
+                'name'                => $this->input->post('name', TRUE),
+                'finding_category_id' => $this->input->post('type', TRUE),
+                'description'         => $this->input->post('description', TRUE),
             );
             $this->finding_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('finding_head_successfully_updated'));
@@ -204,7 +208,7 @@ class Finding extends Admin_Controller
         } else {
             $data = array(
                 'id'       => $id,
-                'category' => $this->input->post('finding_category'),
+                'category' => $this->input->post('finding_category', TRUE),
             );
             $this->finding_model->addfindingtype($data);
 

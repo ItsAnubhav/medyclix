@@ -1,43 +1,42 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender_Patient();
-?> 
-<div class="content-wrapper">
-  <!-- Main content -->
-  <section class="content">
-    <div class="row">
+?>
+<div class="row">
       <div class="col-md-12">
-        <div class="box box-primary">
-			<ul class="nav nav-tabs navlistscroll">             
+        <div class="card">
+			<div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-0 px-3">
+				<ul class="nav nav-pills sh-segmented-tabs" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab_1" type="button" role="tab"><?php echo $this->lang->line("todays_appointment"); ?></button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab_2" type="button" role="tab"><?php echo $this->lang->line("upcoming_appointment"); ?></button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab_3" type="button" role="tab"><?php echo $this->lang->line("old_appointment"); ?></button>
+					</li>
+				</ul>
+				<?php if ($this->rbac->hasPrivilege('appointment', 'can_add')) { ?>
+				<a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm addappointment"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
+				<?php } ?>
+			</div>
 
-				<li class="active"><a href="#tab_1" data-toggle="tab" ><?php echo $this->lang->line("todays_appointment"); ?></a></li>				
-				<li><a href="#tab_2" data-toggle="tab" ><?php echo $this->lang->line("upcoming_appointment"); ?></a></li>
-				<li><a href="#tab_3" data-toggle="tab" ><?php echo $this->lang->line("old_appointment"); ?></a></li>		 
-							
-            </ul>
-		  
           <div class="tab-content">
-            <div class="tab-pane active relative" id="tab_1">  
-				
-				<div class="topmius35 topmius-sm-0">
-                  <?php if ($this->rbac->hasPrivilege('appointment', 'can_add')) {?>
-					<a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addappointment"> <i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
-					<?php }?>
-				</div> 
+            <div class="tab-pane show active" id="tab_1">
 			
-				<div class="box-body">
+				<div class="card-body">
            <div class="table-responsive">
               <table class="table table-striped table-bordered table-hover ajaxlisttodays" data-export-title="<?php echo $this->lang->line('appointment_billing'); ?>" >
                 <thead>
                   <tr>
-                    <th><?php echo $this->lang->line('patient_name'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_no'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_date'); ?></th>
-                    <th width="10%"><?php echo $this->lang->line('phone'); ?></th>
-                    <th><?php echo $this->lang->line('gender'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('patient_name'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('appointment_no'); ?></th>
+                    <th><?php echo $this->lang->line('date'); ?></th>
+                    <th width="90px"><?php echo $this->lang->line('phone'); ?></th>
+                    <th width="80px"><?php echo $this->lang->line('gender'); ?></th>
                     <th><?php echo $this->lang->line('doctor'); ?></th>
                     <th><?php echo $this->lang->line('source'); ?></th>
-                    <th><?php echo $this->lang->line('created_by'); ?></th>
                     <th><?php echo $this->lang->line('priority'); ?></th>
                     <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                     <th><?php echo $this->lang->line('live_consultant'); ?></th>                    
@@ -51,10 +50,12 @@ $genderList      = $this->customlib->getGender_Patient();
                     } 
                     }
                     ?>
+					<th><?php echo $this->lang->line('created_by'); ?></th>
+
+                    <th><?php echo $this->lang->line('status'); ?></th>
                     <th><?php echo $this->lang->line('fees')." (".$currency_symbol.")"; ?></th>
                     <th><?php echo $this->lang->line('discount')." (%)"; ?></th>
                     <th><?php echo $this->lang->line('paid')." (".$currency_symbol.")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('status'); ?></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -64,27 +65,20 @@ $genderList      = $this->customlib->getGender_Patient();
 			</div>  
 			</div>
 			
-			<div class="tab-pane relative" id="tab_2">  
-				
-				<div class="topmius35 topmius-sm-0">
-                  <?php if ($this->rbac->hasPrivilege('appointment', 'can_add')) {?>
-					<a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addappointment"> <i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
-					<?php }?>
-				</div> 
+			<div class="tab-pane" id="tab_2">
 			
-				<div class="box-body">
+				<div class="card-body">
            <div class="table-responsive">
               <table class="table table-striped table-bordered table-hover ajaxlistupcoming" data-export-title="<?php echo $this->lang->line('appointment_billing'); ?>" >
                 <thead>
                   <tr>
-                    <th><?php echo $this->lang->line('patient_name'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_no'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_date'); ?></th>
-                    <th width="10%"><?php echo $this->lang->line('phone'); ?></th>
-                    <th><?php echo $this->lang->line('gender'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('patient_name'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('appointment_no'); ?></th>
+                    <th><?php echo $this->lang->line('date'); ?></th>
+                    <th width="90px"><?php echo $this->lang->line('phone'); ?></th>
+                    <th width="80px"><?php echo $this->lang->line('gender'); ?></th>
                     <th><?php echo $this->lang->line('doctor'); ?></th>
                     <th><?php echo $this->lang->line('source'); ?></th>
-                    <th><?php echo $this->lang->line('created_by'); ?></th>
                     <th><?php echo $this->lang->line('priority'); ?></th>
                     <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                     <th><?php echo $this->lang->line('live_consultant'); ?></th>                    
@@ -98,10 +92,11 @@ $genderList      = $this->customlib->getGender_Patient();
                     } 
                     }
                     ?>
+					<th><?php echo $this->lang->line('created_by'); ?></th>
+                    <th><?php echo $this->lang->line('status'); ?></th>
                     <th><?php echo $this->lang->line('fees')." (".$currency_symbol.")"; ?></th>
                     <th><?php echo $this->lang->line('discount')." (%)"; ?></th>
                     <th><?php echo $this->lang->line('paid')." (".$currency_symbol.")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('status'); ?></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -111,27 +106,20 @@ $genderList      = $this->customlib->getGender_Patient();
 			</div>  
 			</div>
 			
-			<div class="tab-pane relative" id="tab_3">  
-				
-				<div class="topmius35 topmius-sm-0">
-                  <?php if ($this->rbac->hasPrivilege('appointment', 'can_add')) {?>
-					<a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addappointment"> <i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
-					<?php }?>
-				</div> 
+			<div class="tab-pane" id="tab_3">
 			
-				<div class="box-body">
+				<div class="card-body">
            <div class="table-responsive">
               <table class="table table-striped table-bordered table-hover ajaxlistold" data-export-title="<?php echo $this->lang->line('appointment_billing'); ?>" >
                 <thead>
                   <tr>
-                    <th><?php echo $this->lang->line('patient_name'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_no'); ?></th>
-                    <th><?php echo $this->lang->line('appointment_date'); ?></th>
-                    <th width="10%"><?php echo $this->lang->line('phone'); ?></th>
-                    <th><?php echo $this->lang->line('gender'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('patient_name'); ?></th>
+                    <th width="120px"><?php echo $this->lang->line('appointment_no'); ?></th>
+                    <th><?php echo $this->lang->line('date'); ?></th>
+                    <th width="90px"><?php echo $this->lang->line('phone'); ?></th>
+                    <th width="80px"><?php echo $this->lang->line('gender'); ?></th>
                     <th><?php echo $this->lang->line('doctor'); ?></th>
                     <th><?php echo $this->lang->line('source'); ?></th>
-                    <th><?php echo $this->lang->line('created_by'); ?></th>
                     <th><?php echo $this->lang->line('priority'); ?></th>
                     <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                     <th><?php echo $this->lang->line('live_consultant'); ?></th>                    
@@ -145,11 +133,11 @@ $genderList      = $this->customlib->getGender_Patient();
                     } 
                     }
                     ?>
-                   
+                    <th><?php echo $this->lang->line('created_by'); ?></th>
+                    <th><?php echo $this->lang->line('status'); ?></th>
                     <th><?php echo $this->lang->line('fees')." (".$currency_symbol.")"; ?></th>
                     <th><?php echo $this->lang->line('discount')." (%)"; ?></th>
                     <th><?php echo $this->lang->line('paid')." (".$currency_symbol.")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('status'); ?></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,211 +151,143 @@ $genderList      = $this->customlib->getGender_Patient();
         </div>
       </div>
     </div>
-  </section>
-</div>
 
-<div class="modal fade" id="myModal" aria-labelledby="myModalLabel">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content modal-media-content mx-2">
-      <div class="modal-header modal-media-header">
-        <button type="button" class="close pt4" data-dismiss="modal">&times;</button>
-        <div class="row">
-          <div class="col-sm-6 col-xs-6">
-            <div class="row">
-                <div class="col-lg-9 col-md-9 col-sm-7 col-xs-9">
-                    <div class="p-2 select2-full-width">
-                        <select class="form-control patient_list_ajax" form="formadd" id="addpatient_id" name='patient_id'>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-3 col-sm-5 col-xs-1">
-                    <div class="p-2">
-                       <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) {?>
-                        <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a>
-                        <?php }?>
-                    </div>    
-                </div>     
-            </div>
-          </div><!--./col-sm-8-->
-        </div><!-- ./row -->
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_appointment'); ?></h5>
+        <div class="d-flex align-items-center gap-2 ms-auto me-2">
+          <div class="sh-header-select-wrap">
+            <select class="form-control form-control-sm patient_list_ajax" form="formadd" id="addpatient_id" name="patient_id"></select>
+          </div>
+          <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+          <a data-bs-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient sh-newpatient-btn"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
+          <?php } ?>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="formadd" accept-charset="utf-8" method="post">
-        <div class="scroll-area">
-        <div class="modal-body pb0">
-          <div class="row">
-            <div class="col-lg-12 col-md-12 col-sm-12">
-              <div class="row">
-                <div class="col-sm-3">
-                  <div class="form-group">
-                    <label for="exampleInputFile"><?php echo $this->lang->line('doctor'); ?></label>
-                    <small class="req"> *</small>
-                    <div>
-                      <select class="form-control select2 doctor_select2" name="doctorid" onchange="getDoctorShift(this);getDoctorFees(this)" <?php
-                        if ((isset($disable_option)) && ($disable_option == true)) {
-                        echo 'disabled';
-                        }
-                        ?> name='doctor' id="doctorid" style="width:100%" >
-                        <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select') ?></option>
-                        <?php foreach ($doctors as $dkey => $dvalue) {
-                        ?>
-                        <option value="<?php echo $dvalue["id"]; ?>" <?php
-                        if ($doctor_select == $dvalue['id']) {
-                        echo 'selected';
-                        }
-                        ?>><?php echo $dvalue["name"] . " " . $dvalue["surname"] ." (". $dvalue["employee_id"].")" ?></option>
-                        <?php }?>
-                      </select>
-                      <input type="hidden" name="charge_id" value="" id="charge_id" />
-                    </div>
+        <div class="pup-scroll-area">
+          <div class="modal-body">
+
+            <div class="sh-form-card">
+              <div class="sh-card-header">
+                <span class="sh-card-header-title"><?php echo $this->lang->line('appointment_details'); ?></span>
+              </div>
+              <div class="p-2">
+                <div class="row g-2">
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('doctor'); ?></label><small class="req"> *</small>
+                    <select class="form-control form-control-sm select2 doctor_select2" name="doctorid" onchange="getDoctorShift(this);getDoctorFees(this)"
+                      <?php if (isset($disable_option) && $disable_option == true) { echo 'disabled'; } ?>
+                      name="doctor" id="doctorid">
+                      <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select'); ?></option>
+                      <?php foreach ($doctors as $dkey => $dvalue) { ?>
+                      <option value="<?php echo $dvalue['id']; ?>" <?php if ($doctor_select == $dvalue['id']) { echo 'selected'; } ?>><?php echo $dvalue['name'] . ' ' . $dvalue['surname'] . ' (' . $dvalue['employee_id'] . ')'; ?></option>
+                      <?php } ?>
+                    </select>
+                    <input type="hidden" name="charge_id" value="" id="charge_id" />
                     <span class="text-danger"><?php echo form_error('doctor'); ?></span>
                   </div>
-                </div>
-                <div class="col-sm-3">
-                  <div class="form-group">
-                    <label for="doctor_fees"><?php echo $this->lang->line("doctor_fees")." (".$currency_symbol.")"; ?></label>
-                    <small class="req"> *</small>
-                    <div>   
-                        <input type="text" name="amount" id="doctor_fees" class="form-control" readonly="readonly">
-                    </div>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('doctor_fees') . ' (' . $currency_symbol . ')'; ?></label><small class="req"> *</small>
+                    <input type="text" name="amount" id="doctor_fees" class="form-control form-control-sm" readonly="readonly">
                     <span class="text-danger"><?php echo form_error('doctor_fees'); ?></span>
                   </div>
-                </div>
-                <div class="col-sm-3">
-                    <div class="form-group">
-                        <label for="pwd"><?php echo $this->lang->line('shift'); ?></label><span class="req"> *</span>
-                        <select name="global_shift" id="global_shift" class="select2" style="width:100%">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-3">
-                  <div class="form-group" style="position: relative; overflow:visible !important">
-                    <label><?php echo $this->lang->line('appointment_date'); ?></label>
-                    <small class="req"> *</small>
-                    <input type="text" id="datetimepicker" name="date" class="form-control datetime">
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('shift'); ?></label><span class="req"> *</span>
+                    <select name="global_shift" id="global_shift" onchange="getShift()" class="form-control form-control-sm select2">
+                      <option value=""><?php echo $this->lang->line('select'); ?></option>
+                    </select>
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('appointment_date'); ?></label><small class="req"> *</small>
+                    <input type="text" id="datetimepicker" name="date" class="form-control form-control-sm datetime">
                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                   </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="slot"><?php echo $this->lang->line('slot'); ?></label>
-                        <span class="req"> *</span>
-                        <select name="slot" id="slot" onchange="validateTime(this)" class="form-control">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                        </select>
-                        <span class="text-danger"><?php echo form_error('slot'); ?></span>
-                    </div>
-                </div>
-                <div class="col-sm-3">
-                  <div class="form-group">
-                    <label for="exampleInputFile"><?php echo $this->lang->line('appointment_priority'); ?></label>
-                    <div>
-                      <select class="form-control select2 appointment_priority_select2"  name='priority' style="width:100%">
-                        <?php foreach ($appoint_priority_list as $dkey => $dvalue) { ?>
-                        <option value="<?php echo $dvalue["id"]; ?>"> <?php echo $dvalue["appoint_priority"]; ?></option>
-                        <?php }?>
-                      </select>
-                    </div>
-                    <span class="text-danger"><?php echo form_error('doctor'); ?></span>
-                  </div>
-                </div>
-                <div class="col-sm-3">
-                  <div class="form-group">
-                      <label><?php echo $this->lang->line('payment_mode'); ?></label> 
-                      <select class="form-control payment_mode" name="payment_mode">
-                      <?php foreach ($payment_mode as $key => $value) { ?>
-                          <option value="<?php echo $key ?>"><?php echo $value ?></option>
-                      <?php } ?>
-                      </select>    
-                      <span class="text-danger"><?php echo form_error('apply_charge'); ?></span>
-                  </div>
-                </div>
-                <div class="col-sm-3">
-                      <div class="form-group">
-                        <label for="appointment_status"><?php echo $this->lang->line('status'); ?><small class="req"> *</small></label>
-                        <select name="appointment_status" class="form-control" id="appointment_status">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                            <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) {  ?>
-                            <option value="<?php echo $appointment_status_key ?>"><?php echo $appointment_status_value ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('discount_percentage'); ?></label><small class="req"></small> 
-                            <input type="text" name="discount_percentage" id="discount_percentage" class="form-control">
-                            <span class="text-danger"></span>
-                        </div>
-                </div>
-                <div class="cheque_div" style="display: none;">                        
-                    <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small> 
-                            <input type="text" name="cheque_no" id="cheque_no" class="form-control">
-                            <span class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small> 
-                            <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
-                            <span class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('attach_document'); ?></label>
-                            <input type="file" class="filestyle form-control" name="document">
-                            <span class="text-danger"><?php echo form_error('document'); ?></span> 
-                        </div>
-                    </div>
-                </div>
-                <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
-                <div class="col-sm-5 col-md-4 col-lg-4">
-                  <div class="form-group">
-                    <label for="exampleInputFile"><?php echo $this->lang->line('live_consultant_on_video_conference'); ?></label>
-                    <small class="req">*</small>
-                    <div>
-                    <select name="live_consult" id="live_consult" class="form-control">
-                        <?php foreach ($yesno_condition as $yesno_key => $yesno_value) {
-                            ?>
-                            <option value="<?php echo $yesno_key ?>" <?php
-                                    if ($yesno_key == 'no') {
-                                        echo "selected";
-                                    }
-                                    ?> ><?php echo $yesno_value ?>
-                            </option>
-                            <?php } ?>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('slot'); ?></label><span class="req"> *</span>
+                    <select name="slot" id="slot" onchange="validateTime(this)" class="form-control form-control-sm">
+                      <option value=""><?php echo $this->lang->line('select'); ?></option>
                     </select>
-                    </div>
+                    <span class="text-danger"><?php echo form_error('slot'); ?></span>
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('appointment_priority'); ?></label>
+                    <select class="form-control form-control-sm select2 appointment_priority_select2" name="priority">
+                      <?php foreach ($appoint_priority_list as $dkey => $dvalue) { ?>
+                      <option value="<?php echo $dvalue['id']; ?>"><?php echo $dvalue['appoint_priority']; ?></option>
+                      <?php } ?>
+                    </select>
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('status'); ?><small class="req"> *</small></label>
+                    <select name="appointment_status" class="form-control form-control-sm" id="appointment_status">
+                      <option value=""><?php echo $this->lang->line('select'); ?></option>
+                      <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) { ?>
+                      <option value="<?php echo $appointment_status_key; ?>"><?php echo $appointment_status_value; ?></option>
+                      <?php } ?>
+                    </select>
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('discount_percentage'); ?></label>
+                    <input type="text" name="discount_percentage" id="discount_percentage" class="form-control form-control-sm">
+                  </div>
+                  <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+                  <div class="col-md-3">
+                    <label class="form-label"><?php echo $this->lang->line('live_consultant_on_video_conference'); ?></label>
+                    <select name="live_consult" id="live_consult" class="form-control form-control-sm">
+                      <?php foreach ($yesno_condition as $yesno_key => $yesno_value) { ?>
+                      <option value="<?php echo $yesno_key; ?>" <?php if ($yesno_key == 'no') { echo 'selected'; } ?>><?php echo $yesno_value; ?></option>
+                      <?php } ?>
+                    </select>
                     <span class="text-danger"><?php echo form_error('live_consult'); ?></span>
                   </div>
-                </div>
-                <?php } ?>
-                <div class="col-sm-5">
-                  <div class="form-group">
-                    <label for="message"><?php echo $this->lang->line('message'); ?></label>
-                    <textarea name="message" id="note" class="form-control" ></textarea>
+                  <?php } ?>
+                  <div class="col-sm-3">
+                    <label class="form-label"><?php echo $this->lang->line('payment_mode'); ?></label>
+                    <select class="form-control form-control-sm payment_mode" name="payment_mode">
+                      <?php foreach ($payment_mode as $key => $value) { ?>
+                      <option value="<?php echo $key; ?>"><?php echo $value; ?></option>
+                      <?php } ?>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label"><?php echo $this->lang->line('message'); ?></label>
+                    <textarea name="message" id="note" class="form-control form-control-sm"></textarea>
                     <span class="text-danger"><?php echo form_error('message'); ?></span>
                   </div>
+                  <div class="cheque_div col-12 d-none" >
+                    <div class="row g-2">
+                      <div class="col-sm-4">
+                        <label class="form-label"><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small>
+                        <input type="text" name="cheque_no" id="cheque_no" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-sm-4">
+                        <label class="form-label"><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small>
+                        <input type="text" name="cheque_date" id="cheque_date" class="form-control form-control-sm date">
+                      </div>
+                      <div class="col-sm-4">
+                        <label class="form-label"><?php echo $this->lang->line('attach_document'); ?></label>
+                        <input type="file" class="filestyle form-control form-control-sm" name="document">
+                        <span class="text-danger"><?php echo form_error('document'); ?></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <?php echo display_custom_fields('appointment'); ?>
+                  </div>
                 </div>
-                
-                <div>
-                <?php echo display_custom_fields('appointment'); ?>
-                </div>
-              </div><!--./row-->
-            </div><!--./col-md-12-->
-          </div><!--./row-->
-        </div><!--./modal-body-->
+              </div>
+            </div>
+
+          </div>
         </div>
         <div class="modal-footer">
-          <div class="pull-right">
-            <button type="submit" id="formaddbtn" name="save" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-          </div>
-          <div class="pull-right mr-10">
-              <button type="submit" id="formaddprintbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" name="save_print" class="btn btn-info pull-right printsavebtn"><i class="fa fa-print"></i> <?php echo $this->lang->line('save_print'); ?></button>
-          </div>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+          <button type="submit" id="formaddprintbtn" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' name="save_print" class="btn btn-info printsavebtn"><i class="fa fa-print"></i> <?php echo $this->lang->line('save_print'); ?></button>
+          <button type="submit" id="formaddbtn" name="save" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
         </div>
       </form>
     </div>
@@ -375,255 +295,298 @@ $genderList      = $this->customlib->getGender_Patient();
 </div>
 <!-- dd -->
 
-<div class="modal fade" id="rescheduleModal" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content modal-media-content mx-2">
-      <div class="modal-header modal-media-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title" id="model_title"></h4>
-      </div>
+<!-- ==========================reschedule modal added=================================== -->
+
+<div class="modal fade sh-modal sh-modal-accent" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
       <form id="rescheduleform" accept-charset="utf-8" method="post">
-        <div>
-          <div class="modal-body pb0">
-            <div class="row">
-              <div class="col-lg-12 col-md-12 col-sm-12">
-                <div class="row">
-                  <input type="hidden" name="appointment_id" id="appointment_id">
-                  <div class="col-sm-3">
-                    <div class="form-group">
-                      <label for="exampleInputFile">
-                      <?php echo $this->lang->line('doctor'); ?></label> 
-                      <small class="req"> *</small>
-                      <div>
-                        <select class="form-control" style="width:100%" id="rdoctor" disabled>
-                          <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select') ?></option>
-                          <?php foreach ($doctors as $dkey => $dvalue) {
-                          ?>
-                          <option value="<?php echo $dvalue["id"]; ?>"><?php echo $dvalue["name"] . " " . $dvalue["surname"]." (".$dvalue["employee_id"].")" ?></option>
-                          <?php }?>
-                        </select>
-                        <span class="text-danger"><?php echo form_error('rdoctor'); ?></span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-sm-3">
-                    <div class="form-group">
-                      <label for="doctor_fees"><?php echo $this->lang->line("doctor_fees")." (".$currency_symbol.")"; ?></label>
-                      <small class="req"> *</small>
-                      <div>   
-                          <input type="text" name="doctor_fees" id="rdoctor_fees_edit" class="form-control" readonly="readonly">
-                      </div>
-                      <span class="text-danger"><?php echo form_error('doctor_fees'); ?></span>
-                    </div>
-                  </div>
-                  <div class="col-sm-3">
-                    <div class="form-group">
-                        <label for="pwd"><?php echo $this->lang->line('shift'); ?></label><span class="req"> *</span>
-                        <select name="rglobal_shift" id="rglobal_shift_edit" onchange="getreschsduleShift()" class="select2" style="width:100%">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                        </select>
-                        <span class="text-danger"><?php echo form_error('rglobal_shift'); ?></span>
-                    </div>
-                  </div>
-                  <div class="col-sm-3">
-                    <div class="form-group">
-                      <label><?php echo $this->lang->line('appointment_date') ?></label>
-                      <small class="req"> *</small>
-                      <input type="text" id="rdates" name="appointment_date" class="form-control datetime" value="<?php echo set_value('dates'); ?>">
-                      <span class="text-danger"><?php echo form_error('appointment_date'); ?></span>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="slot"><?php echo $this->lang->line('slot'); ?></label>
-                        <span class="req"> *</span>
-                        <select name="rslot" id="rslot_edit" class="form-control">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                        </select>
-                        <input type="hidden" id="rslot_edit_field" name="rslot_edit_field" />
-                        <input type="hidden" id="rdoctor_id" name="rdoctor_id" />
-                        <span class="text-danger"><?php echo form_error('rslot'); ?></span>
-                    </div>
-                  </div>
-                   <div class="col-sm-3">
-                    <div class="form-group">
-                      <label for="exampleInputFile">
-                      <?php echo $this->lang->line('appointment_priority'); ?></label>
-                      <div>
-                        <select class="form-control select2" name='priority' style="width:100%" id="edit_appoint_priority">
-                        <?php foreach ($appoint_priority_list as $dkey => $dvalue) {
-                        ?>
-                        <option value="<?php echo $dvalue["id"]; ?>"><?php echo $dvalue["appoint_priority"]; ?></option>
-                        <?php }?>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-				                  <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('discount_percentage'); ?></label><small class="req"></small> 
-                            <input type="text"  name="discount_percentage" id="rdiscount_percentage" class="form-control">
-                            <span class="text-danger"></span>
-                        </div>
-                    </div>
-                   <div class="col-sm-3">
-                      <div class="form-group">
-                        <label for="appointment_status"><?php echo $this->lang->line('status'); ?><small class="req"> *</small></label>
-                        <select name="edit_appointment_status"  class="form-control" id="edit_appointment_status">
-                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                            <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) {  ?>
-                            <option value="<?php echo $appointment_status_key ?>" ><?php echo $appointment_status_value ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                </div> 
-                  <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
-                  <div class="col-sm-4">
-                    <div class="form-group">
-                      <label><?php echo $this->lang->line('live_consultant_on_video_conference'); ?></label> <small class="req">*</small>
-                      <select name="live_consult" id="edit_liveconsult" class="form-control">
-                        <?php foreach ($yesno_condition as $yesno_key => $yesno_value) {
-                            ?>
-                            <option value="<?php echo $yesno_key ?>" <?php
-                                    if ($yesno_key == 'no') {
-                                        echo "selected";
-                                    }
-                                    ?> ><?php echo $yesno_value ?>
-                            </option>
-                        <?php } ?>
-                      </select>
-                    </div>
-                  </div>
-                  <?php } ?>
-                  <div class="col-sm-12">
-                    <div class="form-group">
-                      <label for="message"><?php echo $this->lang->line('message'); ?></label>                      
-                      <textarea name="message" id="message" class="form-control" ><?php echo set_value('message'); ?></textarea>
-                      <span class="text-danger"><?php echo form_error('message'); ?></span>
-                    </div>
-                  </div>
-                  <div class="" id="customfield" ></div> 
-                </div><!--./row-->
-              </div><!--./col-md-12-->
-            </div><!--./row-->
-          </div><!--./modal-body-->
-        </div>
-        <div class="modal-footer">
-          <div class="pull-right">
-            <button type="submit" id="rescheduleformbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info" ><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+      <input type="hidden" name="appointment_id" id="appointment_id">
+      <input type="hidden" id="rdoctor_id" name="rdoctor_id">
+      <input type="hidden" id="edit_is_emergency" name="edit_is_emergency">
+      <input type="hidden" id="charge_id_edit" name="charge_id_edit">
+      <div class="modal-header">
+        <h5 class="modal-title" id="rescheduleModalLabel"><span id="model_title"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="pup-scroll-area">
+        <div class="modal-body">
+
+          <div class="sh-form-card">
+            <div class="sh-card-header">
+              <span class="sh-card-header-title"><?php echo $this->lang->line('appointment_details'); ?></span>
+            </div>
+            <div class="p-2">
+              <div class="row g-2">
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('doctor'); ?></label><small class="req"> *</small>
+                  <select class="form-control form-control-sm" onchange="getDoctorShift(this);getDoctorFeesEdit(this)" id="rdoctor" disabled>
+                    <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select'); ?></option>
+                    <?php foreach ($doctors as $dkey => $dvalue) { ?>
+                    <option value="<?php echo $dvalue["id"]; ?>"><?php echo $dvalue["name"] . " " . $dvalue["surname"] . " (" . $dvalue["employee_id"] . ")"; ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="text-danger"><?php echo form_error('rdoctor'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line("doctor_fees") . ' (' . $currency_symbol . ')'; ?></label><small class="req"> *</small>
+                  <input type="text" name="doctor_fees" id="rdoctor_fees_edit" class="form-control form-control-sm" readonly="readonly">
+                  <span class="text-danger"><?php echo form_error('doctor_fees'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('shift'); ?></label><span class="req"> *</span>
+                  <select name="rglobal_shift" id="rglobal_shift_edit" onchange="getreschsduleShift()" class="form-control form-control-sm select2">
+                    <option value=""><?php echo $this->lang->line('select'); ?></option>
+                  </select>
+                  <span class="text-danger"><?php echo form_error('rglobal_shift'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('appointment_date'); ?></label><small class="req"> *</small>
+                  <input type="text" id="rdates" name="appointment_date" class="form-control form-control-sm datetime" value="<?php echo set_value('dates'); ?>">
+                  <span class="text-danger"><?php echo form_error('appointment_date'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('slot'); ?></label><span class="req"> *</span>
+                  <select name="rslot" id="rslot_edit" class="form-control form-control-sm" onchange="validateTime(this)">
+                    <option value=""><?php echo $this->lang->line('select'); ?></option>
+                  </select>
+                  <input type="hidden" id="rslot_edit_field" name="rslot_edit_field" />
+                  <span class="text-danger"><?php echo form_error('rslot'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('appointment_priority'); ?></label>
+                  <select class="form-control form-control-sm select2" name="priority" id="edit_appoint_priority">
+                    <?php foreach ($appoint_priority_list as $dkey => $dvalue) { ?>
+                    <option value="<?php echo $dvalue["id"]; ?>"><?php echo $dvalue["appoint_priority"]; ?></option>
+                    <?php } ?>
+                  </select>
+                </div>
+                <div class="col-sm-3" id="edit_payment_mode_div">
+                  <label class="form-label"><?php echo $this->lang->line('payment_mode'); ?></label>
+                  <select class="form-control form-control-sm edit_payment_mode" name="edit_payment_mode">
+                    <?php foreach ($payment_mode as $key => $value) { ?>
+                    <option value="<?php echo $key ?>"><?php echo $value ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="text-danger"><?php echo form_error('apply_charge'); ?></span>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('discount_percentage'); ?></label>
+                  <input type="text" name="discount_percentage" id="rdiscount_percentage" class="form-control form-control-sm">
+                  <input type="hidden" name="rdiscount_percentage_hidden" id="rdiscount_percentage_hidden">
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label"><?php echo $this->lang->line('status'); ?><small class="req"> *</small></label>
+                  <select name="edit_appointment_status" class="form-control form-control-sm" id="edit_appointment_status">
+                    <option value=""><?php echo $this->lang->line('select'); ?></option>
+                    <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) { ?>
+                    <option value="<?php echo $appointment_status_key ?>"><?php echo $appointment_status_value ?></option>
+                    <?php } ?>
+                  </select>
+                </div>
+                <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+                <div class="col-md-3">
+                  <label class="form-label"><?php echo $this->lang->line('live_consultant_on_video_conference'); ?></label><small class="req"> *</small>
+                  <select name="live_consult" id="edit_liveconsult" class="form-control form-control-sm">
+                    <?php foreach ($yesno_condition as $yesno_key => $yesno_value) { ?>
+                    <option value="<?php echo $yesno_key ?>" <?php if ($yesno_key == 'no') { echo "selected"; } ?>><?php echo $yesno_value ?></option>
+                    <?php } ?>
+                  </select>
+                </div>
+                <?php } ?>
+                <div class="col-12">
+                  <label class="form-label"><?php echo $this->lang->line('message'); ?></label>
+                  <textarea name="message" id="message" class="form-control form-control-sm"><?php echo set_value('message'); ?></textarea>
+                  <span class="text-danger"><?php echo form_error('message'); ?></span>
+                </div>
+                <div id="customfield" class="col-12"></div>
+              </div>
+            </div>
           </div>
+
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+        <button type="submit" id="rescheduleformbtn" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+      </div>
       </form>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content modal-media-content mx-2">
-      <div class="modal-header modal-media-header">
-        <button type="button" class="close" data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('close'); ?>" data-dismiss="modal">&times;</button>
-        <div class="modalicon">
-          <div id="edit_delete">
-            <a href="#" data-target="#editModal" data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a><a href="#" data-toggle="tooltip" onclick="delete_recordById('<?php echo base_url(); ?>admin/appointment/delete/#', '<?php echo $this->lang->line('success_message') ?>')" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash" ></i></a></div>
+
+
+
+<div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('appointment_details'); ?></h5>
+        <div class="d-flex align-items-center gap-2">
+          <div id="edit_delete" class="d-flex align-items-center gap-2">
+            <a href="#" class="btn btn-sm btn-light" data-bs-target="#editModal" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
+            <a href="#" class="btn btn-sm btn-light" data-bs-toggle="tooltip" onclick="delete_recordById('<?php echo base_url(); ?>admin/appointment/delete/#', '<?php echo $this->lang->line('success_message') ?>')" title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <h4 class="modal-title"><?php echo $this->lang->line('appointment_details'); ?></h4>
       </div>
-      <div class="modal-body pt0 pb0">
-        <div class="row">
-          <div class="col-lg-12 col-md-12 col-sm-12">
-            <form id="view" accept-charset="utf-8" method="get" class="pt5 pb5">
-              <div class="table-responsive">
-                <table class="table mb0 table-striped table-bordered examples">
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('patient_name'); ?></th>
-                  <td width="35%"><span id='patient_names'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('appointment_no'); ?></th>
-                  <td width="35%"><span id="appointmentno"></span>
-                  </td>
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('age'); ?></th>
-                  <td width="35%"><span id='patient_age'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('appointment_s_no'); ?></th>
-                  <td width="35%"><span id="appointment_s_no"></span>
-                  </td>
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('gender'); ?></th>
-                  <td width="35%"><span id="genders"></span></td>
-                  <th width="15%"><?php echo $this->lang->line('appointment_date'); ?></th>
-                  <td width="35%"><span id='dating'></span></td>                  
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('email'); ?></th>
-                  <td width="35%"><span id='emails'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('phone'); ?></th>
-                  <td width="35%"><span id="phones"></span>
-                  </td>
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('doctor'); ?></th>
-                  <td width="35%"><span id='doctors'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('message'); ?></th>
-                  <td width="35%"><span id="messages"></span>
-                  </td>
-                </tr>
-                <tr>  
-                <th width="15%"><?php echo $this->lang->line('department'); ?></th>
-                  <td width="35%"><span id="department_name"></span></td>                
-                  <th width="15%"><?php echo $this->lang->line('appointment_priority'); ?></th>
-                  <td width="35%"><span id='appointpriority'></span></td>
-                </tr>                 
-                <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('live_consultation'); ?></th>
-                  <td width="35%"><span id="liveconsult"></span></td>
-                  <th width="15%"><?php echo $this->lang->line('status'); ?></th>
-                  <td width="35%"><span id='status' style="text-transform: capitalize;"></span></td>
-                </tr>
-                <?php } ?>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('shift'); ?></th>
-                  <td width="35%"><span id="global_shift_view"></span></td>
-                  <th width="15%"><?php echo $this->lang->line('slot'); ?></th>
-                  <td width="35%"><span id='doctor_shift_view' style="text-transform: capitalize;"></span></td>
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('amount'); ?></th>
-                  <td width="35%"><span id='pay_amount'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('payment_mode'); ?></th>
-                  <td width="35%"><span id="payment_mode"></span>
-                  </td>
-                </tr>
-                 <tr  id="payrow" style="display:none">
-                  <th width="15%"><?php echo $this->lang->line('cheque_no'); ?></th>
-                  <td width="35%"><span id='spn_chequeno'></span></td>
-                  <th width="15%"><?php echo $this->lang->line('cheque_date'); ?></th>
-                  <td width="35%"><span id="spn_chequedate"></span>
-                  </td>
-                </tr>
-                <tr id="paydocrow" style="display:none">
-                   <th width="15%"><?php echo $this->lang->line('document'); ?></th>
-                  <td width="35%" id='spn_doc'><span ></span></td>
-                </tr>
-                <tr>
-                  <th width="15%"><?php echo $this->lang->line('source'); ?></th>
-                  <td width="35%"><span id="source"></span></td>
-                   <th width="15%"><?php echo $this->lang->line('transaction_id'); ?></th>
-                  <td width="35%"><span id="trans_id"></span></td>
-                </tr>
-                 <tr>
-                   <th width="15%"><?php echo $this->lang->line('payment_note'); ?></th>
-                  <td width="35%"><span id="payment_note"></span></td>                  
-                </tr>
-                </table>
-                  <table class="table mb0 table-striped table-bordered examples" id="field_data">
-                  </table>                
+      <div class="pup-scroll-area">
+        <div class="modal-body">
+          <div class="sh-form-card mb-2">
+            <div class="sh-info-grid">
+
+              <!-- Row 1: Patient Name | Appointment No | Age | S/N -->
+              <div class="row g-0">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('patient_name'); ?></span>
+                  <span class="sh-info-value highlight" id="patient_names"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('appointment_no'); ?></span>
+                  <span class="sh-info-value highlight" id="appointmentno"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('age'); ?></span>
+                  <span class="sh-info-value" id="patient_age"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('appointment_s_no'); ?></span>
+                  <span class="sh-info-value" id="appointment_s_no"></span>
+                </div>
               </div>
-            </form>
-          </div><!--./col-md-12-->
-        </div><!--./row-->
+
+              <!-- Row 2: Email | Date | Phone | Priority -->
+              <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('email'); ?></span>
+                  <span class="sh-info-value" id="emails"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('appointment_date'); ?></span>
+                  <span class="sh-info-value" id="dating"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('phone'); ?></span>
+                  <span class="sh-info-value" id="phones"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('appointment_priority'); ?></span>
+                  <span class="sh-info-value" id="appointpriority"></span>
+                </div>
+              </div>
+
+              <!-- Row 3: Gender | Shift | Doctor | Slot -->
+              <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('gender'); ?></span>
+                  <span class="sh-info-value" id="genders"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('shift'); ?></span>
+                  <span class="sh-info-value" id="global_shift_view"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('doctor'); ?></span>
+                  <span class="sh-info-value" id="doctors"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('slot'); ?></span>
+                  <span class="sh-info-value text-capitalize" id="doctor_shift_view"></span>
+                </div>
+              </div>
+
+              <!-- Row 4: Department | Amount | Source | Transaction ID -->
+              <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('department'); ?></span>
+                  <span class="sh-info-value" id="department_name"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('amount'); ?></span>
+                  <span class="sh-info-value" id="pay_amount"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('source'); ?></span>
+                  <span class="sh-info-value" id="source"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('transaction_id'); ?></span>
+                  <span class="sh-info-value" id="trans_id"></span>
+                </div>
+              </div>
+
+              <!-- Row 5 (conditional): Live Consult | Status -->
+              <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
+              <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('live_consultation'); ?></span>
+                  <span class="sh-info-value" id="liveconsult"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('status'); ?></span>
+                  <span class="sh-info-value" id="status"></span>
+                </div>
+              </div>
+              <?php } ?>
+
+              <!-- Row 6: Payment Note | Payment Mode -->
+              <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('payment_note'); ?></span>
+                  <span class="sh-info-value" id="payment_note"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('payment_mode'); ?></span>
+                  <span class="sh-info-value" id="payment_mode"></span>
+                </div>
+              </div>
+
+              <!-- Row 7: Cheque (JS-toggled) -->
+              <div class="row g-0 sh-row-divider" id="payrow" class="d-none">
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('cheque_no'); ?></span>
+                  <span class="sh-info-value" id="spn_chequeno"></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('cheque_date'); ?></span>
+                  <span class="sh-info-value" id="spn_chequedate"></span>
+                </div>
+              </div>
+
+              <!-- Row 8: Document (JS-toggled) -->
+              <div class="row g-0 sh-row-divider" id="paydocrow" class="d-none">
+                <div class="col-12 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('document'); ?></span>
+                  <span class="sh-info-value" id="spn_doc"></span>
+                </div>
+              </div>
+
+              <!-- Row 9: Message (full width) -->
+              <div class="row g-0 sh-row-divider">
+                <div class="col-12 sh-info-item">
+                  <span class="sh-info-label"><?php echo $this->lang->line('message'); ?></span>
+                  <span class="sh-info-value" id="messages"></span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- Custom Fields -->
+          <div class="sh-form-card mb-0 d-none" id="custom_fields_card">
+            <div class="sh-card-header">
+              <span class="sh-card-header-title"><?php echo $this->lang->line('custom_fields'); ?></span>
+            </div>
+            <div class="p-2">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0" id="field_data"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
       </div>
     </div>
   </div>
@@ -649,7 +612,7 @@ $genderList      = $this->customlib->getGender_Patient();
       }
 });
   
-  $("#edit_appointment_status").change(function(){
+  $("#edit_appointment_status_old").change(function(){
 
       var edit_appointment_status = $('#edit_appointment_status').val();
       var doctor_id = $('#rdoctor').val();  
@@ -667,18 +630,40 @@ $genderList      = $this->customlib->getGender_Patient();
       }else{
           $('#rdoctor_fees_edit').val('0');
           $('#rdiscount_percentage').val('0');
-		  
       }
 });
 
 
-   $(document).on('change','.payment_mode',function(){
+$("#edit_appointment_status").change(function(){
+      var edit_appointment_status = $('#edit_appointment_status').val();
+      var doctor_id = $('#rdoctor').val();
+      if(edit_appointment_status == 'approved'){
+        $.ajax({
+            url: baseurl+'admin/appointment/getDoctorFees/',
+            type: "POST",
+            data: {doctor_id: doctor_id},
+            dataType: 'json',
+            success: function (res) {
+              $("#rdoctor_fees_edit").val(res.fees);
+              $("#charge_id_edit").val(res.charge_id);
+              var rdiscount_percentage_hidden=$("#rdiscount_percentage_hidden").val();
+              $("#rdiscount_percentage").val(rdiscount_percentage_hidden);        
+          }
+        });
+      }else{
+          $('#rdoctor_fees_edit').val('0');
+          $('#rdiscount_percentage').val('0');
+      }
+  });
+
+
+  $(document).on('change','.payment_mode',function(){
       var mode=$(this).val();
       if(mode == "Cheque"){
         $('.filestyle','#addPaymentModal').dropify();
-        $('.cheque_div').css("display", "block");
+        $('.cheque_div').removeClass('d-none');
       }else{
-        $('.cheque_div').css("display", "none");
+        $('.cheque_div').addClass('d-none');
       }
     });
 </script>
@@ -694,11 +679,7 @@ $genderList      = $this->customlib->getGender_Patient();
   });
 
   function holdModal(modalId) {
-    $('#' + modalId).modal({
-      backdrop: 'static',
-      keyboard: false,
-      show: true
-    });
+    (function(){var _el=document.getElementById(modalId); if(_el) bootstrap.Modal.getOrCreateInstance(_el, {backdrop:'static', keyboard:false}).show();})();;
   }
 
   (function ($) {
@@ -788,9 +769,9 @@ $genderList      = $this->customlib->getGender_Patient();
     var sub_btn_clicked = $("button[type=submit][clicked=true]");                  
     var sub_btn_clicked_name=sub_btn_clicked.attr('name');
       if(sub_btn_clicked_name === "save_print") {                            
-           $("#formaddprintbtn").button('loading');
+           $("#formaddprintbtn").btnLoading();
        }else{
-        $("#formaddbtn").button('loading');
+        $("#formaddbtn").btnLoading();
        }  
 
       e.preventDefault();
@@ -810,21 +791,20 @@ $genderList      = $this->customlib->getGender_Patient();
         });
         errorMsg(message);
         } else {
-          successMsg(data.message);
          $('.ajaxlisttodays,.ajaxlistupcoming,.ajaxlistold').DataTable().ajax.reload();
-          $('#myModal').modal('hide');
-          if(sub_btn_clicked_name === "save_print") {                            
+          shModal('myModal').hide();
+          if(sub_btn_clicked_name === "save_print") {
            printAppointment(data.appointment_id);
          }else{
           successMsg(data.message);
-         }   
+         }
         }
 
         // reset buttons
         if(sub_btn_clicked_name === "save_print") {                            
-           $("#formaddprintbtn").button('reset');
+           $("#formaddprintbtn").btnReset();
          }else{
-            $("#formaddbtn").button('reset');
+            $("#formaddbtn").btnReset();
          }
         // reset buttons
         },
@@ -861,7 +841,7 @@ function printAppointment(id){
 	
 $(document).ready(function (e) {
 $("#formedit").on('submit', (function (e) {
-  $("#formeditbtn").button('loading');
+  $("#formeditbtn").btnLoading();
   e.preventDefault();
     $.ajax({
       url: base_url+'admin/appointment/update',
@@ -882,7 +862,7 @@ $("#formedit").on('submit', (function (e) {
         successMsg(data.message);
         window.location.reload(true);
       }
-        $("#formeditbtn").button('reset');
+        $("#formeditbtn").btnReset();
       },
       error: function () {
 
@@ -894,6 +874,10 @@ $("#formedit").on('submit', (function (e) {
     if($("#global_shift").val() != ''){
         getShift();
     }
+  });
+
+  $("#global_shift").on('select2:select', function () {
+      getShift();
   });
 
   $("#dates").on("dp.change", function (e) {
@@ -909,7 +893,7 @@ $("#formedit").on('submit', (function (e) {
   });
 
   $("#rescheduleform").on('submit', (function (e) {
-      $("#rescheduleformbtn").button('loading');
+      $("#rescheduleformbtn").btnLoading();
       e.preventDefault();
         $.ajax({
           url: baseurl+'admin/appointment/reschedule',
@@ -930,7 +914,7 @@ $("#formedit").on('submit', (function (e) {
             successMsg(data.message);
             window.location.reload(true);
           }
-            $("#rescheduleformbtn").button('reset');
+            $("#rescheduleformbtn").btnReset();
           },
           error: function () {
 
@@ -996,7 +980,7 @@ function getBed(bed_group, bed = '', active, htmlid = 'bed_no') {
         });
     }
 
-    function viewreschedule(id,modeltype){
+    function viewreschedule_old(id,modeltype){
         
 		if(modeltype == '1'){
 			$('#model_title').html('<?php echo $this->lang->line('reschedule'); ?>');
@@ -1004,7 +988,7 @@ function getBed(bed_group, bed = '', active, htmlid = 'bed_no') {
 			$('#model_title').html('<?php echo $this->lang->line('approve_appointment'); ?>');  
 		}
       
-		$('#rescheduleModal').modal('show');
+		shModal('rescheduleModal').show();
 		$('#appointment_id').val(id);
 		$.ajax({
 			url: baseurl+'admin/appointment/getDetailsAppointment',
@@ -1032,9 +1016,67 @@ function getBed(bed_group, bed = '', active, htmlid = 'bed_no') {
 		});
     }
 
+    function viewreschedule(id,modeltype){ 
+      
+      if(modeltype == '1'){
+        $('#model_title').html('<?php echo $this->lang->line('reschedule'); ?>');
+      } else if (modeltype == '2'){
+        $('#model_title').html('<?php echo $this->lang->line('approve_appointment'); ?>');  
+      }
+      
+      // shModal('rescheduleModal').show();
+      $('#appointment_id').val(id);
+      $('#rdiscount_percentage_hidden').val(0);
+      var doctor_id;
+      var payment_mode_type;
+      $.ajax({
+        url: baseurl+'admin/appointment/getDetailsAppointment',
+        type: "GET",
+        data: {appointment_id: id},
+        dataType: 'json',
+        success: function (data) {
+
+        $('#customfield').html(data.custom_fields_value);
+        $("#rdoctor").val(data.doctor);
+        $("#rdates").val(data.date);         
+        $("#rdoctor_id").val(data.doctor);      
+        $("#edit_appoint_priority").val(data.priority).trigger("change");
+        $("#message").val(data.message); 
+        $("#edit_appointment_status").val(data.appointment_status);       
+       
+        if(data.appointment_status == 'approved'){
+          $("#rdoctor_fees_edit").val(data.amount); 
+          $("#rdiscount_percentage").val(data.discount_percentage);
+          $("#rdiscount_percentage_hidden").val(data.discount_percentage);
+        }else{
+          $("#rdoctor_fees_edit").val('0'); 
+          $("#rdiscount_percentage").val('0');
+        }
+        getDoctorShift("",data.doctor,data.shift_id);
+        $('select[id="rdoctor"] option[value="' + data.doctor + '"]').attr("selected", "selected");
+        $('select[id="edit_liveconsult"] option[value="' + data.live_consult + '"]').attr("selected", "selected");  
+        $("#rslot_edit").val(data.slot_id);
+        $("#rslot_edit_field").val(data.slot_id);      
+        doctor_id=data.doctor;//added
+        payment_mode_type=data.payment_mode_type;//added
+
+        if(payment_mode_type=="" || payment_mode_type==null){
+            $("#edit_payment_mode_div").removeClass('d-none');
+        }else{
+            $("#edit_payment_mode_div").addClass('d-none');
+        }
+      },
+      complete:function(res){
+        getDoctorFeeschargeIdEdit(doctor_id);//added
+        shModal('rescheduleModal').show();
+      }
+      });
+    }
+
+
   function getRecord(id) {
-    $("#viewModal").modal('hide');
-    $('#myModaledit').modal('show');
+    shModal("viewModal").hide();
+    shModal('myModaledit').show();
     $.ajax({
       url: baseurl+'admin/bill/get_appointment_detail',
       type: "GET",
@@ -1072,7 +1114,8 @@ function getBed(bed_group, bed = '', active, htmlid = 'bed_no') {
   }
 
 function viewDetail(id) {
-  $('#viewModal').modal('show');
+  $('#custom_fields_card').hide().find('#field_data').empty();
+  shModal('viewModal').show();
   $.ajax({
     url: baseurl+'admin/bill/get_appointment_detail',
     type: "GET",
@@ -1080,22 +1123,21 @@ function viewDetail(id) {
     dataType: 'json',
     success: function (data) {
       var table_html = '';
-      $.each(data.field_data, function (i, obj)
-      {
-      if (obj.field_value == null) {
-      var field_value = "";
+      var visible_rows = 0;
+      $.each(data.field_data || [], function (i, obj) {
+        var raw = (obj.field_value == null) ? '' : String(obj.field_value).trim();
+        var is_patient = parseInt(obj.visible_on_patient_panel, 10) === 1;
+        if (is_patient && raw !== '') {
+          visible_rows++;
+          table_html += "<tr><th width='15%'><span class='vcustom_name'>" + capitalizeFirstLetter(obj.name) + "</span></th><td width='85%'><span class='vcustom_value'>" + raw + "</span></td></tr>";
+        }
+      });
+      $("#field_data").html(table_html);
+      if (visible_rows > 0) {
+        $('#custom_fields_card').show();
       } else {
-      var field_value = obj.field_value;
+        $('#custom_fields_card').hide();
       }
-
-      var name = obj.name ;
-      var is_patient = obj.visible_on_patient_panel ;
-      if(is_patient==1){
-        table_html += "<tr><th width='15%'><span id='vcustom_name'>" + capitalizeFirstLetter(name) + "</span></th> <td width='85%'><span id='vcustom_value'>" + field_value + "</span></td></tr><th></th><td></td>";
-      }
-      
-  });
-  $("#field_data").html(table_html);
   $("#dating").html(data.date);  
   $("#appointmentno").html(data.appointment_no);
   $("#patient_names").html(data.patients_name);
@@ -1124,31 +1166,35 @@ function viewDetail(id) {
   $("#department_name").html(data.department_name);
 
   if(data.payment_mode=="Cheque"){
-    $("#payrow").show();
-    $("#paydocrow").show();
+    $("#payrow").removeClass('d-none');
+    $("#paydocrow").removeClass('d-none');
     $("#spn_chequeno").html(data.cheque_no);
     $("#spn_chequedate").html(data.cheque_date);
     $("#spn_doc").html(data.doc);
   }else{
-    $("#payrow").hide();
-    $("#paydocrow").hide();
+    $("#payrow").addClass('d-none');
+    $("#paydocrow").addClass('d-none');
     $("#spn_chequeno").html("");
     $("#spn_chequedate").html("");
   }
  
   var label = "";
    if (data.appointmentstatus == "Approved") {
-    var label = "class='label label-success'";
+    var label = "class='badge bg-success'";
   } else if (data.appointmentstatus == "Pending") {
-    var label = "class='label label-warning'";
+    var label = "class='badge bg-warning'";
   } 
   else{
-    var label = "class='label label-danger'";
+    var label = "class='badge bg-danger'";
   }  
+  
+  if(data.appointment_status == "cancel"){
+    $("#trans_id").html("");
+  }
 
   $("#status").html("<small " + label + " >" + data.appointmentstatus + "</small>");
   
-  $("#edit_delete").html("<a href='#' data-toggle='tooltip'  onclick='printAppointment(" + id +")' data-original-title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a> <?php if ($this->rbac->hasPrivilege('appointment', 'can_delete')) {?><a href='#' data-toggle='tooltip'  onclick='delete_record(" + id +")' data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?> ");
+  $("#edit_delete").html("<a href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip' onclick='printAppointment(" + id +")' title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a> <?php if ($this->rbac->hasPrivilege('appointment', 'can_delete')) {?><a href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip' onclick='delete_record(" + id +")' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?> ");
 
   },
   });
@@ -1163,7 +1209,7 @@ function delete_record(id) {
       dataType: 'json',
       success: function (res) {
         if (res.status == 'success') {
-        $('#viewModal').modal('hide');
+        shModal('viewModal').hide();
         successMsg(res.message);
         $('.ajaxlisttodays,.ajaxlistupcoming,.ajaxlistold').DataTable().ajax.reload();
       }
@@ -1184,6 +1230,21 @@ function delete_record(id) {
 
     } 
   
+  $('#myModal').on('shown.bs.modal', function () {
+    var $sel = $('#addpatient_id');
+    if ($sel.hasClass('select2-hidden-accessible')) { $sel.select2('destroy'); }
+    $sel.select2({
+      ajax: {
+        url: "<?= base_url(); ?>admin/patient/getPatientListAjax",
+        type: "post", dataType: 'json', delay: 250,
+        data: function (params) { return { searchTerm: params.term }; },
+        processResults: function (response) { return { results: response }; },
+        cache: true
+      },
+      dropdownParent: $('#myModal')
+    });
+  });
+
   $('#myModal').on('hidden.bs.modal', function () {
     $(".appointment_priority_select2").select2("val", "");
     $(".doctor_select2").select2("val", "");
@@ -1199,11 +1260,7 @@ function delete_record(id) {
   });
   
   $(document).ready(function (e) {
-      $('#myModal,#viewModal,#myModaledit').modal({
-          backdrop: 'static',
-          keyboard: false,
-          show:false
-      });
+      modal_click_disabled('myModal', 'viewModal', 'myModaledit');
   });
 </script> 
 <script type="text/javascript">
@@ -1235,6 +1292,18 @@ function delete_record(id) {
       }
     })
   }
+
+  function getDoctorFeeschargeIdEdit(doctor_id){
+    $.ajax({
+      url: baseurl+'admin/appointment/getDoctorFees/',
+      type: "POST",
+      data: {doctor_id: doctor_id},
+      dataType: 'json',
+      success: function (res) {
+        $("#charge_id_edit").val(res.charge_id);
+      }
+    });
+  }
 </script>
 <script>
   function getShift(){
@@ -1243,6 +1312,8 @@ function delete_record(id) {
       var date = $("#datetimepicker").val();
       var doctor = $("#doctorid").val();
       var global_shift = $("#global_shift").val();
+
+      if(!doctor || !date || !global_shift){ return; }
 
       $.ajax({
           url: base_url+'admin/onlineappointment/getShift',
@@ -1256,7 +1327,8 @@ function delete_record(id) {
               });
               $("#slot").html("<option value=''><?php echo $this->lang->line('select'); ?></option>");
               $('#slot').append(div_data);
-          }
+          },
+          error: function(xhr){ console.error('getShift failed', xhr.status, xhr.responseText); }
       });
   }
 
@@ -1336,7 +1408,7 @@ function delete_record(id) {
 
   function validateTime(obj){
     let id = obj.value;
-    let date = $("#datetimepicker").val();
+    let date = (obj.id === 'rslot_edit') ? $("#rdates").val() : $("#datetimepicker").val();
     if(id){
       $.ajax({
           url: baseurl+'admin/onlineappointment/getshiftbyid',
@@ -1344,13 +1416,17 @@ function delete_record(id) {
           data: {id:id,date:date},
           dataType: 'json',
           success: function(res){
-            if(res.status){
-              alert("<?php echo $this->lang->line("appointment_time_is_expired"); ?>");
+            if (res.end_time && res.date) {
+              var t = res.end_time.split(':');
+              var d = res.date.split('-');
+              var endDate = new Date(parseInt(d[0]), parseInt(d[1])-1, parseInt(d[2]), parseInt(t[0]), parseInt(t[1]), parseInt(t[2]||0));
+              if (new Date() > endDate) {
+                alert("<?php echo $this->lang->line("appointment_time_is_expired"); ?>");
+              }
             }
           }
       });
     }
-    
   }
 </script>
 <script type="text/javascript">

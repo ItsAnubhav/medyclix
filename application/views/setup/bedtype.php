@@ -1,116 +1,118 @@
-<div class="content-wrapper"> 
-    <section class="content">
-        <div class="row">
-            <div class="col-md-2">
-                <?php
-                $this->load->view('setup/bedsidebar');
-                ?>
-            </div>
-            <div class="col-md-10">
-                <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('bed_type_list'); ?></h3>
-                        <div class="box-tools pull-right">
-                            <?php if ($this->rbac->hasPrivilege('bed_type', 'can_add')) { ?>
-                                <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addbed"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_bed_type'); ?></a>
-                            <?php } ?> 
-                        </div><!-- /.box-tools -->
-                    </div>
-                    <div class="box-body">
-                        <div class="download_label"><?php echo $this->lang->line('bed_type_list'); ?></div>
-                        <div class="table-responsive mailbox-messages overflow-visible">
-                            <table class="table table-hover table-striped table-bordered example">
-                                <thead>
-                                    <tr>                                    
-                                        <th><?php echo $this->lang->line('purpose'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    if (empty($bedtype_list)) {
-                                        ?>
-                                        <?php
-                                    } else {
-                                        foreach ($bedtype_list as $key => $value) {
-                                            ?>
-                                            <tr>
-                                                <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $value['name'] ?></a>       
-                                                </td>
-                                                <td class="mailbox-date pull-right">
-                                                    <?php if ($this->rbac->hasPrivilege('bed_type', 'can_edit')) { ?>
-                                                        <a data-target="#editmyModal" onclick="edit(<?php echo $value['id']; ?>)"  class="btn btn-default btn-xs" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('edit') ?>">
-                                                            <i class="fa fa-pencil"></i>
-                                                        </a>
-                                                    <?php } ?>
-                                                    <?php if ($this->rbac->hasPrivilege('bed_type', 'can_delete')) { ?>
-                                                        <a class="btn btn-default btn-xs" data-toggle="tooltip" title="" onclick="delete_recordByIdReload('admin/setup/bedtype/delete/<?php echo $value['id']; ?>', '<?php echo $this->lang->line('delete_conform'); ?>')" data-original-title="<?php echo $this->lang->line('delete') ?>">
-                                                            <i class="fa fa-trash"></i>
-                                                        </a>
-                                                    <?php } ?>
-                                                </td>
-                                            </tr>
-                                            <?php
-                                        }
-                                    }
-                                    ?>
-                                </tbody>
-                            </table><!-- /.table -->
-                        </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+<div class="row">
+    <div class="col-md-2">
+        <?php $this->load->view('setup/bedsidebar'); ?>
+    </div>
+    <div class="col-md-10">
+        <!-- general form elements -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title titlefix"><?php echo $this->lang->line('bed_type_list'); ?></h3>
+                <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                    <?php if ($this->rbac->hasPrivilege('bed_type', 'can_add')) { ?>
+                        <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm addbed"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_bed_type'); ?></a>
+                    <?php } ?>
                 </div>
-            </div><!--/.col (left) -->
-            <!-- right column -->
+            </div>
+            <div class="card-body">
+                <div class="download_label"><?php echo $this->lang->line('bed_type_list'); ?></div>
+                <div class="table-responsive mailbox-messages overflow-visible">
+                    <table class="table table-hover table-striped table-bordered example">
+                        <thead>
+                            <tr>
+                                <th><?php echo $this->lang->line('purpose'); ?></th>
+                                <th class="text-end noExport sh-th-140"><?php echo $this->lang->line('action'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            if (empty($bedtype_list)) {
+                            } else {
+                                foreach ($bedtype_list as $key => $value) {
+                                    ?>
+                                    <tr>
+                                        <td class="mailbox-name">
+                                            <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $value['name'] ?></a>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="rowoptionview mt-mius0">
+                                                <?php if ($this->rbac->hasPrivilege('bed_type', 'can_edit')) { ?>
+                                                    <a data-bs-target="#editmyModal" onclick="edit(<?php echo $value['id']; ?>)" class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit') ?>">
+                                                        <i class="fa fa-pencil"></i>
+                                                    </a>
+                                                <?php } ?>
+                                                <?php if ($this->rbac->hasPrivilege('bed_type', 'can_delete')) { ?>
+                                                    <a class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete') ?>" onclick="delete_recordByIdReload('admin/setup/bedtype/delete/<?php echo $value['id']; ?>', '<?php echo $this->lang->line('delete_confirm'); ?>')">
+                                                        <i class="fa fa-trash"></i>
+                                                    </a>
+                                                <?php } ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                }
+                            }
+                            ?>
+                        </tbody>
+                    </table><!-- /.table -->
+                </div><!-- /.mail-box-messages -->
+            </div><!-- /.card-body -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    </div><!--/.col (left) -->
+    <!-- right column -->
+</div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-sm400" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_bed_type'); ?></h4> 
-            </div>          
-            <form id="addbedtype" class="ptt10" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="modal-body pt0 pb0">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1"><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small> 
-                                <input id="invoice_no" name="name" placeholder="" type="text" class="form-control"  value="<?php echo set_value('name'); ?>" />
-
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_bed_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addbedtype" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
+                                        <input id="invoice_no" name="name" placeholder="" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div><!--./box-body-->    
-                    <div class="modal-footer">
-                        <div class="pull-right ">
-                            <button type="submit" id="addbedtypebtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                    </div>
-                </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="addbedtypebtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-sm400" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_bed_type'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editmyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editmyModalLabel"><?php echo $this->lang->line('edit_bed_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0">
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12" id="edit_bedtypedata">
-                    </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div id="edit_bedtypedata"></div>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <button type="submit" form="editbedtype" id="editbedtypebtn" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+            </div>
         </div>
-    </div>    
+    </div>
 </div>
 
 <script>
@@ -148,37 +150,33 @@
     });
 
     $(document).ready(function () {
-        $('.detail_popover').popover({
-            placement: 'right',
-            trigger: 'hover',
-            container: 'body',
-            html: true,
-            content: function () {
-                return $(this).closest('td').find('.fee_detail_popover').html();
-            }
+        document.querySelectorAll('.detail_popover').forEach(function (el) {
+            new bootstrap.Popover(el, {
+                placement: 'right',
+                trigger: 'hover',
+                container: 'body',
+                html: true,
+                content: function () {
+                    var td = el.closest('td');
+                    var inner = td ? td.querySelector('.fee_detail_popover') : null;
+                    return inner ? inner.innerHTML : '';
+                }
+            });
         });
     });
 
     function edit(id) {
-        $('#editmyModal').modal('show');        
+        var editmyModal = new bootstrap.Modal(document.getElementById('editmyModal'));
+        editmyModal.show();
         $.ajax({
             url: '<?php echo base_url(); ?>admin/setup/bedtype/getdata/' + id,
-            success: function (data) {               
+            success: function (data) {
                 $('#edit_bedtypedata').html(data);
             },
-
         });
     }
-	
-$(".addbed").click(function(){
-	$('#addbedtype').trigger("reset");	
-});
 
-    $(document).ready(function (e) {
-        $('#myModal,#editmyModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+    $(".addbed").click(function () {
+        $('#addbedtype').trigger("reset");
     });
 </script>

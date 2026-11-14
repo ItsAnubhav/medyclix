@@ -10,12 +10,12 @@
                         $datemonth = date("m", strtotime($value));
                         $att_dates = $year . "-" . $datemonth . "-" . sprintf("%02d", $i);
                         ?>
-                        <td><span data-toggle="popover" class="detail_popover" data-original-title="" title=""><a href="#" style="color:#333"><?php
+                        <td><span data-bs-toggle="popover" class="detail_popover" title="" title=""><a href="#" class="text-body"><?php
                                     if (array_key_exists($att_dates, $resultlist)) {
                                         echo $resultlist[$att_dates]["key"];
                                     }
                                     ?></a></span>
-                            <div class="fee_detail_popover" style="display: none"><?php echo $resultlist[$att_dates]["remark"]; ?></div>
+                            <div class="fee_detail_popover d-none" ><?php echo $resultlist[$att_dates]["remark"]; ?></div>
                         </td>
                     <?php } ?>
                 </tr>

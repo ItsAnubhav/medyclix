@@ -5,6 +5,22 @@ if (!defined('BASEPATH')) {
 
 class patient extends Admin_Controller
 {
+	public $agerange;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $notification;
+	public $notificationurl;
+	public $opd_prefix;
+	public $patient_login_prefix;
+	public $patient_notificationurl;
+	public $payment_mode;
+	public $recent_record_count;
+	public $sch_setting_detail;
+	public $search_type;
+	public $time_format;
+	public $yesno_condition;
+
 
     public function __construct()
     {
@@ -22,12 +38,13 @@ class patient extends Admin_Controller
         $this->load->library('Customlib');
         $this->load->library('system_notification');
         $this->load->library('datatables');
+        $this->load->library('SaasValidation');
         $this->marital_status  = $this->config->item('marital_status');
         $this->payment_mode    = $this->config->item('payment_mode');
         $this->yesno_condition = $this->config->item('yesno_condition');
         $this->search_type     = $this->config->item('search_type');
         $this->blood_group     = $this->config->item('bloodgroup');
-        $this->load->model(array('conference_model', 'transaction_model', 'casereference_model', 'patient_model', 'notificationsetting_model','antenatal_model','vital_model'));
+        $this->load->model(array('conference_model', 'transaction_model', 'casereference_model', 'patient_model', 'notificationsetting_model','antenatal_model','vital_model','indent_model'));
         $this->load->model('finding_model');
         $this->charge_type          = $this->customlib->getChargeMaster();
         $data["charge_type"]        = $this->charge_type;
@@ -74,7 +91,7 @@ class patient extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[opd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[opd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
@@ -85,20 +102,23 @@ class patient extends Admin_Controller
         $this->form_validation->set_rules('charge_id', $this->lang->line('charge'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('paid_amount', $this->lang->line('paid_amount'), 'trim|required|valid_amount|xss_clean');
 
-        $payment_mode = $this->input->post('payment_mode');
+        $payment_mode = $this->input->post('payment_mode', TRUE);
         if ($payment_mode == 'Cheque') {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
-		
-		$consult      = $this->input->post('live_consult');
+
+		$consult      = $this->input->post('live_consult', TRUE);
 		if($consult == 'yes'){
 			if (!$this->session->has_userdata('zoom_access_token')) {
 				$this->form_validation->set_rules('zoom_live', $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting'), 'trim|required|xss_clean', array('required' => $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting')));
 			}
 		}
 		
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('opd'), 'callback_validateCanAddNewResource[no_of_opd,1]');
+
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'appointment_date'  => form_error('appointment_date'),
@@ -107,12 +127,17 @@ class patient extends Admin_Controller
                 'amount'            => form_error('amount'),
                 'charge_id'         => form_error('charge_id'),
                 'paid_amount'       => form_error('paid_amount'),
+                'file'              => form_error('file'),
                 'cheque_no'         => form_error('cheque_no'),
                 'cheque_date'       => form_error('cheque_date'),
                 'document'          => form_error('document'),
                 'zoom_live'         => form_error('zoom_live'),
+                // SaaS count-limit (no_of_opd) error. The virtual validate_resource field
+                // has no input of its own; including it here lets the existing AJAX error
+                // toast (which concatenates all error values) surface the message.
+                'validate_resource' => form_error('validate_resource'),
             );
-			
+
             if (!empty($custom_fields)) {
                 foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
                     if ($custom_fields_value['validation']) {
@@ -129,31 +154,31 @@ class patient extends Admin_Controller
             }
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $live_consult     = $this->input->post('live_consult');
+            $live_consult     = $this->input->post('live_consult', TRUE);
             if($live_consult == ''){
                 $live_consult     = 'no';
-            }            
-            
+            }
+
             $payment_section = $this->config->item('payment_section');
-            $doctor_id        = $this->input->post('consultant_doctor');
-            $patient_id       = $this->input->post('patient_id');
-            $password         = $this->input->post('password');
-            $email            = $this->input->post('email');
-            $mobileno         = $this->input->post('mobileno');
-            $patient_name     = $this->input->post('patient_name');
-            $appointment_date = $this->input->post('appointment_date');
-            $isopd            = $this->input->post('is_opd');
-            $appointmentid    = $this->input->post('appointment_id');            
+            $doctor_id        = $this->input->post('consultant_doctor', TRUE);
+            $patient_id       = $this->input->post('patient_id', TRUE);
+            $password         = $this->input->post('password', TRUE);
+            $email            = $this->input->post('email', TRUE);
+            $mobileno         = $this->input->post('mobileno', TRUE);
+            $patient_name     = $this->input->post('patient_name', TRUE);
+            $appointment_date = $this->input->post('appointment_date', TRUE);
+            $isopd            = $this->input->post('is_opd', TRUE);
+            $appointmentid    = $this->input->post('appointment_id', TRUE);
             $date             = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);
             $opd_data         = array(
                 'patient_id'   => $patient_id,
                 'generated_by' => $this->customlib->getStaffID(),
             );
-            $custom_field_post  = $this->input->post("custom_fields[opd]");
+            $custom_field_post  = $this->input->post("custom_fields[opd]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -169,84 +194,114 @@ class patient extends Admin_Controller
             $transaction_data = array(
                 'case_reference_id' => 0,
                 'opd_id'            => 0,
-                'patient_id'        => $this->input->post('patient_id'),
-                'amount'            => $this->input->post('paid_amount'),
+                'patient_id'        => $this->input->post('patient_id', TRUE),
+                'amount'            => $this->input->post('paid_amount', TRUE),
                 'type'              => 'payment',
                 'section'           => $payment_section['opd'],
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $date,
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            $cheque_date = $this->input->post("cheque_date");
-            if ($this->input->post('payment_mode') == "Cheque") {
+            $cheque_date = $this->input->post("cheque_date", TRUE);
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (patient index document): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient index document): ' . $e->getMessage());
+                    }
+                }
 
             }
 
             $staff_data = $this->staff_model->getStaffByID($doctor_id);
             $staff_name = composeStaffName($staff_data);
-			
-			if (empty($this->input->post('organisation_id'))) {
+
+			if (empty($this->input->post('organisation_id', TRUE))) {
                 $organisation_id = null;
             }else{
-				$organisation_id = $this->input->post('organisation_id');
+				$organisation_id = $this->input->post('organisation_id', TRUE);
 			}
-			
+
             $charge     = array(
                 'opd_id'               => 0,
                 'date'                 => $date,
-                'charge_id'            => $this->input->post('charge_id'),
+                'charge_id'            => $this->input->post('charge_id', TRUE),
                 'qty'                  => 1,
-                'apply_charge'         => $this->input->post('amount'),
-                'standard_charge'      => $this->input->post('standard_charge'),
-                'tpa_charge'           => $this->input->post('org_charge_amount'),
-                'amount'               => $this->input->post('apply_amount'),
-                'discount_percentage'  => $this->input->post('discount_percentage'),
+                'apply_charge'         => $this->input->post('amount', TRUE),
+                'standard_charge'      => $this->input->post('standard_charge', TRUE),
+                'tpa_charge'           => $this->input->post('org_charge_amount', TRUE),
+                'amount'               => $this->input->post('apply_amount', TRUE),
+                'discount_percentage'  => $this->input->post('discount_percentage', TRUE),
                 'created_at'           => date('Y-m-d'),
                 'note'                 => '',
-                'tax'                  => $this->input->post('percentage'),
+                'tax'                  => $this->input->post('percentage', TRUE),
                 'organisation_id'      => $organisation_id,
-                'insurance_id'         => $this->input->post('insurance_id'),
-                'insurance_validity'   => $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'))
-            ); 
-			
+                'insurance_id'         => $this->input->post('insurance_id', TRUE),
+                'insurance_validity'   => $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE))
+            );
+
             $opd_visit_data = array(
                 'appointment_date'  => $date,
-                'opd_details_id'    => 0,                
-                'symptoms'          => $this->input->post('symptoms'),
-                'refference'        => $this->input->post('refference'),
-                'cons_doctor'       => $this->input->post('consultant_doctor'),
-                'casualty'          => $this->input->post('casualty'),
-                'case_type'         => $this->input->post('case'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'opd_details_id'    => 0,
+                'symptoms'          => $this->input->post('symptoms', TRUE),
+                'refference'        => $this->input->post('refference', TRUE),
+                'cons_doctor'       => $this->input->post('consultant_doctor', TRUE),
+                'casualty'          => $this->input->post('casualty', TRUE),
+                'case_type'         => $this->input->post('case', TRUE),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'live_consult'      => $live_consult,
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
                 'patient_charge_id' => null,
                 'transaction_id'    => null,
                 'can_delete'        => 'no',
-                'known_allergies'   => $this->input->post('known_allergies'),                
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
             );
 
-            if($this->input->post('is_for_antenatal')!=""){
-                $opd_visit_data['is_antenatal'] = $this->input->post('is_for_antenatal');
+            if($this->input->post('is_for_antenatal', TRUE)!=""){
+                $opd_visit_data['is_antenatal'] = $this->input->post('is_for_antenatal', TRUE);
             }
 
-            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal'),'id'=> $patient_id);
-            $this->patient_model->add($patient_data);       
- 
-            if ($this->input->post('symptoms_type') != "") {
-                $opd_visit_data['symptoms_type'] = $this->input->post('symptoms_type');
+            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal', TRUE),'id'=> $patient_id);
+            $this->patient_model->add($patient_data);
+
+            if ($this->input->post('symptoms_type', TRUE) != "") {
+                $opd_visit_data['symptoms_type'] = $this->input->post('symptoms_type', TRUE);
             }
             $opdn_id          = $this->patient_model->add_opd($opd_data, $transaction_data, $charge, $opd_visit_data);
+
+            // SaaS: increment the OPD count usage by 1 (count-based resource: no_of_opd).
+            // The pre-check only blocks when over limit; this raises the usage so the limit
+            // stays meaningful. Own try/catch so a quota-API hiccup does not abort the
+            // already-created OPD's flow (updateResouceQuota throws on failure).
+            // NOTE: decrement on OPD delete is wired (deleteOPD/deleteOPDPatient), and the
+            // revisit create path (add_revisit) increments too. The OPD->IPD move (moveopd)
+            // now increments no_of_ipd on its side.
+            if ($opdn_id) {
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_opd', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_opd quota increment failed (patient index opd add): ' . $e->getMessage());
+                }
+            }
+
             $visit_details_id = $this->patient_model->getvisitminid($opdn_id);
             $notificationurl  = $this->notificationurl;
             $url_link         = $notificationurl["opd"];
@@ -255,6 +310,11 @@ class patient extends Admin_Controller
 
             if (!empty($custom_value_array)) {
                 $this->customfield_model->insertRecord($custom_value_array, $opdn_id);
+            }
+            $icd_ids = $this->input->post('icd_code_ids', TRUE);
+            if (!empty($icd_ids) && is_array($icd_ids)) {
+                $this->load->model('icd10_model');
+                $this->icd10_model->saveOpdCodes($opdn_id, $icd_ids);
             }
             if ($live_consult == 'yes') {
                 $api_type = 'global';
@@ -321,9 +381,24 @@ class patient extends Admin_Controller
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $patient_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (patient index file): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient index file): ' . $e->getMessage());
+                    }
+                }
             }
 
             $sender_details = array('patient_id' => $patient_id, 'patient_name' => $patient_name, 'opd_details_id' => $opdn_id, 'contact_no' => $mobileno, 'email' => $email, 'appointment_date' => $appointment_date);
@@ -369,19 +444,19 @@ class patient extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $ipd_id      = $this->input->post("ipdid");
-            $date        = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date"));
-            $time        = $this->input->post('time');
+            $ipd_id      = $this->input->post("ipdid", TRUE);
+            $date        = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE));
+            $time        = $this->input->post('time', TRUE);
             $timeformat  = date("H:i:s", strtotime($time));
-            $pharmacy_id = $this->input->post('medicine_name_id');
+            $pharmacy_id = $this->input->post('medicine_name_id', TRUE);
             $chekrecord  = $this->patient_model->checkmedicationdose($ipd_id, $pharmacy_id, $date, $timeformat);
             $data = array(
                 'date'               => $date,
-                'medicine_dosage_id' => $this->input->post('dosage'),
+                'medicine_dosage_id' => $this->input->post('dosage', TRUE),
                 'time'               => $timeformat,
                 'pharmacy_id'        => $pharmacy_id,
                 'ipd_id'             => $ipd_id,
-                'remark'             => $this->input->post('remark'),
+                'remark'             => $this->input->post('remark', TRUE),
                 'generated_by'       => $this->customlib->getLoggedInUserID(),
             );
             if ($chekrecord) {
@@ -392,9 +467,9 @@ class patient extends Admin_Controller
                 $sts = 'success';
                 $msg = $this->lang->line('record_saved_successfully');
             }
-            $patient_data      = $this->patient_model->get_patientidbyIpdId($this->input->post('ipdid'));
+            $patient_data      = $this->patient_model->get_patientidbyIpdId($this->input->post('ipdid', TRUE));
             $medicine_data     = $this->notificationsetting_model->getmedicineDetails($pharmacy_id);
-            $medicinedose_data = $this->notificationsetting_model->getmedicinedoseDetails($this->input->post('dosage'));
+            $medicinedose_data = $this->notificationsetting_model->getmedicinedoseDetails($this->input->post('dosage', TRUE));
             $doctor_list       = $this->patient_model->getDoctorsipd($ipd_id);
             $consultant_doctor = $this->patient_model->get_patientidbyIpdId($ipd_id);
             $doctor_details    = $this->notificationsetting_model->getstaffDetails($patient_data['cons_doctor']);
@@ -408,7 +483,7 @@ class patient extends Admin_Controller
 
             $event_data = array(
                 'patient_id'        => $patient_data['patient_id'],
-                'ipd_no'            => $this->customlib->getSessionPrefixByType('ipd_no') . $this->input->post('ipdid'),
+                'ipd_no'            => $this->customlib->getSessionPrefixByType('ipd_no') . $this->input->post('ipdid', TRUE),
                 'case_id'           => $patient_data['case_reference_id'],
                 'date'              => $this->customlib->YYYYMMDDTodateFormat($date),
                 'time'              => $this->customlib->getHospitalTime_Format($time),
@@ -442,20 +517,20 @@ class patient extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $opd_id      = $this->input->post("opdid");
-            $date        = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date"));
-            $time        = $this->input->post('time');
+            $opd_id      = $this->input->post("opdid", TRUE);
+            $date        = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE));
+            $time        = $this->input->post('time', TRUE);
             $timeformat  = date("H:i:s", strtotime($time));
-            $pharmacy_id = $this->input->post('medicine_name_id');
+            $pharmacy_id = $this->input->post('medicine_name_id', TRUE);
             $chekrecord  = $this->patient_model->checkmedicationdoseopd($opd_id, $pharmacy_id, $date, $timeformat);
 
             $data = array(
                 'date'               => $date,
-                'medicine_dosage_id' => $this->input->post('dosage'),
+                'medicine_dosage_id' => $this->input->post('dosage', TRUE),
                 'time'               => $timeformat,
                 'pharmacy_id'        => $pharmacy_id,
                 'opd_details_id'     => $opd_id,
-                'remark'             => $this->input->post('remark'),
+                'remark'             => $this->input->post('remark', TRUE),
                 'generated_by'       => $this->customlib->getLoggedInUserID(),
             );
 
@@ -467,13 +542,13 @@ class patient extends Admin_Controller
                 $sts = 'success';
                 $msg = $this->lang->line('record_saved_successfully');
             }
-            $patient_data      = $this->patient_model->get_patientidbyopdid($this->input->post('opdid'));
+            $patient_data      = $this->patient_model->get_patientidbyopdid($this->input->post('opdid', TRUE));
             $medicine_data     = $this->notificationsetting_model->getmedicineDetails($pharmacy_id);
-            $medicinedose_data = $this->notificationsetting_model->getmedicinedoseDetails($this->input->post('dosage'));
+            $medicinedose_data = $this->notificationsetting_model->getmedicinedoseDetails($this->input->post('dosage', TRUE));
             $doctor_details    = $this->notificationsetting_model->getstaffDetails($patient_data['doctor_id']);
             $event_data        = array(
                 'patient_id'        => $patient_data['patient_id'],
-                'opd_no'            => $this->customlib->getSessionPrefixByType('opd_no') . $this->input->post('opdid'),
+                'opd_no'            => $this->customlib->getSessionPrefixByType('opd_no') . $this->input->post('opdid', TRUE),
                 'case_id'           => $patient_data['case_reference_id'],
                 'date'              => $this->customlib->YYYYMMDDTodateFormat($date),
                 'time'              => $this->customlib->getHospitalTime_Format($time),
@@ -511,12 +586,12 @@ class patient extends Admin_Controller
         } else {
 
             $data = array(
-                'id'                 => $this->input->post('medication_id'),
-                'medicine_dosage_id' => $this->input->post('dosage_id'),
-                'date'               => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date")),
-                'time'               => date("H:i:s", strtotime($this->input->post('time'))),
-                'remark'             => $this->input->post('remark'),
-                'pharmacy_id'        => $this->input->post('medicine_name_id'),
+                'id'                 => $this->input->post('medication_id', TRUE),
+                'medicine_dosage_id' => $this->input->post('dosage_id', TRUE),
+                'date'               => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE)),
+                'time'               => date("H:i:s", strtotime($this->input->post('time', TRUE))),
+                'remark'             => $this->input->post('remark', TRUE),
+                'pharmacy_id'        => $this->input->post('medicine_name_id', TRUE),
                 'generated_by'       => $this->customlib->getLoggedInUserID(),
             );
 
@@ -554,13 +629,13 @@ class patient extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[opd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[opd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
-        $payment_mode = $this->input->post('payment_mode');
-		
-		$consult      = $this->input->post('live_consult');
+        $payment_mode = $this->input->post('payment_mode', TRUE);
+
+		$consult      = $this->input->post('live_consult', TRUE);
 		if($consult == 'yes'){
 			if (!$this->session->has_userdata('zoom_access_token')) {
 				$this->form_validation->set_rules('zoom_live', $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting'), 'trim|required|xss_clean', array('required' => $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting')));
@@ -570,7 +645,7 @@ class patient extends Admin_Controller
         if ($payment_mode == 'Cheque') {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         $this->form_validation->set_rules('amount', $this->lang->line('applied_charge'), 'trim|required|xss_clean|valid_amount');
@@ -579,7 +654,11 @@ class patient extends Admin_Controller
         $this->form_validation->set_rules('charge_id', $this->lang->line('charge'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('appointment_date', $this->lang->line('visit_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
+        // SaaS: block the revisit when it would exceed the tenant's OPD count limit.
+        // A revisit calls add_opd() with no 'id', which INSERTs a new opd_details row —
+        // i.e. a brand-new OPD record — so it must be pre-checked like a fresh registration.
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('opd'), 'callback_validateCanAddNewResource[no_of_opd,1]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'charge_id'         => form_error('charge_id'),
@@ -592,6 +671,10 @@ class patient extends Admin_Controller
                 'cheque_date'       => form_error('cheque_date'),
                 'document'          => form_error('document'),
                 'zoom_live'         => form_error('zoom_live'),
+                // SaaS count-limit (no_of_opd) error. The virtual validate_resource field
+                // has no input of its own; including it here lets the existing AJAX error
+                // toast (which concatenates all error values) surface the message.
+                'validate_resource' => form_error('validate_resource'),
             );
 
             if (!empty($custom_fields)) {
@@ -615,20 +698,20 @@ class patient extends Admin_Controller
             if (empty($check_patient_id)) {
                 $check_patient_id = 0;
             }
-            $patient_id        = $this->input->post('patientid');
-            $password          = $this->input->post('password');
-            $email             = $this->input->post('email');
-            $mobileno          = $this->input->post('mobileno');
+            $patient_id        = $this->input->post('patientid', TRUE);
+            $password          = $this->input->post('password', TRUE);
+            $email             = $this->input->post('email', TRUE);
+            $mobileno          = $this->input->post('mobileno', TRUE);
             $opdn_id           = $check_patient_id + 1;
-            $custom_field_post = $this->input->post("custom_fields[opd]");
-            $appointment_date  = $this->input->post('appointment_date');
-            $consult           = $this->input->post('live_consult');
+            $custom_field_post = $this->input->post("custom_fields[opd]", TRUE);
+            $appointment_date  = $this->input->post('appointment_date', TRUE);
+            $consult           = $this->input->post('live_consult', TRUE);
             if ($consult) {
-                $live_consult = $this->input->post('live_consult');
+                $live_consult = $this->input->post('live_consult', TRUE);
             } else {
                 $live_consult = 'no';
             }
-            $doctor_id = $this->input->post("consultant_doctor");
+            $doctor_id = $this->input->post("consultant_doctor", TRUE);
             $date      = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);
             $opd_data  = array(
                 'patient_id'   => $patient_id,
@@ -638,7 +721,7 @@ class patient extends Admin_Controller
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -656,27 +739,41 @@ class patient extends Admin_Controller
                 $fileInfo        = pathinfo($_FILES["document"]["name"]);
                 $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                 $attachment_name = $_FILES["document"]["name"];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment)) {
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (patient add_revisit): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient add_revisit): ' . $e->getMessage());
+                    }
+                }
             }
 
-            $cheque_date = $this->input->post("cheque_date");
+            $cheque_date = $this->input->post("cheque_date", TRUE);
 
             $transaction_data = array(
                 'case_reference_id' => 0,
                 'opd_id'            => 0,
-                'amount'            => $this->input->post('paid_amount'),
+                'amount'            => $this->input->post('paid_amount', TRUE),
                 'type'              => 'payment',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $date,
-                'patient_id'        => $this->input->post('patientid'),
+                'patient_id'        => $this->input->post('patientid', TRUE),
                 'section'           => $payment_section['opd'],
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $transaction_data['attachment']      = $attachment;
                 $transaction_data['attachment_name'] = $attachment_name;
             }
@@ -684,15 +781,15 @@ class patient extends Admin_Controller
             $staff_data = $this->staff_model->getStaffByID($doctor_id);
             $staff_name = composeStaffName($staff_data);
 
-            $is_tpa = $this->input->post('is_tpa');
+            $is_tpa = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
             $organisation_id = null;
             $insurance_validity = null;
             $insurance_id = null;
-            }else{           
-            $organisation_id = $this->input->post('organisation');
-            $insurance_id    = $this->input->post('insurance_id');
-            $insurance_validity = $this->input->post('insurance_validity');
+            }else{
+            $organisation_id = $this->input->post('organisation_id', TRUE);
+            $insurance_id    = $this->input->post('insurance_id', TRUE);
+            $insurance_validity = $this->input->post('insurance_validity', TRUE);
             }
            
             if (empty($organisation_id)) {
@@ -702,48 +799,61 @@ class patient extends Admin_Controller
             $charge     = array(
                 'opd_id'          => 0,
                 'date'            => $date,
-                'charge_id'       => $this->input->post('charge_id'),
+                'charge_id'       => $this->input->post('charge_id', TRUE),
                 'qty'             => 1,
-                'apply_charge'    => $this->input->post('amount'),
-                'standard_charge' => $this->input->post('standard_charge'),
-                'tpa_charge'      => $this->input->post('schedule_charge'),
-                'amount'          => $this->input->post('apply_amount'),
-                'discount_percentage'=> $this->input->post('discount_percentage'),
+                'apply_charge'    => $this->input->post('amount', TRUE),
+                'standard_charge' => $this->input->post('standard_charge', TRUE),
+                'tpa_charge'      => $this->input->post('schedule_charge', TRUE),
+                'amount'          => $this->input->post('apply_amount', TRUE),
+                'discount_percentage'=> $this->input->post('discount_percentage', TRUE),
                 'created_at'      => date('Y-m-d'),
                 'note'            => '',
-                'tax'             => $this->input->post('percentage'),
+                'tax'             => $this->input->post('percentage', TRUE),
                 'organisation_id' => $organisation_id,
                 'insurance_id'     => $insurance_id,
                 'insurance_validity'  => $this->customlib->dateFormatToYYYYMMDD($insurance_validity),
             );
-			
+
             $opd_visit_data = array(
-                'appointment_date' => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),               
-                'symptoms'         => $this->input->post('symptoms'),
-                'known_allergies'  => $this->input->post('known_allergies'),
-                'patient_old'      => $this->input->post('old_patient'),
-                'refference'       => $this->input->post('refference'),
-                'cons_doctor'      => $this->input->post('consultant_doctor'),
-                'symptoms_type'    => $this->input->post('symptoms_type'),
-                'casualty'         => $this->input->post('casualty'),
-                'payment_mode'     => $this->input->post('payment_mode'),
-                'note'             => $this->input->post('note_remark'),
+                'appointment_date' => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),
+                'symptoms'         => $this->input->post('symptoms', TRUE),
+                'known_allergies'  => $this->input->post('known_allergies', TRUE),
+                'patient_old'      => $this->input->post('old_patient', TRUE),
+                'refference'       => $this->input->post('refference', TRUE),
+                'cons_doctor'      => $this->input->post('consultant_doctor', TRUE),
+                'symptoms_type'    => $this->input->post('symptoms_type', TRUE),
+                'casualty'         => $this->input->post('casualty', TRUE),
+                'payment_mode'     => $this->input->post('payment_mode', TRUE),
+                'note'             => $this->input->post('note_remark', TRUE),
                 'live_consult'     => $live_consult,
                 'can_delete'       => 'no',
                 'generated_by'     => $this->customlib->getLoggedInUserID(),
             );
-			
+
 			$opd_visit_data['is_antenatal'] = 0;
-           
-            if($this->input->post('is_for_antenatal') != "" ){
+
+            if($this->input->post('is_for_antenatal', TRUE) != "" ){
                 $opd_visit_data['is_antenatal'] = 1;
             }
 
             $opdn_id         = $this->patient_model->add_opd($opd_data, $transaction_data, $charge, $opd_visit_data);
 			
-            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal'),'id'=> $patient_id);
+            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal', TRUE),'id'=> $patient_id);
             $this->patient_model->add($patient_data);
-			
+
+            // SaaS: increment the OPD count usage by 1 (count-based resource: no_of_opd),
+            // mirroring the +1 done in patient index() OPD add. A revisit creates a NEW
+            // opd_details row (add_opd INSERTs when $opd_data has no 'id'), so it must count
+            // like any new OPD. Own try/catch so a quota-API hiccup does not abort the
+            // already-created OPD's flow (updateResouceQuota throws on failure).
+            if ($opdn_id) {
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_opd', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_opd quota increment failed (patient add_revisit opd add): ' . $e->getMessage());
+                }
+            }
+
             $visit_max_id    = $this->patient_model->getvisitmaxid($opdn_id);
             $visitid         = $visit_max_id['visitid'];
             $notificationurl = $this->notificationurl;
@@ -842,9 +952,43 @@ This Function is used to Get Doctor Charges
                 'delete_id' => form_error('delete_id[]'),
             );
             $return_array = array('status' => 0, 'error' => $msg);
-        } else {            
+        } else {
             $patient = $this->input->post('delete_id');
+
+            // SaaS: release each patient's profile image from storage quota before bulk deletion.
+            // Skip the shared default placeholder (no_image.png) — it's not a per-patient upload.
+            if (is_array($patient) && !empty($patient)) {
+                foreach ($patient as $patient_id) {
+                    $patient_record = $this->patient_model->getpatientDetails($patient_id);
+                    if (!empty($patient_record['image']) && strpos($patient_record['image'], 'no_image.png') === false) {
+                        $image_path = $patient_record['image'];
+                        $dir        = (strpos($image_path, '/') !== false) ? '' : 'uploads/patient_images';
+                        $kb         = $this->media_storage->getUploadedFileSize($image_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient bulk_delete id=' . $patient_id . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($image_path, $dir);
+                    }
+                }
+            }
+
             $this->patient_model->bulkdelete($patient);
+
+            // SaaS: decrement the patient count usage by the number of deleted patients
+            // (count-based resource: no_of_patient), mirroring the per-record -1 done in
+            // deletePatient(). Own try/catch so a quota-API hiccup does not abort the flow.
+            if (is_array($patient) && !empty($patient)) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('no_of_patient', count($patient));
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_patient quota decrement failed (patient bulk_delete): ' . $e->getMessage());
+                }
+            }
+
             $return_array = array('status' => 1, 'error' => '', 'msg' => $this->lang->line('delete_message'));
         }
 
@@ -886,7 +1030,7 @@ This Function is used to Add Patient
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[patient][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[patient][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
@@ -907,20 +1051,17 @@ This Function is used to Add Patient
 
         $this->form_validation->set_rules('email', $this->lang->line('email'), 'trim|valid_email|xss_clean');
         $this->form_validation->set_rules('mobileno', $this->lang->line('phone'), 'trim|numeric|xss_clean');
-        $this->form_validation->set_rules('first_name', $this->lang->line('staff_first_name'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('middle_name', 'Middle Name', 'trim|xss_clean');
-        $this->form_validation->set_rules('last_name', $this->lang->line('staff_last_name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('age[year]', $this->lang->line('year'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[month]', $this->lang->line('month'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[day]', $this->lang->line('day'), 'trim|required|xss_clean|numeric');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('patient'), 'callback_validateCanAddNewResource[no_of_patient,1]');
 
         if ($this->form_validation->run() == false) {
 
             $msg = array(
-                'first_name' => form_error('first_name'),
-                'middle_name'=> form_error('middle_name'),
-                'last_name'  => form_error('last_name'),
+                'name'       => form_error('name'),
                 'age'        => form_error('age'),
                 'age[year]'  => form_error('age[year]'),
                 'age[month]' => form_error('age[month]'),
@@ -931,6 +1072,10 @@ This Function is used to Add Patient
                 'insurance_id'       => form_error('insurance_id'),
                 'validity'           => form_error('validity'),
                 'organisation_id'    => form_error('organisation_id'),
+                // SaaS count-limit (no_of_patient) error. The virtual validate_resource
+                // field has no input of its own; including it here lets the existing AJAX
+                // error toast (which concatenates all error values) surface the message.
+                'validate_resource'  => form_error('validate_resource'),
             );
         
             if (!empty($custom_fields)) {
@@ -952,35 +1097,15 @@ This Function is used to Add Patient
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $dobdate = $this->input->post('dob');
+            $dobdate = $this->input->post('dob', TRUE);
             if ($dobdate == "") {
                 $dob = null;
             } else {
                 $dob = $this->customlib->dateFormatToYYYYMMDD($dobdate);
             }
 
-            $email    = $this->input->post('email');
-            $mobileno = $this->input->post('mobileno');
-
-            if (($mobileno != "") && ($email != "")) {
-                $result = $this->patient_model->checkmobileemail($mobileno, $email);
-                if ($result == 1) {
-                    $msg   = array('numberemail' => $this->lang->line('mobile_number_and_email_already_exist'));
-                    $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
-                    echo json_encode($array);
-                    die;
-                }
-            }
-
-            if ($mobileno != "") {
-                $result = $this->patient_model->checkmobilenumber($mobileno);
-                if ($result == 1) {
-                    $msg   = array('number' => $this->lang->line('mobile_number_already_exist'));
-                    $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
-                    echo json_encode($array);
-                    die;
-                }
-            }
+            $email    = $this->input->post('email', TRUE);
+            $mobileno = $this->input->post('mobileno', TRUE);
 
             if ($email != "") {
                 $result = $this->patient_model->checkemail($email);
@@ -992,63 +1117,55 @@ This Function is used to Add Patient
                 }
             }
 
-            $validity = $this->input->post("validity");
+            $validity = $this->input->post("validity", TRUE);
             if (!empty($validity)) {
                 $validity = $this->customlib->dateFormatToYYYYMMDD($validity);
             } else {
                 $validity = null;
             }
-			
-            $blood_bank_product_id = $this->input->post('blood_group');
+
+            $blood_bank_product_id = $this->input->post('blood_group', TRUE);
             if (!empty($blood_bank_product_id)) {
                 $blood_group = $blood_bank_product_id;
             } else {
                 $blood_group = null;
             }
-			
-			$organisation_id = $this->input->post('organisation_id');
+
+			$organisation_id = $this->input->post('organisation_id', TRUE);
             if (!empty($organisation_id)) {
                 $organisation_id = $organisation_id;
             } else {
                 $organisation_id = null;
             }
 			
-            $first_name   = trim($this->input->post('first_name'));
-            $middle_name  = trim($this->input->post('middle_name'));
-            $last_name    = trim($this->input->post('last_name'));
-            $patient_name = implode(' ', array_filter(array($first_name, $middle_name, $last_name), 'strlen'));
-
             $patient_data = array(
-                'first_name'            => $first_name,
-                'middle_name'           => $middle_name !== '' ? $middle_name : null,
-                'last_name'             => $last_name,
-                'patient_name'          => $patient_name,
-                'mobileno'              => $this->input->post('mobileno'),
-                'marital_status'        => $this->input->post('marital_status'),
-                'email'                 => $this->input->post('email'),
-                'gender'                => $this->input->post('gender'),
-                'guardian_name'         => $this->input->post('guardian_name'),
+                'patient_name'          => $this->input->post('name', TRUE),
+                'mobileno'              => $mobileno,
+                'marital_status'        => $this->input->post('marital_status', TRUE),
+                'email'                 => $email,
+                'gender'                => $this->input->post('gender', TRUE),
+                'guardian_name'         => $this->input->post('guardian_name', TRUE),
                 'blood_bank_product_id' => $blood_group,
-                'address'               => $this->input->post('address'),
-                'known_allergies'       => $this->input->post('known_allergies'),
-                'insurance_id'          => $this->input->post('insurance_id'),
+                'address'               => $this->input->post('address', TRUE),
+                'known_allergies'       => $this->input->post('known_allergies', TRUE),
+                'insurance_id'          => $this->input->post('insurance_id', TRUE),
                 'insurance_validity'    => $validity,
-                'note'                  => $this->input->post('note'),
+                'note'                  => $this->input->post('note', TRUE),
                 'dob'                   => $dob,
-                'age'                   => $this->input->post('age[year]'),
-                'month'                 => $this->input->post('age[month]'),
-                'day'                   => $this->input->post('age[day]'),                
-                'as_of_date'           => date("Y-m-d"),
-                'identification_number' => $this->input->post('identification_number'),
+                'age'                   => $this->input->post('age[year]', TRUE),
+                'month'                 => $this->input->post('age[month]', TRUE),
+                'day'                   => $this->input->post('age[day]', TRUE),
+                'as_of_date'            => date("Y-m-d"),
+                'identification_number' => $this->input->post('identification_number', TRUE),
                 'is_active'             => 'yes',
-                'organisation_id'       => $organisation_id,               
+                'organisation_id'       => $organisation_id,
             );
 
             $custom_field_post  = $this->input->post("custom_fields[patient]");
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[patient][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[patient][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -1059,6 +1176,18 @@ This Function is used to Add Patient
                 }
             }
             $insert_id = $this->patient_model->add_patient($patient_data);
+
+            // SaaS: increment the patient count usage by 1 (count-based resource:
+            // no_of_patient). The pre-check only blocks when over limit; this raises the
+            // usage so the limit stays meaningful. Own try/catch so a quota-API hiccup
+            // does not abort the already-created patient's flow (updateResouceQuota throws).
+            if ($insert_id) {
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_patient', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_patient quota increment failed (patient addpatient): ' . $e->getMessage());
+                }
+            }
 
             if (!empty($custom_value_array)) {
                 $this->customfield_model->insertRecord($custom_value_array, $insert_id);
@@ -1080,10 +1209,17 @@ This Function is used to Add Patient
             $this->user_model->add($data_patient_login);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'), 'id' => $insert_id);
 
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {             
+            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $file_name = $this->media_storage->fileupload("file", "./uploads/patient_images/");
                 if (!IsNullOrEmptyString($file_name)) {
                     $data_img = array('id' => $insert_id, 'image' => './uploads/patient_images/' . $file_name);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient addpatient): ' . $e->getMessage());
+                    }
                 }
 
             } else {
@@ -1093,7 +1229,7 @@ This Function is used to Add Patient
             $scan_type= $this->sch_setting_detail->scan_code_type;
             $this->customlib->generatebarcode($insert_id,$scan_type);//generate barcode and qrcode
 
-            $sender_details = array('id' => $insert_id, 'credential_for' => 'patient', 'username' => $this->patient_login_prefix . $insert_id, 'password' => $user_password, 'contact_no' => $this->input->post('mobileno'), 'email' => $this->input->post('email'));
+            $sender_details = array('id' => $insert_id, 'credential_for' => 'patient', 'username' => $this->patient_login_prefix . $insert_id, 'password' => $user_password, 'contact_no' => $mobileno, 'email' => $email);
 
             $this->mailsmsconf->mailsms('login_credential', $sender_details);
 
@@ -1236,8 +1372,8 @@ This Function is used to Import Multiple Patient Records
             access_denied();
         }
 
-        $this->session->set_userdata('top_menu', 'setup');
-        $this->session->set_userdata('sub_menu', 'setup/patient');
+        $this->session->set_userdata('top_menu', 'patient');
+        $this->session->set_userdata('sub_menu', '');
 
         $fields         = array('patient_name', 'guardian_name', 'gender', 'age', 'month', 'day', 'marital_status', 'mobileno', 'email', 'address', 'note', 'known_allergies', 'identification_number', 'insurance_id', 'insurance_validity');
         $data["fields"] = $fields;
@@ -1246,15 +1382,25 @@ This Function is used to Import Multiple Patient Records
         $data['blood_group'] = $this->blood_group;
         if ($this->form_validation->run() == false) {
 
-            $this->load->view('layout/header');
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/patient/import', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
  
         } else { 
 
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $ext        = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
                 $patient_bloodgroup = $this->input->post('blood_group');
+
+                //==============added============
+                if (!empty($patient_bloodgroup)) {
+                    $patient_bloodgroup = $patient_bloodgroup;
+                } else {
+                    $patient_bloodgroup = null;
+                }
+                //==============added============
+
 				$scan_type= $this->sch_setting_detail->scan_code_type;
 				
                 if ($ext == 'csv') {
@@ -1270,7 +1416,7 @@ This Function is used to Import Multiple Patient Records
                             $n                = 0;
 
                             foreach ($result[$i] as $key => $value) {
-                                $patient_data[$i][$fields[$n]]             	= $this->encoding_lib->toUTF8($result[$i][$key]);
+                                $patient_data[$i][$fields[$n]]             	= $this->security->xss_clean($this->encoding_lib->toUTF8($result[$i][$key]));
                                 $patient_data[$i]['is_active']             	= 'yes';
                                 $patient_data[$i]['blood_bank_product_id']  = $patient_bloodgroup;
                                 $patient_data[$i]['image']                 	= 'uploads/patient_images/no_image.png';                                
@@ -1329,6 +1475,9 @@ This Function is used to Import Multiple Patient Records
         $data['opd_data'] = $opd_data;
         $data["title"]    = $this->lang->line('opd_patient');
         $this->session->set_userdata('top_menu', 'OPD_Out_Patient');
+        // OPD is a top-level menu item — clear any sticky sub_menu (e.g. left over from
+        // Setup > Settings) so the sidebar doesn't keep a sub-page highlighted here.
+        $this->session->set_userdata('sub_menu', '');
         $setting                    = $this->setting_model->get();
         $data['setting']            = $setting;
         $opd_month                  = $setting[0]['opd_record_month'];
@@ -1353,6 +1502,8 @@ This Function is used to Import Multiple Patient Records
         $data['category_dosage']    = $category_dosage;
         $data['intervaldosage']  = $this->medicine_dosage_model->getIntervalDosage();
         $data['durationdosage']  = $this->medicine_dosage_model->getDurationDosage();
+        $data['medicineName']    = $this->pharmacy_model->getMedicineName();
+        $data['dosage']          = $this->medicine_dosage_model->getMedicineDosage();
         $doctorid                   = "";
         $doctor_restriction         = $this->session->userdata['hospitaladmin']['doctor_restriction'];
         $disable_option             = false;
@@ -1367,9 +1518,13 @@ This Function is used to Import Multiple Patient Records
         $data["doctor_select"]  = $doctorid;
         $data["disable_option"] = $disable_option;
         $data['organisation']   = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $this->load->model('icd10_model');
+        $data['icd10_groups']   = $this->icd10_model->getgroup();
+        $data['icd10_codes']    = $this->icd10_model->get();
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/search', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getopddatatable()
@@ -1389,9 +1544,9 @@ This Function is used to Import Multiple Patient Records
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . '/1' . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 $action .= "</div'>";
-                $first_action = "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . ">";
+                $first_action = "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . '/1' . ">";
                 if($value->gender){
                     $gender = $this->lang->line(strtolower($value->gender));
                 }else{
@@ -1399,18 +1554,18 @@ This Function is used to Import Multiple Patient Records
                 }
                 
                 //==============================
-                $row[] = $first_action . $value->patient_name . "</a>" . $action;
+                $row[] = $first_action . $value->patient_name . "</a>";
                 $row[] = $value->patientid;
                 $row[] = $value->guardian_name;
                 $row[] = $gender;
                 $row[] = $value->mobileno;
                 $row[] = composeStaffNameByString($value->generated_byname, $value->generated_bysurname, $value->generated_byemployee_id);
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
-                $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->last_visit, $this->time_format);                
-				if ($this->rbac->hasPrivilege('opd_antenatal', 'can_view')) { 
+                $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->last_visit, $this->time_format);
+				if ($this->rbac->hasPrivilege('opd_antenatal', 'can_view')) {
                 $row[]  = $is_antenatal;
 				}
-                $row[]     = $value->total_visit;
+                $row[]     = $value->total_visit. $action;
                 $dt_data[] = $row;
             }
         }
@@ -1424,8 +1579,9 @@ This Function is used to Import Multiple Patient Records
     }
 
     public function getvisitwiseopddatatable($id)
-    { 
-        $dt_response = $this->patient_model->getallopdvisits($id);
+    {
+        $show_antenatal = $this->rbac->hasPrivilege('opd_antenatal', 'can_view');
+        $dt_response = $this->patient_model->getallopdvisits($id, $show_antenatal, 'patient_search');
         $fields      = $this->customfield_model->get_custom_fields('opd', 1);
         $dt_response = json_decode($dt_response);
 
@@ -1445,35 +1601,35 @@ This Function is used to Import Multiple Patient Records
 
                 $action = "<div class='white-space-nowrap'>";
                 if ($this->rbac->hasPrivilege('opd_print_bill', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs print_visit_bill'  data-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs print_visit_bill'  data-bs-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
                 }
                 if ($result[$key]['prescription'] == 'no') {
                     if ($this->rbac->hasPrivilege('prescription', 'can_add')) {
-                        $action .= "<a href='#' onclick='getRecord_id(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
+                        $action .= "<a href='#' onclick='getRecord_id(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
                     }
                 } elseif ($result[$key]['prescription'] == 'yes') {
                     if ($this->rbac->hasPrivilege('prescription', 'can_view')) {
-                        $action .= "<a href='#' onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
+                        $action .= "<a href='#' onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
                     }
                 }
                 if ($this->rbac->hasPrivilege('manual_prescription', 'can_view')) {
-                    $action .= "<a href='#' onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fas fa fa-file'></i></a>";
+                    $action .= "<a href='#' onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fas fa fa-file'></i></a>";
                 }
-                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
                 if (!$value->is_ipd_moved) {
                     if ($this->rbac->hasPrivilege('opd_move_patient_in_ipd', 'can_view')) {
-                        $action .= "<a href='javascript:void(0)' data-toggle='tooltip'  data-original-title='" . $this->lang->line('move_in_ipd') . "' class='btn btn-default btn-xs move_opd' data-opd-id=" . $this->opd_prefix . $opd_id . " data-record-id=" . $visit_details_id . "><i class='fas fa-share-square'></i></a>";
+                        $action .= "<a href='javascript:void(0)' data-bs-toggle='tooltip' title='" . $this->lang->line('move_in_ipd') . "' class='btn btn-default btn-xs move_opd' data-opd-id=" . $this->opd_prefix . $opd_id . " data-record-id=" . $visit_details_id . "><i class='fas fa-share-square'></i></a>";
                     }
                 }
 
                 $action .= "</div>";
-                $first_action = "<a href=" . base_url() . 'admin/patient/visitdetails/' . $value->pid . '/' . $opd_id . ">";
+                $first_action = "<a href=" . base_url() . 'admin/patient/visitdetails/' . $value->pid . '/' . $opd_id . '/' . $id . ">";
                 if($value->is_antenatal==1){
                     $is_antenatal = $this->lang->line('yes');
                 }else{
                     $is_antenatal = $this->lang->line('no');
                 }
-                
+
                 if($value->symptoms){
                     $symptoms = nl2br($value->symptoms);
                 }else{
@@ -1522,9 +1678,10 @@ This Function is used to Import Multiple Patient Records
         }
         $opd_data = $this->session->flashdata('opd_data');
         $data['fields'] = $this->customfield_model->get_custom_fields('opd', 1);
-        $this->load->view('layout/header');
-        $this->load->view('admin/patient/opddischargepatients.php', $data);
-        $this->load->view('layout/footer');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/opddischargepatients', $data);
+        $this->load->view('layout/footer', $data);
     }
 	
     public function getopddischargepatient()
@@ -1540,7 +1697,7 @@ This Function is used to Import Multiple Patient Records
                 //====================================
                 $action = "";
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 $action .= "</div'>";
                 $first_action = "<a href=" . base_url() . 'admin/patient/profile/' . $value->pid . ">";
                 //==============================
@@ -1616,40 +1773,40 @@ This Function is used to Import Multiple Patient Records
                 $action = "<div class='white-space-nowrap'>";
                 $antenatal_prescription="";
                 if ($this->rbac->hasPrivilege('opd_print_bill', 'can_view')) {
-                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs print_visit_bill'  data-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fas fa fa-print'></i></a>";
+                    $action .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs print_visit_bill'  data-bs-toggle='tooltip' title='" . $this->lang->line('print_bill') . "'><i class='fas fa fa-print'></i></a>";
                 }
 
                 if ($result[$key]['prescription'] == 'no') {
                     if ($this->rbac->hasPrivilege('prescription', 'can_add')) {
-                        $action .= "<a href='#' onclick='getRecord_id(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
+                        $action .= "<a href='#' onclick='getRecord_id(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
                     }
                 } elseif ($result[$key]['prescription'] == 'yes') {
                     if ($this->rbac->hasPrivilege('prescription', 'can_view')) {
-                        $action .= "<a href='#' onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
+                        $action .= "<a href='#' onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
                     }
                 }
 
                 if ($this->rbac->hasPrivilege('manual_prescription', 'can_view')) {
-                    $action .= "<a href='#' onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fa fa-file'></i></a>";
+                    $action .= "<a href='#' onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fa fa-file'></i></a>";
                 }
 
-                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
 
                 if($value->is_antenatal==1 && $value->gender=='Female'){
                     if($result[$key]['antenatal_prescription']=='no'){						
 						if ($this->rbac->hasPrivilege('opd_antenatal', 'can_add')) { 
-							$action .= "<a href='#' onclick='addantenatal(" . $visit_details_id . "," . $value->case_reference_id . " )' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('add_antenatal_finding') . "'><img width='15' src='".base_url().'uploads/patient_images/pregnant.png'."'></a>";
+							$action .= "<a href='#' onclick='addantenatal(" . $visit_details_id . "," . $value->case_reference_id . " )' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('add_antenatal_finding') . "'><img width='15' src='".base_url().'uploads/patient_images/pregnant.png'."'></a>";
 						}						
                     }else{						
 						if ($this->rbac->hasPrivilege('opd_antenatal', 'can_view')) { 
-							$action .= "<a href='#' onclick='viewantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('view_antenatal_finding') . "'><img width='15' src='".base_url().'uploads/patient_images/ultrasound-machine.png'."'></i></a>";
+							$action .= "<a href='#' onclick='viewantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('view_antenatal_finding') . "'><img width='15' src='".base_url().'uploads/patient_images/ultrasound-machine.png'."'></i></a>";
 						}						
                     }
 				}                
 
                 if (!$value->is_ipd_moved) {
                     if ($this->rbac->hasPrivilege('opd_move_patient_in_ipd', 'can_view')) {
-                        $action .= "<a href='javascript:void(0)' data-toggle='tooltip'  data-original-title='" . $this->lang->line('move_in_ipd') . "' class='btn btn-default btn-xs move_opd' data-opd-id=" . $this->opd_prefix . $opd_id . " data-record-id=" . $visit_details_id . "><i class='fas fa-share-square'></i></a>";
+                        $action .= "<a href='javascript:void(0)' data-bs-toggle='tooltip' title='" . $this->lang->line('move_in_ipd') . "' class='btn btn-default btn-xs move_opd' data-opd-id=" . $this->opd_prefix . $opd_id . " data-record-id=" . $visit_details_id . "><i class='fas fa-share-square'></i></a>";
                     }
                 }
 
@@ -1760,51 +1917,52 @@ This Function is used to Import Multiple Patient Records
 
                     if ($result[$key]['prescription'] == 'no') {
                         if ($this->customlib->checkDischargePatient($value->discharged)) {
-                            $action .= "<a href='#'  onclick='getRecord_id(" . $value->visit_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
+                            $action .= "<a href='#' onclick='getRecord_id(" . $value->visit_id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
                         }
                     } elseif ($result[$key]['prescription'] == 'yes') {
-                        $action .= "<a href='#'  onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
+                        $action .= "<a href='#' onclick='view_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('view_prescription') . "'><i class='fas fa-file-prescription'></i></a>";
                     }
                 }
 
                 if ($this->rbac->hasPrivilege('manual_prescription', 'can_view')) {
-                    $action .= "<a href='#'  onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fas fa fa-file'></i></a>";
+                    $action .= "<a href='#' onclick='viewmanual_prescription(" . $visit_details_id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('manual_prescription') . "'><i class='fas fa fa-file'></i></a>";
                 }
-				
+
                 if($value->gender=='Female' && $value->is_antenatal==1){
                     if($result[$key]['antenatal_prescription']=='no'){
 						if ($this->rbac->hasPrivilege('opd_antenatal', 'can_add')) {
-							$action .= "<a href='#' onclick='addantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='".$this->lang->line('add_antenatal_finding')."'><img width='15' src='".base_url().'uploads/patient_images/pregnant.png'."'></a>";
+							$action .= "<a href='#' onclick='addantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='".$this->lang->line('add_antenatal_finding')."'><img width='15' src='".base_url().'uploads/patient_images/pregnant.png'."'></a>";
 						}
                     }else{
 						if ($this->rbac->hasPrivilege('opd_antenatal', 'can_view')) {
-							$action .= "<a href='#' onclick='viewantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='".$this->lang->line('view_antenatal_finding')."'><img width='15' src='".base_url().'uploads/patient_images/ultrasound-machine.png'."'></a>";
+							$action .= "<a href='#' onclick='viewantenatal(" . $visit_details_id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='".$this->lang->line('view_antenatal_finding')."'><img width='15' src='".base_url().'uploads/patient_images/ultrasound-machine.png'."'></a>";
 						}
                     }
                 }
-				
-                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
 
                 $action .= "</div>";
                 
                 if($value->symptoms){
-                    $symptoms = nl2br($value->symptoms);
+                    $symptoms = nl2br(html_escape($value->symptoms));
                 }else{
                     $symptoms = '';
                 }
-                
+
                 //=====================
                 $row[] = $this->customlib->getSessionPrefixByType('checkup_id') . $visit_details_id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->appointment_date, $this->time_format);
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
-                $row[] = $value->refference;
+                $row[] = html_escape($value->refference);
                 $row[] = $symptoms;
                 //====================
                 if (!empty($fields)) {
                     foreach ($fields as $fields_key => $fields_value) {
-                        $display_field = $value->{"$fields_value->name"};
+                        $display_field = html_escape($value->{"$fields_value->name"});
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
+                            $raw_val = html_escape($value->{"$fields_value->name"});
+                            $display_field = "<a href=" . $raw_val . " target='_blank'>" . $raw_val . "</a>";
                         }
                         $row[] = $display_field;
                     }
@@ -1839,7 +1997,7 @@ This Function is used to Import Multiple Patient Records
                 $action = "<div class=''>";
 
                 if ($this->rbac->hasPrivilege('opd_charges', 'can_delete')) {
-                    $action .= "<a href='#' onclick='deleterecord(" . $value->patient_id . ',' . $value->opd_id . ',' . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='deleterecord(" . $value->patient_id . ',' . $value->opd_id . ',' . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div>";
@@ -1883,7 +2041,7 @@ This Function is used to Import Multiple Patient Records
                 $action = "<div class=''>";
 
                 if ($this->rbac->hasPrivilege('opd_charges', 'can_delete')) {
-                    $action .= "<a href='#' onclick='deleterecord(" . $value->patient_id . ',' . $value->opd_details_id . ',' . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='deleterecord(" . $value->patient_id . ',' . $value->opd_details_id . ',' . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div>";
@@ -1937,7 +2095,7 @@ This Function is used to Import Multiple Patient Records
             if ($this->rbac->hasPrivilege('prescription', 'can_add')) {
 
                 if ($result_value['prescription'] == 'no') {
-                    $action .= "<a href='#' onclick='getRecord_id(" . $result_value['id'] . "," . $opdid . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
+                    $action .= "<a href='#' onclick='getRecord_id(" . $result_value['id'] . "," . $opdid . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('add_prescription') . "'><i class='fas fa-prescription'></i></a>";
                 } elseif ($result_value['prescription'] == 'yes') {
                     $userdata           = $this->customlib->getUserData();
                     $prescription       = "yes";
@@ -1951,11 +2109,11 @@ This Function is used to Import Multiple Patient Records
                             }
                         }
                     }
-                    $action .= "<a href='#' onclick='view_prescription(" . $result_value['opdid'] . ',' . $result_value['opdid'] . ',' . $result_value['id'] . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('view') . ' ' . $this->lang->line('prescription') . "'><i class='fas fa-file-prescription'></i></a>";
+                    $action .= "<a href='#' onclick='view_prescription(" . $result_value['opdid'] . ',' . $result_value['opdid'] . ',' . $result_value['id'] . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('view') . ' ' . $this->lang->line('prescription') . "'><i class='fas fa-file-prescription'></i></a>";
                 }
             }
 
-            $action .= "<a href='#' onclick='getRecord(" . $result_value['patientid'] . ',' . $result_value['opdid'] . ',' . $result_value['id'] . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' ></a>";
+            $action .= "<a href='#' onclick='getRecord(" . $result_value['patientid'] . ',' . $result_value['opdid'] . ',' . $result_value['id'] . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' ></a>";
             $action .= "</div'>";
             
                 if($result_value['symptoms']){
@@ -2031,6 +2189,9 @@ This Function is used to Import Multiple Patient Records
             $data["bedgroupid"] = $bedgroupid;
         }
         $this->session->set_userdata('top_menu', 'IPD_in_patient');
+        // IPD is a top-level menu item — clear any sticky sub_menu (e.g. left over from
+        // Setup > Settings) so the sidebar doesn't keep a sub-page highlighted here.
+        $this->session->set_userdata('sub_menu', '');
         $data["marital_status"]     = $this->marital_status;
         $data["payment_mode"]       = $this->payment_mode;
         $data["bloodgroup"]         = $this->bloodbankstatus_model->get_product(null, 1);
@@ -2044,6 +2205,9 @@ This Function is used to Import Multiple Patient Records
         $data['symptomsresult']     = $symptoms_result;
         $symptoms_resulttype        = $this->symptoms_model->getsymtype();
         $data['symptomsresulttype'] = $symptoms_resulttype;
+        $this->load->model('icd10_model');
+        $data['icd10_groups']       = $this->icd10_model->getgroup();
+        $data['icd10_codes']        = $this->icd10_model->get();
         $data["patients"]           = $patients;
         $data["doctors"]            = $doctors;
         $data["yesno_condition"]    = $this->yesno_condition;
@@ -2064,9 +2228,10 @@ This Function is used to Import Multiple Patient Records
         $data['setting']        = $setting;
         $data['organisation']   = $this->organisation_model->get();
 
-        $this->load->view('layout/header');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/ipdsearch', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getipddatatable()
@@ -2095,7 +2260,7 @@ This Function is used to Import Multiple Patient Records
                 $action            = "<div class='rowoptionview rowview-mt-19'>";
 
                 if ($this->rbac->hasPrivilege('ipd_patient', 'can_view')) {
-                    $action .= "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                    $action .= "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . '/1' . " class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 }
 
                 if($value->gender){
@@ -2103,11 +2268,11 @@ This Function is used to Import Multiple Patient Records
                 }else{
                     $gender =  '';
                 }
-                
+
                 $action .= "</div'>";
-                $first_action = "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . ">";
+                $first_action = "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . '/1' . ">";
                 //==============================
-                $row[] = $first_action . $this->customlib->getSessionPrefixByType('ipd_no') . $value->ipdid . "</a>" . $action;
+                $row[] = $first_action . $this->customlib->getSessionPrefixByType('ipd_no') . $value->ipdid . "</a>";
                 $row[] = $value->case_reference_id;
                 $row[] = composePatientName($value->patient_name, $value->id);              
                 $row[] = $gender;
@@ -2129,7 +2294,7 @@ This Function is used to Import Multiple Patient Records
                         $row[] = $display_field;
                     }
                 }
-                $row[] = amountFormat($value->ipdcredit_limit);
+                $row[] = amountFormat($value->ipdcredit_limit) . $action;
                 //====================
                 $dt_data[] = $row;
             }
@@ -2171,11 +2336,11 @@ This Function is used to Import Multiple Patient Records
                 }
 
                 $payment = $this->patient_model->getPayment($id, $ipdid);
-                $action  = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a title=".$this->lang->line('view')." href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . "><i class='fa fa-reorder' aria-hidden='true'></i></a>";
-                $action .= "</div'>";
-                $first_action = "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . ">";
-                $row[]        = $first_action . $value->patient_name . "</a>" . $action;
+                $action  = "<div class='rowoptionview'>";
+                $action .= "<a title='" . $this->lang->line('view') . "' href='" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "</div>";
+                $first_action = "<a href='" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . "'>";
+                $row[]        = $first_action . $value->patient_name . "</a>";
                 $row[]        = $value->id;
                 $row[]        = $value->case_reference_id;
                 
@@ -2192,7 +2357,7 @@ This Function is used to Import Multiple Patient Records
                 $row[]        = $this->customlib->YYYYMMDDHisTodateFormat($value->discharge_date, $this->time_format);
                 $row[]        = amountFormat($tax);
                 $row[]        = amountFormat($total);
-                $row[]        = amountFormat($amount);
+                $row[]        = amountFormat($amount) . $action;
                 $dt_data[]    = $row;
             }
         }
@@ -2257,7 +2422,7 @@ This Function is used to Import Multiple Patient Records
 
                 $action = "";
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a target='_blank' href=" . site_url('admin/patient/ipdprofile/' . $value->id) . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "<a target='_blank' href=" . site_url('admin/patient/ipdprofile/' . $value->id) . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 $action .= "</div'>";
                 $first_action = "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->id . ">";
                 //==============================
@@ -2265,7 +2430,7 @@ This Function is used to Import Multiple Patient Records
                 $row = array();
 
                 $row[] = composePatientName($value->patient_name, $value->patient_id);
-                $row[] = $first_action . $this->customlib->getSessionPrefixByType('ipd_no') . $value->id . "</a>" . $action;
+                $row[] = $first_action . $this->customlib->getSessionPrefixByType('ipd_no') . $value->id . "</a>";
                 $row[]     = $value->case_reference_id;
                 
                 if($value->gender){
@@ -2291,7 +2456,7 @@ This Function is used to Import Multiple Patient Records
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->date);
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->discharge_date);
                 $row[]     = $status;
-                $row[]     = $value->admit_duration;
+                $row[]     = $value->admit_duration . $action;
                 $dt_data[] = $row;
             }
         }
@@ -2346,7 +2511,7 @@ This Function is used to Import Multiple Patient Records
 
                 $action = "";
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a target='_blank' href=" . base_url('admin/patient/visitdetails/' . $value->patient_id . '/' . $value->id) . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                $action .= "<a target='_blank' href=" . base_url('admin/patient/visitdetails/' . $value->patient_id . '/' . $value->id) . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 $action .= "</div'>";
                 $first_action = "<a href=" . base_url() . 'admin/patient/visitdetails/' . $value->patient_id . '/' . $value->id . ">";
                 //==============================
@@ -2354,7 +2519,7 @@ This Function is used to Import Multiple Patient Records
                 $row = array();
 
                 $row[] = composePatientName($value->patient_name, $value->patient_id);
-                $row[] = $first_action . $this->customlib->getSessionPrefixByType('opd_no') . $value->id . "</a>" . $action;
+                $row[] = $first_action . $this->customlib->getSessionPrefixByType('opd_no') . $value->id . "</a>";
                 $row[]     = $value->case_reference_id;
                 
                 if($value->gender){
@@ -2378,7 +2543,7 @@ This Function is used to Import Multiple Patient Records
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->appointment_date);
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->discharge_date);
                 $row[]     = $status;
-                $row[]     = $value->admit_duration;
+                $row[]     = $value->admit_duration . $action;
                 $dt_data[] = $row;
             }
         }
@@ -2397,13 +2562,14 @@ This Function is used to Import Multiple Patient Records
             access_denied();
         }
         $this->session->set_userdata('top_menu', 'IPD_in_patient');
-        $this->load->view('layout/header');
-        $this->load->view('admin/patient/dischargedPatients');
-        $this->load->view('layout/footer');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/dischargedPatients', $data);
+        $this->load->view('layout/footer', $data);
     }
 
-    public function visitdetails($id, $opdid)
-    {       
+    public function visitdetails($id, $opdid, $tab_type = 0)
+    {
         if (!empty($id)) {
             $result         = $this->patient_model->getDetails($opdid);       
             $data['result'] = $result;
@@ -2509,10 +2675,25 @@ This Function is used to Import Multiple Patient Records
 				$data['patientvital']	=	'';
 			}
 
-            $this->load->view("layout/header"); 
-            $this->load->view("admin/patient/visitDetails", $data);
-            $this->load->view("layout/footer");
+            $data['tab_type'] = (int) $tab_type;
+            $this->load->model('icd10_model');
+            $data['opd_icd_codes'] = $this->icd10_model->getOpdCodes($opdid);
+            $data['icd10_groups']  = $this->icd10_model->getgroup();
+            $data['icd10_codes']   = $this->icd10_model->get();
+
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/patient/visitDetails', $data);
+            $this->load->view('layout/footer', $data);
         }
+    }
+
+    public function getopdsidebarpage($tab_type = 0, $page = 1)
+    {
+        $search               = $this->input->get('search', TRUE);
+        $result               = $this->patient_model->getOpdSidebarList((int) $tab_type, (int) $page, 15, $search);
+        $result['opd_prefix'] = $this->opd_prefix;
+        echo json_encode($result);
     }
 
     public function addlivelink()
@@ -2531,7 +2712,7 @@ This Function is used to Import Multiple Patient Records
         echo json_encode($array);
     } else {
     
-        $conference_id= $this->input->post('conference_id');
+        $conference_id= $this->input->post('conference_id', TRUE);
         $conference= $this->conference_model->getconference($conference_id);
         $api_type = 'global';
         $params   = array(
@@ -2583,7 +2764,7 @@ This Function is used to Import Multiple Patient Records
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[opdrecheckup][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[opdrecheckup][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
 
@@ -2595,22 +2776,25 @@ This Function is used to Import Multiple Patient Records
         $this->form_validation->set_rules('appointment_date', $this->lang->line('appointment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('paid_amount', $this->lang->line('paid_amount'), 'trim|required|xss_clean|valid_amount');
         
-        if($this->input->post('payment_mode') == 'Cheque'){
+        if($this->input->post('payment_mode', TRUE) == 'Cheque'){
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean|valid_amount');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
         }
-        
-        $consult      = $this->input->post('live_consult');
+
+        $consult      = $this->input->post('live_consult', TRUE);
 		if($consult == 'yes'){
 			if (!$this->session->has_userdata('zoom_access_token')) {
 				$this->form_validation->set_rules('zoom_live', $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting'), 'trim|required|xss_clean', array('required' => $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting')));
 			}
 		}
 		
-        if ($this->form_validation->run() == false) {  
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
+
+        if ($this->form_validation->run() == false) {
             $msg = array(
                 'firstname'        => form_error('name'),
                 'appointment_date' => form_error('appointment_date'),
+                'document'         => form_error('document'),
                 'amount'           => form_error('amount'),
                 'charge_id'        => form_error('charge_id'),
                 'apply_amount'     => form_error('apply_amount'),
@@ -2646,44 +2830,44 @@ This Function is used to Import Multiple Patient Records
                 $check_patient_id = 0;
             }
             $opdn_id           = $check_patient_id + 1;
-            $patient_id        = $this->input->post('id');
-            $password          = $this->input->post('password');
-            $custom_field_post = $this->input->post("custom_fields[opdrecheckup]");
-            $appointment_date  = $this->input->post('appointment_date');
-            $doctor_id         = $this->input->post('consultant_doctor');
-            $opd_id            = $this->input->post('opd_id');
+            $patient_id        = $this->input->post('id', TRUE);
+            $password          = $this->input->post('password', TRUE);
+            $custom_field_post = $this->input->post("custom_fields[opdrecheckup]", TRUE);
+            $appointment_date  = $this->input->post('appointment_date', TRUE);
+            $doctor_id         = $this->input->post('consultant_doctor', TRUE);
+            $opd_id            = $this->input->post('opd_id', TRUE);
             if ($consult) {
-                $live_consult = $this->input->post('live_consult');
+                $live_consult = $this->input->post('live_consult', TRUE);
             } else {
                 $live_consult = "no";
             }
 
             $date            = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);
-            $revisit_is_tpa = $this->input->post('revisit_is_tpa');
+            $revisit_is_tpa = $this->input->post('revisit_is_tpa', TRUE);
             if($revisit_is_tpa=="" || $revisit_is_tpa==0){
             $organisation_id = null;
             $insurance_validity = null;
             $insurance_id = null;
-        }else{           
-            $organisation_id = $this->input->post('organisation');
-            $insurance_validity = $this->input->post('insurance_validity');
-            $insurance_id = $this->input->post('insurance_id');
+        }else{
+            $organisation_id = $this->input->post('organisation_id', TRUE);
+            $insurance_validity = $this->input->post('insurance_validity', TRUE);
+            $insurance_id = $this->input->post('insurance_id', TRUE);
         }
-           
+
             if (empty($organisation_id)) {
                 $organisation_id = null;
             }
             $opd_data = array(
                 'appointment_date'  => $date,
-                'opd_details_id'    => $opd_id,                
-                'case_type'         => $this->input->post('revisit_case'),
-                'symptoms'          => $this->input->post('symptoms'),
-                'known_allergies'   => $this->input->post('known_allergies'),
-                'refference'        => $this->input->post('refference'),
-                'cons_doctor'       => $this->input->post('consultant_doctor'),
-                'casualty'          => $this->input->post('casualty'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note_remark'),
+                'opd_details_id'    => $opd_id,
+                'case_type'         => $this->input->post('revisit_case', TRUE),
+                'symptoms'          => $this->input->post('symptoms', TRUE),
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
+                'refference'        => $this->input->post('refference', TRUE),
+                'cons_doctor'       => $this->input->post('consultant_doctor', TRUE),
+                'casualty'          => $this->input->post('casualty', TRUE),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note_remark', TRUE),
                 'live_consult'      => $live_consult,
                 'patient_charge_id' => null,
                 'transaction_id'    => null,
@@ -2691,53 +2875,68 @@ This Function is used to Import Multiple Patient Records
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
             );
 
-            if($this->input->post('is_for_antenatal')!=""){
-                $opd_data['is_antenatal'] = $this->input->post('is_for_antenatal') ;
+            if($this->input->post('is_for_antenatal', TRUE)!=""){
+                $opd_data['is_antenatal'] = $this->input->post('is_for_antenatal', TRUE);
             }
 
             $payment_section  = $this->config->item('payment_section');
             $transaction_data = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
-                'opd_id'            => $this->input->post('opd_id'),
-                'amount'            => $this->input->post('paid_amount'),
+                'case_reference_id' => $this->input->post('case_reference_id', TRUE),
+                'opd_id'            => $this->input->post('opd_id', TRUE),
+                'amount'            => $this->input->post('paid_amount', TRUE),
                 'type'              => 'payment',
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
-                'patient_id'        => $this->input->post('id'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
+                'patient_id'        => $this->input->post('id', TRUE),
                 'section'           => $payment_section['opd'],
                 'payment_date'      => $date,
                 'cheque_date'       => $date,
-                'cheque_no'         => $this->input->post('cheque_no'),
+                'cheque_no'         => $this->input->post('cheque_no', TRUE),
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
-                $cheque_date                     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+                $cheque_date                     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
                 $transaction_data['cheque_date'] = $cheque_date;
-                $transaction_data['cheque_no']   = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']   = $this->input->post('cheque_no', TRUE);
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $fileInfo        = pathinfo($_FILES["document"]["name"]);
                     $attachment      = uniqueFileName() . '.' . $fileInfo['extension'];
                     $attachment_name = $_FILES["document"]["name"];
-                    move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment);
-                    $transaction_data['attachment']      = $attachment;
-                    $transaction_data['attachment_name'] = $attachment_name;
+                    if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $attachment)) {
+                        $transaction_data['attachment']      = $attachment;
+                        $transaction_data['attachment_name'] = $attachment_name;
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                            // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                            if (is_string($saas_quota_result)) {
+                                $saas_quota_decoded = json_decode($saas_quota_result);
+                                if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                    log_message('error', 'SaaS storage quota update returned failure (patient addvisitDetails): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                                }
+                            }
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (patient addvisitDetails): ' . $e->getMessage());
+                        }
+                    }
                 }
             }
 
             $staff_data = $this->staff_model->getStaffByID($doctor_id);
             $staff_name = composeStaffName($staff_data);
             $charge     = array(
-                'opd_id'          => $this->input->post('opd_id'),
+                'opd_id'          => $this->input->post('opd_id', TRUE),
                 'date'            => $date,
-                'charge_id'       => $this->input->post('charge_id'),
+                'charge_id'       => $this->input->post('charge_id', TRUE),
                 'qty'             => 1,
-                'apply_charge'    => $this->input->post('amount'),
-                'standard_charge' => $this->input->post('standard_charge'),
-                'tpa_charge'      => $this->input->post('schedule_charge'),
-                'amount'          => $this->input->post('apply_amount'),
-                'tax'          => $this->input->post('percentage'),
-                'discount_percentage'=> $this->input->post('discount_percentage'),
+                'apply_charge'    => $this->input->post('amount', TRUE),
+                'standard_charge' => $this->input->post('standard_charge', TRUE),
+                'tpa_charge'      => $this->input->post('schedule_charge', TRUE),
+                'amount'          => $this->input->post('apply_amount', TRUE),
+                'tax'          => $this->input->post('percentage', TRUE),
+                'discount_percentage'=> $this->input->post('discount_percentage', TRUE),
                 'created_at'      => date('Y-m-d'),
                 'note'            => '',
                 'organisation_id' => $organisation_id,
@@ -2748,7 +2947,7 @@ This Function is used to Import Multiple Patient Records
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -2764,7 +2963,7 @@ This Function is used to Import Multiple Patient Records
                 $this->customfield_model->insertRecord($custom_value_array, $opdvisit_id);
             }
             
-            $doctor_id      = $this->input->post('consultant_doctor');
+            $doctor_id      = $this->input->post('consultant_doctor', TRUE);
             $setting_result = $this->setting_model->getzoomsetting();
             $opdduration    = $setting_result->opd_duration;			
 			
@@ -2799,22 +2998,22 @@ This Function is used to Import Multiple Patient Records
 						 
                         $conferenceid   = $this->conference_model->add($insert_array);
 						
-						$sender_details = array('patient_id' => $patient_id, 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('contact'), 'email' => $this->input->post('email'));
+						$sender_details = array('patient_id' => $patient_id, 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('contact', TRUE), 'email' => $this->input->post('email', TRUE));
                         $this->mailsmsconf->mailsms('live_consult', $sender_details);
 						 
                     }
                 }					
             }
 
-            $sender_details = array('patient_id' => $patient_id, 'opd_no' => $this->customlib->getSessionPrefixByType('opd_no') . $opd_id, 'contact_no' => $this->input->post('contact'), 'email' => $this->input->post('email'));
+            $sender_details = array('patient_id' => $patient_id, 'opd_no' => $this->customlib->getSessionPrefixByType('opd_no') . $opd_id, 'contact_no' => $this->input->post('contact', TRUE), 'email' => $this->input->post('email', TRUE));
 
-            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor'));
+            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor', TRUE));
             $event_data     = array(
                 'patient_id'           => $patient_id,
-                'symptoms_description' => $this->input->post('symptoms'),
-                'any_known_allergies'  => $this->input->post('known_allergies'),
+                'symptoms_description' => $this->input->post('symptoms', TRUE),
+                'any_known_allergies'  => $this->input->post('known_allergies', TRUE),
                 'appointment_date'     => $this->customlib->YYYYMMDDHisTodateFormat($date, $this->time_format),
-                'doctor_id'            => $this->input->post('consultant_doctor'),
+                'doctor_id'            => $this->input->post('consultant_doctor', TRUE),
                 'doctor_name'          => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
             );
             $this->system_notification->send_system_notification('opd_new_checkup_created', $event_data);
@@ -2824,7 +3023,7 @@ This Function is used to Import Multiple Patient Records
         echo json_encode($array);
     }
   
-    public function profile($id)
+    public function profile($id, $from_search = 0)
     {
         if (!$this->rbac->hasPrivilege('opd_patient', 'can_view')) {
             access_denied();
@@ -2841,6 +3040,9 @@ This Function is used to Import Multiple Patient Records
         $data['medicineName']       = $this->pharmacy_model->getMedicineName();
         $symptoms_resulttype        = $this->symptoms_model->getsymtype();
         $data['symptomsresulttype'] = $symptoms_resulttype;
+        $this->load->model('icd10_model');
+        $data['icd10_groups']       = $this->icd10_model->getgroup();
+        $data['icd10_codes']        = $this->icd10_model->get();
         $pathology                  = $this->pathology_model->getpathologytest();
         $data['pathology']          = $pathology;
         $radiology                  = $this->radio_model->getradiologytest();
@@ -2875,6 +3077,10 @@ This Function is used to Import Multiple Patient Records
             $opd_details_id = $this->patient_model->getopdmaxid($id);
             $timeline_list = $this->timeline_model->getPatientTimeline($id, $timeline_status = '');
         }
+        $data["opd_icd_codes"] = array();
+        if (!empty($opd_details_id) && !empty($opd_details_id['opdid'])) {
+            $data["opd_icd_codes"] = $this->icd10_model->getOpdCodes($opd_details_id['opdid']);
+        }
         $data["result"]         = $result;
         $data["opd_details_id"] = $opd_details_id;
         $staff_id                = $this->customlib->getStaffID();
@@ -2888,6 +3094,7 @@ This Function is used to Import Multiple Patient Records
         $data['charge_category'] = $charge_category;
         $data['intervaldosage']  = $this->medicine_dosage_model->getIntervalDosage();
         $data['durationdosage']  = $this->medicine_dosage_model->getDurationDosage();
+        $data['dosage']          = $this->medicine_dosage_model->getMedicineDosage();
         $data['investigations']  = $this->patient_model->allinvestigationbypatientid($id);
         $data['timeformat']      = $this->time_format;
         $data['patientdetails'] = $this->patient_model->getpatientoverview($id);
@@ -2932,9 +3139,29 @@ This Function is used to Import Multiple Patient Records
 			$data['patientvital']	=	'';
 		}		
 			
-        $this->load->view("layout/header");
-        $this->load->view("admin/patient/profile", $data);
-        $this->load->view("layout/footer");
+        $data['from_search'] = (int) $from_search;
+
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/profile', $data);
+        $this->load->view('layout/footer', $data);
+    }
+
+    public function getpatientsidebarpage($page = 1)
+    {
+        $search = $this->input->get('search', TRUE);
+        $result = $this->patient_model->getPatientSidebarList((int) $page, 15, $search);
+        $result['opd_prefix'] = $this->opd_prefix;
+        echo json_encode($result);
+    }
+
+    public function getipdsidebarpage($page = 1)
+    {
+        $search       = $this->input->get('search', TRUE);
+        $bed_group_id = (int) $this->input->get('bed_group_id', TRUE);
+        $result = $this->patient_model->getIpdSidebarList((int) $page, 15, $search, $bed_group_id);
+        $result['ipd_prefix'] = $this->customlib->getSessionPrefixByType('ipd_no');
+        echo json_encode($result);
     }
 
 	public function yearchart()
@@ -3104,11 +3331,12 @@ This Function is used to Import Multiple Patient Records
     }
     
     
-    public function ipdprofile($ipdid)  
+    public function ipdprofile($ipdid, $from_search = 0)
     {
         if (!$this->rbac->hasPrivilege('ipd_patient', 'can_view')) {
             access_denied();
         }
+        $data['from_search'] = (int) $from_search;
 
         $patientid = $this->patient_model->getPatientbyipdid($ipdid);
         $id        = $patientid['pid'];
@@ -3137,10 +3365,16 @@ This Function is used to Import Multiple Patient Records
         $patients                   = $this->patient_model->getPatientListall();
         $symptoms_resulttype        = $this->symptoms_model->getsymtype();
         $data['symptomsresulttype'] = $symptoms_resulttype;
+        $this->load->model('icd10_model');
+        $data['icd10_groups']       = $this->icd10_model->getgroup();
+        $data['icd10_codes']        = $this->icd10_model->get();
+        $data['icd_codes']          = $this->icd10_model->getIpdCodes($ipdid);
         $pathology                  = $this->pathology_model->getpathologytest();
         $data['pathology']          = $pathology;
         $radiology                  = $this->radio_model->getradiologytest();
         $data['radiology']          = $radiology;
+        $data['indent_pathology']   = $this->indent_model->getDropdownTests('pathology');
+        $data['indent_radiology']   = $this->indent_model->getDropdownTests('radiology');
         $data["patients"]           = $patients;
         $data['organisation']       = $this->organisation_model->get();
         $data["id"]                 = $id;
@@ -3167,6 +3401,7 @@ This Function is used to Import Multiple Patient Records
         $data["doctor_restriction"]  = $doctor_restriction;  
         $data["doctor_select"]  = $doctorid;  
         $data["disable_option"] = $disable_option;
+        $data["ipd_indents"]    = array();
         $result                 = array();
         $diagnosis_details      = array();
         $timeline_list          = array();
@@ -3189,15 +3424,23 @@ This Function is used to Import Multiple Patient Records
             if (!empty($nursenote)) {
                 $data["nursenote"] = $nursenote;
             }
-            $charges                     = $this->charge_model->getCharges($ipdid);
+            $charges                     = array_merge(
+                $this->charge_model->getCharges($ipdid),
+                $this->indent_model->getChargeLedgerByIpd($ipdid)
+            );
+            usort($charges, function ($left, $right) {
+                return strtotime($right['date']) - strtotime($left['date']);
+            });
             $paymentDetails              = $this->transaction_model->IPDPatientPayments($ipdid);
             $paid_amount                 = $this->payment_model->getPaidTotal($id, $ipdid);
             $data["paid_amount"]         = $paid_amount["paid_amount"];
             $data["payment_details"]     = $paymentDetails;
             $data["consultant_register"] = $consultant_register;
             $data["nurse_note"]          = $nurse_note;
+            $data["ipd_indents"]         = $this->indent_model->getByIpd($ipdid);
             $data["medication"]          = $medicationreport;
             $data["result"]              = $result;
+            $data['ipd_bed_group_id']    = !empty($result['bed_group_id']) ? (int) $result['bed_group_id'] : 0;
             $data["prescription_detail"] = $prescription_details;
             $data["timeline_list"]       = $timeline_list;
             $data["charge_type"]         = $this->chargetype_model->getChargeTypeByModule("ipd");
@@ -3229,21 +3472,22 @@ This Function is used to Import Multiple Patient Records
         $credit_limit_percentage     = 0;
                 if ($data['result']['ipdcredit_limit'] > 0) {
                     $data['credit_limit']    = $data['result']['ipdcredit_limit'];
-                    if($data['graph']['my_balance']>=$data['credit_limit']){
-                        $data['donut_graph_percentage']  = '0';                       
+                    $my_balance = max(0, $data['graph']['my_balance']);
+                    if($my_balance>=$data['credit_limit']){
+                        $data['donut_graph_percentage']  = '0';
                         $data['balance_credit_limit']    = 0;
                         $data['used_credit_limit']       = $data['credit_limit'];
                     }else{
-                        $credit_limit_percentage = (($data['graph']['my_balance'] / $data['credit_limit'])*100);
-                        $data['donut_graph_percentage']  = number_format(((100-$credit_limit_percentage)), 2);                        
-                        $data['balance_credit_limit']    = ($data['credit_limit'] - $data['graph']['my_balance']);
-                        $data['used_credit_limit']       = $data['graph']['my_balance'];
-                    }                    
+                        $credit_limit_percentage = (($my_balance / $data['credit_limit'])*100);
+                        $data['donut_graph_percentage']  = number_format(((100-$credit_limit_percentage)), 2);
+                        $data['balance_credit_limit']    = ($data['credit_limit'] - $my_balance);
+                        $data['used_credit_limit']       = $my_balance;
+                    }
                 } else {
                     $data['credit_limit'] = 0;
                     $data['used_credit_limit'] = 0;
                     $data['balance_credit_limit'] = 0;
-                } 
+                }
         
         $data['getipdoverviewtreatment'] = $this->patient_model->getipdoverviewtreatment($id);
     	$data['patientcurrentvital']    = $this->vital_model->getcurrentvitals($id);			
@@ -3269,9 +3513,10 @@ This Function is used to Import Multiple Patient Records
 			$data['patientvital']	=	'';
 		}	
 			
-        $this->load->view("layout/header");
-        $this->load->view("admin/patient/ipdprofile", $data); 
-        $this->load->view("layout/footer");
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/ipdprofile', $data);
+        $this->load->view('layout/footer', $data);
     }
 
     public function getsummaryDetails($id)
@@ -3289,6 +3534,8 @@ This Function is used to Import Multiple Patient Records
         }
         $result         = $this->patient_model->getsummaryDetails($id);
         $data['result'] = $result;
+        $this->load->model('icd10_model');
+        $data['icd_codes'] = $this->icd10_model->getIpdCodes($id);
         $this->load->view('admin/patient/printsummary', $data);
     }
 
@@ -3304,6 +3551,8 @@ This Function is used to Import Multiple Patient Records
         }
         $result         = $this->patient_model->getsummaryopdDetails($id);
         $data['result'] = $result;
+        $this->load->model('icd10_model');
+        $data['icd_codes'] = $this->icd10_model->getOpdCodes($id);
         $this->load->view('admin/patient/printopdsummary', $data);
     }
 
@@ -3319,9 +3568,10 @@ This Function is used to Import Multiple Patient Records
             $i++;
         }
         $data['organisation'] = $this->organisation_model->get();
-        $this->load->view('layout/header');
-        $this->load->view('admin/patient/patientipddetails.php', $data);
-        $this->load->view('layout/footer');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/patientipddetails', $data);
+        $this->load->view('layout/footer', $data);
     }
 
     public function deleteIpdPatientCharge()
@@ -3346,6 +3596,23 @@ This Function is used to Import Multiple Patient Records
         if (!$this->rbac->hasPrivilege('opd_diagnosis', 'can_delete')) {
             access_denied();
         }
+
+        // SaaS: release the diagnosis report file from storage quota before deletion.
+        $diagnosis = $this->patient_model->geteditDiagnosis($id);
+        if (!empty($diagnosis['document'])) {
+            $doc_path = $diagnosis['document'];
+            $dir      = (strpos($doc_path, '/') !== false) ? '' : 'uploads/patient_images';
+            $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (patient deleteOpdPatientDiagnosis): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($doc_path, $dir);
+        }
+
         $this->patient_model->deleteIpdPatientDiagnosis($id);
     }
 
@@ -3380,6 +3647,24 @@ This Function is used to Import Multiple Patient Records
         if (!$this->rbac->hasPrivilege('ipd_diagnosis', 'can_delete')) {
             access_denied();
         }
+
+        // SaaS: release the diagnosis report file from storage quota before deletion.
+        // Note: $pateint_id is a legacy misnomer — the model deletes by diagnosis.id.
+        $diagnosis = $this->patient_model->geteditDiagnosis($pateint_id);
+        if (!empty($diagnosis['document'])) {
+            $doc_path = $diagnosis['document'];
+            $dir      = (strpos($doc_path, '/') !== false) ? '' : 'uploads/patient_images';
+            $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (patient deleteIpdPatientDiagnosis): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($doc_path, $dir);
+        }
+
         $this->patient_model->deleteIpdPatientDiagnosis($pateint_id);
         $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('patient_diagnosis_deleted_successfully') . '</div>');
         redirect('admin/patient/ipdprofile/' . $pateint_id . '#diagnosis');
@@ -3387,11 +3672,43 @@ This Function is used to Import Multiple Patient Records
 
     public function deleteIpdPatientPayment($id)
     {
+        // SaaS: release the payment attachment from storage quota before deletion.
+        $saas_transaction = $this->transaction_model->getTransaction($id);
+        if (!empty($saas_transaction) && !empty($saas_transaction->attachment)) {
+            $doc_path = $saas_transaction->attachment;
+            $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+            $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (patient deleteIpdPatientPayment): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($doc_path, $dir);
+        }
+
         $this->transaction_model->deletePayment($id);
     }
 
     public function deletePayment($id)
     {
+        // SaaS: release the payment attachment from storage quota before deletion.
+        $saas_transaction = $this->transaction_model->getTransaction($id);
+        if (!empty($saas_transaction) && !empty($saas_transaction->attachment)) {
+            $doc_path = $saas_transaction->attachment;
+            $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+            $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (patient deletePayment): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($doc_path, $dir);
+        }
+
         $this->transaction_model->deletePayment($id);
     }
 
@@ -3414,23 +3731,37 @@ This Function is used to Import Multiple Patient Records
         $data           = array();
         $visitid        = $this->input->post("visit_id");
         $opd_id         = $this->input->post('opd_id');
-        $result         = $this->patient_model->getopdvisitDetailsbyvisitid($visitid);       
+        $result         = $this->patient_model->getopdvisitDetailsbyvisitid($visitid);
+        if (empty($result)) {
+            echo json_encode(array('status' => 0, 'message' => $this->lang->line('no_record_found')));
+            return;
+        }
         $data['fields'] = $this->customfield_model->get_custom_fields('opd', '', '', '', '');
         $data['result'] = $result;
-        $data['patient_id'] = $result['patient_id'];     
+        $data['patient_id'] = $result['patient_id'];
         $page           = $this->load->view("admin/patient/_getopdDetails", $data, true);
-        echo json_encode(array('status' => 1, 'page' => $page, 'patient_id'=>$result['patient_id']));
+        echo json_encode(array('status' => 1, 'page' => $page, 'patient_id' => $result['patient_id']));
     }
 
     public function getopdrecheckupDetails()
     {
         $data           = array();
         $visitid        = $this->input->post("visit_id");
-        $result         = $this->patient_model->getopdvisitrecheckupDetailsbyvisitid($visitid);        
-        $data['fields'] = $this->customfield_model->get_custom_fields('opdrecheckup');       
-        $data['result'] = $result;       
+        $result         = $this->patient_model->getopdvisitrecheckupDetailsbyvisitid($visitid);
+        $data['fields'] = $this->customfield_model->get_custom_fields('opdrecheckup');
+        $data['result'] = $result;
         $page           = $this->load->view("admin/patient/_getopdrecheckupDetails", $data, true);
         echo json_encode(array('status' => 1, 'page' => $page)); //, 'can_delete' => $can_delete
+    }
+
+    public function getopdrecheckupdetails_print()
+    {
+        if (!$this->rbac->hasPrivilege('revisit', 'can_view')) { access_denied(); }
+        $visitid          = $this->input->post('visit_id', TRUE);
+        if (empty($visitid) || !is_numeric($visitid)) { echo ''; return; }
+        $data['result'] = $this->patient_model->getopdvisitrecheckupDetailsbyvisitid($visitid);
+        $data['fields'] = $this->customfield_model->get_custom_fields('opdrecheckup');
+        $this->load->view('admin/patient/print/visitdetail_print', $data);
     }
 
     public function getopdDetailsSummary()
@@ -3463,23 +3794,37 @@ This Function is used to Import Multiple Patient Records
 
     public function getopdvisitdata()
     {
-        $opdid      = $this->input->post("opdid");        
-        $result = $this->patient_model->getVisitdataDetails($opdid);        
-        $result['patients_name']      = composePatientName($result['patient_name'], $result['patientid']);        
-        $result['patient_age']        = $this->customlib->get_patient_current_age($result['patientid']);
-        $appointment_date             = $this->customlib->YYYYMMDDHisTodateFormat($result['appointment_date'], $this->time_format);        
-        if($result['insurance_validity']){
-            $result['insurance_validity'] = $this->customlib->YYYYMMDDTodateFormat($result['insurance_validity']);
-        }else{
-            $result['insurance_validity'] = '';            
+        $opdid  = $this->input->post("opdid");
+        $result = $this->patient_model->getVisitdataDetails($opdid);
+        if (empty($result)) {
+            // No visit_details record yet — fall back to opd_details + patients
+            $result = $this->patient_model->getDetails($opdid);
+            if (empty($result)) {
+                echo json_encode(['status' => 'fail', 'message' => $this->lang->line('no_data_found')]);
+                return;
+            }
+            $result['patientid']           = $result['pid'];
+            $result['any_known_allergies'] = $result['known_allergies'] ?? '';
         }
-        $result['gender'] = $this->lang->line(strtolower($result['gender']));        
-        if($result['marital_status']){
+        $result['patients_name'] = composePatientName($result['patient_name'], $result['patientid']);
+        $result['patient_age']   = $this->customlib->get_patient_current_age($result['patientid']);
+        $appointment_date = !empty($result['appointment_date'])
+            ? $this->customlib->YYYYMMDDHisTodateFormat($result['appointment_date'], $this->time_format)
+            : '';
+        if ($result['insurance_validity']) {
+            $result['insurance_validity'] = $this->customlib->YYYYMMDDTodateFormat($result['insurance_validity']);
+        } else {
+            $result['insurance_validity'] = '';
+        }
+        $result['gender'] = !empty($result['gender'])
+            ? $this->lang->line(strtolower($result['gender']))
+            : '';
+        if ($result['marital_status']) {
             $result['marital_status'] = $this->lang->line(strtolower($result['marital_status']));
-        }else{
+        } else {
             $result['marital_status'] = '';
-        }        
-        $result["appointment_date"]   = $appointment_date;
+        }
+        $result['appointment_date'] = $appointment_date;
         echo json_encode($result);
     }
 
@@ -3530,18 +3875,18 @@ This Function is used to Import Multiple Patient Records
         $cutom_fields_data             = get_custom_table_values($id, 'patient');
         $result['field_data']          = $cutom_fields_data;   
         
-        $file_exists=$this->customlib->getFolderPath().("./uploads/patient_id_card/barcodes/$id.png"); 
-        $file_exists2=$this->customlib->getFolderPath().("./uploads/patient_id_card/qrcode/$id.png"); 
+        $file_exists  = FCPATH . "uploads/patient_id_card/barcodes/$id.png";
+        $file_exists2 = FCPATH . "uploads/patient_id_card/qrcode/$id.png";
 
-        if(file_exists("$file_exists")){
-            $result['getbarcode']          = $this->media_storage->getImageURL("./uploads/patient_id_card/barcodes/$id.png") ;  
+        if(file_exists($file_exists)){
+            $result['getbarcode'] = base_url("uploads/patient_id_card/barcodes/$id.png") . img_time();
         }else{
-            $result['getbarcode']          = null;
+            $result['getbarcode'] = null;
         }
-        if(file_exists("$file_exists2")){
-            $result['getqrcode']           = $this->media_storage->getImageURL("./uploads/patient_id_card/qrcode/$id.png") ;
+        if(file_exists($file_exists2)){
+            $result['getqrcode'] = base_url("uploads/patient_id_card/qrcode/$id.png") . img_time();
         }else{
-            $result['getqrcode']          = null;
+            $result['getqrcode'] = null;
         }       
         
         if(!empty($result['image'])){        
@@ -3650,7 +3995,7 @@ This Function is used to Import Multiple Patient Records
 
     public function getMedicationDoseDetails()
     {
-        $medication_id        = $this->input->post("medication_id");
+        $medication_id        = $this->input->post("medication_id", TRUE);
         $result               = $this->patient_model->getmedicationbyid($medication_id);
         $result['date']       = $this->customlib->YYYYMMDDTodateFormat($result['date']);
         $result['dosagetime'] = $this->customlib->getHospitalTime_Format($result['time']);
@@ -3659,7 +4004,7 @@ This Function is used to Import Multiple Patient Records
 
     public function getMedicineDoseDetails()
     {
-        $medicine_category_id = $this->input->post("medicine_category_id");
+        $medicine_category_id = $this->input->post("medicine_category_id", TRUE);
         $result               = $this->patient_model->getMedicineDose($medicine_category_id);
         echo json_encode($result);
     }
@@ -3670,7 +4015,7 @@ This Function is used to Import Multiple Patient Records
             access_denied();
         }
         if (isset($_POST['age'])) {
-            if (count(array_filter($_POST['age'])) == 0) {
+            if (count(array_filter($this->input->post('age', TRUE) ?: [])) == 0) {
                 $this->form_validation->set_rules('age', $this->lang->line('age'), 'trim|required|xss_clean|');
             }
         }
@@ -3683,7 +4028,7 @@ This Function is used to Import Multiple Patient Records
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
 
-                    $this->form_validation->set_rules("custom_fields[patient][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[patient][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
                 }
             }
         }
@@ -3704,7 +4049,7 @@ This Function is used to Import Multiple Patient Records
         }
 
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
         $this->form_validation->set_rules('age[year]', $this->lang->line('year'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[month]', $this->lang->line('month'), 'trim|required|xss_clean|numeric');
         $this->form_validation->set_rules('age[day]', $this->lang->line('day'), 'trim|required|xss_clean|numeric');
@@ -3740,51 +4085,50 @@ This Function is used to Import Multiple Patient Records
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $validity = $this->input->post("validity");
+            $validity = $this->input->post("validity", TRUE);
             if (!empty($validity)) {
                 $validity = $this->customlib->dateFormatToYYYYMMDD($validity);
             } else {
                 $validity = null;
             }
-			
-			$organisation_id = $this->input->post("organisation_id");
+
+            $organisation_id = $this->input->post("organisation_id", TRUE);
             if (!empty($organisation_id)) {
                 $organisation_id = $organisation_id;
             } else {
                 $organisation_id = null;
             }
 
-            $id                = $this->input->post('updateid');
-            $dobdate           = $this->input->post('dob');
-            $custom_field_post = $this->input->post("custom_fields[patient]");
+            $id                = $this->input->post('updateid', TRUE);
+            $dobdate           = $this->input->post('dob', TRUE);
+            $custom_field_post = $this->input->post("custom_fields[patient]", TRUE);
             $dob               = $this->customlib->dateFormatToYYYYMMDD($dobdate);
-            $blood_group       = $this->input->post('blood_group');
+            $blood_group       = $this->input->post('blood_group', TRUE);
             $as_of_date        = $this->patient_model->patientDetails($id);
            
             $patient_data      = array(
-                'id'                    => $this->input->post('updateid'),
-                'patient_name'          => $this->input->post('name'),
-                'mobileno'              => $this->input->post('contact'),
-                'marital_status'        => $this->input->post('marital_status'),
-                'email'                 => $this->input->post('email'),
+                'id'                    => $id,
+                'patient_name'          => $this->input->post('name', TRUE),
+                'mobileno'              => $this->input->post('contact', TRUE),
+                'marital_status'        => $this->input->post('marital_status', TRUE),
+                'email'                 => $this->input->post('email', TRUE),
                 'dob'                   => $dob,
-                'gender'                => $this->input->post('gender'),
-                'guardian_name'         => $this->input->post('guardian_name'),
-                'address'               => $this->input->post('address'),
-                'note'                  => $this->input->post('note'),
-                'age'                   => $this->input->post('age[year]'),
-                'month'                 => $this->input->post('age[month]'),
-                'day'                   => $this->input->post('age[day]'),
-                'insurance_id'          => $this->input->post('insurance_id'),
-                'identification_number' => $this->input->post('identification_number'),
-                'insurance_validity'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('validity')),
-                'organisation_id'       => $organisation_id,
-                'known_allergies'       => $this->input->post('known_allergies'), 
+                'gender'                => $this->input->post('gender', TRUE),
+                'guardian_name'         => $this->input->post('guardian_name', TRUE),
+                'address'               => $this->input->post('address', TRUE),
+                'note'                  => $this->input->post('note', TRUE),
+                'age'                   => $this->input->post('age[year]', TRUE),
+                'month'                 => $this->input->post('age[month]', TRUE),
+                'day'                   => $this->input->post('age[day]', TRUE),
+                'insurance_id'          => $this->input->post('insurance_id', TRUE),
+                'identification_number' => $this->input->post('identification_number', TRUE),
                 'insurance_validity'    => $validity,
+                'organisation_id'       => $organisation_id,
+                'known_allergies'       => $this->input->post('known_allergies', TRUE),
             );
 
             if ($blood_group != "") {
-                $patient_data['blood_bank_product_id'] = $this->input->post('blood_group');
+                $patient_data['blood_bank_product_id'] = $blood_group;
             }
 
             if($as_of_date['as_of_date']==null){
@@ -3801,7 +4145,7 @@ This Function is used to Import Multiple Patient Records
 
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[patient][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[patient][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $id,
@@ -3814,9 +4158,33 @@ This Function is used to Import Multiple Patient Records
             }
 
             if (isset($_FILES["file"]) && !empty($_FILES["file"]['name'])) {
+                // SaaS: capture the existing patient image for quota diff + cleanup.
+                // Skip the shared default placeholder (no_image.png) — it's not a per-patient upload.
+                $saas_existing  = $this->patient_model->getpatientDetails($id);
+                $saas_old_image = (!empty($saas_existing['image']) && strpos($saas_existing['image'], 'no_image.png') === false) ? $saas_existing['image'] : '';
+                $saas_old_dir   = (strpos($saas_old_image, '/') !== false) ? '' : 'uploads/patient_images';
+                $saas_old_kb    = (!empty($saas_old_image)) ? $this->media_storage->getUploadedFileSize($saas_old_image, $saas_old_dir) : 0;
+
                 $img_name = $this->media_storage->fileupload("file", "./uploads/patient_images/");
-                $data_img = array('id' => $id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (!IsNullOrEmptyString($img_name)) {
+                    if (!empty($saas_old_image)) {
+                        $this->media_storage->filedelete($saas_old_image, $saas_old_dir);
+                    }
+                    $data_img = array('id' => $id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('file');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient update): ' . $e->getMessage());
+                    }
+                }
             }
         }
 
@@ -3873,8 +4241,8 @@ This Function is used to Import Multiple Patient Records
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $doctors = $this->input->post('doctorOpt[]');
-            $ipdid   = $this->input->post('ipdid_doctor');
+            $doctors = $this->input->post('doctorOpt[]', TRUE);
+            $ipdid   = $this->input->post('ipdid_doctor', TRUE);
             $i       = 0;
             foreach ($doctors as $key => $value) {
                 $doctors_id = $doctors[$i];
@@ -3904,7 +4272,7 @@ This Function is used to Import Multiple Patient Records
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
 
-                    $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
                 }
             }
         }
@@ -3912,7 +4280,7 @@ This Function is used to Import Multiple Patient Records
         $this->form_validation->set_rules('cons_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('appointment_date', $this->lang->line('admission_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('bed_no', $this->lang->line('bed_no'), 'trim|required');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload');
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'patients_id'      => form_error('patients_id'),
@@ -3938,13 +4306,15 @@ This Function is used to Import Multiple Patient Records
             }
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $id                = $this->input->post('updateid');
-            $appointment_date  = $this->input->post('appointment_date');
-            $patientid         = $this->input->post('patient_id');
-            $previous_bed_id   = $this->input->post('previous_bed_id');
-            $current_bed_id    = $this->input->post('bed_no');
-            $ipdid             = $this->input->post('ipdid');
+            $id                = $this->input->post('updateid', TRUE);
+            $appointment_date  = $this->input->post('appointment_date', TRUE);
+            $patientid         = $this->input->post('patient_id', TRUE);
+            $previous_bed_id   = $this->input->post('previous_bed_id', TRUE);
+            $current_bed_id    = $this->input->post('bed_no', TRUE);
+            $ipdid             = $this->input->post('ipdid', TRUE);
             $case_reference_id = $this->patient_model->getReferenceByIpdId($ipdid);
+            $this->load->model('bill_model');
+            $this->bill_model->ensureCreditBillingSchema();
             if ($previous_bed_id != $current_bed_id) {
                 $beddata = array('id' => $previous_bed_id, 'is_active' => 'yes');
                 $this->bed_model->savebed($beddata);
@@ -3959,25 +4329,29 @@ This Function is used to Import Multiple Patient Records
                 'id'              => $ipdid,
                 'patient_id'      => $patientid,
                 'date'            => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),
-                'bed'             => $this->input->post('bed_no'),
-                'bed_group_id'    => $this->input->post('bed_group_id'),                
-                'case_type'       => $this->input->post('case_type'),
-                'symptoms'        => $this->input->post('symptoms'),
-                'known_allergies' => $this->input->post('known_allergies'),
-                'patient_old'     => $this->input->post('old_patient'),
-                'refference'      => $this->input->post('refference'),
-                'cons_doctor'     => $this->input->post('cons_doctor'),
-                'casualty'        => $this->input->post('casualty'),
-                'note'            => $this->input->post('note'),
-                'credit_limit'    => $this->input->post('credit_limit'),
+                'bed'             => $this->input->post('bed_no', TRUE),
+                'bed_group_id'    => $this->input->post('bed_group_id', TRUE),
+                'case_type'       => $this->input->post('case_type', TRUE),
+                'symptoms'        => $this->input->post('symptoms', TRUE),
+                'known_allergies' => $this->input->post('known_allergies', TRUE),
+                'patient_old'     => $this->input->post('old_patient', TRUE),
+                'refference'      => $this->input->post('refference', TRUE),
+                'cons_doctor'     => $this->input->post('cons_doctor', TRUE),
+                'reporting_doctor'=> $this->input->post('reporting_doctor', TRUE) ? $this->input->post('reporting_doctor', TRUE) : null,
+                'casualty'        => $this->input->post('casualty', TRUE),
+                'note'            => $this->input->post('note', TRUE),
+                'credit_limit'    => $this->input->post('credit_limit', TRUE),
             );
-            $bed_data = array('id' => $this->input->post('bed_no'), 'is_active' => 'no');
+            $bed_data = array('id' => $this->input->post('bed_no', TRUE), 'is_active' => 'no');
             $this->bed_model->savebed($bed_data);           
            
             $ipd_id = $this->patient_model->add_ipd($ipd_data);
-          
+            $icd_ids = $this->input->post('icd_code_ids', TRUE);
+            $this->load->model('icd10_model');
+            $this->icd10_model->saveIpdCodes($ipdid, is_array($icd_ids) ? $icd_ids : array());
+
             $is_antenatal = 0;
-            if($this->input->post('is_for_antenatal')){
+            if($this->input->post('is_for_antenatal', TRUE)){
                 $is_antenatal = 1;
             }
             
@@ -3990,19 +4364,19 @@ This Function is used to Import Multiple Patient Records
              if ($previous_bed_id != $current_bed_id) {
                 $bed_history = array(
                     "case_reference_id" => $case_reference_id,
-                    "bed_group_id"      => $this->input->post("bed_group_id"),
-                    "bed_id"            => $this->input->post("bed_no"),
+                    "bed_group_id"      => $this->input->post("bed_group_id", TRUE),
+                    "bed_id"            => $this->input->post("bed_no", TRUE),
                     "from_date"         => date("Y-m-d H:i:s"),
                     "is_active"         => "yes",
                 );
                 $this->bed_model->saveBedHistory($bed_history);
             }
 
-            $custom_field_post  = $this->input->post("custom_fields[ipd]");
+            $custom_field_post  = $this->input->post("custom_fields[ipd]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $ipdid,
@@ -4016,11 +4390,40 @@ This Function is used to Import Multiple Patient Records
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('patient_updated_successfully'));
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: measure the EXISTING patient image BEFORE it is overwritten, so the quota
+                // is adjusted by the size difference (edit) — not blindly re-added, which would
+                // inflate usage on every re-edit. Skip the shared no_image.png placeholder.
+                $saas_existing  = $this->patient_model->getpatientDetails($id);
+                $saas_old_image = (!empty($saas_existing['image']) && strpos($saas_existing['image'], 'no_image.png') === false) ? $saas_existing['image'] : '';
+                $saas_old_dir   = (strpos($saas_old_image, '/') !== false) ? '' : 'uploads/patient_images';
+                $saas_old_kb    = (!empty($saas_old_image)) ? $this->media_storage->getUploadedFileSize($saas_old_image, $saas_old_dir) : 0;
+
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $new_img_path = 'uploads/patient_images/' . $img_name;
+
+                    // If the new upload has a different extension, the old physical file is NOT
+                    // overwritten by move_uploaded_file — remove it so it does not orphan/leak.
+                    if (!empty($saas_old_image) && $saas_old_image !== $new_img_path) {
+                        $this->media_storage->filedelete($saas_old_image, $saas_old_dir);
+                    }
+
+                    $data_img = array('id' => $id, 'image' => $new_img_path);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('file');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient ipd_update edit): ' . $e->getMessage());
+                    }
+                }
             }
         }
         echo json_encode($array);
@@ -4037,30 +4440,30 @@ This Function is used to Import Multiple Patient Records
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $patientid  = $this->input->post('patient_id');
-            $updated_id = $this->input->post('updateid');
-            $ipd_id     = $this->input->post('ipdid');
+            $patientid  = $this->input->post('patient_id', TRUE);
+            $updated_id = $this->input->post('updateid', TRUE);
+            $ipd_id     = $this->input->post('ipdid', TRUE);
             if (!empty($updated_id)) {
                 $summary_dataupdate = array(
                     'id'             => $updated_id,
                     'ipd_id'         => $ipd_id,
                     'patient_id'     => $patientid,
-                    'note'           => $this->input->post('note'),
-                    'diagnosis'      => $this->input->post('diagnosis'),
-                    'operation'      => $this->input->post('operation'),
-                    'investigations' => $this->input->post('investigations'),
-                    'treatment_home' => $this->input->post('treatment_at_home'),
+                    'note'           => $this->input->post('note', TRUE),
+                    'diagnosis'      => $this->input->post('diagnosis', TRUE),
+                    'operation'      => $this->input->post('operation', TRUE),
+                    'investigations' => $this->input->post('investigations', TRUE),
+                    'treatment_home' => $this->input->post('treatment_at_home', TRUE),
                 );
                 $summary_id = $this->patient_model->add_disch_summary($summary_dataupdate);
             } else {
                 $summary_data = array(
                     'ipd_id'         => $ipd_id,
                     'patient_id'     => $patientid,
-                    'note'           => $this->input->post('note'),
-                    'diagnosis'      => $this->input->post('diagnosis'),
-                    'operation'      => $this->input->post('operation'),
-                    'investigations' => $this->input->post('investigations'),
-                    'treatment_home' => $this->input->post('treatment_at_home'),
+                    'note'           => $this->input->post('note', TRUE),
+                    'diagnosis'      => $this->input->post('diagnosis', TRUE),
+                    'operation'      => $this->input->post('operation', TRUE),
+                    'investigations' => $this->input->post('investigations', TRUE),
+                    'treatment_home' => $this->input->post('treatment_at_home', TRUE),
                 );
                 $summary_id = $this->patient_model->add_disch_summary($summary_data);
             }
@@ -4081,31 +4484,31 @@ This Function is used to Import Multiple Patient Records
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $patientid  = $this->input->post('patient_id');
-            $updated_id = $this->input->post('updateid');
-            $opd_id     = $this->input->post('opdid');
+            $patientid  = $this->input->post('patient_id', TRUE);
+            $updated_id = $this->input->post('updateid', TRUE);
+            $opd_id     = $this->input->post('opdid', TRUE);
 
             if (!empty($updated_id)) {
                 $summary_dataupdate = array(
                     'id'             => $updated_id,
                     'opd_details_id' => $opd_id,
                     'patient_id'     => $patientid,
-                    'note'           => $this->input->post('note'),
-                    'diagnosis'      => $this->input->post('diagnosis'),
-                    'operation'      => $this->input->post('operation'),
-                    'investigations' => $this->input->post('investigations'),
-                    'treatment_home' => $this->input->post('treatment_at_home'),
+                    'note'           => $this->input->post('note', TRUE),
+                    'diagnosis'      => $this->input->post('diagnosis', TRUE),
+                    'operation'      => $this->input->post('operation', TRUE),
+                    'investigations' => $this->input->post('investigations', TRUE),
+                    'treatment_home' => $this->input->post('treatment_at_home', TRUE),
                 );
                 $summary_id = $this->patient_model->add_dischopd_summary($summary_dataupdate);
             } else {
                 $summary_data = array(
                     'opd_details_id' => $opd_id,
                     'patient_id'     => $patientid,
-                    'note'           => $this->input->post('note'),
-                    'diagnosis'      => $this->input->post('diagnosis'),
-                    'operation'      => $this->input->post('operation'),
-                    'investigations' => $this->input->post('investigations'),
-                    'treatment_home' => $this->input->post('treatment_at_home'),
+                    'note'           => $this->input->post('note', TRUE),
+                    'diagnosis'      => $this->input->post('diagnosis', TRUE),
+                    'operation'      => $this->input->post('operation', TRUE),
+                    'investigations' => $this->input->post('investigations', TRUE),
+                    'treatment_home' => $this->input->post('treatment_at_home', TRUE),
                 );
 
                 $summary_id = $this->patient_model->add_dischopd_summary($summary_data);
@@ -4141,7 +4544,7 @@ This Function is used to Import Multiple Patient Records
                     if ($custom_fields_value['validation']) {
                         $custom_fields_id   = $custom_fields_value['id'];
                         $custom_fields_name = $custom_fields_value['name'];
-                        $this->form_validation->set_rules($set_fields . "[" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                        $this->form_validation->set_rules($set_fields . "[" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
 
                     }
                 }
@@ -4153,7 +4556,7 @@ This Function is used to Import Multiple Patient Records
                     if ($visit_custom_fields_value['validation']) {
                         $custom_fields_id   = $visit_custom_fields_value['id'];
                         $custom_fields_name = $visit_custom_fields_value['name'];
-                        $this->form_validation->set_rules($set_visit_fields . "[" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                        $this->form_validation->set_rules($set_visit_fields . "[" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
 
                     }
                 }
@@ -4165,69 +4568,98 @@ This Function is used to Import Multiple Patient Records
 
         //for transaction data update        
 
-        if ((!empty($_POST['payment_mode'])) && $_POST['payment_mode'] == "Cheque") {
+        if ((!empty($this->input->post('payment_mode', TRUE))) && $this->input->post('payment_mode', TRUE) == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == true) {
            
-            $appointment_date = $this->input->post('appointment_date');
-            $visitid          = $this->input->post("visitid");
-            $patient_id       = $this->input->post("patient_id");          
+            $appointment_date = $this->input->post('appointment_date', TRUE);
+            $visitid          = $this->input->post("visitid", TRUE);
+            $patient_id       = $this->input->post("patient_id", TRUE);
 
             $visit_data = array(
                 'id'               => $visitid,
                 'appointment_date' => $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format),
-                'case_type'        => $this->input->post('case'),
-                'cons_doctor'      => $this->input->post('consultant_doctor'),
-                'symptoms'         => $this->input->post('symptoms'),                
-                'casualty'         => $this->input->post('casualty'),
-                'patient_old'      => $this->input->post('old_patient'),
-                'refference'       => $this->input->post('refference'),
-                'note'             => $this->input->post('revisit_note'),
-                'known_allergies'  => $this->input->post('known_allergies'), 
+                'case_type'        => $this->input->post('case', TRUE),
+                'cons_doctor'      => $this->input->post('consultant_doctor', TRUE),
+                'symptoms'         => $this->input->post('symptoms', TRUE),
+                'casualty'         => $this->input->post('casualty', TRUE),
+                'patient_old'      => $this->input->post('old_patient', TRUE),
+                'refference'       => $this->input->post('refference', TRUE),
+                'note'             => $this->input->post('revisit_note', TRUE),
+                'known_allergies'  => $this->input->post('known_allergies', TRUE),
             );
             
             $visit_data['is_antenatal'] = 0;
            
-            if($this->input->post('is_for_antenatal') != "" ){
+            if($this->input->post('is_for_antenatal', TRUE) != "" ){
                 $visit_data['is_antenatal'] = 1;
             }
 
-            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date"), $this->time_format);
-            $amount          = $this->input->post('amount');
-            $transaction_id  = $this->input->post('visit_transaction_id');
+            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date", TRUE), $this->time_format);
+            $amount          = $this->input->post('amount', TRUE);
+            $transaction_id  = $this->input->post('visit_transaction_id', TRUE);
 
-            $trasaction_data['payment_mode'] = $this->input->post('payment_mode');
+            $trasaction_data['payment_mode'] = $this->input->post('payment_mode', TRUE);
             $trasaction_data['amount']  = $amount ;
-            $trasaction_data['id']      = $this->input->post('visit_transaction_id') ;
+            $trasaction_data['id']      = $transaction_id ;
             $trasaction_data['payment_date'] = $payment_date ;
-            $trasaction_data['note'] = $this->input->post('note');          
+            $trasaction_data['note'] = $this->input->post('note', TRUE);
             $this->transaction_model->add($trasaction_data);
 
-            if ($this->input->post('payment_mode') == "Cheque") {
-                $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+                $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
                 $data['id']              = $transaction_id;
                 $data['cheque_date']     = $cheque_date;
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
 
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
+                    // SaaS: capture the existing transaction's attachment for quota diff + cleanup.
+                    $saas_existing        = $this->transaction_model->getTransaction($transaction_id);
+                    $saas_old_attachment  = (!empty($saas_existing) && !empty($saas_existing->attachment)) ? $saas_existing->attachment : '';
+                    $saas_old_dir         = $this->media_storage->resolveAttachmentDir($saas_old_attachment);
+                    $saas_old_kb          = (!empty($saas_old_attachment)) ? $this->media_storage->getUploadedFileSize($saas_old_attachment, $saas_old_dir) : 0;
+
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
-                    $data['attachment']      = $file_name;
-                    $data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+                    if (!IsNullOrEmptyString($file_name)) {
+                        if (!empty($saas_old_attachment)) {
+                            $this->media_storage->filedelete($saas_old_attachment, $saas_old_dir);
+                        }
+                        $data['attachment']      = $file_name;
+                        $data['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: adjust storage quota by the size difference (new vs replaced).
+                        try {
+                            $saas_new_kb = $this->media_storage->getTmpFileSize('document');
+                            if ($saas_old_kb > $saas_new_kb) {
+                                $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                            } elseif ($saas_new_kb > $saas_old_kb) {
+                                $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                            }
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (patient opd_detail_update): ' . $e->getMessage());
+                        }
+                    }
+                }
                 $this->transaction_model->add($data);
             }
 
             $opd_id = $this->patient_model->add_visit_recheckup($visit_data, $trasaction_data, array());
 
+            $icd_ids = $this->input->post('icd_code_ids', TRUE);
+            if (!empty($icd_ids) && is_array($icd_ids)) {
+                $this->load->model('icd10_model');
+                $this->icd10_model->saveOpdCodes($insert_id, $icd_ids);
+            }
+
             if($type =='opd'){
 
                     if (!empty($custom_fields)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[opd][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $insert_id,
@@ -4245,7 +4677,7 @@ This Function is used to Import Multiple Patient Records
             if($type=='visit'){           
                 if (!empty($visit_custom_fields)) {
                     foreach ($visit_custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[opdrecheckup][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $visitid,
@@ -4458,7 +4890,7 @@ This Function is used to Import Multiple Patient Records
     {
         $this->form_validation->set_rules('report_type', $this->lang->line('report_type'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('report_date', $this->lang->line('report_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('report_document', $this->lang->line('image'), 'callback_handle_doc_upload[report_document]');
+        $this->form_validation->set_rules('report_document', $this->lang->line('image'), 'callback_handle_doc_upload[report_document]|callback_validateCanUploadFile[report_document]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'report_type'     => form_error('report_type'),
@@ -4467,22 +4899,30 @@ This Function is used to Import Multiple Patient Records
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $reportdate = $this->input->post('report_date');
+            $reportdate = $this->input->post('report_date', TRUE);
 
             $data = array(
-                'report_type'   => $this->input->post("report_type"),
+                'report_type'   => $this->input->post("report_type", TRUE),
                 'report_date'   => $this->customlib->dateFormatToYYYYMMDD($reportdate),
-                'patient_id'    => $this->input->post("patient"),
-                'report_center' => $this->input->post('report_center'),
-                'description'   => $this->input->post("description"),
+                'patient_id'    => $this->input->post("patient", TRUE),
+                'report_center' => $this->input->post('report_center', TRUE),
+                'description'   => $this->input->post("description", TRUE),
             );
             $insert_id = $this->patient_model->add_diagnosis($data);
             if (isset($_FILES["report_document"]) && !empty($_FILES['report_document']['name'])) {
                 $fileInfo = pathinfo($_FILES["report_document"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["report_document"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $insert_id, 'document' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add_diagnosis($data_img);
+                if (move_uploaded_file($_FILES["report_document"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'document' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add_diagnosis($data_img);
+
+                    // SaaS: add the uploaded report document size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['report_document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient add_diagnosis): ' . $e->getMessage());
+                    }
+                }
             }
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('record_added_successfully'));
         }
@@ -4493,7 +4933,7 @@ This Function is used to Import Multiple Patient Records
     {
         $this->form_validation->set_rules('report_type', $this->lang->line('report_type'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('report_date', $this->lang->line('report_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('report_document', $this->lang->line('document'), 'callback_handle_doc_upload[report_document]');
+        $this->form_validation->set_rules('report_document', $this->lang->line('document'), 'callback_handle_doc_upload[report_document]|callback_validateCanUploadFile[report_document]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'report_type'     => form_error('report_type'),
@@ -4502,25 +4942,55 @@ This Function is used to Import Multiple Patient Records
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $report_date = $this->input->post('report_date');
-            $id          = $this->input->post('diagnosis_id');
-            $patientid   = $this->input->post("diagnosispatient_id");
+            $report_date = $this->input->post('report_date', TRUE);
+            $id          = $this->input->post('diagnosis_id', TRUE);
+            $patientid   = $this->input->post("diagnosispatient_id", TRUE);
             $this->load->library('Customlib');
             $data = array(
                 'id'            => $id,
-                'report_type'   => $this->input->post("report_type"),
+                'report_type'   => $this->input->post("report_type", TRUE),
                 'report_date'   => $this->customlib->dateFormatToYYYYMMDD($report_date),
                 'patient_id'    => $patientid,
-                'report_center' => $this->input->post("report_center"),
-                'description'   => $this->input->post("description"),
+                'report_center' => $this->input->post("report_center", TRUE),
+                'description'   => $this->input->post("description", TRUE),
             );
             $insert_id = $this->patient_model->add_diagnosis($data);
             if (isset($_FILES["report_document"]) && !empty($_FILES['report_document']['name'])) {
+                // SaaS: measure the EXISTING report document BEFORE it is overwritten, so the
+                // quota is adjusted by the size difference (edit) — not blindly re-added, which
+                // would inflate usage on every re-edit even though one file exists on disk.
+                $saas_existing = $this->patient_model->geteditDiagnosis($id);
+                $saas_old_doc  = (!empty($saas_existing['document'])) ? $saas_existing['document'] : '';
+                $saas_old_dir  = (strpos($saas_old_doc, '/') !== false) ? '' : 'uploads/patient_images';
+                $saas_prev_kb  = (!empty($saas_old_doc)
+) ? $this->media_storage->getUploadedFileSize($saas_old_doc, $saas_old_dir) : 0;
+
                 $fileInfo = pathinfo($_FILES["report_document"]["name"]);
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["report_document"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $id, 'document' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add_diagnosis($data_img);
+                if (move_uploaded_file($_FILES["report_document"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $new_doc_path = 'uploads/patient_images/' . $img_name;
+
+                    // If the new upload has a different extension, the old physical file is NOT
+                    // overwritten by move_uploaded_file — remove it so it does not orphan/leak.
+                    if (!empty($saas_old_doc) && $saas_old_doc !== $new_doc_path) {
+                        $this->media_storage->filedelete($saas_old_doc, $saas_old_dir);
+                    }
+
+                    $data_img = array('id' => $id, 'document' => $new_doc_path);
+                    $this->patient_model->add_diagnosis($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('report_document');
+                        if ($saas_prev_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_prev_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_prev_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_prev_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient update_diagnosis edit): ' . $e->getMessage());
+                    }
+                }
             }
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('record_added_successfully'));
         }
@@ -4613,52 +5083,45 @@ This Function is used to Import Multiple Patient Records
 
     public function add_ipdprescription()
     {
-        $total_rows = $this->input->post('rows');
-        $pathology  = $this->input->post('pathology');
-        $radiology  = $this->input->post('radiology');
+        $total_rows = $this->input->post('rows', TRUE);
+        $pathology  = $this->input->post('pathology', TRUE);
+        $radiology  = $this->input->post('radiology', TRUE);
         $custom_fields = $this->customfield_model->getByBelong('prescription');
 
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[prescription][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[prescription][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
         $this->form_validation->set_rules('ipd_id', $this->lang->line('ipd'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('prescribe_by', $this->lang->line('prescribe_by'), 'trim|required|xss_clean');
-        
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
+
         $medicine=0;
         if (isset($total_rows) && !empty($total_rows)) {
 
             foreach ($total_rows as $row_key => $row_value) {
-                $medicine_category = $this->input->post('medicine_cat_' . $row_value);
-                $medicine_name     = $this->input->post('medicine_' . $row_value);
-                $dosage            = $this->input->post('dosage_' . $row_value);
-				$interval_dosage            = $this->input->post('interval_dosage_' . $row_value);
+                $medicine_name     = $this->input->post('medicine_' . $row_value, TRUE);
+                $dosage            = $this->input->post('dosage_' . $row_value, TRUE);
+				$interval_dosage            = $this->input->post('interval_dosage_' . $row_value, TRUE);
 
-                if ($medicine_category != "") {
+                // Redesign removed the medicine "category" select; medicine_cat_X is now a hardcoded
+                // hidden '1' on every row, so detect a real medicine by the selected medicine_X instead.
+                if ($medicine_name != "") {
 
                     $medicine=1;
 
-                    if ($medicine_name == "") {
-                        $this->form_validation->set_rules('medicine_name', $this->lang->line('medicine'), 'trim|required|xss_clean');
-                    }
-
                     if ($dosage == "") {
                         $this->form_validation->set_rules('dosage', $this->lang->line('dosage'), 'required');
-                    }					
+                    }
 
                     if ($interval_dosage == "") {
                         $this->form_validation->set_rules('interval_dosage', $this->lang->line('dose_interval'), 'required');
                     }
-                }else{
-					if($row_value > 1){
-						$medicine=0;
-						$this->form_validation->set_rules('medicine_cat', $this->lang->line('medicine_category'), 'trim|required|xss_clean');
-					}
-				}
+                }
             }
         }
 
@@ -4676,6 +5139,7 @@ This Function is used to Import Multiple Patient Records
                 'dosage'            => form_error('dosage'),
                 'prescribe_by'      => form_error('prescribe_by'),
 				'interval_dosage'   => form_error('interval_dosage'),
+                'document'          => form_error('document'),
             );
 
             if (!empty($custom_fields)) {
@@ -4698,18 +5162,18 @@ This Function is used to Import Multiple Patient Records
 
         } else {
 
-            $action                    	= 	$this->input->post('action');
-            $ipd_prescription_basic_id 	= 	$this->input->post('ipd_prescription_basic_id');
-            $prev_prescription_ids		=	array();   
-            $_post_prev_medicine		=	$this->input->post('prev_medicine');
+            $action                    	= 	$this->input->post('action', TRUE);
+            $ipd_prescription_basic_id 	= 	$this->input->post('ipd_prescription_basic_id', TRUE);
+            $prev_prescription_ids		=	array();
+            $_post_prev_medicine		=	$this->input->post('prev_medicine', TRUE);
            
             $prev_medicine = '';
             if($_post_prev_medicine){
                  $prev_medicine= $_post_prev_medicine;
             }
 
-            $prev_pathology = $this->input->post('prev_pathology');
-            $prev_radiology = $this->input->post('prev_radiology');
+            $prev_pathology = $this->input->post('prev_pathology', TRUE);
+            $prev_radiology = $this->input->post('prev_radiology', TRUE);
 
             if (!isset($prev_pathology)) {
                 $prev_pathology = array();
@@ -4720,8 +5184,8 @@ This Function is used to Import Multiple Patient Records
                 # code...
             }
 
-            $pathology = $this->input->post('pathology');
-            $radiology = $this->input->post('radiology');
+            $pathology = $this->input->post('pathology', TRUE);
+            $radiology = $this->input->post('radiology', TRUE);
 
             if (!isset($pathology)) {
                 $pathology = array();
@@ -4731,58 +5195,58 @@ This Function is used to Import Multiple Patient Records
                 $radiology = array();
             }
 
-            $total_rows               = $this->input->post('rows');
+            $total_rows               = $this->input->post('rows', TRUE);
             $insert_medicines         = array();
             $update_medicines         = array();
             $not_be_deleted_medicines = array();
             if ($medicine==1) {
           
                 foreach ($total_rows as $row_key => $row_value) {
-                    $ipd_prescription_detail_id = $this->input->post("ipd_prescription_detail_id_" . $row_value);
-					
-					$duration_dosage = $this->input->post("duration_dosage_" . $row_value);
+                    $ipd_prescription_detail_id = $this->input->post("ipd_prescription_detail_id_" . $row_value, TRUE);
+
+					$duration_dosage = $this->input->post("duration_dosage_" . $row_value, TRUE);
 					if($duration_dosage){
 						$durationdosage = $duration_dosage;
 					}else{
 						$durationdosage = NULL;
 					}
 
-                    $interval_dosage = $this->input->post("interval_dosage_" . $row_value);
+                    $interval_dosage = $this->input->post("interval_dosage_" . $row_value, TRUE);
                     if($interval_dosage){
                         $interval_dosage = $interval_dosage;
                     }else{
                         $interval_dosage = NULL;
                     }
-					
+
                     if (isset($ipd_prescription_detail_id)) {
                         $not_be_deleted_medicines[] = $ipd_prescription_detail_id;
                         $update_medicines[]         = array(
                             'id'               => $ipd_prescription_detail_id,
-                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value),
-                            'dosage'           => $this->input->post("dosage_" . $row_value),
+                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value, TRUE),
+                            'dosage'           => $this->input->post("dosage_" . $row_value, TRUE),
                             'dose_duration_id' => $durationdosage,
                             'dose_interval_id' => $interval_dosage,
-                            'instruction'      => $this->input->post("instruction_" . $row_value),
+                            'instruction'      => $this->input->post("instruction_" . $row_value, TRUE),
                         );
                     } else {
                         $insert_medicines[] = array(
                             'basic_id'         => null,
-                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value),
-                            'dosage'           => $this->input->post("dosage_" . $row_value),
+                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value, TRUE),
+                            'dosage'           => $this->input->post("dosage_" . $row_value, TRUE),
                             'dose_duration_id' => $durationdosage,
                             'dose_interval_id' => $interval_dosage,
-                            'instruction'      => $this->input->post("instruction_" . $row_value),
+                            'instruction'      => $this->input->post("instruction_" . $row_value, TRUE),
                         );
                     }
                 }
             }
 
-            $ipd_id              = $this->input->post('ipd_id');
-            $header_note         = $this->input->post("header_note");
-            $footer_note         = $this->input->post("footer_note");
-            $ipd_no_value        = $this->input->post('ipd_no_value');
-            $finding_description = $this->input->post('finding_description');
-            $finding_print       = $this->input->post('finding_print');
+            $ipd_id              = $this->input->post('ipd_id', TRUE);
+            $header_note         = $this->input->post("header_note", TRUE);
+            $footer_note         = $this->input->post("footer_note", TRUE);
+            $ipd_no_value        = $this->input->post('ipd_no_value', TRUE);
+            $finding_description = $this->input->post('finding_description', TRUE);
+            $finding_print       = $this->input->post('finding_print', TRUE);
             $ipd_basic_array     = array(
                 'ipd_id'              => $ipd_id,
                 'header_note'         => $header_note,
@@ -4791,20 +5255,46 @@ This Function is used to Import Multiple Patient Records
                 'is_finding_print'    => $finding_print,
                 'date'                => date("Y-m-d"),
                 'generated_by'        => $this->customlib->getStaffID(),
-                'prescribe_by'        => $this->input->post('prescribe_by'),
+                'prescribe_by'        => $this->input->post('prescribe_by', TRUE),
             );
+
+            // SaaS: capture the existing prescription attachment (edit) for quota diff + cleanup.
+            $saas_old_attachment = '';
+            if (!empty($ipd_prescription_basic_id) && $ipd_prescription_basic_id > 0) {
+                $saas_existing       = $this->prescription_model->getIpdPrescriptionBasicById($ipd_prescription_basic_id);
+                $saas_old_attachment = (!empty($saas_existing) && !empty($saas_existing['attachment'])) ? $saas_existing['attachment'] : '';
+            }
+            $saas_old_kb = (!empty($saas_old_attachment)) ? $this->media_storage->getUploadedFileSize($saas_old_attachment, 'uploads/prescription_document') : 0;
 
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $file_name = $this->media_storage->fileupload("document", "./uploads/prescription_document/");
                 $ipd_basic_array['attachment']      = $file_name;
                 $ipd_basic_array['attachment_name'] = $_FILES["document"]["name"];
+
+                if (!IsNullOrEmptyString($file_name)) {
+                    // Remove the replaced old file (unique name differs) to avoid orphan + quota leak.
+                    if (!empty($saas_old_attachment) && $saas_old_attachment != $file_name) {
+                        $this->media_storage->filedelete($saas_old_attachment, 'uploads/prescription_document');
+                    }
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('document');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient add_ipdprescription): ' . $e->getMessage());
+                    }
+                }
             }
 
-            $custom_field_post  = $this->input->post("custom_fields[prescription]");
+            $custom_field_post  = $this->input->post("custom_fields[prescription]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[prescription][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[prescription][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -4841,7 +5331,7 @@ This Function is used to Import Multiple Patient Records
                 $this->customfield_model->insertRecord($custom_value_array, $basic_id);
             }
 
-            $visible_module = $this->input->post('visible');
+            $visible_module = $this->input->post('visible', TRUE);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'), 'ipd_prescription_basic_id' => $basic_id);
 
             $doctor_list          = $this->patient_model->getDoctorsipd($ipd_id);
@@ -4872,13 +5362,13 @@ This Function is used to Import Multiple Patient Records
 			
             $radiology_array = implode(',', $radiology_array);
 
-            $prescribe_by_details = $this->notificationsetting_model->getstaffDetails($this->input->post('prescribe_by'));
+            $prescribe_by_details = $this->notificationsetting_model->getstaffDetails($this->input->post('prescribe_by', TRUE));
             $generated_by_details = $this->notificationsetting_model->getstaffDetails($this->customlib->getStaffID());
 
             $staff_role_list_array = array();
             $notification_to_array = array();
 
-            $notification_to = $this->input->post('visible');
+            $notification_to = $this->input->post('visible', TRUE);
 
             if(!empty($notification_to)){
                 
@@ -4930,6 +5420,29 @@ This Function is used to Import Multiple Patient Records
         echo json_encode($array);
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    /**
+     * SaaS count-limit pre-check (form_validation callback).
+     * Returns false (blocking the save) when adding one more record would push
+     * the tenant over its count quota (e.g. no_of_patient). Param string is
+     * "resource_name,quantity"; SaasValidation sets the error message.
+     */
+    public function validateCanAddNewResource($input, $resource_name)
+    {
+        list($resource_name, $quantity) = explode(',', $resource_name);
+        return $this->saasvalidation->validateCanAddNewResource($input, $resource_name, $quantity);
+    }
+
     public function printbill()
     { 
         $opd_id                   = $this->input->post('opd_id');
@@ -4963,33 +5476,31 @@ This Function is used to Import Multiple Patient Records
         $medicine_name_array = array();
         $radiology_test_name = array();
         $pathology_test_name = array();
-        $total_rows          = $this->input->post('rows');
-        $pathology           = $this->input->post('pathology');
-        $radiology           = $this->input->post('radiology');
+        $total_rows          = $this->input->post('rows', TRUE);
+        $pathology           = $this->input->post('pathology', TRUE);
+        $radiology           = $this->input->post('radiology', TRUE);
         $custom_fields = $this->customfield_model->getByBelong('prescription');
 
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[prescription][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[prescription][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $this->form_validation->set_rules('visit_details_id', $this->lang->line("visit_details_id"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
         $medicine=0;
         if (isset($total_rows) && !empty($total_rows)) {
             foreach ($total_rows as $row_key => $row_value) {
-                $medicine_category = $this->input->post('medicine_cat_' . $row_value);
-                $medicine_name     = $this->input->post('medicine_' . $row_value);
-                $dosage            = $this->input->post('dosage_' . $row_value);
-                $interval_dosage            = $this->input->post('interval_dosage_' . $row_value);
-                
-                if ($medicine_category !== "") {
-                    $medicine=1;
+                $medicine_name     = $this->input->post('medicine_' . $row_value, TRUE);
+                $dosage            = $this->input->post('dosage_' . $row_value, TRUE);
+                $interval_dosage            = $this->input->post('interval_dosage_' . $row_value, TRUE);
 
-                    if ($medicine_name == "") {
-                        $this->form_validation->set_rules('medicine_name', $this->lang->line('medicine'), 'trim|required|xss_clean');
-                    }
+                // Redesign removed the medicine "category" select; medicine_cat_X is now a hardcoded
+                // hidden '1' on every row, so detect a real medicine by the selected medicine_X instead.
+                if ($medicine_name !== "") {
+                    $medicine=1;
 
                     if ($dosage == "") {
                         $this->form_validation->set_rules('dosage', $this->lang->line('dosage'), 'required');
@@ -4997,11 +5508,6 @@ This Function is used to Import Multiple Patient Records
 
                     if ($interval_dosage == "") {
                         $this->form_validation->set_rules('interval_dosage', $this->lang->line('dose_interval'), 'required');
-                    }
-                }else{
-                    if($row_value > 1){
-                        $medicine=0;
-                        $this->form_validation->set_rules('medicine_cat', $this->lang->line('medicine_category'), 'trim|required|xss_clean');
                     }
                 }
             }
@@ -5020,6 +5526,7 @@ This Function is used to Import Multiple Patient Records
                 'medicine_name'     => form_error('medicine_name'),
                 'dosage'            => form_error('dosage'),
                 'interval_dosage'   => form_error('interval_dosage'),
+                'document'          => form_error('document'),
             );
             if (!empty($custom_fields)) {
                 foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
@@ -5039,16 +5546,16 @@ This Function is used to Import Multiple Patient Records
             $array = array('status' => 0, 'error' => $error_msg, 'message' => '');
         } else {
 
-            $action                    = $this->input->post('action');
-            $ipd_prescription_basic_id = $this->input->post('ipd_prescription_basic_id');
+            $action                    = $this->input->post('action', TRUE);
+            $ipd_prescription_basic_id = $this->input->post('ipd_prescription_basic_id', TRUE);
             $prev_prescription_ids=array();
-   
-            $_post_prev_medicine=$this->input->post('prev_medicine');
+
+            $_post_prev_medicine=$this->input->post('prev_medicine', TRUE);
             if($_post_prev_medicine){
                  $prev_medicine= $_post_prev_medicine;
             }
-            $prev_pathology = $this->input->post('prev_pathology');
-            $prev_radiology = $this->input->post('prev_radiology');
+            $prev_pathology = $this->input->post('prev_pathology', TRUE);
+            $prev_radiology = $this->input->post('prev_radiology', TRUE);
             if (!isset($prev_pathology)) {
                 $prev_pathology = array();
             }
@@ -5057,60 +5564,60 @@ This Function is used to Import Multiple Patient Records
                 $prev_radiology = array();
             }
             
-            $pathology = $this->input->post('pathology');
-            $radiology = $this->input->post('radiology');
+            $pathology = $this->input->post('pathology', TRUE);
+            $radiology = $this->input->post('radiology', TRUE);
             if (!isset($pathology)) {
                 $pathology = array();
             }
-            
+
             if (!isset($radiology)) {
                 $radiology = array();
             }
-            $total_rows               = $this->input->post('rows');
+            $total_rows               = $this->input->post('rows', TRUE);
             $insert_medicines         = array();
             $update_medicines         = array();
             $not_be_deleted_medicines = array();
             if ($medicine==1) {
                 foreach ($total_rows as $row_key => $row_value) {
-                    $ipd_prescription_detail_id = $this->input->post("ipd_prescription_detail_id_" . $row_value);
-                    $duration_dosage    =   $this->input->post("duration_dosage_" . $row_value);
+                    $ipd_prescription_detail_id = $this->input->post("ipd_prescription_detail_id_" . $row_value, TRUE);
+                    $duration_dosage    =   $this->input->post("duration_dosage_" . $row_value, TRUE);
                     if($duration_dosage){
                         $duration_dosage_value = $duration_dosage;
                     }else{
                         $duration_dosage_value = null;
                     }
-                    
+
                     if (isset($ipd_prescription_detail_id)) {
                         $not_be_deleted_medicines[] = $ipd_prescription_detail_id;
                         $update_medicines[]         = array(
                             'id'               => $ipd_prescription_detail_id,
-                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value),
-                            'dosage'           => $this->input->post("dosage_" . $row_value),
-                            'dose_interval_id' => $this->input->post("interval_dosage_" . $row_value),
+                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value, TRUE),
+                            'dosage'           => $this->input->post("dosage_" . $row_value, TRUE),
+                            'dose_interval_id' => $this->input->post("interval_dosage_" . $row_value, TRUE),
                             'dose_duration_id' => $duration_dosage_value,
-                            'instruction'      => $this->input->post("instruction_" . $row_value),
+                            'instruction'      => $this->input->post("instruction_" . $row_value, TRUE),
                         );
                     } else {
                         $insert_medicines[] = array(
                             'basic_id'         => 0,
-                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value),
-                            'dosage'           => $this->input->post("dosage_" . $row_value),
-                            'dose_interval_id' => $this->input->post("interval_dosage_" . $row_value),
+                            'pharmacy_id'      => $this->input->post("medicine_" . $row_value, TRUE),
+                            'dosage'           => $this->input->post("dosage_" . $row_value, TRUE),
+                            'dose_interval_id' => $this->input->post("interval_dosage_" . $row_value, TRUE),
                             'dose_duration_id' => $duration_dosage_value,
-                            'instruction'      => $this->input->post("instruction_" . $row_value),
+                            'instruction'      => $this->input->post("instruction_" . $row_value, TRUE),
                         );
-                        $medicine_data         = $this->notificationsetting_model->getmedicineDetails($this->input->post("medicine_" . $row_value));
+                        $medicine_data         = $this->notificationsetting_model->getmedicineDetails($this->input->post("medicine_" . $row_value, TRUE));
                         $medicine_name_array[] = $medicine_data['medicine_name'];
                     }
                 }
             }
 
-            $visitid             = $this->input->post('visit_details_id');
-            $header_note         = $this->input->post("header_note");
-            $footer_note         = $this->input->post("footer_note");
-            $ipd_no_value        = $this->input->post('ipd_no_value');
-            $finding_description = $this->input->post('finding_description');
-            $finding_print       = $this->input->post('finding_print');
+            $visitid             = $this->input->post('visit_details_id', TRUE);
+            $header_note         = $this->input->post("header_note", TRUE);
+            $footer_note         = $this->input->post("footer_note", TRUE);
+            $ipd_no_value        = $this->input->post('ipd_no_value', TRUE);
+            $finding_description = $this->input->post('finding_description', TRUE);
+            $finding_print       = $this->input->post('finding_print', TRUE);
             $opd_details         = $this->patient_model->get_patientidbyvisitid($visitid);
             
             $opd_basic_array = array(
@@ -5124,17 +5631,46 @@ This Function is used to Import Multiple Patient Records
                 'prescribe_by'        => $opd_details['doctor_id'],
             );
 
+            // SaaS: capture the existing prescription attachment (edit) for quota diff + cleanup.
+            // OPD prescriptions are stored in ipd_prescription_basic, so the same getter the IPD
+            // path uses works here. Empty on add ($ipd_prescription_basic_id 0) -> old_kb 0.
+            $saas_old_attachment = '';
+            if (!empty($ipd_prescription_basic_id) && $ipd_prescription_basic_id > 0) {
+                $saas_existing       = $this->prescription_model->getIpdPrescriptionBasicById($ipd_prescription_basic_id);
+                $saas_old_attachment = (!empty($saas_existing) && !empty($saas_existing['attachment'])) ? $saas_existing['attachment'] : '';
+            }
+            $saas_old_kb = (!empty($saas_old_attachment)) ? $this->media_storage->getUploadedFileSize($saas_old_attachment, 'uploads/prescription_document') : 0;
+
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $file_name = $this->media_storage->fileupload("document","./uploads/prescription_document/");
                 $opd_basic_array['attachment']      = $file_name;
                 $opd_basic_array['attachment_name'] = $_FILES["document"]["name"];
+
+                if (!IsNullOrEmptyString($file_name)) {
+                    // Remove the replaced old file (unique name differs) to avoid orphan + quota leak.
+                    if (!empty($saas_old_attachment) && $saas_old_attachment != $file_name) {
+                        $this->media_storage->filedelete($saas_old_attachment, 'uploads/prescription_document');
+                    }
+                    // SaaS: adjust storage quota by the size difference (new vs replaced). On a fresh
+                    // add, $saas_old_kb is 0 so this adds the full new size (same as before).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('document');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient add_opd_prescription): ' . $e->getMessage());
+                    }
+                }
             }
 
-            $custom_field_post  = $this->input->post("custom_fields[prescription]");
+            $custom_field_post  = $this->input->post("custom_fields[prescription]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[prescription][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[prescription][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -5170,7 +5706,7 @@ This Function is used to Import Multiple Patient Records
             
             $patient_record = $this->patient_model->get_patientidbyvisitid($visitid);
             $opd_id         = $patient_record['opd_details_id'];
-            $visible_module = $this->input->post('visible');
+            $visible_module = $this->input->post('visible', TRUE);
 
             if (!empty($pathology)) {
                 foreach ($pathology as $key => $value) {
@@ -5239,10 +5775,10 @@ This Function is used to Import Multiple Patient Records
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $ipd_id   = $this->input->post('ipd_id');
-            $visit_id = $this->input->post('visit_id');
-            $visible_module = $this->input->post("visible");
-            $ipd_no_value = $this->input->post('ipd_no_value');
+            $ipd_id   = $this->input->post('ipd_id', TRUE);
+            $visit_id = $this->input->post('visit_id', TRUE);
+            $visible_module = $this->input->post("visible", TRUE);
+            $ipd_no_value = $this->input->post('ipd_no_value', TRUE);
 
             if (!empty($ipd_id)) {
                 $ipd_details = $this->patient_model->getipddetailspres($ipd_id);
@@ -5254,18 +5790,18 @@ This Function is used to Import Multiple Patient Records
             $url_link        = $notificationurl["ipdpres"];
             $url             = base_url() . $url_link . '/' . $insert_id . '/' . $ipd_id;
             $this->ipdpresNotification($insert_id, $doctor_id, $ipd_id, $ipd_no_value, $url, $visible_module);
-            $medicine         = $this->input->post("medicine[]");
-            $medicine_cat     = $this->input->post("medicine_cat[]");
-            $prescription_id  = $this->input->post("prescription_id[]");
-            $previous_pres_id = $this->input->post("previous_pres_id[]");
-            $dosage           = $this->input->post("dosage[]");
-            $instruction      = $this->input->post("instruction[]");
-            $pathology        = $this->input->post("pathology[]");
-            $radiology        = $this->input->post("radiology[]");
+            $medicine         = $this->input->post("medicine[]", TRUE);
+            $medicine_cat     = $this->input->post("medicine_cat[]", TRUE);
+            $prescription_id  = $this->input->post("prescription_id[]", TRUE);
+            $previous_pres_id = $this->input->post("previous_pres_id[]", TRUE);
+            $dosage           = $this->input->post("dosage[]", TRUE);
+            $instruction      = $this->input->post("instruction[]", TRUE);
+            $pathology        = $this->input->post("pathology[]", TRUE);
+            $radiology        = $this->input->post("radiology[]", TRUE);
             $pathology_id     = implode(",", $pathology);
             $radiology_id     = implode(",", $radiology);
-            $header_note      = $this->input->post("header_note");
-            $footer_note      = $this->input->post("footer_note");
+            $header_note      = $this->input->post("header_note", TRUE);
+            $footer_note      = $this->input->post("footer_note", TRUE);
             $data_array       = array();
             $delete_arr       = array();
             foreach ($previous_pres_id as $pkey => $pvalue) {
@@ -5326,31 +5862,55 @@ This Function is used to Import Multiple Patient Records
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
         $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|callback_valid_patient');
-        $this->form_validation->set_rules('credit_limit', $this->lang->line('credit_limit'), 'trim|required');
+        $this->form_validation->set_rules('credit_limit', $this->lang->line('credit_limit'), 'trim|required|numeric|xss_clean');
         $this->form_validation->set_rules('appointment_date', $this->lang->line('admission_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('bed_no', $this->lang->line('bed_number'), 'trim|required|xss_clean');		
 		
-		$consult      = $this->input->post('live_consult');
+		$consult      = $this->input->post('live_consult', TRUE);
 		if($consult == 'yes'){
 			if (!$this->session->has_userdata('zoom_access_token')) {
 				$this->form_validation->set_rules('zoom_live', $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting'), 'trim|required|xss_clean', array('required' => $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting')));
 			}
 		}
 		
-        if ($this->form_validation->run() == false) {
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('ipd'), 'callback_validateCanAddNewResource[no_of_ipd,1]');
+
+        
+        $advance_amount = $this->input->post('advance_amount', TRUE);
+        if ($advance_amount !== '' && $advance_amount !== null && (float) $advance_amount > 0) {
+            $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
+            if ($this->input->post('payment_mode', TRUE) == 'Cheque') {
+                $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+                $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
+                $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
+            }
+        }
+
+if ($this->form_validation->run() == false) {
             $msg = array(
                 'patient_id'        => form_error('patient_id'),
                 'credit_limit'      => form_error('credit_limit'),
                 'appointment_date'  => form_error('appointment_date'),
+                'file'              => form_error('file'),
                 'bed_no'            => form_error('bed_no'),
                 'consultant_doctor' => form_error('consultant_doctor'),
+                'payment_mode'      => form_error('payment_mode'),
+                'cheque_no'         => form_error('cheque_no'),
+                'cheque_date'       => form_error('cheque_date'),
+                'document'          => form_error('document'),
+                'advance_amount'    => form_error('advance_amount'),
                 'zoom_live' 		=> form_error('zoom_live'),
+                // SaaS count-limit (no_of_ipd) error. The virtual validate_resource field
+                // has no input of its own; including it here lets the existing AJAX error
+                // toast (which concatenates all error values) surface the message.
+                'validate_resource' => form_error('validate_resource'),
             );
 
             if (!empty($custom_fields)) {
@@ -5371,53 +5931,75 @@ This Function is used to Import Multiple Patient Records
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $appointment_date = $this->input->post('appointment_date');
-            $patient_id       = $this->input->post('patient_id');
-            $password         = $this->input->post('password');
-            $email            = $this->input->post('email');
-            $mobileno         = $this->input->post('mobileno');
-            $patient_name     = $this->input->post('patient_name');             
+            $appointment_date = $this->input->post('appointment_date', TRUE);
+            $patient_id       = $this->input->post('patient_id', TRUE);
+            $password         = $this->input->post('password', TRUE);
+            $email            = $this->input->post('email', TRUE);
+            $mobileno         = $this->input->post('mobileno', TRUE);
+            $patient_name     = $this->input->post('patient_name', TRUE);             
             
             if ($this->module_lib->hasActive('live_consultation')) {
-                $live_consult = $this->input->post('live_consult');
+                $live_consult = $this->input->post('live_consult', TRUE);
             } else {
                 $live_consult = 'no';
             }
-            
-            $doctor_id        = $this->input->post('consultant_doctor');
-            $date             = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);           
+
+            $doctor_id        = $this->input->post('consultant_doctor', TRUE);
+            $date             = $this->customlib->dateFormatToYYYYMMDDHis($appointment_date, $this->time_format);
+            $this->load->model('bill_model');
+            $this->bill_model->ensureCreditBillingSchema();
             $ipd_data = array(
                 'date'            => $date,
-                'bed'             => $this->input->post('bed_no'),
-                'bed_group_id'    => $this->input->post('bed_group_id'),               
-                'case_type'       => $this->input->post('case'),
-                'symptoms'        => $this->input->post('symptoms'),
-                'refference'      => $this->input->post('refference'),
-                'cons_doctor'     => $this->input->post('consultant_doctor'),
+                'bed'             => $this->input->post('bed_no', TRUE),
+                'bed_group_id'    => $this->input->post('bed_group_id', TRUE),
+                'case_type'       => $this->input->post('case', TRUE),
+                'symptoms'        => $this->input->post('symptoms', TRUE),
+                'refference'      => $this->input->post('refference', TRUE),
+                'cons_doctor'     => $this->input->post('consultant_doctor', TRUE),
+                'reporting_doctor'=> $this->input->post('reporting_doctor', TRUE) ? $this->input->post('reporting_doctor', TRUE) : null,
                 'patient_id'      => $patient_id,
-                'credit_limit'    => $this->input->post('credit_limit'),
-                'casualty'        => $this->input->post('casualty'),
+                'credit_limit'    => $this->input->post('credit_limit', TRUE),
+                'casualty'        => $this->input->post('casualty', TRUE),
                 'discharged'      => 'no',
                 'live_consult'    => $live_consult,
                 'generated_by'    => $this->customlib->getLoggedInUserID(),
             );
             
-             if($this->input->post('is_for_antenatal')!=""){
-                $ipd_data['is_antenatal'] = $this->input->post('is_for_antenatal');
+             if($this->input->post('is_for_antenatal', TRUE)!=""){
+                $ipd_data['is_antenatal'] = $this->input->post('is_for_antenatal', TRUE);
             }
 
-            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal'),'id'=> $patient_id);
+            $patient_data = array('is_antenatal' => $this->input->post('is_for_antenatal', TRUE),'id'=> $patient_id);
             $this->patient_model->add($patient_data);
 
             $ipd_id            = $this->patient_model->add_ipd($ipd_data);
+
+            // SaaS: increment the IPD count usage by 1 (count-based resource: no_of_ipd).
+            // The pre-check only blocks when over limit; this raises the usage so the limit
+            // stays meaningful. Own try/catch so a quota-API hiccup does not abort the
+            // already-created IPD's flow (updateResouceQuota throws on failure).
+            // NOTE: decrement on IPD delete is a later step — until then this only increases.
+            if ($ipd_id) {
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_ipd', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_ipd quota increment failed (patient add_inpatient): ' . $e->getMessage());
+                }
+            }
+
+            $icd_ids = $this->input->post('icd_code_ids', TRUE);
+            if (!empty($icd_ids) && is_array($icd_ids)) {
+                $this->load->model('icd10_model');
+                $this->icd10_model->saveIpdCodes($ipd_id, $icd_ids);
+            }
             $ipdno             = $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id;
             $case_reference_id = $this->patient_model->getReferenceByIpdId($ipd_id);
-            $bed_data          = array('id' => $this->input->post('bed_no'), 'is_active' => 'no');
+            $bed_data          = array('id' => $this->input->post('bed_no', TRUE), 'is_active' => 'no');
             $this->bed_model->savebed($bed_data);
             $bed_history = array(
                 "case_reference_id" => $case_reference_id,
-                "bed_group_id"      => $this->input->post("bed_group_id"),
-                "bed_id"            => $this->input->post("bed_no"),
+                "bed_group_id"      => $this->input->post("bed_group_id", TRUE),
+                "bed_id"            => $this->input->post("bed_no", TRUE),
                 "from_date"         => $date,
                 "is_active"         => "yes",
             );
@@ -5461,11 +6043,11 @@ This Function is used to Import Multiple Patient Records
                 }
             }
 			
-            $custom_field_post  = $this->input->post("custom_fields[ipd]");
+            $custom_field_post  = $this->input->post("custom_fields[ipd]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -5478,7 +6060,44 @@ This Function is used to Import Multiple Patient Records
             if (!empty($custom_value_array)) {
                 $this->customfield_model->insertRecord($custom_value_array, $ipd_id);
             }
-            $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('patient_added_successfully'));
+            
+            // Optional IPD advance — recorded as a normal payment so billing always continues.
+            $advance_amount = $this->input->post('advance_amount', TRUE);
+            if ($advance_amount !== '' && $advance_amount !== null && (float) $advance_amount > 0) {
+                $payment_section = $this->config->item('payment_section');
+                $advance_data = array(
+                    'case_reference_id' => $case_reference_id,
+                    'section'           => $payment_section['ipd'],
+                    'patient_id'        => $patient_id,
+                    'amount'            => $advance_amount,
+                    'type'              => 'payment',
+                    'amount_type'       => 'advance',
+                    'ipd_id'            => $ipd_id,
+                    'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                    'note'              => $this->lang->line('advance_amount'),
+                    'payment_date'      => $date,
+                    'received_by'       => $this->customlib->getLoggedInUserID(),
+                );
+                $cheque_date = $this->input->post('cheque_date', TRUE);
+                if ($this->input->post('payment_mode', TRUE) == 'Cheque') {
+                    $img_name = '';
+                    if (isset($_FILES['document']) && !empty($_FILES['document']['name'])) {
+                        $img_name = $this->media_storage->fileupload('document', './uploads/payment_document/');
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (ipd admission advance): ' . $e->getMessage());
+                        }
+                    }
+                    $advance_data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
+                    $advance_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
+                    $advance_data['attachment']      = $img_name;
+                    $advance_data['attachment_name'] = $img_name;
+                }
+                $this->transaction_model->add($advance_data);
+            }
+
+$array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('patient_added_successfully'));
             if ($this->session->has_userdata("appointment_id")) {
                 $appointment_id = $this->session->userdata("appointment_id");
                 $updateData     = array('id' => $appointment_id, 'is_ipd' => 'yes');
@@ -5489,22 +6108,30 @@ This Function is used to Import Multiple Patient Records
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $patient_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $patient_id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (patient add_inpatient): ' . $e->getMessage());
+                    }
+                }
             }
 
             $sender_details = array('patient_id' => $patient_id, 'patient_name' => $patient_name, 'ipdid' => $ipd_id, 'contact_no' => $mobileno, 'email' => $email);
             $this->mailsmsconf->mailsms('ipd_patient_registration', $sender_details);
 
-            $bed_details    = $this->bed_model->getBedDetails($this->input->post('bed_no'));
-            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor'));
+            $bed_details    = $this->bed_model->getBedDetails($this->input->post('bed_no', TRUE));
+            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor', TRUE));
             $event_data     = array(
-                'patient_id'           => $this->input->post('patient_id'),
-                'symptoms_description' => $this->input->post('symptoms'),
+                'patient_id'           => $this->input->post('patient_id', TRUE),
+                'symptoms_description' => $this->input->post('symptoms', TRUE),
                 'bed_location'         => $bed_details['name'] . ' - ' . $bed_details['bedgroup'] . ' - ' . $bed_details['floor_name'],
                 'admission_date'       => $this->customlib->YYYYMMDDHisTodateFormat($appointment_date, $this->customlib->getHospitalTimeFormat()),
-                'doctor_id'            => $this->input->post('consultant_doctor'),
+                'doctor_id'            => $this->input->post('consultant_doctor', TRUE),
                 'doctor_name'          => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
             );
 
@@ -5539,7 +6166,7 @@ This Function is used to Import Multiple Patient Records
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[ipdconsultinstruction][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[ipdconsultinstruction][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $this->form_validation->set_rules('date', $this->lang->line('applied_date'), 'trim|required|xss_clean');
@@ -5571,12 +6198,12 @@ This Function is used to Import Multiple Patient Records
 
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $getdate     = $this->input->post('date');
-            $ins_date    = $this->input->post('insdate');
-            $patient_id  = $this->input->post('patient_id');
-            $ipd_id      = $this->input->post('ipdid');
-            $doctor      = $this->input->post('doctor');
-            $instruction = $this->input->post('instruction');
+            $getdate     = $this->input->post('date', TRUE);
+            $ins_date    = $this->input->post('insdate', TRUE);
+            $patient_id  = $this->input->post('patient_id', TRUE);
+            $ipd_id      = $this->input->post('ipdid', TRUE);
+            $doctor      = $this->input->post('doctor', TRUE);
+            $instruction = $this->input->post('instruction', TRUE);
             $date        = $this->customlib->dateFormatToYYYYMMDDHis($getdate);
             $data_array  = array(
                 'date'        => $date,
@@ -5585,11 +6212,11 @@ This Function is used to Import Multiple Patient Records
                 'cons_doctor' => $doctor,
                 'instruction' => $instruction,
             );
-            $custom_field_post  = $this->input->post("custom_fields[ipdconsultinstruction]");
+            $custom_field_post  = $this->input->post("custom_fields[ipdconsultinstruction]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipdconsultinstruction][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipdconsultinstruction][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -5608,9 +6235,9 @@ This Function is used to Import Multiple Patient Records
 
             $doctor_list       = $this->patient_model->getDoctorsipd($ipd_id);
             $consultant_doctor = $this->patient_model->get_patientidbyIpdId($ipd_id);
-            $doctor_details    = $this->notificationsetting_model->getstaffDetails($this->input->post('doctor'));
+            $doctor_details    = $this->notificationsetting_model->getstaffDetails($this->input->post('doctor', TRUE));
 
-            $consultant_doctorarray[] = array('consult_doctor' => $this->input->post('doctor'), 'name' => $doctor_details['name'] . " " . $doctor_details['surname'] . "(" . $doctor_details['employee_id'] . ")");
+            $consultant_doctorarray[] = array('consult_doctor' => $this->input->post('doctor', TRUE), 'name' => $doctor_details['name'] . " " . $doctor_details['surname'] . "(" . $doctor_details['employee_id'] . ")");
 
             $consultant_doctorarray[] = array('consult_doctor' => $consultant_doctor['cons_doctor'], 'name' => $consultant_doctor['doctor_name'] . " " . $consultant_doctor['doctor_surname'] . "(" . $consultant_doctor['doctor_employee_id'] . ")");
             foreach ($doctor_list as $key => $value) {
@@ -5618,14 +6245,14 @@ This Function is used to Import Multiple Patient Records
             }
 
             $event_data = array(
-                'patient_id'       => $this->input->post('patient_id'),
+                'patient_id'       => $this->input->post('patient_id', TRUE),
                 'ipd_no'           => $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id,
-                'case_id'          => $this->input->post('case_id'),
+                'case_id'          => $this->input->post('case_id', TRUE),
                 'instruction_date' => $this->customlib->YYYYMMDDTodateFormat($ins_date),
                 'applied_date'     => $this->customlib->YYYYMMDDTodateFormat($date),
-                'doctor_id'        => $this->input->post('doctor'),
+                'doctor_id'        => $this->input->post('doctor', TRUE),
                 'doctor_name'      => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
-                'instruction'      => $this->input->post('instruction'),
+                'instruction'      => $this->input->post('instruction', TRUE),
             );
  
             $this->system_notification->send_system_notification('add_consultant_register', $event_data, $consultant_doctorarray);
@@ -5675,12 +6302,12 @@ This Function is used to Import Multiple Patient Records
 
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $id       = $this->input->post('instruction_id');
-            $getdate  = $this->input->post('date');
-            $ins_date = $this->input->post('insdate');
-            $ipd_id      = $this->input->post('ipdid');
-            $doctor      = $this->input->post('doctor');
-            $instruction = $this->input->post('instruction');
+            $id       = $this->input->post('instruction_id', TRUE);
+            $getdate  = $this->input->post('date', TRUE);
+            $ins_date = $this->input->post('insdate', TRUE);
+            $ipd_id      = $this->input->post('ipdid', TRUE);
+            $doctor      = $this->input->post('doctor', TRUE);
+            $instruction = $this->input->post('instruction', TRUE);
             $date        = $this->customlib->dateFormatToYYYYMMDDHis($getdate, $this->customlib->getHospitalTimeFormat());
             $data_array  = array(
                 'id'          => $id,
@@ -5691,11 +6318,11 @@ This Function is used to Import Multiple Patient Records
                 'instruction' => $instruction,
             );
             $insert_id          = $this->patient_model->add_consultantInstruction($data_array);
-            $custom_field_post  = $this->input->post("custom_fields[ipdconsultinstruction]");
+            $custom_field_post  = $this->input->post("custom_fields[ipdconsultinstruction]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipdconsultinstruction][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipdconsultinstruction][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $id,
@@ -5754,12 +6381,12 @@ This Function is used to Import Multiple Patient Records
 
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $date       = $this->input->post('date');
-            $nurse      = $this->input->post('nurse');
-            $patient_id = $this->input->post('patient_id');
-            $ipd_id     = $this->input->post('ipdid');
-            $note       = $this->input->post('note');
-            $comment    = $this->input->post('comment');            
+            $date       = $this->input->post('date', TRUE);
+            $nurse      = $this->input->post('nurse', TRUE);
+            $patient_id = $this->input->post('patient_id', TRUE);
+            $ipd_id     = $this->input->post('ipdid', TRUE);
+            $note       = $this->input->post('note', TRUE);
+            $comment    = $this->input->post('comment', TRUE);            
 
             $data_array = array(
                 'date'       => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
@@ -5771,11 +6398,11 @@ This Function is used to Import Multiple Patient Records
                 'created_by' => $this->customlib->getStaffID(),
             );
 
-            $custom_field_post  = $this->input->post("custom_fields[ipdnursenote]");
+            $custom_field_post  = $this->input->post("custom_fields[ipdnursenote]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipdnursenote][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipdnursenote][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -5821,6 +6448,267 @@ This Function is used to Import Multiple Patient Records
         echo json_encode($array);
     }
 
+    public function add_ipd_indent()
+    {
+        if (!$this->rbac->hasPrivilege('ipd_indent', 'can_add')) {
+            access_denied();
+        }
+
+        $this->form_validation->set_rules('ipdid', $this->lang->line('ipd_no'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('note', $this->lang->line('note'), 'trim|xss_clean');
+
+        if ($this->form_validation->run() == false) {
+            $array = array(
+                'status'  => 'fail',
+                'error'   => array(
+                    'ipdid'      => form_error('ipdid'),
+                    'patient_id' => form_error('patient_id'),
+                    'note'       => form_error('note'),
+                ),
+                'message' => '',
+            );
+            echo json_encode($array);
+            return;
+        }
+
+        $ipd_id     = (int) $this->input->post('ipdid', true);
+        $patient_id = (int) $this->input->post('patient_id', true);
+        $note       = $this->input->post('note', true);
+
+        $medicine_ids   = $this->input->post('medicine_id');
+        $medicine_notes = $this->input->post('medicine_note');
+        $radio_ids      = $this->input->post('radiology_id');
+        $radio_notes    = $this->input->post('radiology_note');
+        $patho_ids      = $this->input->post('pathology_id');
+        $patho_notes    = $this->input->post('pathology_note');
+
+        if (!$this->validate_indent_indications($radio_ids, $this->input->post('radiology_indication')) ||
+            !$this->validate_indent_indications($patho_ids, $this->input->post('pathology_indication'))) {
+            echo json_encode(array('status' => 'fail', 'error' => array('items' => 'Clinical indication is required for every Radiology and Pathology test.'), 'message' => ''));
+            return;
+        }
+
+        $items = array();
+        $ipd_detail = $this->patient_model->getIpdDetails($ipd_id);
+        if (empty($ipd_detail) || (int) $ipd_detail['patient_id'] !== $patient_id || $ipd_detail['ipd_discharge'] === 'yes') {
+            echo json_encode(array('status' => 'fail', 'error' => array('ipdid' => 'The IPD admission is invalid or has been discharged.'), 'message' => ''));
+            return;
+        }
+
+        $items = array_merge($items, $this->build_indent_items('medicine', $medicine_ids, $medicine_notes,
+            $this->input->post('medicine_quantity'), $this->input->post('medicine_priority'), $this->input->post('medicine_indication')));
+        $items = array_merge($items, $this->build_indent_items('radiology', $radio_ids, $radio_notes,
+            null, $this->input->post('radiology_priority'), $this->input->post('radiology_indication')));
+        $items = array_merge($items, $this->build_indent_items('pathology', $patho_ids, $patho_notes,
+            null, $this->input->post('pathology_priority'), $this->input->post('pathology_indication')));
+
+        if (empty($items)) {
+            echo json_encode(array(
+                'status'  => 'fail',
+                'error'   => array('items' => $this->lang->line('select_atleast_one_indent_item')),
+                'message' => '',
+            ));
+            return;
+        }
+
+        $insert_id = $this->indent_model->add(array(
+            'ipd_id'     => $ipd_id,
+            'patient_id' => $patient_id,
+            'note'       => $note,
+            'created_by' => $this->customlib->getStaffID(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ), $items);
+
+        if (!$insert_id) {
+            echo json_encode(array('status' => 'fail', 'error' => array('items' => $this->lang->line('something_went_wrong')), 'message' => ''));
+            return;
+        }
+
+        $patient_detail = $this->patient_model->get_patientidbyIpdId($ipd_id);
+        if (empty($patient_detail)) {
+            echo json_encode(array('status' => 'success', 'error' => '', 'message' => $this->lang->line('indent_added_successfully')));
+            return;
+        }
+        $staff          = $this->customlib->getUserData();
+        $created_by     = composeStaffNameByString($staff['name'], $staff['surname'], $staff['employee_id']);
+
+        $grouped = array('medicine' => array(), 'radiology' => array(), 'pathology' => array());
+        foreach ($items as $item) {
+            $label = $item['item_name'];
+            if ($item['item_type'] === 'medicine') {
+                $label .= ' x ' . rtrim(rtrim($item['requested_quantity'], '0'), '.');
+            }
+            $label .= ' [' . ucfirst($item['priority']) . ']';
+            if (!empty($item['clinical_indication'])) {
+                $label .= ' - ' . $item['clinical_indication'];
+            }
+            if (!empty($item['note'])) {
+                $label .= ' (' . $item['note'] . ')';
+            }
+            $grouped[$item['item_type']][] = $label;
+        }
+
+        $base_event = array(
+            'patient_id' => $patient_detail['patient_id'],
+            'ipd_no'     => $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id,
+            'case_id'    => $patient_detail['case_reference_id'],
+            'note'       => $note,
+            'created_by' => $created_by,
+            'items'      => '',
+        );
+
+        $event_map = array(
+            'medicine'  => 'ipd_indent_pharmacy',
+            'radiology' => 'ipd_indent_radiology',
+            'pathology' => 'ipd_indent_pathology',
+        );
+
+        foreach ($event_map as $type => $event) {
+            if (empty($grouped[$type])) {
+                continue;
+            }
+            $event_data          = $base_event;
+            $event_data['items'] = implode(', ', $grouped[$type]);
+            $this->system_notification->send_system_notification($event, $event_data);
+        }
+
+        echo json_encode(array('status' => 'success', 'error' => '', 'message' => $this->lang->line('indent_added_successfully')));
+    }
+
+    private function build_indent_items($type, $ids, $notes, $quantities = null, $priorities = null, $indications = null)
+    {
+        $items = array();
+        if (empty($ids) || !is_array($ids)) {
+            return $items;
+        }
+        foreach ($ids as $index => $item_id) {
+            $item_source = 'master';
+            if ($type !== 'medicine' && strpos($item_id, ':') !== false) {
+                list($posted_source, $posted_id) = explode(':', $item_id, 2);
+                $item_source = $posted_source === 'charge' ? 'charge' : 'master';
+                $item_id = $posted_id;
+            }
+            $item_id = (int) $item_id;
+            if ($item_id <= 0) {
+                continue;
+            }
+            $item_note = '';
+            if (!empty($notes) && isset($notes[$index])) {
+                $item_note = trim($notes[$index]);
+            }
+            $item_name = $this->indent_model->getItemName($type, $item_id, $item_source);
+            if ($item_name === '') {
+                continue;
+            }
+            $quantity = 1;
+            if ($type === 'medicine') {
+                $quantity = isset($quantities[$index]) ? (int) $quantities[$index] : 0;
+                if ($quantity <= 0) {
+                    continue;
+                }
+            }
+            $priority = isset($priorities[$index]) && $priorities[$index] === 'urgent' ? 'urgent' : 'routine';
+            $items[] = array(
+                'item_type' => $type,
+                'item_source' => $item_source,
+                'item_id'   => $item_id,
+                'item_name' => $item_name,
+                'note'      => $item_note,
+                'requested_quantity' => $quantity,
+                'priority' => $priority,
+                'clinical_indication' => isset($indications[$index]) ? trim($indications[$index]) : '',
+                'status' => 'pending',
+            );
+        }
+        return $items;
+    }
+
+    private function validate_indent_indications($ids, $indications)
+    {
+        if (empty($ids) || !is_array($ids)) {
+            return true;
+        }
+        foreach ($ids as $index => $id) {
+            $numeric_id = strpos($id, ':') !== false ? substr($id, strrpos($id, ':') + 1) : $id;
+            if ((int) $numeric_id > 0 && (!isset($indications[$index]) || trim($indications[$index]) === '')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function delete_ipd_indent($id, $ipdid)
+    {
+        if (!$this->rbac->hasPrivilege('ipd_indent', 'can_delete')) {
+            access_denied();
+        }
+        if (!$this->indent_model->delete((int) $id, (int) $ipdid)) {
+            $this->output->set_status_header(409);
+            echo json_encode(array('status' => 'fail', 'message' => 'Processed indents cannot be deleted. Reverse the generated bill first.'));
+        }
+    }
+
+    public function department_indents($department)
+    {
+        $type = $this->indent_department_type($department);
+        $this->assert_indent_department_access($type);
+        $data['department'] = $department;
+        $data['item_type'] = $type;
+        $data['indents'] = $this->indent_model->getDepartmentItems($type);
+        if ($type === 'medicine') {
+            foreach ($data['indents'] as $key => $item) {
+                $data['indents'][$key]['batches'] = $this->indent_model->getMedicineBatches($item['item_id']);
+            }
+        }
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/department_indents', $data);
+        $this->load->view('layout/footer', $data);
+    }
+
+    public function process_indent_item()
+    {
+        $type = $this->indent_department_type($this->input->post('department', true));
+        $this->assert_indent_department_access($type);
+        $action = $this->input->post('action', true);
+        $item_id = (int) $this->input->post('item_id', true);
+        if ($action === 'reject') {
+            $reason = trim($this->input->post('rejection_reason', true));
+            if ($reason === '') {
+                echo json_encode(array('status' => 'fail', 'message' => 'A rejection reason is required.'));
+                return;
+            }
+            $ok = $this->indent_model->rejectItem($item_id, $type, $this->customlib->getStaffID(), $reason);
+            echo json_encode(array('status' => $ok ? 'success' : 'fail', 'message' => $ok ? 'Indent rejected.' : 'The indent was already processed.'));
+            return;
+        }
+        $result = $this->indent_model->processItem(
+            $item_id, $type, $this->customlib->getStaffID(),
+            $type === 'medicine' ? (int) $this->input->post('accepted_quantity', true) : 1,
+            $type === 'medicine' ? (int) $this->input->post('batch_id', true) : 0
+        );
+        echo json_encode(array('status' => $result['status'] ? 'success' : 'fail',
+            'message' => $result['status'] ? 'Indent accepted and added to patient billing.' : $result['message']));
+    }
+
+    private function indent_department_type($department)
+    {
+        $map = array('pharmacy' => 'medicine', 'medicine' => 'medicine', 'radiology' => 'radiology', 'pathology' => 'pathology');
+        if (!isset($map[$department])) {
+            show_404();
+        }
+        return $map[$department];
+    }
+
+    private function assert_indent_department_access($type)
+    {
+        $roles = array('medicine' => 4, 'pathology' => 5, 'radiology' => 6);
+        $userdata = $this->customlib->getUserData();
+        if (!in_array((int) $userdata['role_id'], array(1, 7, $roles[$type]), true)) {
+            access_denied();
+        }
+    }
+
     public function updatenursenote()
     {
         $patient_type  = $this->customlib->getPatienttype();
@@ -5864,12 +6752,12 @@ This Function is used to Import Multiple Patient Records
 
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $nurse_noteid      = $this->input->post('nurseid');
-            $date              = $this->input->post('date');
-            $nurse             = $this->input->post('nurse');
-            $note              = $this->input->post('note');
-            $comment           = $this->input->post('comment');
-            $custom_field_post = $this->input->post("custom_fields[ipdnursenote]");
+            $nurse_noteid      = $this->input->post('nurseid', TRUE);
+            $date              = $this->input->post('date', TRUE);
+            $nurse             = $this->input->post('nurse', TRUE);
+            $note              = $this->input->post('note', TRUE);
+            $comment           = $this->input->post('comment', TRUE);
+            $custom_field_post = $this->input->post("custom_fields[ipdnursenote]", TRUE);
             $date_format       = $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format);
             $data_array        = array(
                 'id'       => $nurse_noteid,
@@ -5883,7 +6771,7 @@ This Function is used to Import Multiple Patient Records
             $custom_value_array = array();
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ipdnursenote][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ipdnursenote][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $nurse_noteid,
@@ -5910,8 +6798,8 @@ This Function is used to Import Multiple Patient Records
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $nurse_noteid  = $this->input->post('nurseid');
-            $comment_staff = $this->input->post('comment_staff');
+            $nurse_noteid  = $this->input->post('nurseid', TRUE);
+            $comment_staff = $this->input->post('comment_staff', TRUE);
             $date          = date("Y-m-d H:i:s");
             $userdata      = $this->customlib->getUserData();
             $staff_id      = $userdata['id'];
@@ -6003,11 +6891,12 @@ This Function is used to Import Multiple Patient Records
 		if(!empty($findings)){
 			$data['findings'] = $findings;
 		}else{
-			$data['findings'] = '';	
+			$data['findings'] = [];
 		}
-        $this->load->view('layout/header');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/opdReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function opdreportbalance()
@@ -6031,9 +6920,10 @@ This Function is used to Import Multiple Patient Records
         $data["searchlist"]     = $this->search_type;
         $data['gender']         = $this->customlib->getGender_Patient();
         $data['discharged']     = $this->customlib->getdischargestatus();
-        $this->load->view('layout/header');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/opdReportbalance', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function ipdReport()
@@ -6109,9 +6999,10 @@ This Function is used to Import Multiple Patient Records
             $data['patient_status'] = 'on_bed';
         }
 
-        $this->load->view('layout/header');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/ipdReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
@@ -6670,9 +7561,10 @@ This Function is used to Import Multiple Patient Records
         $data['gender']     = $this->customlib->getGender_Patient();
         $data['discharged'] = $this->customlib->getdischargestatus();
 
-        $this->load->view('layout/header');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/ipdReportbalance', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function dischargepatientreport()
@@ -6691,9 +7583,10 @@ This Function is used to Import Multiple Patient Records
         $data["searchlist"] = $this->search_type;
         $data['gender']     = $this->customlib->getGender_Patient();
         $data['discharged'] = $this->customlib->discharge_status();
-        $this->load->view('layout/header');
+        $data['module'] = 'ipd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/dischargePatientReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function opddischargepatientreport()
@@ -6712,9 +7605,10 @@ This Function is used to Import Multiple Patient Records
         $data["searchlist"] = $this->search_type;
         $data['gender']     = $this->customlib->getGender_Patient();
         $data['discharged'] = $this->customlib->discharge_status();
-        $this->load->view('layout/header');
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/patient/opddischargepatientReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function revertBill()
@@ -6747,6 +7641,50 @@ This Function is used to Import Multiple Patient Records
         $opdid      = $this->input->post('opdid');
         $patient_id = $this->input->post('patient_id');
         if (!empty($opdid)) {
+            // SaaS: release every linked transaction's attachment from storage quota before the OPD
+            // and its transactions are deleted (deleteOPD removes transactions WHERE opd_id = $opdid).
+            $saas_transactions = $this->transaction_model->OPDPatientPayments($opdid);
+            if (!empty($saas_transactions)) {
+                foreach ($saas_transactions as $saas_transaction) {
+                    if (!empty($saas_transaction['attachment'])) {
+                        $doc_path = $saas_transaction['attachment'];
+                        $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                        $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient deleteOPD transaction_id=' . $saas_transaction['id'] . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($doc_path, $dir);
+                    }
+                }
+            }
+
+            // SaaS: release every OPD prescription's file attachment from storage quota before the
+            // OPD is deleted. OPD prescriptions live in opd_prescription_basic, linked via
+            // visit_details to this OPD; once the OPD goes the rows are orphaned and their files
+            // (uploads/prescription_document) become unreachable, leaking quota. Mirrors the
+            // transaction-attachment release above and the IPD prescription release in deleteIpdPatient.
+            $saas_presc_dir     = 'uploads/prescription_document';
+            $saas_prescriptions = $this->patient_model->getOpdPrescriptionAttachments($opdid);
+            if (!empty($saas_prescriptions)) {
+                foreach ($saas_prescriptions as $saas_presc) {
+                    if (!empty($saas_presc['attachment'])) {
+                        $kb = $this->media_storage->getUploadedFileSize($saas_presc['attachment'], $saas_presc_dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient deleteOPD prescription_id=' . $saas_presc['id'] . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($saas_presc['attachment'], $saas_presc_dir);
+                    }
+                }
+            }
+
             $return_result = $this->patient_model->deleteOPD($opdid, $patient_id);
             if (!is_bool($return_result)) {
 
@@ -6765,7 +7703,7 @@ This Function is used to Import Multiple Patient Records
         if (!$this->rbac->hasPrivilege('ipd_medication', 'can_delete')) {
             access_denied();
         }
-        $medication_id = $this->input->post('medication_id');
+        $medication_id = $this->input->post('medication_id', TRUE);
         if (!empty($medication_id)) {
             $this->medicine_dosage_model->deletemedicationdosage($medication_id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
@@ -6782,7 +7720,33 @@ This Function is used to Import Multiple Patient Records
         }
 
         if (!empty($id)) {
+            // SaaS: release the patient's profile image from storage quota before deletion.
+            // Skip the shared default placeholder (no_image.png) — it's not a per-patient upload.
+            $patient = $this->patient_model->getpatientDetails($id);
+            if (!empty($patient['image']) && strpos($patient['image'], 'no_image.png') === false) {
+                $image_path = $patient['image'];
+                $dir        = (strpos($image_path, '/') !== false) ? '' : 'uploads/patient_images';
+                $kb         = $this->media_storage->getUploadedFileSize($image_path, $dir);
+                if ($kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (patient delete): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($image_path, $dir);
+            }
+
             $this->patient_model->deletePatient($id);
+
+            // SaaS: decrement the patient count usage by 1 (count-based resource:
+            // no_of_patient), mirroring the +1 done on addpatient.
+            try {
+                $this->saasvalidation->deleteResouceQuota('no_of_patient', 1);
+            } catch (Exception $e) {
+                log_message('error', 'SaaS no_of_patient quota decrement failed (patient delete): ' . $e->getMessage());
+            }
+
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
@@ -6797,7 +7761,33 @@ This Function is used to Import Multiple Patient Records
         }
         $id = $this->input->post('delid');
         if (!empty($id)) {
+            // SaaS: release the patient's profile image from storage quota before deletion.
+            // Skip the shared default placeholder (no_image.png) — it's not a per-patient upload.
+            $patient = $this->patient_model->getpatientDetails($id);
+            if (!empty($patient['image']) && strpos($patient['image'], 'no_image.png') === false) {
+                $image_path = $patient['image'];
+                $dir        = (strpos($image_path, '/') !== false) ? '' : 'uploads/patient_images';
+                $kb         = $this->media_storage->getUploadedFileSize($image_path, $dir);
+                if ($kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (patient deletePatient): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($image_path, $dir);
+            }
+
             $this->patient_model->deletePatient($id);
+
+            // SaaS: decrement the patient count usage by 1 (count-based resource:
+            // no_of_patient), mirroring the +1 done on addpatient.
+            try {
+                $this->saasvalidation->deleteResouceQuota('no_of_patient', 1);
+            } catch (Exception $e) {
+                log_message('error', 'SaaS no_of_patient quota decrement failed (patient deletePatient): ' . $e->getMessage());
+            }
+
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => '');
@@ -6813,7 +7803,50 @@ This Function is used to Import Multiple Patient Records
         $id = $this->input->post('id');
 
         if (!empty($id)) {
+            // SaaS: $id here is the opd_details.id (same key as deleteOPD's opdid). Release the
+            // storage quota for every linked transaction attachment AND prescription document
+            // BEFORE the rows are deleted, then unlink the physical files — mirrors deleteOPD so
+            // this delete path no longer leaks storage. Each call is wrapped in its own try/catch
+            // so a quota-API failure can never abort the delete.
+            $saas_transactions = $this->transaction_model->OPDPatientPayments($id);
+            if (!empty($saas_transactions)) {
+                foreach ($saas_transactions as $saas_transaction) {
+                    if (!empty($saas_transaction['attachment'])) {
+                        $doc_path = $saas_transaction['attachment'];
+                        $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                        $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient deleteOPDPatient transaction_id=' . $saas_transaction['id'] . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($doc_path, $dir);
+                    }
+                }
+            }
+
+            $saas_presc_dir     = 'uploads/prescription_document';
+            $saas_prescriptions = $this->patient_model->getOpdPrescriptionAttachments($id);
+            if (!empty($saas_prescriptions)) {
+                foreach ($saas_prescriptions as $saas_presc) {
+                    if (!empty($saas_presc['attachment'])) {
+                        $kb = $this->media_storage->getUploadedFileSize($saas_presc['attachment'], $saas_presc_dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient deleteOPDPatient prescription_id=' . $saas_presc['id'] . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($saas_presc['attachment'], $saas_presc_dir);
+                    }
+                }
+            }
+
             $this->patient_model->deleteOPDPatient($id);
+
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => '');
@@ -6827,9 +7860,10 @@ This Function is used to Import Multiple Patient Records
         $this->session->set_userdata('sub_menu', 'reports/patient');
         $this->session->set_userdata('subsub_menu', 'reports/patient/patientcredentialreport');
         $data["searchlist"] = $this->search_type;    
-        $this->load->view("layout/header");
-        $this->load->view("admin/patient/patientcredentialreport",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'opd';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/patient/patientcredentialreport', $data);
+        $this->load->view('layout/footer', $data);
     }
 
     public function getcredentialdatatable()
@@ -6907,7 +7941,30 @@ This Function is used to Import Multiple Patient Records
     {
         $ipdid = $this->input->post('ipdid');
         if (!empty($ipdid)) {
+            // SaaS: deleting the IPD cascades (DB ON DELETE CASCADE) to ipd_prescription_basic,
+            // whose rows carry file attachments. Release their storage + remove the physical
+            // files BEFORE the IPD is deleted (once the cascade fires the rows are gone and the
+            // files would be orphaned, leaking quota). Files live under uploads/prescription_document.
+            $saas_presc_dir     = 'uploads/prescription_document';
+            $saas_prescriptions = $this->patient_model->getIpdPrescriptionAttachments($ipdid);
+            if (!empty($saas_prescriptions)) {
+                foreach ($saas_prescriptions as $saas_presc) {
+                    if (!empty($saas_presc['attachment'])) {
+                        $kb = $this->media_storage->getUploadedFileSize($saas_presc['attachment'], $saas_presc_dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (patient deleteIpdPatient prescription_id=' . $saas_presc['id'] . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($saas_presc['attachment'], $saas_presc_dir);
+                    }
+                }
+            }
+
             $this->patient_model->deleteIpdPatient($ipdid);
+
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => '');
@@ -6958,7 +8015,7 @@ This Function is used to Import Multiple Patient Records
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[ipd][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
@@ -6967,9 +8024,12 @@ This Function is used to Import Multiple Patient Records
         $this->form_validation->set_rules('bed_no', $this->lang->line('bed_no'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('appointment_date', $this->lang->line('appointment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('consultant_doctor', $this->lang->line('consultant_doctor'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('credit_limit', $this->lang->line('credit_limit'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('credit_limit', $this->lang->line('credit_limit'), 'trim|required|numeric|xss_clean');
+        // SaaS: block the OPD->IPD move when it would exceed the tenant's IPD count limit.
+        // move_opd_to_ipd() creates a new ipd_details admission, so pre-check like add_inpatient.
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('ipd'), 'callback_validateCanAddNewResource[no_of_ipd,1]');
         
-        $consult      = $this->input->post('live_consult');
+        $consult      = $this->input->post('live_consult', TRUE);
 		if($consult == 'yes'){
 			if (!$this->session->has_userdata('zoom_access_token')) {
 				$this->form_validation->set_rules('zoom_live', $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting'), 'trim|required|xss_clean', array('required' => $this->lang->line('zoom_access_token_is_invalid_or_not_generated_from_zoom_setting')));
@@ -6986,7 +8046,9 @@ This Function is used to Import Multiple Patient Records
                 'patient_id'         => form_error('patient_id'),
                 'credit_limit'         => form_error('credit_limit'),
                 'zoom_live'         => form_error('zoom_live'),
-            );			
+                // SaaS count-limit (no_of_ipd) error — surfaces in the AJAX error toast.
+                'validate_resource' => form_error('validate_resource'),
+            );
             
             if (!empty($custom_fields)) {
                 foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
@@ -7008,52 +8070,63 @@ This Function is used to Import Multiple Patient Records
 
         } else {
 
-            $opd_id      = $this->input->post('opd_id');
+            $opd_id      = $this->input->post('opd_id', TRUE);
             $opd_pateint = $this->patient_model->getDetails($opd_id);
           
-            if($this->input->post('pulse')){
-              $pulse = $this->input->post('pulse');
+            if($this->input->post('pulse', TRUE)){
+              $pulse = $this->input->post('pulse', TRUE);
             }else{
               $pulse ='';
             }
           	
-         	if($this->input->post('temperature')){
-              $temperature = $this->input->post('temperature');
+         	if($this->input->post('temperature', TRUE)){
+              $temperature = $this->input->post('temperature', TRUE);
             }else{
               $temperature ='';
             }
           
-          	if($this->input->post('respiration')){
-              $respiration = $this->input->post('respiration');
+          	if($this->input->post('respiration', TRUE)){
+              $respiration = $this->input->post('respiration', TRUE);
             }else{
               $respiration ='';
             }
 
-            $live_consult=$this->input->post('live_consult');
+            $live_consult=$this->input->post('live_consult', TRUE);
             
             $ipd_array   = array(
                 'patient_id'        => $opd_pateint['patient_id'],
-                'bed'               => $this->input->post('bed_no'),
-                'bed_group_id'      => $this->input->post('bed_group_id'),
+                'bed'               => $this->input->post('bed_no', TRUE),
+                'bed_group_id'      => $this->input->post('bed_group_id', TRUE),
                 'case_reference_id' => $opd_pateint['case_reference_id'],                
-                'case_type'         => $this->input->post('case'), 
-                'casualty'          => $this->input->post('casualty'), 
-                'symptoms'          => $this->input->post('symptoms'), 
-                'known_allergies'   => $this->input->post('symptoms'),
-                'date'              => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('appointment_date'), $this->time_format), 
-                'note'              => $this->input->post('note'),
-                'credit_limit'      => $this->input->post('credit_limit'),
-                'refference'        => $this->input->post('refference'), 
-                'cons_doctor'       => $this->input->post('consultant_doctor'), 
+                'case_type'         => $this->input->post('case', TRUE), 
+                'casualty'          => $this->input->post('casualty', TRUE), 
+                'symptoms'          => $this->input->post('symptoms', TRUE), 
+                'known_allergies'   => $this->input->post('symptoms', TRUE),
+                'date'              => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('appointment_date', TRUE), $this->time_format), 
+                'note'              => $this->input->post('note', TRUE),
+                'credit_limit'      => $this->input->post('credit_limit', TRUE),
+                'refference'        => $this->input->post('refference', TRUE), 
+                'cons_doctor'       => $this->input->post('consultant_doctor', TRUE), 
                 'live_consult'      => $live_consult,
                 'discharged'        => 'no',
-                'is_antenatal'      => $this->input->post('is_for_antenatal'),
+                'is_antenatal'      => $this->input->post('is_for_antenatal', TRUE),
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
             );
 
             $moved = $this->patient_model->move_opd_to_ipd($ipd_array);
 
             if ($moved) {
+
+                // SaaS: increment the IPD count usage by 1 (count-based resource: no_of_ipd),
+                // mirroring add_inpatient. An OPD->IPD move creates a new ipd_details admission
+                // via move_opd_to_ipd, so it must count like any new IPD. Own try/catch so a
+                // quota-API hiccup does not abort the already-created IPD's flow.
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_ipd', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_ipd quota increment failed (patient moveopd): ' . $e->getMessage());
+                }
+
                 
             if ($live_consult == 'yes') {
                 $ipdno             = $this->customlib->getSessionPrefixByType('ipd_no') . $moved;
@@ -7067,11 +8140,11 @@ This Function is used to Import Multiple Patient Records
                 $ipdduration    = $setting_result->ipd_duration;
 
                 $insert_array = array(
-                    'staff_id'     => $this->input->post('consultant_doctor'), 
+                    'staff_id'     => $this->input->post('consultant_doctor', TRUE), 
                     'patient_id'     => $opd_pateint['patient_id'],
                     'ipd_id'       => $moved,
                     'title'        => 'Online consult for ' . $ipdno,
-                    'date'         =>  $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('appointment_date'), $this->time_format), 
+                    'date'         =>  $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('appointment_date', TRUE), $this->time_format), 
                     'duration'     => $ipdduration,
                     'created_id'   => $this->customlib->getStaffID(),
                     'api_type'     => $api_type,
@@ -7098,22 +8171,22 @@ This Function is used to Import Multiple Patient Records
                 $move_insert_id  = $this->patient_model->add_opd($update_opd_data, [], [], []);
                 $bed_history     = array(
                     "case_reference_id" => $opd_pateint['case_reference_id'],
-                    "bed_group_id"      => $this->input->post("bed_group_id"),
-                    "bed_id"            => $this->input->post("bed_no"),
+                    "bed_group_id"      => $this->input->post("bed_group_id", TRUE),
+                    "bed_id"            => $this->input->post("bed_no", TRUE),
                     "from_date"         => $ipd_array['date'],
                     "is_active"         => "yes",
                 );
                 $this->bed_model->saveBedHistory($bed_history);
                 
-                $bed_data          = array('id' => $this->input->post('bed_no'), 'is_active' => 'no');
+                $bed_data          = array('id' => $this->input->post('bed_no', TRUE), 'is_active' => 'no');
                 $this->bed_model->savebed($bed_data);
                 
                 $array              = array('status' => 'success', 'message' => $this->lang->line('success_message'), 'move_id' => $moved);
-                $custom_field_post  = $this->input->post("custom_fields[ipd]");
+                $custom_field_post  = $this->input->post("custom_fields[ipd]", TRUE);
                 $custom_value_array = array();
                 if (!empty($custom_field_post)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[ipd][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => 0,
@@ -7126,13 +8199,13 @@ This Function is used to Import Multiple Patient Records
                 if (!empty($custom_value_array)) {
                     $this->customfield_model->insertRecord($custom_value_array, $moved);
                 }
-                $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor'));
+                $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('consultant_doctor', TRUE));
                 $event_data     = array(
-                    'patient_id'           => $this->input->post('patient_id'),
-                    'symptoms_description' => $this->input->post('symptoms'),
+                    'patient_id'           => $this->input->post('patient_id', TRUE),
+                    'symptoms_description' => $this->input->post('symptoms', TRUE),
                     'any_known_allergies'  => $opd_pateint['known_allergies'],
-                    'appointment_date'     => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post('appointment_date'), $this->customlib->getHospitalTimeFormat()),
-                    'doctor_id'            => $this->input->post('consultant_doctor'),
+                    'appointment_date'     => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post('appointment_date', TRUE), $this->customlib->getHospitalTimeFormat()),
+                    'doctor_id'            => $this->input->post('consultant_doctor', TRUE),
                     'doctor_name'          => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
                 );
 
@@ -7187,6 +8260,49 @@ This Function is used to Import Multiple Patient Records
 
     public function deleteVisit($id)
     {
+        // SaaS: release the visit's linked payment transaction attachment first.
+        $saas_visit = $this->patient_model->getVisitDetailByid($id);
+        if (!empty($saas_visit) && !empty($saas_visit->transaction_id)) {
+            $saas_transaction = $this->transaction_model->getTransaction($saas_visit->transaction_id);
+            if (!empty($saas_transaction) && !empty($saas_transaction->attachment)) {
+                $doc_path = $saas_transaction->attachment;
+                $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                if ($kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (patient deleteVisit transaction_id=' . $saas_visit->transaction_id . '): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($doc_path, $dir);
+            }
+        }
+
+        // SaaS: release all prescription attachments tied to this visit before deletion.
+        // (visit_details cascade is pre-existing: only visit_details row + custom fields delete.)
+        // Use getVisitPrescriptionAttachments (no medicine join) so document-only prescriptions
+        // — those with only pathology/radiology — are NOT missed. The shared
+        // getopdvisitPrescription INNER-joins medicines and would silently drop them.
+        $saas_prescriptions = $this->patient_model->getVisitPrescriptionAttachments($id);
+        if (!empty($saas_prescriptions)) {
+            foreach ($saas_prescriptions as $saas_prescription) {
+                if (!empty($saas_prescription['attachment'])) {
+                    $doc_path = $saas_prescription['attachment'];
+                    $dir      = (strpos($doc_path, '/') !== false) ? '' : 'uploads/prescription_document';
+                    $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                    if ($kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (patient deleteVisit prescription_id=' . $saas_prescription['id'] . '): ' . $e->getMessage());
+                        }
+                    }
+                    $this->media_storage->filedelete($doc_path, $dir);
+                }
+            }
+        }
+
         $this->patient_model->deleteVisit($id);
         $json_array = array('status' => 'success');
         echo json_encode($json_array);
@@ -7251,7 +8367,7 @@ This Function is used to Import Multiple Patient Records
 
     public function deletemedication()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $this->patient_model->deletemedicationByID($id);
         $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         echo json_encode($array);
@@ -7288,9 +8404,10 @@ This Function is used to Import Multiple Patient Records
         
         if ($this->form_validation->run() == false) {
             $data = array();
-            $this->load->view("layout/header");
-            $this->load->view("admin/patient/patientVisitReport", $data);
-            $this->load->view("layout/footer");
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/patient/patientVisitReport', $data);
+            $this->load->view('layout/footer', $data);
         } else {
             $patient_id   = $this->input->post("patient_id");
             $patient_data = $this->notificationsetting_model->getpatientDetails($patient_id);
@@ -7306,10 +8423,31 @@ This Function is used to Import Multiple Patient Records
             $data["ambulance_data"]  = $this->patient_model->getPatientAmbulanceVisitDetails($patient_id);
             $data['pathology_data']  = $this->report_model->getAllpathologybillRecord($patient_id);
 
-            $this->load->view("layout/header");
-            $this->load->view("admin/patient/patientVisitReport", $data);
-            $this->load->view("layout/footer");
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/patient/patientVisitReport', $data);
+            $this->load->view('layout/footer', $data);
         }
+    }
+
+    public function patientvisitreport_print()
+    {
+        $patient_id = $this->input->post('patient_id', TRUE);
+        if (empty($patient_id) || !is_numeric($patient_id)) {
+            echo '';
+            return;
+        }
+        $patient_data            = $this->notificationsetting_model->getpatientDetails($patient_id);
+        $data['patient_name']    = !empty($patient_data) ? $patient_data['patient_name'] : '';
+        $data['patient_id']      = $patient_id;
+        $data['opd_data']        = $this->patient_model->getopdvisitreportdata($patient_id);
+        $data['ipd_data']        = $this->patient_model->getipdvisitreportdata($patient_id);
+        $data['pharmacy_data']   = $this->patient_model->getPatientPharmacyVisitDetails($patient_id);
+        $data['radiology_data']  = $this->patient_model->getPatientRadiologyVisitDetails($patient_id);
+        $data['blood_bank_data'] = $this->patient_model->getPatientBloodBankVisitDetailsReport($patient_id);
+        $data['ambulance_data']  = $this->patient_model->getPatientAmbulanceVisitDetails($patient_id);
+        $data['pathology_data']  = $this->report_model->getAllpathologybillRecord($patient_id);
+        $this->load->view('admin/patient/print/patientVisitReport_print', $data);
     }
 
     public function patientbillreport()
@@ -7322,9 +8460,10 @@ This Function is used to Import Multiple Patient Records
 
         unset($_SESSION['no_record']);
         if ($this->form_validation->run() == false) {
-            $this->load->view("layout/header");
-            $this->load->view("admin/patient/patientBillReport");
-            $this->load->view("layout/footer");
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/patient/patientBillReport', $data);
+            $this->load->view('layout/footer', $data);
         } else {
             $case_reference_id           = $this->input->post("case_reference_id");
             $opd_data                    = $this->patient_model->getPatientChargePaymentOPD($case_reference_id);
@@ -7340,10 +8479,31 @@ This Function is used to Import Multiple Patient Records
                 $this->session->set_flashdata('no_record', '<div class="alert alert-danger ">'.$this->lang->line("no_record_found").'</div>');
             }
             
-            $this->load->view("layout/header");
-            $this->load->view("admin/patient/patientBillReport", $data);
-            $this->load->view("layout/footer");
+            $data['module'] = 'opd';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/patient/patientBillReport', $data);
+            $this->load->view('layout/footer', $data);
         }
+    }
+
+    public function patientbillreport_print()
+    {
+        $case_reference_id = $this->input->post('case_reference_id', TRUE);
+        if (empty($case_reference_id) || !is_numeric($case_reference_id)) {
+            echo '';
+            return;
+        }
+        $opd_data       = $this->patient_model->getPatientChargePaymentOPD($case_reference_id);
+        $ipd_data       = $this->patient_model->getPatientChargePaymentIPD($case_reference_id);
+        $pharmacy_data  = $this->patient_model->getPatientChargePaymentPharmacy($case_reference_id);
+        $pathology_data = $this->patient_model->getPatientChargePaymentPathology($case_reference_id);
+        $radiology_data = $this->patient_model->getPatientChargePaymentRadiology($case_reference_id);
+        $ambulance_data = $this->patient_model->getPatientChargePaymentAmbulance($case_reference_id);
+        $bloodbank_data = $this->patient_model->getPatientChargePaymentBloodBank($case_reference_id);
+        $data['total_refund_amount']  = $this->transaction_model->getTotalRefundAmountByCaseId($case_reference_id);
+        $data['charge_payment_data']  = array_merge($opd_data, $ipd_data, $pharmacy_data, $pathology_data, $radiology_data, $ambulance_data, $bloodbank_data);
+        $data['case_reference_id']    = $case_reference_id;
+        $this->load->view('admin/patient/print/patientBillReport_print', $data);
     }
 
     public function getpatientage()
@@ -7397,7 +8557,7 @@ This Function is used to Import Multiple Patient Records
             $data['result'] = $result;
             $page           = $this->load->view('admin/pathology/_labinvestigations', $data, true);
 
-            $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill' data-toggle='tooltip' data-record-id=\"" . $id . "\" data-type-id='" . $lab . "'  data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\" data-type-id='" . $lab . "'  title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
 			
 			$test = $result->test_name.' ('.$result->short_name.')' ;
 			
@@ -7413,7 +8573,7 @@ This Function is used to Import Multiple Patient Records
             $data['result'] = $result;
             $page = $this->load->view('admin/radio/_labinvestigations', $data, true);
 
-            $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill' data-toggle='tooltip' data-record-id=\"" . $id . "\"  data-type-id='" . $lab . "' data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions = "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\"  data-type-id='" . $lab . "' title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
 			
 			$test = $result->test_name.' ('.$result->short_name.')' ;
 
@@ -7487,7 +8647,7 @@ This Function is used to Import Multiple Patient Records
 
                 $action = "<div class=''>";
 
-                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)' data-loading-text='" . $this->lang->line('please_wait') . "' data-opd-id=" . $opd_id . " data-record-id=" . $visit_details_id . " class='btn btn-default btn-xs get_opd_detail'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
                 $action .= "</div>";
                 $first_action = "<a href=" . base_url() . 'admin/patient/visitdetails/' . $value->pid . '/' . $opd_id . ">";
                 
@@ -7534,7 +8694,7 @@ This Function is used to Import Multiple Patient Records
                 $action            = "<div class='rowoptionview'>";
 
                 if ($this->rbac->hasPrivilege('ipd_patient', 'can_view')) {
-                    $action .= "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . " class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
+                    $action .= "<a href=" . base_url() . 'admin/patient/ipdprofile/' . $value->ipdid . " class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
                 }
 
                 $action .= "</div'>";
@@ -7628,6 +8788,16 @@ This Function is used to Import Multiple Patient Records
         $this->load->view('admin/patient/visitreport/printBill', $data);
     }
 
+    public function getAmbulanceBillDetail($id)
+    {
+        $result         = $this->vehicle_model->getBillDetails($id);
+        $data['result'] = $result;
+        $data['fields'] = $this->customfield_model->get_custom_fields('ambulance_call');
+        $data['bill_prefix'] = $this->customlib->getSessionPrefixByType('ambulance_call_billing');
+        $page = $this->load->view('admin/patient/visitreport/_getAmbulanceBillDetail', $data, true);
+        echo json_encode(array('status' => 1, 'page' => $page));
+    }
+
     public function getpharmacybilldetails()
     {
         if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_view')) {
@@ -7678,7 +8848,7 @@ This Function is used to Import Multiple Patient Records
 
     public function deletemedicine()
     {
-        $prescription_detail_id = $this->input->post('prescription_detail_id');
+        $prescription_detail_id = $this->input->post('prescription_detail_id', TRUE);
         $this->prescription_model->deletemedicine($prescription_detail_id);       
     }
 
@@ -7699,6 +8869,8 @@ This Function is used to Import Multiple Patient Records
         }
         $result['cheque_no']    = $data['cheque_no'];
         $result['note']         = $data['note'];
+        $result['amount_type']  = !empty($data['amount_type']) ? $data['amount_type'] : 'payment';
+        $result['payment_type'] = $result['amount_type'];
         echo json_encode($result);
     }
 
@@ -7708,10 +8880,10 @@ This Function is used to Import Multiple Patient Records
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');       
         
-        if ($_POST['payment_mode'] == "Cheque") {
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if($this->form_validation->run()==false){
@@ -7727,17 +8899,37 @@ This Function is used to Import Multiple Patient Records
 
         }else{
 
-            $payment_id  = $this->input->post('edit_payment_id');
-            $amount     = $this->input->post('amount');
-            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date"), $this->time_format);
-            $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+            $payment_id  = $this->input->post('edit_payment_id', TRUE);
+            $amount     = $this->input->post('amount', TRUE);
+            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date", TRUE), $this->time_format);
+            $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
             $amount          = $amount;
             $payment_section = $this->config->item('payment_section');
-            $trasaction_data['payment_mode'] = $this->input->post('payment_mode');
+
+            // SaaS: release the existing transaction's attachment before edit clears it.
+            // (The first transaction_model->add below force-clears attachment/attachment_name to null.)
+            $saas_existing = $this->transaction_model->getTransaction($payment_id);
+            if (!empty($saas_existing) && !empty($saas_existing->attachment)) {
+                $saas_old_attachment = $saas_existing->attachment;
+                $saas_old_dir        = $this->media_storage->resolveAttachmentDir($saas_old_attachment);
+                $saas_old_kb         = $this->media_storage->getUploadedFileSize($saas_old_attachment, $saas_old_dir);
+                if ($saas_old_kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (patient editpayment old attachment): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($saas_old_attachment, $saas_old_dir);
+            }
+
+            $payment_type = $this->input->post('payment_type', TRUE);
+            $trasaction_data['payment_mode'] = $this->input->post('payment_mode', TRUE);
             $trasaction_data['amount']  = $amount ;
             $trasaction_data['id']      = $payment_id ;
             $trasaction_data['payment_date'] = $payment_date ;
-            $trasaction_data['note'] = $this->input->post('note');
+            $trasaction_data['note'] = $this->input->post('note', TRUE);
+            $trasaction_data['amount_type'] = ($payment_type === 'advance') ? 'advance' : null;
             $trasaction_data['cheque_date']     = null;
             $trasaction_data['cheque_no']       = null;
             $trasaction_data['attachment']      = null;
@@ -7748,15 +8940,29 @@ This Function is used to Import Multiple Patient Records
             $attachment      = "";
             $attachment_name = "";
             $img_name = "";
-          
+
             if (isset($_FILES["document"]) && !empty($_FILES["document"]['name'])) {
                 $img_name = $this->media_storage->fileupload("document", "./uploads/payment_document/");
+
+                // SaaS: add the uploaded document's size to the storage quota usage.
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                    if (is_string($saas_quota_result)) {
+                        $saas_quota_decoded = json_decode($saas_quota_result);
+                        if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (patient editpayment): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (patient editpayment): ' . $e->getMessage());
+                }
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['id']              = $payment_id;
                 $data['cheque_date']     = $cheque_date;
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $data['attachment']      = $img_name;
                 $data['attachment_name'] = $img_name;
                 $this->transaction_model->add($data);
@@ -7766,6 +8972,22 @@ This Function is used to Import Multiple Patient Records
         }
        
         echo json_encode($arr);
+    }
+
+    // ─── ICD-10: AJAX fetch saved codes for IPD edit pre-fill ────────────────
+    public function get_ipd_icd_codes($ipd_id)
+    {
+        $this->load->model('icd10_model');
+        $result = $this->icd10_model->getIpdCodes($ipd_id);
+        echo json_encode($result);
+    }
+
+    // ─── ICD-10: AJAX fetch saved codes for OPD edit pre-fill ────────────────
+    public function get_opd_icd_codes($opd_id)
+    {
+        $this->load->model('icd10_model');
+        $result = $this->icd10_model->getOpdCodes($opd_id);
+        echo json_encode($result);
     }
 
 }

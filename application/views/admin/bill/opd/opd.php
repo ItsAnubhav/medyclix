@@ -2,22 +2,25 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 <script src="<?php echo base_url(); ?>backend/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row"> 
+<div class="row"> 
             <div class="col-md-12">
-                <div class="box box-primary"> 
-					<ul class="nav nav-tabs navlistscroll">             
-
-							<li class="active"><a href="#tab_1" data-toggle="tab" class="tab_button" data-type="1"><?php echo $this->lang->line("todays_opd"); ?></a></li>
-                            <li><a href="#tab_1" data-toggle="tab" class="tab_button" data-type="2"><?php echo $this->lang->line("upcoming_opd"); ?></a></li>
-                            <li><a href="#tab_1" data-toggle="tab" class="tab_button" data-type="3"><?php echo $this->lang->line("old_opd"); ?></a></li>		
-                           
-					</ul>                  
+                <div class="card"> 
+					<div class="card-header d-flex align-items-center py-0 px-3">
+					<ul class="nav nav-pills sh-segmented-tabs" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active tab_button" data-bs-toggle="tab" data-bs-target="#tab_1" type="button" role="tab" data-type="1"><?php echo $this->lang->line("todays_opd"); ?></button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link tab_button" data-bs-toggle="tab" data-bs-target="#tab_1" type="button" role="tab" data-type="2"><?php echo $this->lang->line("upcoming_opd"); ?></button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link tab_button" data-bs-toggle="tab" data-bs-target="#tab_1" type="button" role="tab" data-type="3"><?php echo $this->lang->line("old_opd"); ?></button>
+						</li>
+					</ul>
+				</div>                  
 					
                     <div class="tab-content">
-                        <div class="tab-pane active relative" id="tab_1">
+                        <div class="tab-pane show active" id="tab_1">
                             <div class="download_label"><?php
                                 if ($title == 'old_patient') {
                                     echo $this->lang->line('opd_old_patient');
@@ -28,8 +31,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     ?>
                                 <?php } ?>
                             </div>
-							<div class="box-body table-responsive">     
-                            <table class="table table-striped table-bordered table-hover ajaxlist" data-export-title="<?php
+							<div class="card-body table-responsive">     
+                            <table class="table table-striped table-bordered table-hover ajaxlist" id="opdBillTable" data-export-title="<?php
                                 if ($title == 'old_patient') {
                                     echo $this->lang->line('opd_old_patient');
                                     ?>
@@ -48,19 +51,20 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     <th><?php echo $this->lang->line('generated_by'); ?></th>
                                     <th><?php echo $this->lang->line('consultant_doctor'); ?></th>
                                     <th><?php echo $this->lang->line('last_visit'); ?></th>
-                                    <?php 
+                                    <?php
                                         if (!empty($fields)) {
                                             foreach ($fields as $fields_key => $fields_value) {
                                                 ?>
                                                 <th><?php echo $fields_value->name; ?></th>
                                                 <?php
-                                            } 
+                                            }
                                         }
-                                    ?> 
-                                    <th><?php echo $this->lang->line('last_visit'); ?></th>
+                                    ?>
+                                    <th><?php echo $this->lang->line('total_visit'); ?></th>
 									<?php if ($this->rbac->hasPrivilege('antenatal', 'can_view')) {  ?>
-                                    <th class="text-right"><?php echo $this->lang->line('is_antenatal'); ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('is_antenatal'); ?></th>
 									<?php  } ?>
+                                    <th class="noExport text-end"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -71,39 +75,39 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </div>
                 </div>  
             </div>
-        </div> 
-    </section>
-</div>
+        </div>
 
-<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close pupclose" data-dismiss="modal">&times;</button>
+<div class="modal fade sh-modal sh-modal-nospace" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('opd_billing'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="px-3 pt-2">
                 <div class="row">
-                    <div class="col-lg-5 col-md-5 col-sm-5 col-xs-9">
+                    <div class="col-lg-5 col-md-5 col-sm-5 col-9">
                         <div class="p-2 select2-full-width">
                             <select onchange="get_PatientDetails(this.value)" class="form-control patient_list_ajax" <?php
-                                    if ($disable_option == true) {                                        
+                                    if ($disable_option == true) {
                                 }
                                     ?> name='' id="addpatient_id">
                             </select>
                             <span class="text-danger"><?php echo form_error('refference'); ?></span>
-                        </div>    
+                        </div>
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-3 col-xs-1"> 
+                    <div class="col-lg-2 col-md-2 col-sm-3 col-1">
                       <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                                <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a> 
-                            <?php } ?>   
-                    </div>   
+                                <a data-bs-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a>
+                            <?php } ?>
+                    </div>
                 </div>
-            </div>             
-            </div><!--./modal-header-->
-        <form id="formadd" accept-charset="utf-8" action="<?php echo base_url() . "admin/patient" ?>" enctype="multipart/form-data" method="post">              
-            <div class="pup-scroll-area">                    
-                <div class="modal-body pt0 pb0">
+            </div>
+        <form id="formadd" accept-charset="utf-8" action="<?php echo base_url() . "admin/patient" ?>" enctype="multipart/form-data" method="post">
+                <div class="pup-scroll-area">
+                <div class="modal-body">
                     <div class="row">
-                        <div class="col-lg-12 col-md-12 col-sm-12">                            
+                        <div class="col-lg-12 col-md-12 col-sm-12">
                                 <input name="patient_id" id="patient_id" type="hidden" class="form-control" />
                                 <input name="email" id="pemail" type="hidden" class="form-control" />
                                 <input name="mobileno" id="mobnumber" type="hidden" class="form-control" />
@@ -115,57 +119,57 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 <div class="row row-eq">
                                     <div class="col-lg-8 col-md-8 col-sm-8">
                                         <div id="ajax_load"></div>
-                                        <div class="row ptt10" id="patientDetails" style="display:none">
-                                            <div class="col-md-9 col-sm-9 col-xs-9">
+                                        <div class="row ptt10" id="patientDetails" class="d-none">
+                                            <div class="col-md-9 col-sm-9 col-9">
                                                 <ul class="singlelist">
                                                     <li class="singlelist24bold">
                                                         <span id="listname"></span></li>
                                                     <li>
-                                                        <i class="fas fa-user-secret" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('guardian'); ?>"></i>
+                                                        <i class="fas fa-user-secret" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('guardian'); ?>"></i>
                                                         <span id="guardian"></span>
                                                     </li>
                                                 </ul>   
                                                 <ul class="multilinelist">   
                                                     <li>
-                                                        <i class="fas fa-venus-mars" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('gender'); ?>"></i>
+                                                        <i class="fas fa-venus-mars" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('gender'); ?>"></i>
                                                         <span id="genders" ></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-tint" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('blood_group'); ?>"></i>
+                                                        <i class="fas fa-tint" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('blood_group'); ?>"></i>
                                                         <span id="blood_group"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-ring" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('marital_status'); ?>"></i>
+                                                        <i class="fas fa-ring" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('marital_status'); ?>"></i>
                                                         <span id="marital_status"></span>
                                                     </li> 
                                                 </ul>  
                                                 <ul class="singlelist">  
                                                     <li>
-                                                        <i class="fas fa-hourglass-half" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('age'); ?>"></i>
+                                                        <i class="fas fa-hourglass-half" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('age'); ?>"></i>
                                                         <span id="age"></span>
                                                     </li>   
 
                                                     <li>
-                                                        <i class="fa fa-phone-square" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('phone'); ?>"></i> 
+                                                        <i class="fa fa-phone-square" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('phone'); ?>"></i> 
                                                         <span id="listnumber"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fa fa-envelope" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('email'); ?>"></i>
+                                                        <i class="fa fa-envelope" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('email'); ?>"></i>
                                                         <span id="email"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-street-view" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('address'); ?>"></i>
+                                                        <i class="fas fa-street-view" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('address'); ?>"></i>
                                                         <span id="address"></span>
                                                     </li>
                                                     <li id="show_barcode">
-                                                        <i class="fa fa-barcode" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('barcode'); ?>"></i>
-                                                        <span><img src=""  id="getbarcode" width="100" height="35" />
+                                                        <i class="fa fa-barcode" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('barcode'); ?>"></i>
+                                                        <span><img  class="sh-qr-code" src=""  id="getbarcode" width="100" height="35" />
                                                         </span>
                                                     </li>
                                                     <li id="show_qrcode">
-                                                        <i class="fa fa-qrcode" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('qrcode'); ?>"></i>
+                                                        <i class="fa fa-qrcode" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('qrcode'); ?>"></i>
                                                         <span>
-                                                        <img src="" id="getqrcode" width="60" height="60" />
+                                                        <img  class="sh-qr-code" src="" id="getqrcode" width="60" height="60" />
                                                         </span>
                                                     </li>
                                                     <li>
@@ -194,12 +198,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                     </li>   
                                                 </ul>                               
                                             </div><!-- ./col-md-9 -->
-                                            <div class="col-md-3 col-sm-3 col-xs-3"> 
-                                                <div class="pull-right">                                                 
+                                            <div class="col-md-3 col-sm-3 col-3"> 
+                                                <div class="float-end">                                                 
                                                     <?php
                                                     $file = "uploads/patient_images/no_image.png";
                                                     ?>        
-                                                    <img class="modal-profile-user-img img-responsive" src="<?php echo $this->media_storage->getImageURL($file) ?>" id="image" alt="User profile picture">
+                                                    <img class="modal-profile-user-img img-fluid" src="<?php echo $this->media_storage->getImageURL($file) ?>" id="image" alt="User profile picture">
                                                 </div>           
                                             </div><!-- ./col-md-3 --> 
                                         </div>
@@ -207,11 +211,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             <div class="col-md-12"> 
                                                 <div class="dividerhr"></div>
                                             </div><!--./col-md-12-->
-                                            <div class="col-sm-3 col-xs-6">
-                                                <div class="form-group">
+                                            <div class="col-sm-3 col-6">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                         <?php echo $this->lang->line('symptoms_type') ; ?></label>
-                                                    <div><select  name='symptoms_type'  id="act"  class="form-control select2 act"  style="width:100%" multiple >
+                                                    <div><select  name='symptoms_type'  id="act"  class="form-control select2 act" multiple >
                                                             <option value=""><?php echo $this->lang->line('select') ?></option>
                                                             <?php foreach ($symptomsresulttype as $dkey => $dvalue) {
                                                                 ?>
@@ -223,7 +227,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>                                            
                                             <input name="rows[]" type="hidden" value="1">
-                                                <div class="col-sm-3 col-xs-6">
+                                                <div class="col-sm-3 col-6">
                                                     <label for="exampleInputFile"> 
                                                         <?php echo $this->lang->line('symptoms_title'); ?></label>
                                                     <div id="dd" class="wrapper-dropdown-3">
@@ -233,27 +237,27 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                         </ul>
                                                     </div>
                                                 </div>
-                                            <div class="col-sm-6 col-xs-12">
-                                                <div class="form-group">
+                                            <div class="col-sm-6 col-12">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('symptoms_description'); ?></label>
                                                     <textarea class="form-control" id="esymptoms" name="symptoms" rows="3" ></textarea>
                                                 </div> 
                                             </div>                                        
-                                            <div class="col-sm-6 col-xs-12">
-                                                <div class="form-group">
+                                            <div class="col-sm-6 col-12">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('note'); ?></label>
                                                     <textarea name="note" rows="3" class="form-control" ><?php echo set_value('note'); ?></textarea>
                                                 </div> 
                                             </div>
-                                            <div class="col-sm-6 col-xs-12">
-                                                <div class="form-group">
+                                            <div class="col-sm-6 col-12">
+                                                <div class="mb-3">
                                                     <label for="email"><?php echo $this->lang->line('any_known_allergies'); ?></label>
                                                     <textarea name="known_allergies"  rows="3" id="eknown_allergies" placeholder="" class="form-control"><?php echo set_value('address'); ?></textarea>
                                                 </div> 
                                             </div>
                                             <div class="row">
-                                                <div class="col-sm-12 col-xs-12">
-                                                    <div class="form-group">
+                                                <div class="col-sm-12 col-12">
+                                                    <div class="mb-3">
                                                         <?php
                                                         echo display_custom_fields('opd');
                                                         ?>
@@ -265,7 +269,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     <div class="col-lg-4 col-md-4 col-sm-4 col-eq ptt10">
                                         <div class="row">
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('appointment_date'); ?></label>
                                                     <small class="req"> *</small>
                                                     <input id="datetimepicker" name="appointment_date" type="text" class="form-control datetime" />
@@ -273,7 +277,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('case'); ?></label>
                                                     <div><input class="form-control" type='text' name='case' />
@@ -282,7 +286,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('casualty'); ?></label>
                                                     <div>
@@ -302,7 +306,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('old_patient'); ?></label>
                                                     <div>
@@ -322,7 +326,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('reference'); ?></label>
                                                     <div><input class="form-control" type='text' name='refference' />
@@ -331,14 +335,14 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                         <?php echo $this->lang->line('consultant_doctor'); ?></label><small class="req"> *</small>
                                                     <div><select name='consultant_doctor' id="consultant_doctor" class="form-control select2" <?php
                                                         if ($disable_option == true) {
                                                             echo "disabled";
                                                         }
-                                                        ?> style="width:100%"  >
+                                                        ?>  >
                                                             <option value=""><?php echo $this->lang->line('select') ?></option>
                                                             <?php foreach ($doctors as $dkey => $dvalue) {
                                                                 ?>
@@ -365,9 +369,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div> 
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('charge_category'); ?></label>
-                                                <select name="charge_category" style="width: 100%" class="form-control charge_category select2">
+                                                <select name="charge_category" class="form-control charge_category select2">
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
                                                 <?php foreach ($charge_category as $key => $value) {
                                                     ?>
@@ -381,9 +385,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div>
                                            
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                             <label><?php echo $this->lang->line('charge'); ?></label><small class="req"> *</small>
-                                            <select name="charge_id" style="width: 100%" class="form-control charge select2">
+                                            <select name="charge_id" class="form-control charge select2">
                                     <option value=""><?php echo $this->lang->line('select')?></option>
                                             </select>
                                              <input type="hidden" class="form-control right-border-none" name="org_charge_amount" id="org_charge_amount" readonly autocomplete="off">
@@ -392,7 +396,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div>                                            
 
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")" ?></label>
                                                     <input type="text" readonly name="standard_charge" id="standard_charge" class="form-control" value="<?php echo set_value('standard_charge'); ?>"> 
                                                     <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
@@ -400,37 +404,37 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div> 
 
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('applied_charge') . " (" . $currency_symbol . ")" ?></label><small class="req"> *</small><input type="text" name="amount" id="apply_charge" class="form-control apply_charge">    
                                                     <span class="text-danger"><?php echo form_error('amount'); ?></span>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                            <div class="form-group"> 
+                                            <div class="mb-3"> 
                                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('discount'); ?></label>
                                                     <div class="input-group">                                                        
                                                         <input type="text" class="form-control discount_percentage" name="discount_percentage" id="discount_percentage" value='0' autocomplete="off">
-                                                        <span class="input-group-addon "> %</span>
+                                                        <span class="input-group-text "> %</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                            <div class="form-group"> 
+                                            <div class="mb-3"> 
                                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('tax'); ?></label>
                                                     <div class="input-group">                                                        
                                                         <input type="text" class="form-control right-border-none" name="percentage" id="percentage" readonly autocomplete="off">
-                                                        <span class="input-group-addon "> %</span>
+                                                        <span class="input-group-text "> %</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('amount'). " (" . $currency_symbol . ")" ?></label><small class="req"> *</small><input type="text" name="apply_amount" readonly id="apply_amount" class="form-control">
                                                 </div>
                                             </div>                                      
                                            
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('payment_mode'); ?></label>
                                                     <select name="payment_mode" class="form-control payment_mode">
                                                         <?php foreach ($payment_mode as $payment_key => $payment_value) {
@@ -445,29 +449,29 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="pwd"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")" ; ?></label><small class="req"> *</small> 
                                                 <input type="text" name="paid_amount" id="paid_amount" class="form-control paid_amount">    
                                                 <span class="text-danger"><?php echo form_error('paid_amount'); ?></span>
                                             </div>
                                         </div>
-                                        <div class="cheque_div" style="display: none;">
+                                        <div class="cheque_div d-none" >
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small> 
                                                     <input type="text" name="cheque_no" id="cheque_no" class="form-control">
                                                     <span class="text-danger"></span>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small> 
                                                     <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
                                                     <span class="text-danger"></span>
                                                 </div>
                                             </div>
                                             <div class="col-sm-12">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('attach_document'); ?></label>
                                                 <input type="file" class="filestyle form-control"   name="document">
                                                 <span class="text-danger"><?php echo form_error('document'); ?></span> 
@@ -476,7 +480,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                         <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label>
                                                     <?php echo $this->lang->line('live_consultation'); ?></label>
                                                     <select name="live_consult"  class="form-control">
@@ -498,47 +502,50 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div> 
                                         <?php  } ?>
 
-                                            <div class="col-sm-6" id="antenatal_div" style="display:none">
-                                                <div class="form-group">
+                                            <div class="col-sm-6" id="antenatal_div" class="d-none">
+                                                <div class="mb-3">
                                                     <label>&nbsp;</label><br/>
                                                     <input type="checkbox" name="is_for_antenatal" id="is_for_antenatal" value="1" > Is For Antenatal
                                                 </div>
                                             </div>
-                                        </div><!--./row-->    
+                                        </div><!--./row-->
                                     </div><!--./col-md-4-->
-                                </div><!--./row-->        
-                        </div><!--./col-md-12-->       
-                    </div><!--./row--> 
+                                </div><!--./row-->
+                        </div><!--./col-md-12-->
+                    </div><!--./row-->
                 </div>
-            </div> 
+                </div><!--./pup-scroll-area-->
                 <div class="modal-footer sticky-footer">
-                    <div class="pull-right">
-                    <button type="submit" id="formaddbtn" name="save" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle" ></i> <span><?php echo $this->lang->line('save'); ?></span></button>
-                    </div>
-                    <div class="pull-right" style="margin-right: 10px;">
-                        <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing') ?>" name="save_print" class="btn btn-info pull-right printsavebtn"><i class="fa fa-print" ></i> <?php echo $this->lang->line('save_print'); ?></button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing') ?>" name="save_print" class="btn btn-info printsavebtn"><i class="fa fa-print" ></i> <?php echo $this->lang->line('save_print'); ?></button>
+                    <button type="submit" id="formaddbtn" name="save" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><i class="fa fa-check-circle" ></i> <span><?php echo $this->lang->line('save'); ?></span></button>
                 </div>
-            </form>                
+            </form>
         </div>
-    </div>    
+    </div>
 </div>
 
-<div class="modal fade" id="myModaledit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title">  <?php echo $this->lang->line('patient_details'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="myModaledit" tabindex="-1" aria-labelledby="myModaleditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModaleditLabel"><?php echo $this->lang->line('patient_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0">
+            <div class="pup-scroll-area">
+            <div class="modal-body">
                 <div class="row">
                     <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
                         <form id="formedit" accept-charset="utf-8"  enctype="multipart/form-data" method="post" class="ptt10">
+                            <div class="sh-form-card">
+                                <div class="sh-card-header">
+                                    <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                                </div>
+                            <div class="p-2">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small> 
+                                    <div class="mb-3">
+                                        <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
                                         <input id="patient_name" name="name" placeholder="" type="text" class="form-control"  value="<?php echo set_value('name'); ?>" />
                                         <input type="hidden" id="updateid" name="updateid">
                                         <input type="hidden" id="opdid" name="opdid">
@@ -546,13 +553,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('guardian_name'); ?></label>
                                         <input type="text" id="guardian_name" name="guardian_name" value="<?php echo set_value('guardian_name'); ?>" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('gender'); ?></label><small class="req"> *</small> 
                                         <select class="form-control" id="gender" name="gender">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -568,7 +575,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="pwd"><?php echo $this->lang->line('marital_status'); ?></label>
                                         <select name="marital_status" id="marital_status" class="form-control">
                                             <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -580,7 +587,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputFile">
 <?php echo $this->lang->line('patient_photo'); ?></label>
                                         <div><input class="filestyle form-control" type='file' name='file' id="file" size='20' />
@@ -590,19 +597,19 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>  
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('email'); ?></label>
                                         <input type="text" id="email" value="<?php echo set_value('email'); ?>" name="email" class="form-control">
                                     </div>
                                 </div> 
                                 <div class="col-sm-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="pwd"><?php echo $this->lang->line('phone'); ?></label>
                                         <input id="contact" autocomplete="off" name="contact" placeholder="" type="text" class="form-control"  value="<?php echo set_value('contact'); ?>" />
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label> <?php echo $this->lang->line('blood_group'); ?></label><small class="req"> *</small> 
                                         <select class="form-control" id="blood_group" name="blood_group">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -618,26 +625,28 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-sm-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('age'); ?></label>
-                                        <div style="clear: both;overflow: hidden;">
-                                            <input type="text" placeholder="Age" id="age" name="age" value="<?php echo set_value('age'); ?>" class="form-control" style="width: 40%; float: left;">
-                                            <input type="text" placeholder="Month" id="month" name="month" value="<?php echo set_value('month'); ?>" class="form-control" style="width: 56%;float: left; margin-left: 5px;">
+                                        <div class="sh-age-input-row">
+                                            <input type="text" placeholder="<?= $this->lang->line('age') ?>" id="age" name="age" value="<?php echo set_value('age'); ?>" class="form-control age-y">
+                                            <input type="text" placeholder="<?= $this->lang->line('month') ?>" id="month" name="month" value="<?php echo set_value('month'); ?>" class="form-control age-m">
                                         </div>
                                     </div>
                                 </div> 
-                            </div><!--./row-->   
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>                    
-                    </div><!--./col-md-12-->       
-                </div><!--./row--> 
+                            </div><!--./row-->
+                            </div><!--./p-2-->
+                            </div><!--./sh-form-card-->
+                    </div><!--./col-md-12-->
+                </div><!--./row-->
             </div>
+            </div><!--./pup-scroll-area-->
             <div class="modal-footer">
-                <div class="pull-right">
-                </div>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
             </div>
-            </form>   
+            </form>
         </div>
-    </div>    
+    </div>
 </div>
 
 <script>
@@ -705,11 +714,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 var text = $(this).text().toLowerCase();
                 var match = text.indexOf(valThis);
                 if (match >= 0) {
-                    $(this).show();
+                    $(this).removeClass('d-none');
                     noresult = 1;
                     $('.no-results-found').remove();
                 } else {
-                    $(this).hide();
+                    $(this).addClass('d-none');
                 }
             });
         }
@@ -761,7 +770,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         var password = makeid(5)
        if(id==''){
             $("#ajax_load").html("");
-             $("#patientDetails").hide();
+             $("#patientDetails").addClass('d-none');
        }else{             
              $.ajax({
             url: base_url+'admin/patient/patientDetails',
@@ -775,7 +784,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     $("#insurance_id").val(res.insurance_id);
                     $("#insurance_validity").val(res.insurance_validity);
                     $("#ajax_load").html("");
-                    $("#patientDetails").show();
+                    $("#patientDetails").removeClass('d-none');
                     $('#patient_unique_id').html(res.id);
                     $('#patient_id').val(res.id);
                     $('#password').val(password);
@@ -787,7 +796,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     $('#mobnumber').val(res.mobileno);
                     $('#pemail').val(res.email);
                     if(res.gender=='Female'){
-                        $("#antenatal_div").css('display','block');
+                        $("#antenatal_div").removeClass('d-none');
                     }
                     $('#patientname').val(res.patient_name);
                     $('#age').html(res.patient_age);
@@ -813,22 +822,22 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         $("#image").attr("src", '<?php echo base_url() ?>uploads/patient_images/no_image.png');
                     }
                     if(res.getbarcode == null){
-                        $("#show_barcode").hide();
+                        $("#show_barcode").addClass('d-none');
                         $("#getbarcode").attr("src", '');
                     }else{
-                        $("#show_barcode").show();
+                        $("#show_barcode").removeClass('d-none');
                         $("#getbarcode").attr("src", res.getbarcode);
                     }
                     if(res.getqrcode == null){
-                        $("#show_qrcode").hide();
-                        $("#getqrcode").attr("src", ''); 
+                        $("#show_qrcode").addClass('d-none');
+                        $("#getqrcode").attr("src", '');
                     }else{
-                        $("#show_qrcode").show();
-                        $("#getqrcode").attr("src", res.getqrcode);  
-                    }    
+                        $("#show_qrcode").removeClass('d-none');
+                        $("#getqrcode").attr("src", res.getqrcode);
+                    }
                 } else {
                     $("#ajax_load").html("");
-                    $("#patientDetails").hide();
+                    $("#patientDetails").addClass('d-none');
                 }
             }
         });
@@ -871,7 +880,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
  });
 
     function getchargecode(charge_category,charge_id) {
-      var div_data = "<option value=''>Select</option>";
+      var div_data = "<option value=''><?= $this->lang->line('select') ?></option>";
       if(charge_category != ""){
           $.ajax({
             url: base_url+'admin/charges/getchargeDetails',
@@ -1081,7 +1090,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 cache: false,
                 processData: false,
                 beforeSend: function() {
-                 sub_btn_clicked.button('loading') ; 
+                 sub_btn_clicked.btnLoading() ; 
                  },
                 success: function (data) {
                     if (data.status == "fail") {
@@ -1096,16 +1105,16 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                            printVisitBill(data.opd_id);
                         }  
                         table.ajax.reload( null, false );
-                        $('#myModal').modal('hide');
+                        shModal('myModal').hide();
                     }
-                      sub_btn_clicked.button('reset') ;
+                      sub_btn_clicked.btnReset() ;
                 },
                  error: function(xhr) { // if error occured
         alert("Error occured.please try again");
-       sub_btn_clicked.button('reset')  ;
+       sub_btn_clicked.btnReset()  ;
     },
     complete: function() {
-        sub_btn_clicked.button('reset');  
+        sub_btn_clicked.btnReset();  
     }
             }); 
         }));
@@ -1141,7 +1150,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         patientid = $("#pid").val();
                         printVisitBill(patientid, data.id);
                     }
-                    $("#formrevisitbtn").button('reset');
+                    $("#formrevisitbtn").btnReset();
                 },
                 error: function () {
                     
@@ -1165,11 +1174,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
          error: function(xhr) { // if error occured
       alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-         $this.button('reset');
+         $this.btnReset();
            
   },
   complete: function() {
-        $this.button('reset'); 
+        $this.btnReset(); 
   }
     });
     }
@@ -1246,11 +1255,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     }
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId); if(_el) bootstrap.Modal.getOrCreateInstance(_el, {backdrop:'static', keyboard:false}).show();})();;
     }
 
 </script>
@@ -1258,9 +1263,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
  $("#myModal").on('hidden.bs.modal', function (e) {
      $(".filestyle").next(".dropify-clear").trigger("click");
-     $("#patientDetails").hide();
+     $("#patientDetails").addClass('d-none');
      $('.select2-selection__rendered').html("");
-     $('.cheque_div').css("display", "none");
+     $('.cheque_div').addClass('d-none');
      $('#formadd').find('input:text, input:password, input:file, textarea').val('');
      $('#formadd').find('select option:selected').removeAttr('selected');
      $('#formadd').find('input:checkbox, input:radio').removeAttr('checked');
@@ -1274,9 +1279,9 @@ $(".modalbtnpatient").click(function(){
  $(document).on('change','.payment_mode',function(){
    var mode=$(this).val();
    if(mode == "Cheque"){
-     $('.cheque_div').css("display", "block");
+     $('.cheque_div').removeClass('d-none');
    }else{
-     $('.cheque_div').css("display", "none");
+     $('.cheque_div').addClass('d-none');
    }
  });
 

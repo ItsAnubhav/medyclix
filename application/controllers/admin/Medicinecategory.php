@@ -12,18 +12,18 @@ class Medicinecategory extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicinecategory/medicine');
-        $medicinecategoryid       = $this->input->post("medicinecategoryid");
+        $medicinecategoryid       = $this->input->post("medicinecategoryid", TRUE);
         $data["title"]            = $this->lang->line('add_medicine_category');
         $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
         $data["medicineCategory"] = $medicineCategory;
         $this->form_validation->set_rules(
-            'medicine_category', $this->lang->line('medicine_category'), array('required',
+            'medicine_category', $this->lang->line('medicine_category'), array('required', 'xss_clean',
                 array('check_exists', array($this->medicine_category_model, 'valid_medicine_category')),
             )
         );
         if ($this->form_validation->run()) {
-            $medicineCategory   = $this->input->post("medicine_category");
-            $medicinecategoryid = $this->input->post("id");
+            $medicineCategory   = $this->input->post("medicine_category", TRUE);
+            $medicinecategoryid = $this->input->post("id", TRUE);
             if (empty($medicinecategoryid)) {
                 if (!$this->rbac->hasPrivilege('medicine_category', 'can_add')) {
                     access_denied();
@@ -43,9 +43,10 @@ class Medicinecategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/medicinecategory/medicine");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pharmacy';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pharmacy/medicine_category", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -57,18 +58,18 @@ class Medicinecategory extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicinecategory/supplier');
-        $medicinecategoryid       = $this->input->post("medicinecategoryid");
+        $medicinecategoryid       = $this->input->post("medicinecategoryid", TRUE);
         $data["title"]            = $this->lang->line('add_supplier');
         $supplierCategory         = $this->medicine_category_model->getSupplierCategoryPat();
         $data["supplierCategory"] = $supplierCategory;
         $this->form_validation->set_rules(
-            'supplier_category', $this->lang->line('supplier_name'), array('required',
+            'supplier_category', $this->lang->line('supplier_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->medicine_category_model, 'valid_supplier_category')),
             )
         );
         if ($this->form_validation->run()) {
-            $supplierCategory   = $this->input->post("supplier_category");
-            $suppliercategoryid = $this->input->post("id");
+            $supplierCategory   = $this->input->post("supplier_category", TRUE);
+            $suppliercategoryid = $this->input->post("id", TRUE);
             if (empty($suppliercategoryid)) {
                 if (!$this->rbac->hasPrivilege('supplier_category', 'can_add')) {
                     access_denied();
@@ -89,30 +90,31 @@ class Medicinecategory extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/medicinecategory/supplier");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'pharmacy';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pharmacy/supplier_category", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
     public function add()
     {       
         
-        $medicinecategoryid = $this->input->post("medicinecategoryid");       
-        
+        $medicinecategoryid = $this->input->post("medicinecategoryid", TRUE);
+
         $this->form_validation->set_rules(
-            'medicine_category', $this->lang->line('category_name'), array('required',
+            'medicine_category', $this->lang->line('category_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->medicine_category_model, 'valid_medicine_category')),
             )
-        );       
-        
+        );
+
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('medicine_category'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $medicineCategory = $this->input->post("medicine_category");
+            $medicineCategory = $this->input->post("medicine_category", TRUE);
             if (!empty($medicinecategoryid)) {
                 $data  = array('medicine_category' => $medicineCategory, 'id' => $medicinecategoryid);
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -127,9 +129,9 @@ class Medicinecategory extends Admin_Controller
 
     public function addsupplier()
     {	
-        $suppliercategoryid = $this->input->post("suppliercategoryid");
+        $suppliercategoryid = $this->input->post("suppliercategoryid", TRUE);
         $this->form_validation->set_rules(
-            'supplier_category', $this->lang->line('supplier_name'), array('required',
+            'supplier_category', $this->lang->line('supplier_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->medicine_category_model, 'valid_supplier_category')),
             )
         );
@@ -143,12 +145,12 @@ class Medicinecategory extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $supplierCategory      = $this->input->post("supplier_category");
-            $contact               = $this->input->post('contact');
-            $supplierperson        = $this->input->post('supplier_person');
-            $supplierpersoncontact = $this->input->post('supplier_person_contact');
-            $supplierdruglicence   = $this->input->post('supplier_drug_licence');
-            $address               = $this->input->post('address');
+            $supplierCategory      = $this->input->post("supplier_category", TRUE);
+            $contact               = $this->input->post('contact', TRUE);
+            $supplierperson        = $this->input->post('supplier_person', TRUE);
+            $supplierpersoncontact = $this->input->post('supplier_person_contact', TRUE);
+            $supplierdruglicence   = $this->input->post('supplier_drug_licence', TRUE);
+            $address               = $this->input->post('address', TRUE);
             if (!empty($suppliercategoryid)) {
                 $data = array('supplier'  => $supplierCategory,
                     'id'                      => $suppliercategoryid,
@@ -191,9 +193,10 @@ class Medicinecategory extends Admin_Controller
         $data["title"]            = $this->lang->line('edit_category');
         $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
         $data["medicineCategory"] = $medicineCategory;
-        $this->load->view("layout/header");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/pharmacy/medicine_category", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function delete($id)

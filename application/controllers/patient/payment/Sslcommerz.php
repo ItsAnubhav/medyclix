@@ -4,6 +4,10 @@
 
 class Sslcommerz extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
     public $payment_method = array();
     public $pay_method     = array();
     public $patient_data;
@@ -90,7 +94,7 @@ class Sslcommerz extends Patient_Controller
                     }
                 } 
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php');
+            curl_setopt($ch, CURLOPT_URL, 'https://securepay.sslcommerz.com/gwprocess/v4/api.php');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "$string");

@@ -1,22 +1,15 @@
-<style type="text/css">
-    .table-sortable tbody tr {
-        cursor: move;
-    }
 
-</style>
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-4">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('edit_menu'); ?></h3>
-                    </div><!-- /.box-header -->
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <h3 class="card-title mb-0"><?php echo $this->lang->line('edit_menu'); ?></h3>
+                    </div><!-- /.card-header -->
                     <!-- form start -->
                     <form id="form1" action="<?php echo site_url('admin/front/menus/edit/' . $result['slug']) ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php if ($this->session->flashdata('msg')) {?>
                                 <?php echo $this->session->flashdata('msg') ?>
                             <?php }?>
@@ -26,12 +19,12 @@ if (isset($error_message)) {
 ?>
                             <?php echo $this->customlib->getCSRF(); ?>
                             <input  type="hidden" name="id" value="<?php echo set_value('id', $result['id']); ?>" >
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('menu_list'); ?></label>
                                 <input  id="menu" name="menu" placeholder="" type="text" class="form-control"  value="<?php echo set_value('menu', $result['menu']); ?>" />
                                 <span class="text-danger"><?php echo form_error('menu'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('page'); ?></label>
                                 <select  id="page_id" name="page_id" class="form-control"  >
                                     <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -49,14 +42,14 @@ $count++;
                                 </select>
                                 <span class="text-danger"><?php echo form_error('class_id'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
                                 <textarea class="form-control" id="description" name="description" placeholder="" rows="3" placeholder=""><?php echo set_value('description', $result['description']); ?></textarea>
                                 <span class="text-danger"><?php echo form_error('description'); ?></span>
                             </div>
-                        </div><!-- /.box-body -->
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                        </div><!-- /.card-body -->
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>
                     </form>
                 </div>
@@ -64,14 +57,14 @@ $count++;
             <!-- left column -->
             <div class="col-md-8">
                 <!-- general form elements -->
-                <div class="box box-primary" id="holist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('menu_list'); ?></h3>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card" id="holist">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('menu_list'); ?></h3>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="mailbox-controls">
-                            <div class="pull-right">
-                            </div><!-- /.pull-right -->
+                            <div class="float-end">
+                            </div><!-- /.float-end -->
                         </div>
                         <div class="table-responsive mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('menu_list'); ?></div>
@@ -79,7 +72,7 @@ $count++;
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('title'); ?></th>
-                                        <th class="text-right no-print">
+                                        <th class="text-end no-print">
                                             <?php echo $this->lang->line('action'); ?>
                                         </th>
                                     </tr>
@@ -96,9 +89,9 @@ $count++;
                                             <tr id="<?php echo $menu["id"]; ?>">
                                         <input type="hidden" value="<?php echo $menu['id']; ?>" id="item" name="item">
                                         <td class="mailbox-name">
-                                            <a href="#" data-toggle="popover" class="detail_popover"><?php echo $menu['menu'] ?></a>
+                                            <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $menu['menu'] ?></a>
 
-                                            <div class="fee_detail_popover" style="display: none">
+                                            <div class="fee_detail_popover d-none" >
                                                 <?php
 if ($menu['description'] == "") {
             ?>
@@ -113,11 +106,11 @@ if ($menu['description'] == "") {
                                             </div>
                                         </td>
 
-                                        <td class="mailbox-date pull-right no-print">
-                                            <a href="<?php echo base_url(); ?>admin/front/menus/edit/<?php echo $menu['slug'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                        <td class="mailbox-date float-end no-print">
+                                            <a href="<?php echo base_url(); ?>admin/front/menus/edit/<?php echo $menu['slug'] ?>" class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                 <i class="fa fa-pencil"></i>
                                             </a>
-                                            <a href="<?php echo base_url(); ?>admin/front/menus/delete/<?php echo $menu['slug'] ?>"class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
+                                            <a href="<?php echo base_url(); ?>admin/front/menus/delete/<?php echo $menu['slug'] ?>"class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
                                                 <i class="fa fa-remove"></i>
                                             </a>
                                         </td>
@@ -130,7 +123,7 @@ if ($menu['description'] == "") {
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
         </div>
@@ -138,14 +131,11 @@ if ($menu['description'] == "") {
             <div class="col-md-12">
             </div><!--/.col (right) -->
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 <script type="text/javascript">
     $(document).ready(function () {
-        $('#postdate').datepicker({
-            format: "dd-mm-yyyy",
-            autoclose: true
-        });
+        /* #postdate init removed - auto-init via class + event delegation */
 
         $('.detail_popover').popover({
             placement: 'right',

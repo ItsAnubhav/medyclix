@@ -1,7 +1,7 @@
-<div class="box-header with-border">
-   <h3 class="box-title"><?php echo $this->lang->line('finance'); ?></h3>
+<div class="card-header">
+   <h3 class="card-title"><?php echo $this->lang->line('finance'); ?></h3>
 </div>    
-<div class="box-body row">
+<div class="card-body row">
     <ul class="reportlists">
                 
  <?php if ($this->rbac->hasPrivilege('daily_transaction_report', 'can_view')) {?>
@@ -66,6 +66,10 @@
 		
 			<li class="col-lg-4 col-md-4 col-sm-6 <?php echo set_SubSubmenu('admin/report/balanceamountreport'); ?>"><a href="<?php echo base_url(); ?>admin/report/balanceamountreport"><i class="fa fa-file-text-o"></i> <?php echo $this->lang->line('balance_amount_report') ?></a></li>
 			
+		<?php } if ($this->rbac->hasPrivilege('income_expense_balance_report', 'can_view')) { ?>
+
+			<li class="col-lg-4 col-md-4 col-sm-6 <?php echo set_SubSubmenu('admin/report/incomeexpensebalancereport'); ?>"><a href="<?php echo base_url(); ?>admin/report/incomeexpensebalancereport"><i class="fa fa-file-text-o"></i> <?php echo $this->lang->line('income_expense_balance_report') ?></a></li>
+
 		<?php } ?>
 
 

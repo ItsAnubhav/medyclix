@@ -16,3 +16,6 @@ application/logs/*
 !application/logs/index.html
 !application/logs/.htaccess
 /vendor/
+
+# Server-only deploy secret
+application/config/deploy_token.php

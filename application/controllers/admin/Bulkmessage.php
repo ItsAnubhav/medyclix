@@ -11,6 +11,7 @@ class Bulkmessage extends Admin_Controller
         parent::__construct();
         $this->load->model("bulkmessage_model");
         $this->load->library('mailsmsconf');
+        $this->load->library('mailgateway');
         $this->load->library('Customlib');
         $this->load->library('datatables');
         $this->load->model("patient_model");       
@@ -20,10 +21,11 @@ class Bulkmessage extends Admin_Controller
     {
 		$this->session->set_userdata('top_menu', 'Messaging');
         $this->session->set_userdata('sub_menu', 'bulkmessage/index');
-        $this->load->view("layout/header");			
+        $data['module'] = 'messaging';
+        $this->load->view("layout/header", $data);
 		$data['notificationtype'] = $this->customlib->bulkmailnotificationtype();
-        $this->load->view('admin/bulkmessage/index',$data);
-        $this->load->view("layout/footer");
+        $this->load->view('admin/bulkmessage/index', $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function getcredentialdatatable()
@@ -73,8 +75,14 @@ class Bulkmessage extends Admin_Controller
             $array = array('status' => 0, 'error' => $msg, 'message' => '');
         } else {
 
-            $patient          	= $this->input->post('patient');
-            $notification_type  = $this->input->post('notification_type');
+            $patient          	= $this->input->post('patient', TRUE);
+            $notification_type  = $this->input->post('notification_type', TRUE);
+
+            // ===== TEMP DIAGNOSTIC (remove after debugging) =====
+            $this->_bulkDiag('--- submit: mode=' . $this->customlib->checkMessageMode()
+                . ' notification_type=' . $notification_type
+                . ' patient_count=' . (is_array($patient) ? count($patient) : 0));
+            // ====================================================
 			 
             foreach ($patient as $patient_id) {
 				 
@@ -101,24 +109,39 @@ class Bulkmessage extends Admin_Controller
 					$chk_mail_sms   = $this->customlib->sendMailSMS($send_for);
 					$body           = $this->forgotPasswordBody($sender_details, $resetPassLink, $chk_mail_sms['template']);
 				
+				// ===== TEMP DIAGNOSTIC (remove after debugging) =====
+				$cred = $this->customlib->sendMailSMS('login_credential');
+				$this->_bulkDiag('  patient_id=' . $patient_id
+					. ' email=' . $patient_detail_byid[0]->email
+					. ' mobileno=' . $patient_detail_byid[0]->mobileno
+					. ' | login_credential[template_empty=' . (isset($cred['template']) && $cred['template'] === '' ? '1' : '0')
+					. ' mail=' . (isset($cred['mail']) ? $cred['mail'] : '?')
+					. ' sms=' . (isset($cred['sms']) ? $cred['sms'] : '?') . ']'
+					. ' | forgot_password[mail=' . (isset($chk_mail_sms['mail']) ? $chk_mail_sms['mail'] : '?')
+					. ' template_empty=' . (isset($chk_mail_sms['template']) && $chk_mail_sms['template'] === '' ? '1' : '0') . ']');
+				// ====================================================
+
 				if($notification_type == 1){
-					
-					echo  $this->mailsmsconf->mailsms('login_credential', $patient_detail);
-					
+
+					// Credential mail/SMS — mailsmsconf routes through mailgateway/smsgateway,
+					// which honour message_mode (queue when ON, direct when OFF).
+					$this->mailsmsconf->mailsms('login_credential', $patient_detail);
+
 				}elseif($notification_type == 2){
-					
+
 					if ($chk_mail_sms['mail']) {
-						$this->mailer->send_mail($patient_detail_byid[0]->email, $chk_mail_sms['subject'], $body);
+						// Queue-aware: enqueues when message_mode is ON, sends directly otherwise.
+						$this->mailgateway->sentMail($send_for, $patient_detail_byid[0]->email, $chk_mail_sms['subject'], $body);
 					}
-				
+
 				}elseif($notification_type == 3){
-					
+
 					if ($chk_mail_sms['mail']) {
-						$this->mailer->send_mail($patient_detail_byid[0]->email, $chk_mail_sms['subject'], $body);
+						$this->mailgateway->sentMail($send_for, $patient_detail_byid[0]->email, $chk_mail_sms['subject'], $body);
 					}
-				
-					echo  $this->mailsmsconf->mailsms('login_credential', $patient_detail);
-					
+
+					$this->mailsmsconf->mailsms('login_credential', $patient_detail);
+
 				}
                    
             }
@@ -143,5 +166,16 @@ class Bulkmessage extends Admin_Controller
 
         return $template;
     }
+
+    // ===== TEMP DIAGNOSTIC HELPER (remove after debugging) =====
+    private function _bulkDiag($line)
+    {
+        @file_put_contents(
+            APPPATH . 'logs/bulkqueue_diag.txt',
+            date('Y-m-d H:i:s') . ' ' . $line . "\n",
+            FILE_APPEND
+        );
+    }
+    // ==========================================================
 
 }

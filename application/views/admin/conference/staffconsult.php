@@ -1,20 +1,18 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('live_consultation'); ?></h3>
-                        <div class="box-tools pull-right addmeeting box-tools-md">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h3 class="card-title"><?php echo $this->lang->line('live_consultation'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap ms-auto">
                            <?php
                             if ($this->rbac->hasPrivilege('live_consultation', 'can_add')) {
                                 ?>
-                                <button type="button" class="btn btn-primary btn-sm addappointment" data-toggle="modal" data-target="#modal-online-timetable"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?> </button>
+                                <button type="button" class="btn btn-primary btn-sm addappointment" data-bs-toggle="modal" data-bs-target="#modal-online-timetable"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?> </button>
                                                     <?php }?>
 
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <?php if ($this->session->flashdata('msg')) {?>
                             <?php echo $this->session->flashdata('msg') ?>
                        <?php $this->session->unset_userdata('msg'); }   ?>
@@ -31,7 +29,7 @@
                                         <th><?php echo $this->lang->line('created_for'); ?></th>
                                         <th><?php echo $this->lang->line('patient'); ?></th>
                                         <th class="noExport"><?php echo $this->lang->line('status'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>                                
@@ -42,47 +40,57 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div id="modal-chkstatus" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-    <form id="form-chkstatus" action="" method="POST">
-        <div class="modal-content mx-2">
+<div id="modal-chkstatus" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="modal-chkstatus-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"></h4>
+                <h5 class="modal-title" id="modal-chkstatus-label"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="zoom_details">
+            <div class="pup-scroll-area">
+                <div class="modal-body" id="zoom_details">
 
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
-    </form>
     </div>
 </div>
 
-<div class="modal fade" id="modal-credential" data-backdrop="static">
-    <div class="modal-dialog">
+<div class="modal fade sh-modal sh-modal-accent" id="modal-credential" tabindex="-1" aria-labelledby="modal-credential-label" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <form id="form-addcredential" action="<?php echo site_url('admin/zoom_conference/addcredential'); ?>" method="POST">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title"> <?php echo $this->lang->line('zoom_credential'); ?></h4>
+                    <h5 class="modal-title" id="modal-credential-label"><i class="fa fa-key me-1"></i> <?php echo $this->lang->line('zoom_credential'); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="pup-scroll-area">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                            <label for="zoom_api_key"><?php echo $this->lang->line('zoom_api_key') ?><small class="req"> *</small></label>
-                            <input type="text" class="form-control" id="zoom_api_key" name="zoom_api_key">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                        </div>
+                    <div class="p-2">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label form-label-sm" for="zoom_api_key"><?php echo $this->lang->line('zoom_api_key') ?> <small class="req"> *</small> </label>
+                            <input type="text" class="form-control form-control-sm" id="zoom_api_key" name="zoom_api_key">
                             <span class="text text-danger" id="title_error"></span>
                         </div>
-                        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                            <label for="zoom_api_secret"><?php echo $this->lang->line('zoom_api_secret'); ?><small class="req"> *</small></label>
-                            <input type="text" class="form-control" id="zoom_api_secret" name="zoom_api_secret">
+                        <div class="col-sm-6">
+                            <label class="form-label form-label-sm" for="zoom_api_secret"><?php echo $this->lang->line('zoom_api_secret'); ?> <small class="req"> *</small> </label>
+                            <input type="text" class="form-control form-control-sm" id="zoom_api_secret" name="zoom_api_secret">
                             <span class="text text-danger" id="title_error"></span>
                         </div>
                     </div>
+                    </div><!--./p-2-->
+                    </div><!--./sh-form-card-->
                 </div>
+                </div><!--./pup-scroll-area-->
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary" value="reset" id="submit-btn-credential" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Updating..."><?php echo $this->lang->line('reset') ?></button>
                     <button type="submit" class="btn btn-primary" value="save" id="submit-btn-credential" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Saving..."><?php echo $this->lang->line('save') ?></button>
@@ -91,245 +99,233 @@
         </form>
     </div>
 </div>
-<div class="modal fade" id="modal-online-timetable" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close pt1" data-dismiss="modal">&times;</button>
-                    <div class="row">
-                        <div class="col-sm-6 col-xs-6">
-                            <div class="form-group15">
-                                <div>
-                                    <select onchange="get_PatientDetails(this.value)"  class="form-control patient_list_ajax" <?php
-                                    if ($disable_option == true) {
-
-                                    }
-                                    ?> style="width:100%" name='' id="addpatient_id">
-                                    </select>
-                                </div>
-                                <span class="text-danger"><?php echo form_error('refference'); ?></span>
-                            </div>
-                        </div><!--./col-sm-8-->
-                        <div class="col-sm-4 col-xs-5">
-                            <div class="form-group15">
-                                <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) {?>
-                                    <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a>
-                                <?php }?>
-                            </div>
-                        </div><!--./col-sm-4-->
-                    </div><!-- ./row -->
-            </div><!--./modal-header-->
-                <div class="modal-body pt0 pb0">
-                    <form id="form-addconference" accept-charset="utf-8" action="<?php echo base_url() . "admin/zoom_conference/addByOther" ?>" enctype="multipart/form-data" method="post">
-                        <div class="col-lg-12 col-md-12 col-sm-12">
-                            <input name="patient_id" id="patient_id" type="hidden" class="form-control" />
-                            <input name="email" id="pemail" type="hidden" class="form-control" />
-                            <input name="mobileno" id="mobnumber" type="hidden" class="form-control" />
-                            <input name="patient_name" id="patientname" type="hidden" class="form-control" />
-                            <input type="hidden" class="form-control" id="password" name="password">
-                            <div class="row row-eq">
-                                <div class="col-lg-6 col-md-6 col-sm-6">
-                                    <div id="ajax_load"></div>
-                                    <div class="row ptt10" id="patientDetails" style="display:none">
-                                        <div class="col-md-9 col-sm-9 col-xs-9">
-                                            <ul class="singlelist">
-                                                <li class="singlelist24bold">
-                                                    <span id="listname"></span></li>
-                                                <li>
-                                                    <i class="fas fa-user-secret" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('guardian'); ?>"></i>
-                                                    <span id="guardian"></span>
-                                                </li>
-                                            </ul>
-                                            <ul class="multilinelist">
-                                                <li>
-                                                    <i class="fas fa-venus-mars" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('gender'); ?>"></i>
-                                                    <span id="genders" ></span>
-                                                </li>
-                                                <li>
-                                                    <i class="fas fa-tint" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('blood_group'); ?>"></i>
-                                                    <span id="blood_group"></span>
-                                                </li>
-                                                <li>
-                                                    <i class="fas fa-ring" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('marital_status'); ?>"></i>
-                                                    <span id="marital_status"></span>
-                                                </li>
-                                            </ul>
-                                            <ul class="singlelist">
-                                                <li>
-                                                    <i class="fas fa-hourglass-half" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('age'); ?>"></i>
-                                                    <span id="age"></span>
-                                                </li>                                                 <li>
-                                                    <i class="fa fa-phone-square" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('phone'); ?>"></i>
-                                                    <span id="listnumber"></span>
-                                                </li>
-                                                <li>
-                                                    <i class="fa fa-envelope" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('email'); ?>"></i>
-                                                    <span id="email"></span>
-                                                </li>
-                                                <li>
-                                                    <i class="fas fa-street-view" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('address'); ?>"></i>
-                                                    <span id="address" ></span>
-                                                </li>
-                                                <li>
-                                                    <b><?php echo $this->lang->line('any_known_allergies') ?> </b>
-                                                    <span id="allergies" ></span>
-                                                </li>
-                                                <li>
-                                                    <b><?php echo $this->lang->line('remarks') ?> </b>
-                                                    <span id="note"></span>
-                                                </li>
-                                                <li>
-                                                    <b><?php echo $this->lang->line('tpa_id') ?> </b>
-                                                        <span id="tpa_id"></span>
-                                                    </li>
-                                                    <li>
-                                                        <b><?php echo $this->lang->line('tpa_validity') ?> </b>
-                                                        <span id="tpa_validity"></span>
-                                                    </li>
-                                                    <li>
-                                                        <b><?php echo $this->lang->line('national_identification_number') ?> </b>
-                                                        <span id="identification_number"></span>
-                                                    </li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-3 col-sm-3 col-xs-3">
-                                            <div class="pull-right">
-                                                    <?php
-                                                    $file = "uploads/patient_images/no_image.png";
-                                                    ?>
-                                                <img class="modal-profile-user-img img-responsive" src="<?php echo $this->media_storage->getImageURL($file); ?>" id="image" alt="User profile picture">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-eq ptt10">
-                                    <div class="row">
-                                        <div class="col-sm-12">
-                                            <div class="form-group">
-                                                <label for="exampleInputFile">
-                                                <?php echo $this->lang->line('consultation_title'); ?></label>
-                                                <div><input class="form-control" type='text' name='title' />
-                                                </div>
-                                                <span class="text-danger"><?php echo form_error('title'); ?></span>
-                                            </div>
-                                        </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('consultation_date'); ?></label><small class="req"> *</small>
-                                            <input id="datetimepicker" name="date"  type="text" class="form-control datetime"   />
-                                            <span class="text-danger"><?php echo form_error('date'); ?></span>
-                                        </div>
-                                    </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="duration"><?php echo $this->lang->line('consultation_duration_minutes'); ?><small class="req"> *</small></label>
-                                                <input type="number" class="form-control" id="duration" name="duration">
-                                                <span class="text-danger"><?php echo form_error('duration'); ?></span>
-                                            </div>
-                                        </div>
-                                         <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="exampleInputFile">
-                                                <?php echo $this->lang->line('opd_ipd'); ?></label>
-                                                <div>
-                                                    <select name='select_group' id="" onchange="getopdipd(this.value)" class="form-control module_type"  style="width:100%" >
-                                                        <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                                        <?php foreach($opd_ipd as $key => $opd_ipd_value){?>
-                                                            <option value="<?php echo $key; ?>"><?php echo $opd_ipd_value; ?></option>
-                                                        <?php } ?>
-                                                    </select>
-                                                </div>
-                                                <span class="text-danger"><?php echo form_error('case'); ?></span>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group">
-                                                <label for="exampleInputFile">
-                                                        <?php echo $this->lang->line('opd_ipd_no'); ?></label>
-                                                <div>
-                                                <select class="form-control select2" style="width: 100%" name='opdipd_id' onchange="getvisitdetailsid(this.value)" id='opdipd_no'>
-                                                        <option value=""><?php echo $this->lang->line('select'); ?></option>  </select>
-                                                </div>
-                                                <span class="text-danger"><?php echo form_error('opdipd_no'); ?></span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6 visit_div" style="display: none;">
-                                            <div class="form-group">
-                                               <label for="exampleInputFile">
-                                                        <?php echo $this->lang->line("checkup_id"); ?></label><small class="req"> *</small>
-                                                <div>
-                                                <select class="form-control select2" style="width: 100%" name='visit_id' id='visit_no'>
-                                                        <option value=""><?php echo $this->lang->line('select') ?></option>  
-                                                </select>
-                                                </div>
-                                                <span class="text-danger"><?php echo form_error('visit_id'); ?></span>
-                                            </div>
-                                        </div>
-                                        <!-- </div> -->
-
-                                        <div class="col-sm-12">
-                                            <div class="form-group">
-                                                <label for="exampleInputFile">
-                                                    <?php echo $this->lang->line('consultant_doctor'); ?></label><small class="req"> *</small>
-                                                <div><select name='staff_id' id="consultant_doctor" onchange="" class="form-control select2" <?php
-                                                        if ($disable_option == true) {
-                                                            echo "disabled";
-                                                        }
-                                                        ?> style="width:100%"  >
-                                                        <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                                        <?php foreach ($doctors as $dkey => $dvalue) {
-                                                            ?>
-                                                            <option value="<?php echo $dvalue["id"]; ?>" <?php
-                                                    if ((isset($doctor_select)) && ($doctor_select == $dvalue["id"])) {
-                                                            echo "selected";
-                                                        }
-                                                        ?>><?php echo composeStaffNameByString($dvalue["name"],$dvalue["surname"],$dvalue["employee_id"]); ?></option>
-                                                    <?php }?>
-                                                    </select>
-                                                    <?php if ($disable_option == true) {?>
-                                                        <input type="hidden" name="staff_id" value="<?php echo $doctor_select ?>">
-                                                    <?php }?>
-                                                </div>
-                                                <span class="text-danger"><?php echo form_error('staff_id'); ?></span>
-                                            </div>
-                                        </div>
-                                            <div class="col-sm-6 col-md-6 col-lg-6">
-                                                <div class="form-group">
-                                                    <label for="class" class="displayblock"><?php echo $this->lang->line('host_video'); ?><small class="req"> *</small></label><br>
-                                                    <label class="radio-inline"><input type="radio" name="host_video"  value="1" checked><?php echo $this->lang->line('enabled'); ?></label>
-                                                    <label class="radio-inline"><input type="radio" name="host_video" value="0"><?php echo $this->lang->line('disabled'); ?> </label>
-                                                    <span class="text-danger"><?php echo form_error('host_video'); ?></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 col-md-6 col-lg-6">
-                                                <div class="form-group">
-                                                    <label for="class" class="displayblock"><?php echo $this->lang->line('client_video'); ?><small class="req"> *</small></label><br>
-                                                    <label class="radio-inline"><input type="radio" name="client_video"  value="1" checked><?php echo $this->lang->line('enabled'); ?></label>
-                                                    <label class="radio-inline"><input type="radio" name="client_video" value="0"><?php echo $this->lang->line('disabled'); ?></label>
-                                                    <span class="text-danger"><?php echo form_error('client_video'); ?></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 col-md-12 col-lg-12">
-                                                <div class="form-group">
-                                                    <label for="description"><?php echo $this->lang->line('description') ?></label>
-                                                    <textarea class="form-control" name="description" id="description"></textarea>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div><!--./row-->
-                                </div><!--./col-md-4-->
-                            </div><!--./row-->
-                            <div class="row">
-                                <div class="modal-footer">
-                                    <div class="pull-right mrminus8 ptt10">
-                                        <button type="submit" class="btn btn-primary" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save') ?></button>
-                                    </div>
-                                </div>
-                        </div>
-                    </form>
-                </div><!--./modal-body-->
+<div class="modal fade sh-modal sh-modal-accent" id="modal-online-timetable" tabindex="-1" aria-labelledby="modal-online-timetable-label" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-online-timetable-label"><?php echo $this->lang->line('live_consult'); ?></h5>
+                <select onchange="get_PatientDetails(this.value)" class="form-control patient_list_ajax sh-maxw-220" <?php if ($disable_option == true) { echo "disabled"; } ?> name="" id="addpatient_id"></select>
+                <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+                    <a onclick="holdModal('myModalpa')" class="modalbtnpatient btn btn-light btn-sm text-nowrap"><i class="fa fa-plus"></i> <?php echo $this->lang->line('new_patient'); ?></a>
+                <?php } ?>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form id="form-addconference" accept-charset="utf-8" action="<?php echo base_url() . "admin/zoom_conference/addByOther" ?>" enctype="multipart/form-data" method="post">
+                <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            <input name="patient_id" id="patient_id" type="hidden" />
+                            <input name="email" id="pemail" type="hidden" />
+                            <input name="mobileno" id="mobnumber" type="hidden" />
+                            <input name="patient_name" id="patientname" type="hidden" />
+                            <input type="hidden" id="password" name="password">
+                            <div class="row row-eq h-vh-lg-100-100">
+                                <div class="col-lg-7 col-md-7 col-sm-12 ot-left-panel">
+                                    <div id="ajax_load"></div>
+                                    <div class="sh-form-card d-none" id="patientDetails">
+                                        <div class="sh-card-header">
+                                            <span class="sh-card-header-title"><?php echo $this->lang->line('patient_details'); ?></span>
+                                        </div>
+                                        <div class="sh-info-grid">
+                                            <div class="row g-0">
+                                                <div class="col-8 sh-info-item">
+                                                    <span class="sh-info-label"><?php echo $this->lang->line('patient_name'); ?></span>
+                                                    <span class="sh-info-value highlight" id="listname"></span>
+                                                </div>
+                                                <div class="col-4 d-flex align-items-center justify-content-center p-2">
+                                                    <img class="modal-profile-user-img img-fluid d-none" src="" id="image" alt="User profile picture">
+                                                    <div class="modal-profile-user-initials d-none" id="image_initials"></div>
+                                                </div>
+                                            </div>
+                                            <div class="row g-0 sh-row-divider">
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-user-secret"></i> <?php echo $this->lang->line('guardian'); ?></span>
+                                                    <span class="sh-info-value" id="guardian"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-venus-mars"></i> <?php echo $this->lang->line('gender'); ?></span>
+                                                    <span class="sh-info-value" id="genders"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-tint"></i> <?php echo $this->lang->line('blood_group'); ?></span>
+                                                    <span class="sh-info-value" id="blood_group"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-ring"></i> <?php echo $this->lang->line('marital_status'); ?></span>
+                                                    <span class="sh-info-value" id="marital_status"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row g-0 sh-row-divider">
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-hourglass-half"></i> <?php echo $this->lang->line('age'); ?></span>
+                                                    <span class="sh-info-value" id="age"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fa fa-phone-square"></i> <?php echo $this->lang->line('phone'); ?></span>
+                                                    <span class="sh-info-value" id="listnumber"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fa fa-envelope"></i> <?php echo $this->lang->line('email'); ?></span>
+                                                    <span class="sh-info-value" id="email"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-street-view"></i> <?php echo $this->lang->line('address'); ?></span>
+                                                    <span class="sh-info-value" id="address"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row g-0 sh-row-divider">
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-allergies"></i> <?php echo $this->lang->line('any_known_allergies'); ?></span>
+                                                    <span class="sh-info-value" id="allergies"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-sticky-note"></i> <?php echo $this->lang->line('remarks'); ?></span>
+                                                    <span class="sh-info-value" id="note"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-id-badge"></i> <?php echo $this->lang->line('tpa_id'); ?></span>
+                                                    <span class="sh-info-value" id="tpa_id"></span>
+                                                </div>
+                                                <div class="col-6 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-calendar-check"></i> <?php echo $this->lang->line('tpa_validity'); ?></span>
+                                                    <span class="sh-info-value" id="tpa_validity"></span>
+                                                </div>
+                                            </div>
+                                            <div class="row g-0 sh-row-divider">
+                                                <div class="col-12 sh-info-item">
+                                                    <span class="sh-info-label"><i class="fas fa-fingerprint"></i> <?php echo $this->lang->line('national_identification_number'); ?></span>
+                                                    <span class="sh-info-value" id="identification_number"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 col-md-5 col-sm-12">
+                                    <div class="sh-form-card">
+                                        <div class="sh-card-header">
+                                            <span class="sh-card-header-title"><?php echo $this->lang->line('live_consultation'); ?></span>
+                                        </div>
+                                        <div class="p-2">
+                                            <div class="row g-3">
+                                                <div class="col-sm-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('consultation_title'); ?></label>
+                                                        <input class="form-control form-control-sm" type="text" name="title" />
+                                                        <span class="text-danger"><?php echo form_error('title'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('consultation_date'); ?> <small class="req"> *</small> </label>
+                                                        <input id="datetimepicker" name="date" type="text" class="form-control form-control-sm datetime" />
+                                                        <span class="text-danger"><?php echo form_error('date'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm" for="duration"><?php echo $this->lang->line('consultation_duration_minutes'); ?> <small class="req"> *</small> </label>
+                                                        <input type="number" class="form-control form-control-sm" id="duration" name="duration">
+                                                        <span class="text-danger"><?php echo form_error('duration'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('opd_ipd'); ?></label>
+                                                        <select name="select_group" id="" onchange="getopdipd(this.value)" class="form-select form-select-sm module_type">
+                                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                            <?php foreach ($opd_ipd as $key => $opd_ipd_value) { ?>
+                                                                <option value="<?php echo $key; ?>"><?php echo $opd_ipd_value; ?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                        <span class="text-danger"><?php echo form_error('case'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('opd_ipd_no'); ?></label>
+                                                        <select class="form-control select2 w-100" name="opdipd_id" id="opdipd_no">
+                                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                        </select>
+                                                        <span class="text-danger"><?php echo form_error('opdipd_no'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6 visit_div d-none">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line("checkup_id"); ?> <small class="req"> *</small> </label>
+                                                        <select class="form-control select2 w-100" name="visit_id" id="visit_no">
+                                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                        </select>
+                                                        <span class="text-danger"><?php echo form_error('visit_id'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('consultant_doctor'); ?> <small class="req"> *</small> </label>
+                                                        <select name="staff_id" id="consultant_doctor" class="form-control select2 w-100" <?php if ($disable_option == true) { echo "disabled"; } ?>>
+                                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                            <?php foreach ($doctors as $dkey => $dvalue) { ?>
+                                                                <option value="<?php echo $dvalue["id"]; ?>" <?php if ((isset($doctor_select)) && ($doctor_select == $dvalue["id"])) { echo "selected"; } ?>><?php echo composeStaffNameByString($dvalue["name"], $dvalue["surname"], $dvalue["employee_id"]); ?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                        <?php if ($disable_option == true) { ?>
+                                                            <input type="hidden" name="staff_id" value="<?php echo $doctor_select ?>">
+                                                        <?php } ?>
+                                                        <span class="text-danger"><?php echo form_error('staff_id'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="sh-field-label"><?php echo $this->lang->line('host_video'); ?> <small class="req"> *</small></label>
+                                                        <div class="sh-radio-group">
+                                                            <label class="sh-radio-option">
+                                                                <input type="radio" name="host_video" value="1" checked>
+                                                                <span><?php echo $this->lang->line('enabled'); ?></span>
+                                                            </label>
+                                                            <label class="sh-radio-option">
+                                                                <input type="radio" name="host_video" value="0">
+                                                                <span><?php echo $this->lang->line('disabled'); ?></span>
+                                                            </label>
+                                                        </div>
+                                                        <span class="text-danger"><?php echo form_error('host_video'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="sh-field-label"><?php echo $this->lang->line('client_video'); ?> <small class="req"> *</small></label>
+                                                        <div class="sh-radio-group">
+                                                            <label class="sh-radio-option">
+                                                                <input type="radio" name="client_video" value="1" checked>
+                                                                <span><?php echo $this->lang->line('enabled'); ?></span>
+                                                            </label>
+                                                            <label class="sh-radio-option">
+                                                                <input type="radio" name="client_video" value="0">
+                                                                <span><?php echo $this->lang->line('disabled'); ?></span>
+                                                            </label>
+                                                        </div>
+                                                        <span class="text-danger"><?php echo form_error('client_video'); ?></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('description'); ?></label>
+                                                        <textarea class="form-control form-control-sm" name="description" id="description" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div><!--./pup-scroll-area-->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" class="btn btn-primary" id="load" data-loading-text="<i class='fa fa-spinner fa-spin'></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>    <!-- Modal -->
@@ -345,24 +341,41 @@
 <script type="text/javascript">
       $(function () {
         $('#easySelectable').easySelectable();
-        $('.select2').select2()
+        $('.select2').select2();
     })
 
-    $(document).on('change','.module_type',function(){
-      var mode=$(this).val();
-      if(mode == "opd"){
-        $('.visit_div').css("display", "block");
-      }else{
-        $('.visit_div').css("display", "none");
-      }
+    $('#modal-online-timetable').on('shown.bs.modal', function () {
+        var $sel = $('#addpatient_id');
+        if ($sel.hasClass('select2-hidden-accessible')) { $sel.select2('destroy'); }
+        $sel.select2({
+            ajax: {
+                url: "<?php echo base_url('admin/patient/getPatientListAjax'); ?>",
+                type: "post", dataType: 'json', delay: 250,
+                data: function (params) { return { searchTerm: params.term }; },
+                processResults: function (response) { return { results: response }; },
+                cache: true
+            },
+            placeholder: '<?php echo $this->lang->line('select_patient'); ?>',
+            minimumInputLength: 2,
+            dropdownParent: $('#modal-online-timetable')
+        });
+    });
+
+    $(document).on('change', '.module_type', function () {
+        var mode = $(this).val();
+        if (mode == "opd") {
+            $('.visit_div').removeClass('d-none');
+        } else {
+            $('.visit_div').addClass('d-none');
+        }
+    });
+
+    $(document).on('change', '#opdipd_no', function () {
+        getvisitdetailsid($(this).val());
     });
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }
 
     $('#myModalpa').on('hidden.bs.modal', function (e) {
@@ -378,23 +391,20 @@
        }
         var pid = $('#patient_id').val();      
         var div_data = "";
-        $('#opdipd_no').html("<option value='l'><?php echo $this->lang->line('loading') ?></option>");
-        $("#opdipd_no").select2("val", '1');
+        $('#opdipd_no').html("<option value=''><?php echo $this->lang->line('loading') ?></option>");
         $.ajax({
             url: '<?php echo base_url(); ?>admin/zoom_conference/getopdipd',
             type: "POST",
-            data: {opdipd_group: opdipd_group,patient_id: pid},
+            data: {opdipd_group: opdipd_group, patient_id: pid},
             dataType: 'json',
             success: function (res) {
-
-                $.each(res, function (i, obj)
-                {
-                var sel = "";
-                div_data += "<option value=" + obj.id + ">"+ opdipdno +""+ obj.id + "</option>";
+                $.each(res, function (i, obj) {
+                    div_data += "<option value=" + obj.id + ">" + opdipdno + obj.id + "</option>";
                 });
+                if ($('#opdipd_no').hasClass('select2-hidden-accessible')) { $('#opdipd_no').select2('destroy'); }
                 $("#opdipd_no").html("<option value=''><?php echo $this->lang->line('select') ?></option>");
                 $('#opdipd_no').append(div_data);
-                $("#opdipd_no").select2().select2('val', '');               
+                $('#opdipd_no').select2({ dropdownParent: $('#modal-online-timetable') });
             }
         });
     }
@@ -403,23 +413,20 @@
 
         var visitcheckupno = "<?php echo $this->customlib->getSessionPrefixByType('checkup_id') ?>"
         var div_data = "";
-        $('#visit_no').html("<option value='l'><?php echo $this->lang->line('loading') ?></option>");
-        $("#visit_no").select2("val", '1');
+        $('#visit_no').html("<option value=''><?php echo $this->lang->line('loading') ?></option>");
         $.ajax({
             url: '<?php echo base_url(); ?>admin/patient/getVisitDetailsbyopdid',
             type: "POST",
             data: {opdid: opdid},
             dataType: 'json',
             success: function (res) {
-                    console.log(res);
-                $.each(res, function (i, obj)   
-                {
-                var sel = "";
-                div_data += "<option value=" + obj.id + ">"+ visitcheckupno +""+ obj.id + "</option>";
+                $.each(res, function (i, obj) {
+                    div_data += "<option value=" + obj.id + ">" + visitcheckupno + obj.id + "</option>";
                 });
+                if ($('#visit_no').hasClass('select2-hidden-accessible')) { $('#visit_no').select2('destroy'); }
                 $("#visit_no").html("<option value=''><?php echo $this->lang->line('select') ?></option>");
                 $('#visit_no').append(div_data);
-                $("#visit_no").select2().select2('val', '');
+                $('#visit_no').select2({ dropdownParent: $('#modal-online-timetable') });
             }
         });
     }
@@ -461,7 +468,7 @@
                 data: formData,
                 dataType: "JSON",
                 beforeSend: function () {
-                    $button.button('loading');
+                    $button.btnLoading();
                 },
                 success: function (data) {
                     if (data.status == 0) {
@@ -471,43 +478,41 @@
                         });
                         errorMsg(message);
                     } else {
-                        $('#modal-credential').modal('hide');
+                        shModal('modal-credential').hide();
                         successMsg(data.message);
                     }
-                    $button.button('reset');
+                    $button.btnReset();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    $button.button('reset');
+                    $button.btnReset();
                 },
                 complete: function (data) {
-                    $button.button('reset');
+                    $button.btnReset();
                 }
             });
         })
 
-        $('#modal-chkstatus').on('shown.bs.modal', function (e) {
-            var $modalDiv = $(e.delegateTarget);
-            var id=$(e.relatedTarget).data('id');
-
+        // Fetch the status content FIRST, then open the modal once #zoom_details is populated.
+        $(document).on('click', '.js-open-livestatus', function (e) {
+            e.preventDefault();
+            var $btn = $(this);
+            if ($btn.hasClass('disabled')) { return; }
+            var id = $btn.data('id');
+            $btn.addClass('disabled');
+            $('#zoom_details').html("");
             $.ajax({
                 type: "POST",
                 url: base_url + 'admin/zoom_conference/getlivestatus',
-                data: {'id':id},
+                data: {'id': id},
                 dataType: "JSON",
-                beforeSend: function () {
-                    $('#zoom_details').html("");
-                    $modalDiv.addClass('modal_loading');
-                },
                 success: function (data) {
-                   $('#zoom_details').html(data.page);
-                    $modalDiv.removeClass('modal_loading');
+                    $('#zoom_details').html(data.page);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-chkstatus')).show();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    $modalDiv.removeClass('modal_loading');
+                    alert('<?php echo $this->lang->line('error_occurred_please_try_again'); ?>');
                 },
-                complete: function (data) {
-                    $modalDiv.removeClass('modal_loading');
-                }
+                complete: function () { $btn.removeClass('disabled'); }
             });
         })
 </script>
@@ -542,7 +547,7 @@
             data: $form.serialize(),
             dataType: "JSON",
             beforeSend: function () {
-                $button.button('loading');
+                $button.btnLoading();
             },
             success: function (data) {
                 if (data.status == 0) {
@@ -552,17 +557,17 @@
                     });
                     errorMsg(message);
                 } else {
-                    $('#modal-online-timetable').modal('hide');
+                    shModal('modal-online-timetable').hide();
                     successMsg(data.message);
                     window.location.reload(true);
                 }
-                $button.button('reset');
+                $button.btnReset();
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                $button.button('reset');
+                $button.btnReset();
             },
             complete: function (data) {
-                $button.button('reset');
+                $button.btnReset();
             }
         });
     })
@@ -579,7 +584,7 @@
     }
 
     $('#modal-online-timetable').on('hidden.bs.modal', function () {
-            $("#patientDetails").css("display", "none");
+            $("#patientDetails").addClass("d-none");
             $('div #modal-online-timetable #patientDetails').find('span').text("");
             $('#opdipd_no').select2("val", "");
             $('#visit_no').select2("val", "");
@@ -731,13 +736,27 @@
 </script>
 
 <script type="text/javascript">
+    function renderStaffConsultAvatar(imageUrl, patientName) {
+        var name = (patientName || '').replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+        var hasRealImage = imageUrl && imageUrl.indexOf('no_image') === -1;
+        if (hasRealImage) {
+            $('#image').attr('src', imageUrl + '<?php echo img_time(); ?>').removeClass('d-none');
+            $('#image_initials').text('').addClass('d-none');
+        } else {
+            var parts = name.split(/\s+/).filter(Boolean);
+            var initials = parts.length === 0 ? '?' : parts.length === 1 ? parts[0].charAt(0) : parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+            $('#image').addClass('d-none').removeAttr('src');
+            $('#image_initials').text(initials.toUpperCase()).removeClass('d-none');
+        }
+    }
+
     function get_PatientDetails(id) {
         var base_url = "<?php echo $this->media_storage->getImageURL('backend/images/loading.gif') ?>";
 
         $("#ajax_load").html("<center><img src='" + base_url + "'/>");
         if (id =='') {
              $("#ajax_load").html("");
-             $("#patientDetails").hide();
+             $("#patientDetails").addClass("d-none");
         }else{
         $.ajax({
             url: '<?php echo base_url(); ?>admin/patient/patientDetails',
@@ -747,36 +766,36 @@
             success: function (res) {
                 if (res) {
                     $("#ajax_load").html("");
-                    $("#patientDetails").show();
-                    $('#patient_unique_id').html(res.patient_unique_id);
+                    $("#patientDetails").removeClass("d-none");
+                    $('#patient_unique_id').text(res.patient_unique_id);
                     $('#patient_id').val(res.id);
-                    $('#listname').html(res.patient_name+" ("+res.id+")");
-                    $('#guardian').html(res.guardian_name);
-                    $('#listnumber').html(res.mobileno);
-                    $('#email').html(res.email);
+                    $('#listname').text(res.patient_name+" ("+res.id+")");
+                    $('#guardian').text(res.guardian_name);
+                    $('#listnumber').text(res.mobileno);
+                    $('#email').text(res.email);
                     $('#mobnumber').val(res.mobileno);
                     $('#pemail').val(res.email);
-                    $('#patientname').val(res.patient_name);                   
-                    $('#blood_group').html(res.blood_group_name); 
-                    $('#age').html(res.as_of_date);
-                    $('#tpa_validity').html(res.insurance_validity);
-                    $('#tpa_id').html(res.insurance_id);
-                    $('#identification_number').html(res.identification_number);
+                    $('#patientname').val(res.patient_name);
+                    $('#blood_group').text(res.blood_group_name);
+                    $('#age').text(res.as_of_date);
+                    $('#tpa_validity').text(res.insurance_validity);
+                    $('#tpa_id').text(res.insurance_id);
+                    $('#identification_number').text(res.identification_number);
                     $('#doctname').val(res.name + " " + res.surname);
-                    $("#bp").html(res.bp);
-                    $("#symptoms").html(res.symptoms);
-                    $("#known_allergies").html(res.known_allergies);
-                    $("#address").html(res.address);
-                    $("#note").html(res.note);
-                    $("#height").html(res.height);
-                    $("#weight").html(res.weight);
-                    $("#genders").html(res.gender);
-                    $("#marital_status").html(res.marital_status);
-                    $("#allergies").html(res.known_allergies);
-                    $("#image").attr("src", res.image+'<?php echo img_time(); ?>');
+                    $("#bp").text(res.bp);
+                    $("#symptoms").text(res.symptoms);
+                    $("#known_allergies").text(res.known_allergies);
+                    $("#address").text(res.address);
+                    $("#note").text(res.note);
+                    $("#height").text(res.height);
+                    $("#weight").text(res.weight);
+                    $("#genders").text(res.gender);
+                    $("#marital_status").text(res.marital_status);
+                    $("#allergies").text(res.known_allergies);
+                    renderStaffConsultAvatar(res.image, res.patient_name);
                 } else {
                     $("#ajax_load").html("");
-                    $("#patientDetails").hide();
+                    $("#patientDetails").addClass("d-none");
                 }
             }
         });
@@ -784,11 +803,7 @@
     }
     
     $(document).ready(function (e) {
-        $('#modal-online-timetable,#modal-chkstatus').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('modal-online-timetable', 'modal-chkstatus');
     });
 </script>
 

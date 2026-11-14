@@ -1,15 +1,13 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <?php $this->load->view('setting/sidebar'); ?>
             <div class="col-md-10">
                 <!-- left column -->
                 <form id="form1" action="<?php echo site_url('admin/notification/setting') ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                    <div class="box box-primary">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('notification_setting'); ?></h3>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><?php echo $this->lang->line('notification_setting'); ?></h3>
                         </div>
                         <div class="around10">
                             <?php if ($this->session->flashdata('msg')) { ?>
@@ -18,8 +16,8 @@
                                  ?>
                             <?php } ?> 
                         </div>
-                        <!-- /.box-header -->
-                        <div class="box-body">
+                        <!-- /.card-header -->
+                        <div class="card-body">
                             <table class="table table-hover ">
                                 <thead>
                                 <th><?php echo $this->lang->line('event'); ?></th>
@@ -55,10 +53,10 @@
                                         <tr><td>
                                                 <?php echo $note_value; ?>
                                             </td>
-                                            <td width="20%"><label class="checkbox-inline">
+                                            <td width="20%"><label class="form-check form-check-inline">
                                                     <input type="checkbox" name="<?php echo $note_key ?>_mail" value="1" <?php echo $mail_checked; ?>> <?php echo $this->lang->line('email'); ?>
                                                 </label>
-                                                <label class="checkbox-inline">
+                                                <label class="form-check form-check-inline">
                                                     <input type="checkbox" name="<?php echo $note_key ?>_sms" value="1" <?php echo $sms_checked; ?>> <?php echo $this->lang->line('sms'); ?>
                                                 </label></td>
                                             <td> <?php
@@ -74,14 +72,14 @@
                                 </tbody>
                             </table>
                         </div>  
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>   
                 </form>                 
             </div>
         </div>
 </div><!--./wrapper-->
-</section><!-- /.content -->
+
 </div>
 <?php
 function checkExists($notificationlist, $key) {

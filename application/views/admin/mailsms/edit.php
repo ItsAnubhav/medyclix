@@ -2,17 +2,14 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-4">              
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('edit_vehicle'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('edit_vehicle'); ?></h3>
                     </div>
                     <form id="form1" action="<?php echo site_url('admin/vehicle/edit/' . $id) ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php if ($this->session->flashdata('msg')) { ?>
                                 <?php echo $this->session->flashdata('msg') ?>
                             <?php } ?>
@@ -23,54 +20,54 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             ?> 
                             <?php echo $this->customlib->getCSRF(); ?>
                             <input type="hidden" name="id" value="<?php echo set_value('id', $editvehicle->id); ?>">
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('vehicle_no'); ?></label>
                                 <input autofocus="" id="vehicle_no" name="vehicle_no" placeholder="" type="text" class="form-control" value="<?php echo set_value('vehicle_no', $editvehicle->vehicle_no); ?>" />
                                 <span class="text-danger"><?php echo form_error('vehicle_no'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('vehicle_model'); ?></label>
                                 <input id="vehicle_model" name="vehicle_model" placeholder="" type="text" class="form-control" value="<?php echo set_value('vehicle_model', $editvehicle->vehicle_model); ?>" />
                                 <span class="text-danger"><?php echo form_error('vehicle_model'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('year_made'); ?></label>
                                 <input id="manufacture_year" name="manufacture_year" placeholder="" type="text" class="form-control" value="<?php echo set_value('manufacture_year', $editvehicle->manufacture_year); ?>" />
                                 <span class="text-danger"><?php echo form_error('manufacture_year'); ?></span>
                             </div>
 
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('driver_name'); ?></label>
                                 <input id="driver_name" name="driver_name" placeholder="" type="text" class="form-control" value="<?php echo set_value('driver_name', $editvehicle->driver_name); ?>" />
                                 <span class="text-danger"><?php echo form_error('driver_name'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('driver_license'); ?></label>
                                 <input id=" driver_licence" name="driver_licence" placeholder="" type="text" class="form-control" value="<?php echo set_value('driver_licence', $editvehicle->driver_licence); ?>" />
                                 <span class="text-danger"><?php echo form_error('driver_licence'); ?></span>
                             </div>
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('driver_contact'); ?></label>
                                 <input id="driver_contact" name="driver_contact" placeholder="" type="text" class="form-control" value="<?php echo set_value('driver_contact', $editvehicle->driver_contact); ?>" />
                                 <span class="text-danger"><?php echo form_error('driver_contact'); ?></span>
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>
                     </form>
                 </div>
             </div>          
             <div class="col-md-8">              
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('vehicle_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('vehicle_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">                         
-                            <div class="pull-right">
+                            <div class="float-end">
                             </div>
                         </div>
                         <div class="table-responsive mailbox-messages">
@@ -83,7 +80,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         <th><?php echo $this->lang->line('driver_name'); ?></th>
                                         <th><?php echo $this->lang->line('driver_license'); ?></th>
                                         <th><?php echo $this->lang->line('driver_contact'); ?></th>
-                                        <th class="text-right no-print"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end no-print"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -104,11 +101,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 <td class="mailbox-name"> <?php echo $data['driver_name'] ?></td>
                                                 <td class="mailbox-name"><?php echo $data['driver_licence'] ?></td>
                                                 <td class="mailbox-name"><?php echo $data['driver_contact'] ?></td>
-                                                <td class="mailbox-date pull-right no-print">
-                                                    <a href="<?php echo base_url(); ?>admin/vehicle/edit/<?php echo $data['id'] ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                <td class="mailbox-date float-end no-print">
+                                                    <a href="<?php echo base_url(); ?>admin/vehicle/edit/<?php echo $data['id'] ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <a href="<?php echo base_url(); ?>admin/vehicle/delete/<?php echo $data['id'] ?>"class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
+                                                    <a href="<?php echo base_url(); ?>admin/vehicle/delete/<?php echo $data['id'] ?>"class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
                                                         <i class="fa fa-remove"></i>
                                                     </a>
                                                 </td>
@@ -124,15 +121,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </div>
                 </div>
             </div> 
-        </div> 
-    </section>
-</div>
+        </div>
 <script type="text/javascript">
     $(document).ready(function () {
-        $('#postdate').datepicker({
-            format: "dd-mm-yyyy",
-            autoclose: true
-        });
+        /* #postdate init removed - auto-init via class + event delegation */
         $("#btnreset").click(function () {
             $("#form1")[0].reset();
         });

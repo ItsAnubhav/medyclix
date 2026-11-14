@@ -1,7 +1,7 @@
-<div class="box-header with-border">
-    <h3 class="box-title"><?php echo $this->lang->line('human_resource'); ?></h3>
+<div class="card-header">
+    <h3 class="card-title"><?php echo $this->lang->line('human_resource'); ?></h3>
 </div>
-<div class="box-body row">
+<div class="card-body row">
     <ul class="reportlists">
     <?php  
       if ($this->rbac->hasPrivilege('payroll_report', 'can_view')) {

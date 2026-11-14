@@ -1,15 +1,13 @@
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <?php $this->load->view('setting/sidebar'); ?>
             <div class="col-md-10">
                 <!-- left column -->
                 <form action="<?php echo site_url('admin/notification/notification_setting') ?>"  method="post" accept-charset="utf-8">
-                    <div class="box box-primary">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('system_notification_setting'); ?></h3>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><?php echo $this->lang->line('system_notification_setting'); ?></h3>
                         </div>
                         <div class="around10">
                             <?php if ($this->session->flashdata('msg')) { ?>
@@ -18,16 +16,16 @@
                                  ?>
                             <?php } ?> 
                         </div>
-                        <!-- /.box-header --> 
-                        <div class="box-body"> 
+                        <!-- /.card-header --> 
+                        <div class="card-body"> 
                             <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-hover">
+                            <table class="table table-striped table-bordered table-hover notif-table">
                                 <thead>
-                                    <th><?php echo $this->lang->line('event'); ?></th>
-                                    <th><?php echo $this->lang->line('subject'); ?></th>
-                                    <th width="5%"><?php echo $this->lang->line('option'); ?></th>
-                                    <th width="30%"><?php echo $this->lang->line('staff_message'); ?></th>
-                                    <th width="30%"><?php echo $this->lang->line('patient_message'); ?></th>                  
+                                    <th width="15%"><?php echo $this->lang->line('event'); ?></th>
+                                    <th width="15%"><?php echo $this->lang->line('subject'); ?></th>
+                                    <th width="14%" class="text-center"><?php echo $this->lang->line('option'); ?></th>
+                                    <th width="28%"><?php echo $this->lang->line('staff_message'); ?></th>
+                                    <th width="28%"><?php echo $this->lang->line('patient_message'); ?></th>
                                 </thead>                              
                                  <tbody>
                                     <?php
@@ -41,32 +39,30 @@
                                                 <input type="hidden" name="ids[]" value="<?php echo $note_value->id; ?>">
                                                 <?php echo $this->lang->line($note_value->event); ?>
                                             </td>
-                                            <td><?php echo ($note_value->subject); ?></td>                                    
+                                            <td><?php echo html_escape($note_value->subject); ?></td>                                    
                                             <td>
-                                                <label class="checkbox-inline">
-                                                    <input type="checkbox" name="event_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('event_' . $note_value->id, 1, set_value('event_' . $note_value->id, $note_value->is_active) ? true : false); ?>>  <?php echo $this->lang->line('enabled'); ?>
-                                                </label>
-                                                <br>
-                                                <label class="checkbox-inline">
-                                                    <input type="checkbox" name="staff_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('sms_' . $note_value->id, 1, set_value('staff_' . $note_value->id, $note_value->is_staff) ? true : false); ?>>
-                                                    <?php echo $this->lang->line('staff'); ?>
-                                                </label>
-                                                <br>
-                                                <?php if(!in_array($note_value->event,$is_patient_notification)){
-                                              	?> 
-                                              	<label class="checkbox-inline">
-                                                    <input type="checkbox" name="patient_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('notification_' . $note_value->id, 1, set_value('patient_' . $note_value->id, $note_value->is_patient) ? true : false); ?>>
-                                                    <?php echo $this->lang->line('patient')?>
-                                                </label>
-                                              	<?php
-                                              }?>                                    
-
+                                                <div class="notif-switch-group">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" role="switch" id="event_<?php echo $note_value->id; ?>" name="event_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('event_' . $note_value->id, 1, set_value('event_' . $note_value->id, $note_value->is_active) ? true : false); ?>>
+                                                        <label class="form-check-label" for="event_<?php echo $note_value->id; ?>"><?php echo $this->lang->line('enabled'); ?></label>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" role="switch" id="staff_<?php echo $note_value->id; ?>" name="staff_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('sms_' . $note_value->id, 1, set_value('staff_' . $note_value->id, $note_value->is_staff) ? true : false); ?>>
+                                                        <label class="form-check-label" for="staff_<?php echo $note_value->id; ?>"><?php echo $this->lang->line('staff'); ?></label>
+                                                    </div>
+                                                    <?php if (!in_array($note_value->event, $is_patient_notification)) { ?>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" role="switch" id="patient_<?php echo $note_value->id; ?>" name="patient_<?php echo $note_value->id; ?>" value="1" <?php echo set_checkbox('notification_' . $note_value->id, 1, set_value('patient_' . $note_value->id, $note_value->is_patient) ? true : false); ?>>
+                                                            <label class="form-check-label" for="patient_<?php echo $note_value->id; ?>"><?php echo $this->lang->line('patient'); ?></label>
+                                                        </div>
+                                                    <?php } ?>
+                                                </div>
                                             </td>
-                                            <td><?php echo ($note_value->staff_message); ?></td>
-                                            <td><?php echo ($note_value->patient_message); ?>   
+                                            <td><?php echo html_escape($note_value->staff_message); ?></td>
+                                            <td><?php echo html_escape($note_value->patient_message); ?>
                                             <br>
                                             <?php if ($this->rbac->hasPrivilege('system_notification_setting', 'can_edit')) { ?>
-   											    <button type="button" class="button_template btn btn-primary btn-xs " id="load" data-record-id="<?php echo $note_value->id; ?>" data-loading-text="<i class='fa fa-spinner fa-spin'></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-pencil-square-o"></i></button>
+   											    <button type="button" class="button_template btn btn-primary btn-sm " id="load" data-record-id="<?php echo $note_value->id; ?>" data-loading-text="<i class='fa fa-spinner fa-spin'></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-pencil-square-o"></i></button>
                                             <?php } ?>
                                             </td> 
                                         </tr>
@@ -79,8 +75,8 @@
                         </div>
                         </div> 
                       <?php if ($this->rbac->hasPrivilege('system_notification_setting', 'can_edit')) { ?>
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                         </div> 
                        <?php } ?>                             
             </div>
@@ -88,24 +84,27 @@
         </div>
 </div><!--./wrapper-->
 
-</section><!-- /.content -->
-</div>
-<div class="modal fade" id="templateModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content mx-2">
-            <form action="<?php echo site_url('admin/notification/save_system_notification') ?>" method="post" id="templateForm">
 
+</div>
+<div class="modal fade sh-modal sh-modal-accent" id="templateModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <form action="<?php echo site_url('admin/notification/save_system_notification') ?>" method="post" id="templateForm">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel"> <?php echo $this->lang->line('edit_notification'); ?></h4>
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('edit_notification'); ?></h5>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
-            <div class="modal-body template_modal_body">
+            <div class="pup-scroll-area">
+                <div class="modal-body template_modal_body">
+                </div>
             </div>
             <div class="modal-footer">
                 <?php if ($this->rbac->hasPrivilege('system_notification_setting', 'can_edit')) { ?>
-               <button type="submit" class="template_update btn btn-primary" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-           <?php } ?>
-
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <button type="submit" class="template_update btn btn-info" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                <?php } ?>
             </div>
             </form>
         </div>
@@ -118,7 +117,7 @@
             $('.template_message_error').html("");
              var $this = $(this);
              var id=$this.data('recordId');
-            $this.button('loading');
+            $this.btnLoading();
             $.ajax({
                 type: 'POST',
                 dataType: 'JSON',
@@ -128,17 +127,17 @@
                 },
                 success: function(data) {
                    if(data.status){
-                    $('#templateModal').modal('show');
+                    shModal('templateModal').show();
                     $('.template_modal_body').html(data.template);
 
                    }
                 },
                 error: function(xhr) { // if error occured
                     alert("Error occured.please try again");
- $this.button('reset');
+ $this.btnReset();
                 },
                 complete: function() {
- $this.button('reset');
+ $this.btnReset();
                 }
             });
         });
@@ -156,7 +155,7 @@ $("#templateForm").submit(function(e) {
                 dataType: 'JSON',
                 data: form.serialize(), // serializes the form's elements.
                beforeSend: function() {
-                 submit_btn.button('loading');
+                 submit_btn.btnLoading();
                 },
                 success: function(data) {
                    if(data.status){
@@ -171,10 +170,10 @@ $("#templateForm").submit(function(e) {
                 },
                 error: function(xhr) { // if error occured
                     alert("Error occured.please try again");
-     submit_btn.button('reset');
+     submit_btn.btnReset();
                 },
                 complete: function() {
-    submit_btn.button('reset');
+    submit_btn.btnReset();
                 }
          });
 

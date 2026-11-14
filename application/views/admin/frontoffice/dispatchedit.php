@@ -1,52 +1,50 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <?php if ($this->rbac->hasPrivilege('postal_dispatch', 'can_add') || $this->rbac->hasPrivilege('postal_dispatch', 'can_edit')) {?>
                 <div class="col-md-4">
                     <!-- Horizontal Form -->
-                    <div class="box box-primary">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('edit'); ?> <?php echo $this->lang->line('postal_dispatch'); ?></h3>
-                        </div><!-- /.box-header -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><?php echo $this->lang->line('edit'); ?> <?php echo $this->lang->line('postal_dispatch'); ?></h3>
+                        </div><!-- /.card-header -->
                         <form id="form1" action="<?php echo site_url('admin/dispatch/editdispatch/' . $Dispatch_data['id']) ?>"   method="post" accept-charset="utf-8" enctype="multipart/form-data" >
-                            <div class="box-body">
-                                <div class="form-group">
+                            <div class="card-body">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('to_title'); ?></label>  <small class="req"> *</small>
                                     <input type="text" class="form-control" value="<?php echo set_value('to_title', $Dispatch_data['to_title']); ?>" name="to_title">
                                     <span class="text-danger"><?php echo form_error('to_title'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('reference_no'); ?></label>
                                     <input type="text" class="form-control" value="<?php echo set_value('ref_no', $Dispatch_data['reference_no']); ?>" name="ref_no">
                                     <span class="text-danger"><?php echo form_error('ref_no'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('address'); ?></label>
                                     <textarea class="form-control" id="description"  name="address" rows="3"><?php echo set_value('address', $Dispatch_data['address']); ?></textarea>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="email"><?php echo $this->lang->line('note'); ?></label>
                                     <textarea class="form-control" id="description" name="note" name="note" rows="3"><?php echo set_value('note', $Dispatch_data['note']); ?></textarea>
                                 </div>
-                                <div class="form-group">
-                                    <div class="form-group">
+                                <div class="mb-3">
+                                    <div class="mb-3">
                                         <label for="pwd"><?php echo $this->lang->line('from_title'); ?></label>     <input type="text" class="form-control" value="<?php echo set_value('from', $Dispatch_data['from_title']); ?>"  name="from">
                                         <span class="text-danger"><?php echo form_error('from'); ?></span>
                                     </div>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('date'); ?></label>
-                                    <input id="date" name="date" placeholder="" type="text" class="form-control" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($Dispatch_data['date']))); ?>" readonly="readonly" />
+                                    <input id="date" name="date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($Dispatch_data['date']))); ?>" readonly="readonly" />
                                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputFile"><?php echo $this->lang->line('attach_document'); ?></label>
                                     <div><input class="filestyle form-control" type='file' name='file'  />
                                     </div>
                                     <span class="text-danger"><?php echo form_error('file'); ?></span></div>
-                            </div><!-- /.box-body -->
+                            </div><!-- /.card-body -->
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                                <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                             </div>
                         </form>
                     </div>
@@ -62,13 +60,13 @@ if ($this->rbac->hasPrivilege('postal_dispatch', 'can_add') || $this->rbac->hasP
 }
 ?>">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('postal_dispatch'); ?> <?php echo $this->lang->line('list'); ?></h3>
-                        <div class="box-tools pull-right">
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('postal_dispatch'); ?> <?php echo $this->lang->line('list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                        </div><!-- /.ms-auto d-flex gap-1 -->
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"></div>
                         <div class="table-responsive mailbox-messages">
                             <table class="table table-hover table-striped table-bordered example">
@@ -81,7 +79,7 @@ if ($this->rbac->hasPrivilege('postal_dispatch', 'can_add') || $this->rbac->hasP
                                         <th><?php echo $this->lang->line('from_title'); ?></th>
                                         <th><?php echo $this->lang->line('date'); ?>
                                         </th>
-                                        <th class="text-right"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -94,23 +92,23 @@ if ($this->rbac->hasPrivilege('postal_dispatch', 'can_add') || $this->rbac->hasP
                                                 <td class="mailbox-name"><?php echo $value->reference_no; ?></td>
                                                 <td class="mailbox-name"> <?php echo $value->from_title; ?></td>
                                                 <td class="mailbox-name"> <?php echo date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($value->date)); ?></td>
-                                                <td class="mailbox-date pull-right">
-                                                    <a onclick="getRecord(<?php echo $value->id; ?>)" class="btn btn-default btn-xs" data-target="#receviedetails" data-toggle="modal" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing" data-original-title="View"><i class="fa fa-reorder"></i></a>
+                                                <td class="mailbox-date float-end">
+                                                    <a onclick="getRecord(<?php echo $value->id; ?>)" class="btn btn-secondary btn-sm" data-bs-target="#receviedetails" data-bs-toggle="modal" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing" title="<?= $this->lang->line('view') ?>"><i class="fa fa-reorder"></i></a>
                                                     <?php if ($value->image !== "") {?>
-                                                        <a href="<?php echo base_url(); ?>admin/dispatch/download/<?php echo $value->image; ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('download'); ?>">
+                                                        <a href="<?php echo base_url(); ?>admin/dispatch/download/<?php echo $value->image; ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="" title="<?php echo $this->lang->line('download'); ?>">
                                                             <i class="fa fa-download"></i>
                                                         </a>
 
                                                     <?php }?>
-                                                    <a href="<?php echo base_url(); ?>admin/dispatch/editdispatch/<?php echo $value->id; ?>"  class="btn btn-default btn-xs" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('edit'); ?>">
+                                                    <a href="<?php echo base_url(); ?>admin/dispatch/editdispatch/<?php echo $value->id; ?>"  class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="" title="<?php echo $this->lang->line('edit'); ?>">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
                                                     <?php if ($value->image !== "") {?>
-                                                        <a href="<?php echo base_url(); ?>admin/dispatch/imagedelete/<?php echo $value->id; ?>/<?php echo $value->image; ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');" data-original-title="<?php echo $this->lang->line('delete'); ?>">
+                                                        <a href="<?php echo base_url(); ?>admin/dispatch/imagedelete/<?php echo $value->id; ?>/<?php echo $value->image; ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');" title="<?php echo $this->lang->line('delete'); ?>">
                                                             <i class="fa fa-remove"></i>
                                                         </a>
                                                     <?php } else {?>
-                                                        <a href="<?php echo base_url(); ?>admin/dispatch/delete/<?php echo $value->id; ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');" data-original-title="<?php echo $this->lang->line('delete'); ?>">
+                                                        <a href="<?php echo base_url(); ?>admin/dispatch/delete/<?php echo $value->id; ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');" title="<?php echo $this->lang->line('delete'); ?>">
                                                             <i class="fa fa-remove"></i>
                                                         </a>
                                                     <?php }?>
@@ -124,33 +122,30 @@ if ($this->rbac->hasPrivilege('postal_dispatch', 'can_add') || $this->rbac->hasP
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 <!-- new END -->
 <div id="receviedetails" class="modal fade" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content mx-2">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('details'); ?></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><?php echo $this->lang->line('details'); ?></h5>
             </div>
             <div class="modal-body" id="getdetails">
             </div>
         </div>
     </div>
 </div>
-</div><!-- /.content-wrapper -->
+
 <script type="text/javascript">
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('#date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* date init removed - .date class triggers TD 6 via event delegation */
     });
 
     function getRecord(id) {

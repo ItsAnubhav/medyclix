@@ -418,7 +418,7 @@ class Charge_model extends MY_Model
 
     public function getopdCharges($opdid)
     {
-        $query = $this->db->select('patient_charges.*,charge_categories.name as charge_category_name,charge_type_master.charge_type,charges.charge_category_id,charge_units.unit,charges.name,organisations_charges.org_charge,opd_details.patient_id')
+        $query = $this->db->select('patient_charges.*,charge_categories.name as charge_category_name,charge_type_master.charge_type,charges.charge_category_id,charges.standard_charge,charge_units.unit,charges.name,organisations_charges.org_charge,opd_details.patient_id')
             ->join('opd_details', 'patient_charges.opd_id = opd_details.id')
             ->join('patients', 'opd_details.patient_id = patients.id')
             ->join('charges', 'patient_charges.charge_id = charges.id')

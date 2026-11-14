@@ -24,9 +24,10 @@ class Unittype extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'charges/index');
         $medicinecategoryid = $this->input->post("medicinecategoryid");
         $data["title"]      = $this->lang->line('add_medicine_category');
-        $this->load->view("layout/header");
+        $data['module'] = 'setup';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/unittype/index", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
 
     }
 
@@ -36,7 +37,7 @@ class Unittype extends Admin_Controller
             access_denied();
         }
         $this->form_validation->set_rules(
-            'unit', $this->lang->line('unit'), array('required',
+            'unit', $this->lang->line('unit'), array('required', 'xss_clean',
                 array('check_exists', array($this->unittype_model, 'valid_unit_type')),
             )
         );
@@ -48,8 +49,8 @@ class Unittype extends Admin_Controller
             $array = array('status' => '0', 'error' => $msg, 'message' => '');
         } else {
             $insert_data = array(
-                'unit' => $this->input->post("unit"),
-                'id'   => $this->input->post("id"),
+                'unit' => $this->input->post("unit", TRUE),
+                'id'   => $this->input->post("id", TRUE),
             );
 
             $array = array('status' => '1', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -66,15 +67,14 @@ class Unittype extends Admin_Controller
         if (!empty($dt_response->data)) {
             foreach ($dt_response->data as $key => $value) {
                 $row    = array();
-                $action = "";
-
+                $action = "<div class='rowoptionview mt-mius0'>";
                 if ($this->rbac->hasPrivilege('unit_type', 'can_edit')) {
-                    $action .= "<a href='#' class='btn btn-default btn-xs edit_unittype edit_unit_type_modal' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-toggle='tooltip' data-record-id='" . $value->id . "'  title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='javascript:void(0)' class='btn btn-default btn-xs edit_unittype edit_unit_type_modal' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-bs-toggle='tooltip' data-record-id='" . $value->id . "' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
-
                 if ($this->rbac->hasPrivilege('unit_type', 'can_delete')) {
-                    $action .= "<a  data-record-id='" . $value->id . "' class='btn btn-default btn-xs delect_record' data-toggle='tooltip'   title='" . $this->lang->line('delete') . "'><i class='fa fa-remove'></i></a>";
+                    $action .= "<a data-record-id='" . $value->id . "' class='btn btn-default btn-xs delect_record' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
+                $action .= "</div>";
 
                 $row[] = $value->unit;
                 $row[] = $action;
@@ -95,7 +95,7 @@ class Unittype extends Admin_Controller
     public function getByUnitId()
     {
 
-        $id     = $this->input->post('id');
+        $id     = $this->input->post('id', TRUE);
         $result = $this->unittype_model->get($id);
         $array  = array('status' => 1, 'result' => $result);
         echo json_encode($array);
@@ -106,7 +106,7 @@ class Unittype extends Admin_Controller
         if (!$this->rbac->hasPrivilege('unit_type', 'can_delete')) {
             access_denied();
         }
-        $id     = $this->input->post('id');
+        $id     = $this->input->post('id', TRUE);
         $result = $this->unittype_model->delete($id);
         $array  = array('status' => 1, 'result' => $result, 'message' => $this->lang->line('delete_message'));
         echo json_encode($array);

@@ -56,7 +56,6 @@ class Auth
     public function is_logged_in($default_redirect = false)
     {
 
-        //var_dump($this->CI->session->userdata('session_id'));
         //$redirect allows us to choose where a customer will get redirected to after they login
         //$default_redirect points is to the login page, if you do not want this, you can set it to false and then redirect wherever you wish.
 
@@ -164,7 +163,9 @@ class Auth
         }
     }
 
-    /*
+
+	
+	/*
     This function takes admin array and inserts/updates it to the database
      */
     public function save($admin)
@@ -191,8 +192,8 @@ class Auth
 
         return $result;
     }
-
-    /*
+	
+	/*
     This function gets an individual admin
      */
     public function get_admin($id)
@@ -204,8 +205,8 @@ class Auth
 
         return $result;
     }
-
-    public function check_id($str)
+	
+	public function check_id($str)
     {
         $this->CI->db->select('id');
         $this->CI->db->from('admin');
@@ -235,8 +236,8 @@ class Auth
             return false;
         }
     }
-
-    public function delete($id)
+	
+	public function delete($id)
     {
         if ($this->check_id($id)) {
             $admin = $this->get_admin($id);
@@ -249,21 +250,7 @@ class Auth
             return 'The admin could not be found.';
         }
     }
-
-    public function validate_child($id = null)
-    {
-        $parent    = $this->CI->session->userdata('student');
-        $parent_id = $parent['id'];        
-        if ($id) {
-            foreach ($students_array as $stu_key => $stu_value) {
-                if ($stu_value->id == $id) {
-                    return true;
-                }
-            }
-            redirect('parent/unauthorized');
-        }
-    } 
-
+	
     public function multiupdate($branch_url, $purchase_code)
     {     
         $url =$this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_MBANCH);
@@ -296,60 +283,198 @@ class Auth
             return false;
         }
     }
-
-    public function app_update()
+	
+	public function app_update()  //================= activate smart school
     {
-
         $email                       = $this->CI->input->post('email');
-        $envato_market_purchase_code = $this->CI->input->post('envato_market_purchase_code');
-        $url                         = $this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_UPDATE);     
-        $ch                          = curl_init();
+        $purchase_code               = $this->CI->input->post('purchase_code');
+        $signingKey                  = $this->CI->input->post('signing_key');
+        if (empty($signingKey) || empty($purchase_code)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(array(
+                    'response' => 'Please provide both signing key and purchase code.',
+                    false,
+                )));
+        }
+
+        $licenseKeyHash = $purchase_code;
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            $licenseKeyHash          = hash('sha256', $purchase_code);
+        }
+
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(array(
+                    'response' => 'Invalid license key hash format. Must be a 64-char SHA-256 hex.',
+                    false,
+                )));
+        }
+
+        $productCode = $this->CI->config->item('app_product_code');
+        $apiResult = $this->callLicenseApi(
+            'https://apigt.webfeb.com/api/v1/licenses/activate',
+            $licenseKeyHash,
+            $productCode,
+            $signingKey
+        );
+
+        if ($apiResult['httpcode'] != 200) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header($apiResult['httpcode'])
+                ->set_output(json_encode(array(
+                    'response' => $apiResult['error'],
+                    true,
+                )));
+        }
+
+        $json_response = $apiResult['body'];
+        $licenseId = isset($json_response->licenseId) ? $json_response->licenseId : '';
+
+        $shlk = array(
+            'productCode' => $productCode,
+            'licenseKey'  => $licenseKeyHash,
+            'signingKey'  => $signingKey,
+            'licenseId'   => $licenseId,
+            'datetime'    => date('Y-m-d H:i:s'),
+        );
+
+        $this->CI->load->library('License_service');
+        $saved = $this->CI->license_service->saveLicense($shlk);
+
+        if (!$saved) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(500)
+                ->set_output(json_encode(array(
+                    'response' => 'Failed to write license cache file',
+                    false
+                )));
+        }
+
+        $this->CI->config->set_item('SHLK', $this->CI->license_service->loadLicense());
+        $this->CI->config->set_item('lic_status', 'ACTIVE');
+
+        $array = array('status' => 1, 'message' => 'Thank you for registering your product');
+        return $this->CI->output
+            ->set_content_type('application/json')
+            ->set_status_header($apiResult['httpcode'])
+            ->set_output(json_encode($array));
+    }
+	
+	
+	private function callLicenseApi($url, $licenseKeyHash, $productCode, $signingKey)
+    {
+       
+		$domain = base_url();
+        $domain = preg_replace('/^https?:\/\//i', '', $domain);
+        $domain = rtrim($domain, '/');
+        $domain = strtolower($domain);
+
+        $timestamp = (string)time();
+        $signature = hash_hmac('sha256', $licenseKeyHash . $productCode . $domain . $timestamp, $signingKey);
+
+        $data = array(
+            'licenseKeyHash' => $licenseKeyHash,
+            'productCode'    => $productCode,
+            'domain'         => $domain,
+            'timestamp'      => $timestamp,
+            'signature'      => $signature,
+        );
+        $payload = json_encode($data);
+
+        $ch = curl_init();
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($payload),
+        ));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-        $data = array(
-            'email'         => $email,
-            'purchase_code' => $envato_market_purchase_code,
-            'base_url'      => base_url(),
-        );
-
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         $output   = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
         curl_close($ch);
 
-        $json_response = json_decode($output);
+        $body = json_decode($output);
 
-        if ($httpcode != 200) {
-            return $this->CI->output
-                ->set_content_type('application/json')
-                ->set_status_header($httpcode)
-                ->set_output(json_encode(array(
-                    'response' => $json_response->response, true,
-                )));
-        } else {
-
-            $fname         = APPPATH . 'config/license.php';
-            $update_handle = fopen($fname, "r");
-            $content       = fread($update_handle, filesize($fname));
-            $file_contents = str_replace('$config[\'SHLK\'] = \'\'', '$config[\'SHLK\'] = \'' . $json_response->response . '\'', $content);
-            $update_handle = fopen($fname, 'w') or die("can't open file");
-            if (fwrite($update_handle, $file_contents)) {
-
+        $error = '';
+        if ($httpcode != 200 && $httpcode != 201) {
+            if (is_object($body) && isset($body->message)) {
+                $error = $body->message;
+            } elseif (is_object($body) && isset($body->response)) {
+                $error = $body->response;
+            } else {
+                $error = 'License API request failed';
             }
-            fclose($update_handle);
-            $array = array('status' => 1, 'message' => 'Thank you for registering your product');
-            return $this->CI->output
-                ->set_content_type('application/json')
-                ->set_status_header($httpcode)
-                ->set_output(json_encode($array));
         }
-    }
 
+        return array(
+            'httpcode' => $httpcode,
+            'body'     => $body,
+            'error'    => $error,
+        );
+    }
+	
+    public function addon_update_check($payload) //check for an addon update
+    {
+        $licenseKeyHash = isset($payload['licenseKeyHash']) ? $payload['licenseKeyHash'] : '';
+        $productCode    = isset($payload['productCode']) ? $payload['productCode'] : '';
+        $currentVersion = isset($payload['currentVersion']) ? (string)$payload['currentVersion'] : '';
+        $signingKey     = isset($payload['signingKey']) ? $payload['signingKey'] : '';
+
+        $domain = isset($payload['domain']) ? $payload['domain'] : '';
+        $domain = preg_replace('/^https?:\/\//i', '', $domain);
+        $domain = rtrim($domain, '/');
+        $domain = strtolower($domain);
+
+        $timestamp = (string)time();
+   
+        $signature = hash_hmac('sha256', $licenseKeyHash . $productCode . $domain . $timestamp, $signingKey);
+        $data = array(
+            'licenseKeyHash' => $licenseKeyHash,
+            'productCode'    => $productCode,
+            'domain'         => $domain,
+            'currentVersion' => $currentVersion,
+            'timestamp'      => $timestamp,
+            'signature'      => $signature,
+        );
+
+        
+        $body = json_encode($data);
+        
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_URL, 'https://apigt.webfeb.com/api/v1/updates/check');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($body),
+        ));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $output   = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return array(
+            'httpcode' => $httpcode,
+            'body'     => json_decode($output, true),
+        );
+    }
+	
     public function andapp_validate()
     {
 
@@ -377,212 +502,6 @@ class Auth
         }
     }
 
-    public function andapp_update()
-    {
-        $email                       = $this->CI->input->post('app-email');
-        $envato_market_purchase_code = $this->CI->input->post('app-envato_market_purchase_code');
-        $shlk                        = $this->CI->config->item('SHLK');
-        $url                         = $this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_APP);
-        
-        $ch                          = curl_init();
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, true);
-        $data = array(
-            'email'         => $email,
-            'shlk'          => $shlk,
-            'purchase_code' => $envato_market_purchase_code,
-            'base_url'      => base_url(),
-        );
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        $output   = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $json_response = json_decode($output);
-        if ($httpcode != 200) {
-            return $this->CI->output
-                ->set_content_type('application/json')
-                ->set_status_header($httpcode)
-                ->set_output(json_encode(array(
-                    'response' => $json_response->response, true,
-                )));
-
-        } else {
-            $fname         = APPPATH . 'config/license.php';
-            $update_handle = fopen($fname, "r");
-            $content       = fread($update_handle, filesize($fname));
-            if (strpos($content, '$config[\'app_ver\']') == false) {
-                $update_handle = fopen($fname, 'a') or die("can't open file");
-                $file_contents = '$config[\'app_ver\'] = 1;' . "\n";
-                if (fwrite($update_handle, $file_contents)) {
-
-                }
-            } else {
-                $file_contents = str_replace('$config[\'app_ver\'] = 0', '$config[\'app_ver\'] = 1', $content);
-                $update_handle = fopen($fname, 'w') or die("can't open file");
-                if (fwrite($update_handle, $file_contents)) {
-
-                }
-            }
-            fclose($update_handle);
-            $array = array('status' => 1, 'message' => 'Thank you for registering your product');
-            return $this->CI->output
-                ->set_content_type('application/json')
-                ->set_status_header($httpcode)
-                ->set_output(json_encode($array));
-
-        }
-    }
-
-    public function autoupdate()
-    {
-        if (!$this->CI->session->has_userdata('version')) {
-            $this->set_message('Internal error, Please concact to service provider.');
-            return false;
-        }
-        $version_dt      = $this->CI->session->userdata('version');
-        $updated_version = $version_dt['version'];
-        $dw_filename     = $version_dt['filename'];
-        $fd_name         = $this->filename($dw_filename);
-
-        $url         = $this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_AUTO_UPDATE);
-        $file        = './temp/' . $dw_filename;
-        $shlk        = $this->CI->config->item('SHLK');
-        $app_version = $this->CI->customlib->getAppVersion();
-        $post_data   = [
-            'shlk'        => $shlk,
-            'site_url'    => site_url(),
-            'app_version' => $app_version,
-        ];
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL            => $url,
-            CURLOPT_RETURNTRANSFER => 1,
-            CURLOPT_FOLLOWLOCATION => 1,
-            CURLOPT_CONNECTTIMEOUT => 50,
-            CURLOPT_POSTFIELDS     => $post_data,
-            CURLOPT_USERAGENT      => 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)',
-        ]);
-
-        $response = curl_exec($curl);
-        $info     = curl_getinfo($curl);
-        curl_close($curl);
-
-        $this->CI->session->unset_userdata('version');
-        if ($info['http_code'] == 0 && $info['header_size'] == 0) {
-            $this->set_error('Unable to connect updater, please try after sometime!');
-            return false;
-        }
-
-        if ($info['http_code'] == 200) {
-            if ($info['content_type'] == "application/zip") {
-//=========
-                file_put_contents($file, $response);
-                if (filesize($file) > 0) {
-                    $zip = new ZipArchive;
-                    $res = $zip->open('./temp/' . $dw_filename);
-                    if ($res === true) {
-                        $zip->extractTo('./temp/');
-                        $zip->close();
-                        if (!$this->import_dump($fd_name)) {
-                            unlink('./temp/' . $fd_name . '/db_import.sql');
-                            unlink('./temp/' . $dw_filename);
-                            $this->deleteDir('./temp/' . $fd_name);
-                            return false;
-                        }
-                        unlink('./temp/' . $fd_name . '/db_import.sql');
-                        $this->recurse_copy('./temp/' . $fd_name, '.');
-                        unlink('./temp/' . $dw_filename);
-                        $this->deleteDir('./temp/' . $fd_name);
-                        $this->set_message('Update successful!');
-                        return $updated_version;
-                    } else {
-
-                        $this->set_message('Update error! There is some issue occurred during update, please contact to support.');
-                        return false;
-                    }
-
-                }
-                //==================
-            } else if (is_string($response) && is_array(json_decode($response, true))) {
-                $result = json_decode($response);
-                $this->set_message($result->response);
-                return false;
-            } else {
-
-            }
-
-        } else {
-            $result = json_decode($response);
-            $this->set_error($result->response);
-            return false;
-        }
-    }
-
-    public function import_dump($fd_name)
-    {
-
-        $filename = './temp/' . $fd_name . '/db_import.sql';
-        if (file_exists($filename)) {
-            $progressFilename = $filename . '_filepointer';
-            $errorFilename    = $filename . '_error';
-            $fp               = fopen($filename, 'r');
-            if (!$fp) {
-                $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
-                return false;
-            }
-            $queryCount = 0;
-            $query      = '';
-
-            $db_debug               = $this->CI->db->db_debug;
-            $this->CI->db->db_debug = false;
-            while ($line = fgets($fp, 1024000)) {
-                if (substr($line, 0, 2) == '--' or trim($line) == '') {
-                    continue;
-                }
-
-                $query .= $line;
-
-                if (substr(trim($query), -1) == ';') {
-
-                    if (!$this->CI->db->query($query)) {
-                        $db_error = $this->CI->db->error();
-                        $this->set_error($db_error['message']);
-                        return false;
-                    }
-                    $query = '';
-
-                    $queryCount++;
-                }
-
-            }
-            $this->CI->db->db_debug = $db_debug;
-            if (feof($fp)) {
-                return true;
-            } else {
-                $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
-                return false;
-            }
-        }
-        $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
-        return false;
-
-    }
-
-    public function set_error($error)
-    {
-        $this->errors[] = $error;
-        return $error;
-    }
-
-    public function set_message($message)
-    {
-        $this->messages[] = $message;
-        return $message;
-    }
-
     public function clear_messages()
     {
         $this->messages = array();
@@ -594,15 +513,7 @@ class Auth
         $this->errors = array();
         return true;
     }
-    public function messages()
-    {
-        return $this->messages;
-    }
 
-    public function error()
-    {
-        return $this->errors;
-    }
 
     public function recurse_copy($src, $dst)
     {
@@ -693,32 +604,24 @@ class Auth
     {
         return preg_replace('/.[^.]*$/', '', $filename);
     }
-    
-    public function addonchk($prod = null, $return_url = false)
-    {      
-        if ($prod != null) {
-            $addon_prod = $this->CI->config->item('addon_prod');
-            $addon_ver  = $this->CI->config->item('addon_ver');
-            $products   = array();
+	
+	public function addonchk($prod = null, $return_url = false)
+    {
+        if ($prod !== null) {
+            $addon_status = $this->CI->config->item('addon_status');
 
-            if (!empty($addon_ver)) {
-                foreach ($addon_ver as $ver_key => $ver_value) {
-                    $key         = $addon_prod[$ver_key];
-                    $decrypt_val = $this->CI->aes->decode($ver_value, $key);
-                    if ($decrypt_val !== "") {
-                        $arr               = explode('!!', $decrypt_val);
-                        $products[$arr[0]] = $arr[1];
-                        if ($arr[0] == $prod && $arr[1] == base_url()) {
-                            return true;
-                        }
-                    }
+            // $addon_status is keyed by short_name (stored at activation), so this
+            // is a direct in-memory lookup -- no database call here.
+            if (is_array($addon_status)) {
+                if (isset($addon_status[$prod]) && $addon_status[$prod] === 'ACTIVE') {
+                    return true;
                 }
+                
             }
         }
         if ($return_url) {
             redirect($return_url);
             exit;
-
         }
         return false;
     }
@@ -813,150 +716,427 @@ class Auth
                 ->set_output(json_encode($array));
 
         }
-    }
+    }														   
+    public function addon_update() //addon register
+    {
+        $addon         = $this->CI->input->post('addon');
+        $purchase_code = $this->CI->input->post('app-envato_market_purchase_code');
+        $signingKey    = $this->CI->input->post('signing_key');
 
-    public function addon_update()
-    {        
-		$email                       = $this->CI->input->post('app-email');
-        $addon                       = $this->CI->input->post('addon');
-        $addon_version               = $this->CI->input->post('addon_version');
-        $envato_market_purchase_code = $this->CI->input->post('app-envato_market_purchase_code');
-        $shlk                        = $this->CI->config->item('SHLK');
-       
-        $url                         = $this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_ADDON);
- 
-        $ch                          = curl_init();
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, true);
-        $data = array(
-            'email'         => $email,
-            'shlk'          => $shlk,
-            'purchase_code' => $envato_market_purchase_code,
-            'addon_version' => $addon_version,
-            'addon'         => $addon,
-            'base_url'      => base_url(),
-        );
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        $output   = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        $json_response = json_decode($output);      
-
-        if ($httpcode != 200) {
+        if (empty($addon) || empty($purchase_code) || empty($signingKey)) {
+			 
+																	 
+																	   
+																			   
             return $this->CI->output
                 ->set_content_type('application/json')
-                ->set_status_header($httpcode)
+                ->set_status_header(400)
                 ->set_output(json_encode(array(
-                    'response' => $json_response->response,
+                    'response' => 'Please provide addon, signing key and purchase code.',
+                    false,
+                )));
+        }
+											
+													
+											 
+					  
+									  
+									 
+															
+											  
+									  
+										  
+		  
+													
+								   
+														  
+						
+
+        $this->CI->load->model('addons_model');
+        $addonRow = $this->CI->addons_model->getByShortName($addon);
+
+       
+        if (!$addonRow || empty($addonRow->product_id)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(404)
+                ->set_output(json_encode(array(
+                    'response' => 'Addon not found or missing product id.',
+                    false,
+                )));
+        }
+        $product_id = $addonRow->product_id;
+
+        $licenseKeyHash = $purchase_code;
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            $licenseKeyHash = hash('sha256', $purchase_code);
+        }
+        
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(array(
+                    'response' => 'Invalid license key hash format. Must be a 64-char SHA-256 hex.',
+                    false,
+                )));
+        }
+
+        $apiResult = $this->callLicenseApi(
+            'https://apigt.webfeb.com/api/v1/licenses/activate',
+            $licenseKeyHash,
+            $product_id,
+            $signingKey
+        );
+
+        if ($apiResult['httpcode'] != 200) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header($apiResult['httpcode'])
+                ->set_output(json_encode(array(
+                    'response' => $apiResult['error'],
                     true,
                 )));
-        } else {
+        }
+													 
 
-            $fname         = APPPATH . 'config/license.php';
-          
-            $new_token = $json_response->token;
-            $new_license = $json_response->license;
-            $pattern_token             = preg_quote('$config[\'addon_prod\']', '/');
-            $pattern_token             = "/^.*$pattern_token.*\$/m";
+        $json_response = $apiResult['body'];
+        $licenseId = isset($json_response->licenseId) ? $json_response->licenseId : '';
+										  
+					
+																				  
+																					  
+																						
+																																													
+						
+																					  
+														 
+										  
+					 
+																		
+																														
+				 
+			
+														
+														  
+			 
 
-            $pattern_version             = preg_quote('$config[\'addon_ver\']', '/');
-            $pattern_version             = "/^.*$pattern_version.*\$/m";
-            $addon_prod= $this->CI->config->item('addon_prod'); 
-            $addon_ver= $this->CI->config->item('addon_ver'); 
+        $block = array(
+            'productCode' => $product_id,
+            'short_name'  => !empty($addonRow->short_name) ? $addonRow->short_name : '',
+            'licenseKey'  => $licenseKeyHash,
+            'signingKey'  => $signingKey,
+            'licenseId'   => $licenseId,
+            'datetime'    => date('Y-m-d H:i:s'),
+        );
 
-            // Initialize the array of tokens, make sure to grab the existing ones if present
-            $array_production = isset($addon_prod) ? $addon_prod  : [];
-            $array_version = isset($addon_ver) ? $addon_ver  : [];
-            
-            if (empty($array_production) || !in_array($new_token, $array_production)) {
-                $contents = file_get_contents($fname);
-                $update_write_handle = fopen($fname, 'w') or die("can't open file");
-                if (preg_match_all($pattern_token, $contents, $matches)) {
-                    // Token isn't present, so we add it to the array
-                    $array_production[] = $new_token;
+        $this->CI->load->library('License_service');
+        $saved = $this->CI->license_service->saveAddonLicense($product_id, $block);
+									   
+					
+																				  
+																					  
+																						
+																																												  
+						
+																					  
+														 
+										  
+					 
+																		
+																														 
+				 
+			
+														
+														  
+			 
+			
+											  
+										 
 
-                    $quoted_array = array_map(function($value) {
-                        return "'" . $value . "'";
-                    }, $array_production);
-                    
-                    // Step 2: Use implode to join the array elements with a comma
-                    $imploded_string = implode(", ", $quoted_array);                  
-                    // Update the configuration line with the new array using var_export
-                    $file_contents = str_replace($matches[0], '$config[\'addon_prod\'] = array(' . $imploded_string . ');', $contents);
-                } else {
-                   // Ensure a newline at the end of the file content before appending
-                    if (substr($contents, -1) !== "\n") {
-                        $contents .= "\n";
-                    }
-                    // If the pattern is not found, append the new array
-                    $file_contents = $contents . '$config[\'addon_prod\'] = array(\'' . addslashes($new_token) . '\');';
-                }
-            
-                // Save the updated contents to the file
-                file_put_contents($fname, $file_contents);
-            }
+        if (!$saved) {
+									   
+										  
+																						 
+									 
+															   
+									 
+				  
 
-            if (empty($array_version) || !in_array($new_license, $array_version)) {
-                $contents = file_get_contents($fname);
-                $update_write_handle = fopen($fname, 'w') or die("can't open file");
-                if (preg_match_all($pattern_version, $contents, $matches)) {
-                    // Token isn't present, so we add it to the array
-                    $array_version[] = $new_license;
-
-                    $quoted_array = array_map(function($value) {
-                        return "'" . $value . "'";
-                    }, $array_version);
-                    
-                    // Step 2: Use implode to join the array elements with a comma
-                    $imploded_string = implode(", ", $quoted_array);                  
-                    // Update the configuration line with the new array using var_export
-                    $file_contents = str_replace($matches[0], '$config[\'addon_ver\'] = array(' . $imploded_string . ');', $contents);
-                } else {
-                   // Ensure a newline at the end of the file content before appending
-                    if (substr($contents, -1) !== "\n") {
-                        $contents .= "\n";
-                    }
-                    // If the pattern is not found, append the new array
-                    $file_contents = $contents . '$config[\'addon_ver\'] = array(\'' . addslashes($new_license) . '\');';
-                }
-            
-                // Save the updated contents to the file
-                file_put_contents($fname, $file_contents);
-            }
-            
-            // Close the file handle after use
-            fclose($update_write_handle);
-
-            if (!empty($json_response->products)) {
-                $updateArray = array();
-                $side_bar_Array = array();
-                // foreach ($json_response->products as $product_key => $product_value) {
-                $side_bar_Array[] = [
-                    'product_name' => $json_response->products,
-                    'is_active' => 1,
-                ];
-
-                $updateArray[] = [
-                    'short_name' => $json_response->products,
-                    'addon_ver' => $json_response->license,
-                    'addon_prod' => $json_response->token
-                ];
-                // }
-                // $this->CI->db->update_batch('addons', $updateArray, 'short_name');
-                // $this->CI->db->update_batch('sidebar_menus', $side_bar_Array, 'product_name');
-            }
-            $back  = $_SERVER['HTTP_REFERER'];
-            $array = array('status' => 1, 'back' => $back, 'message' => 'Thank you for registering your product');
+								  
+															 
+														   
+														 
+				  
+					
+																					 
+																								 
+			 
+											  
+																												  
             return $this->CI->output
                 ->set_content_type('application/json')
-                ->set_status_header($httpcode)
-                ->set_output(json_encode($array));
+                ->set_status_header(500)
+                ->set_output(json_encode(array(
+                    'response' => 'Failed to write license cache file',
+                    false
+                )));
+        }
+
+        $addon_status = $this->CI->config->item('addon_status');
+        if (!is_array($addon_status)) {
+            $addon_status = array();
+        }
+        // Store under short_name so addonchk() reads it directly (no DB lookup).
+        $status_key = !empty($addonRow->short_name) ? $addonRow->short_name : $product_id;
+        $addon_status[$status_key] = 'ACTIVE';
+        $this->CI->config->set_item('addon_status', $addon_status);
+
+        $back  = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+        $array = array('status' => 1, 'back' => $back, 'message' => 'Thank you for registering your product');
+        return $this->CI->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode($array));
+    }
+	
+	public function autoupdate()
+    {
+        if (!$this->CI->session->has_userdata('version')) {
+            $this->set_message('Internal error, Please concact to service provider.');
+            return false;
+        }
+        $version_dt      = $this->CI->session->userdata('version');
+        $updated_version = $version_dt['version'];
+        $dw_filename     = $version_dt['filename'];
+        $fd_name         = $this->filename($dw_filename);
+
+        $url         = $this->CI->enc_lib->dycrypt(DEBUG_SYSTEM_AUTO_UPDATE);
+        $file        = './temp/' . $dw_filename;
+        $shlk        = $this->CI->config->item('SHLK');
+        $app_version = $this->CI->customlib->getAppVersion();
+        $post_data   = [
+            'shlk'        => $shlk,
+            'site_url'    => site_url(),
+            'app_version' => $app_version,
+        ];
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_FOLLOWLOCATION => 1,
+            CURLOPT_CONNECTTIMEOUT => 50,
+            CURLOPT_POSTFIELDS     => $post_data,
+            CURLOPT_USERAGENT      => 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)',
+        ]);
+
+        $response = curl_exec($curl);
+        $info     = curl_getinfo($curl);
+        curl_close($curl);
+
+        $this->CI->session->unset_userdata('version');
+        if ($info['http_code'] == 0 && $info['header_size'] == 0) {
+            $this->set_error('Unable to connect updater, please try after sometime!');
+            return false;
+        }
+
+        if ($info['http_code'] == 200) {
+            if ($info['content_type'] == "application/zip") {
+//=========
+                file_put_contents($file, $response);
+                if (filesize($file) > 0) {
+                    $zip = new ZipArchive;
+                    $res = $zip->open('./temp/' . $dw_filename);
+                    if ($res === true) {
+                        $zip->extractTo('./temp/');
+                        $zip->close();
+                        if (!$this->import_dump($fd_name)) {
+                            unlink('./temp/' . $fd_name . '/db_import.sql');
+                            unlink('./temp/' . $dw_filename);
+                            $this->deleteDir('./temp/' . $fd_name);
+                            return false;
+                        }
+                        unlink('./temp/' . $fd_name . '/db_import.sql');
+                        $this->recurse_copy('./temp/' . $fd_name, '.');
+                        unlink('./temp/' . $dw_filename);
+                        $this->deleteDir('./temp/' . $fd_name);
+                        $this->set_message('Update successful!');
+                        return $updated_version;
+                    } else {
+
+                        $this->set_message('Update error! There is some issue occurred during update, please contact to support.');
+                        return false;
+                    }
+
+                }
+                //==================
+            } else if (is_string($response) && is_array(json_decode($response, true))) {
+                $result = json_decode($response);
+                $this->set_message($result->response);
+                return false;
+            } else {
+
+            }
+
+        } else {
+            $result = json_decode($response);
+            $this->set_error($result->response);
+            return false;
         }
     }
+	
+	public function import_dump($fd_name)
+    {
 
+        $filename = './temp/' . $fd_name . '/db_import.sql';
+        if (file_exists($filename)) {
+            $progressFilename = $filename . '_filepointer';
+            $errorFilename    = $filename . '_error';
+            $fp               = fopen($filename, 'r');
+            if (!$fp) {
+                $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
+                return false;
+            }
+            $queryCount = 0;
+            $query      = '';
 
+            $db_debug               = $this->CI->db->db_debug;
+            $this->CI->db->db_debug = false;
+            while ($line = fgets($fp, 1024000)) {
+                if (substr($line, 0, 2) == '--' or trim($line) == '') {
+                    continue;
+                }
+
+                $query .= $line;
+
+                if (substr(trim($query), -1) == ';') {
+
+                    if (!$this->CI->db->query($query)) {
+                        $db_error = $this->CI->db->error();
+                        $this->set_error($db_error['message']);
+                        return false;
+                    }
+                    $query = '';
+
+                    $queryCount++;
+                }
+
+            }
+            $this->CI->db->db_debug = $db_debug;
+            if (feof($fp)) {
+                return true;
+            } else {
+                $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
+                return false;
+            }
+        }
+        $this->set_error('Update error! There is some issue occurred during update, please contact to support.');
+        return false;
+
+    }
+	
+	public function set_error($error)
+    {
+        $this->errors[] = $error;
+        return $error;
+    }
+
+    public function set_message($message)
+    {
+        $this->messages[] = $message;
+        return $message;
+    }
+	
+	public function messages()
+    {
+        return $this->messages;
+    }
+
+    public function error()
+    {
+        return $this->errors;
+    }
+	
+	public function andapp_update() //================= activate android app smart school
+    {
+        $purchase_code = $this->CI->input->post('purchase_code');
+        $signingKey    = $this->CI->input->post('signing_key');
+
+        if (empty($signingKey) || empty($purchase_code)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(array(
+                    'response' => 'Please provide both signing key and purchase code.',
+                    false,
+                )));
+        }
+
+        $licenseKeyHash = $purchase_code;
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            $licenseKeyHash = hash('sha256', $purchase_code);
+        }
+
+        if (!preg_match('/^[a-f0-9]{64}$/i', $licenseKeyHash)) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(array(
+                    'response' => 'Invalid license key hash format. Must be a 64-char SHA-256 hex.',
+                    false,
+                )));
+        }
+
+        $productCode = $this->CI->config->item('android_product_code');
+
+        $apiResult = $this->callLicenseApi(
+            'https://apigt.webfeb.com/api/v1/licenses/activate',
+            $licenseKeyHash,
+            $productCode,
+            $signingKey
+        );
+
+        if ($apiResult['httpcode'] != 200) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header($apiResult['httpcode'])
+                ->set_output(json_encode(array(
+                    'response' => $apiResult['error'],
+                    true,
+                )));
+        }
+
+        $json_response = $apiResult['body'];
+        $licenseId = isset($json_response->licenseId) ? $json_response->licenseId : '';
+
+        $block = array(
+            'productCode' => $productCode,
+            'licenseKey'  => $licenseKeyHash,
+            'signingKey'  => $signingKey,
+            'licenseId'   => $licenseId,
+            'datetime'    => date('Y-m-d H:i:s'),
+        );
+
+        $this->CI->load->library('License_service');
+        $saved = $this->CI->license_service->saveAndroidLicense($block);
+
+        if (!$saved) {
+            return $this->CI->output
+                ->set_content_type('application/json')
+                ->set_status_header(500)
+                ->set_output(json_encode(array(
+                    'response' => 'Failed to write license cache file',
+                    false
+                )));
+        }
+
+        $this->CI->config->set_item('android_app_status', 'ACTIVE');
+
+        $array = array('status' => 1, 'message' => 'Thank you for registering your product');
+        return $this->CI->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode($array));
+    }
+	
 }

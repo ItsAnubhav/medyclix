@@ -154,7 +154,6 @@ class Cms_program_model extends MY_Model
                 $this->db->trans_rollback();
                 return false;
             } else {
-                //return $return_value;
             }
             return $insert_id;
         }
@@ -288,7 +287,6 @@ class Cms_program_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }       
     }
 

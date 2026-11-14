@@ -2,23 +2,21 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row"> 
+<div class="row"> 
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('pathology_test'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('pathology_test'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                            <a href="<?php echo base_url('admin/patient/department_indents/pathology'); ?>" class="btn btn-warning btn-sm"><i class="fas fa-clipboard-list"></i> Pending IPD Indents</a>
                             <?php if ($this->rbac->hasPrivilege('pathology_test', 'can_add')) {?>
-                                <button  class="btn btn-primary btn-sm pathology addtest" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Please wait.."><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_pathology_test'); ?></button>
+                                <button class="btn btn-primary btn-sm pathology addtest" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_pathology_test'); ?></button>
                             <?php }?>
                            
                         </div>
-                    </div><!-- /.box-header -->
+                    </div><!-- /.card-header -->
                     
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('pathology_test'); ?></div>
                         <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('pathology_test'); ?>">
@@ -38,9 +36,10 @@ $genderList      = $this->customlib->getGender();
                                     <?php   } 
                                         } 
                                     ?>                                  
-                                    <th class="text-right"><?php echo $this->lang->line('tax'); ?> (%)</th>
-                                    <th class="text-right"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('tax'); ?> (%)</th>
+                                    <th class="text-end"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -52,51 +51,42 @@ $genderList      = $this->customlib->getGender();
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <!-- dd -->
-<div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='edit_delete'>
-                        <?php if ($this->rbac->hasPrivilege('pathology_test', 'can_edit')) {?>
-                        <a href="#" data-target="#editModal" data-toggle="modal" title="" data-original-title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
-                    <?php }
-                    if ($this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
-                        ?>
-                        <a href="#" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
-                    <?php }?>
-                    </div>
+<div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('test_details'); ?></h5>
+                <div class="d-flex align-items-center gap-2">
+                    <div id='edit_delete' class="d-flex align-items-center gap-2"></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('test_details'); ?></h4>
-            </div>          
-            <div class="modal-body ptt10 pb0">
-
-            </div>           
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="addTestReportModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" id="modaltitle"></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="addTestReportModal" tabindex="-1" aria-labelledby="modaltitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modaltitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
-            <div class="scroll-area"> 
-                <div class="modal-body pt0 pb0">
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <div class="pup-scroll-area">
+                    <div class="modal-body"></div>
                 </div>
-            </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
@@ -116,11 +106,7 @@ $genderList      = $this->customlib->getGender();
 <script type="text/javascript">
    
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }    
 
     function printData(id) {
@@ -153,7 +139,7 @@ $genderList      = $this->customlib->getGender();
                cache: false,
                processData: false,
                  beforeSend: function() {
-              btn.button('loading');
+              btn.btnLoading();
          },
          success: function (data) {
              if (data.status == "fail") {
@@ -180,15 +166,15 @@ $genderList      = $this->customlib->getGender();
                         }
                         
              }
-              btn.button('reset');
+              btn.btnReset();
          },
              error: function(xhr) { // if error occured
              alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                btn.button('reset');
+                btn.btnReset();
               
               },
               complete: function() {
-                      btn.button('reset');
+                      btn.btnReset();
                  
              }
             });
@@ -200,7 +186,7 @@ $genderList      = $this->customlib->getGender();
     $(document).ready(function (e) {
         $("#formaddp").on('submit', (function (e) {
             e.preventDefault();
-            $("#formaddbtnp").button('loading');
+            $("#formaddbtnp").btnLoading();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/pathology/add',
                 type: "POST",
@@ -221,7 +207,7 @@ $genderList      = $this->customlib->getGender();
                          $('.ajaxlist').DataTable().ajax.reload();
 
                     }
-                    $("#formaddbtnp").button('reset');
+                    $("#formaddbtnp").btnReset();
                 },
                 error: function () {
                 }
@@ -234,9 +220,9 @@ $(document).on('click','.add-record',function(){
         var table = document.getElementById("tableID");
         var table_len = (table.rows.length);
         pathology_parmeter_rows++;
-        var div = "<td width='35%'><input type='hidden' name='total_rows[]' value='" + pathology_parmeter_rows + "'>  <input type='hidden' name='inserted_id_" + pathology_parmeter_rows + "' value='0'>  <select class='form-control select2 pathology_parmeter' name='parameter_name_"+ pathology_parmeter_rows +"' ><option value='<?php echo set_value('parameter_name'); ?>'><?php echo $this->lang->line('select'); ?></option><?php foreach ($parametername as $dkey => $dvalue) {?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["parameter_name"] ?></option><?php }?></select></td><td width='30%'><input type='text' name='reference_range_"+ pathology_parmeter_rows +"' readonly id='reference_range" + pathology_parmeter_rows + "' class='form-control reference_range'></td><td width='30%'><input type='text' name='patho_unit_"+ pathology_parmeter_rows +"' readonly id='patho_unit" + pathology_parmeter_rows + "' class='form-control patho_unit'></td>";
-       
-        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + pathology_parmeter_rows + "'>" + div + "<td><button type='button'  class='closebtn delete_row'><i class='fa fa-remove'></i></button></td></tr>";
+        var div = "<td width='35%'><input type='hidden' name='total_rows[]' value='" + pathology_parmeter_rows + "'>  <input type='hidden' name='inserted_id_" + pathology_parmeter_rows + "' value='0'>  <select class='form-control form-control-sm select2 pathology_parmeter' name='parameter_name_"+ pathology_parmeter_rows +"' ><option value='<?php echo set_value('parameter_name'); ?>'><?php echo $this->lang->line('select'); ?></option><?php foreach ($parametername as $dkey => $dvalue) {?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["parameter_name"] ?></option><?php }?></select></td><td width='30%'><input type='text' name='reference_range_"+ pathology_parmeter_rows +"' readonly id='reference_range" + pathology_parmeter_rows + "' class='form-control form-control-sm reference_range'></td><td width='30%'><input type='text' name='patho_unit_"+ pathology_parmeter_rows +"' readonly id='patho_unit" + pathology_parmeter_rows + "' class='form-control form-control-sm patho_unit'></td>";
+
+        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + pathology_parmeter_rows + "'>" + div + "<td class='text-center'><button type='button' class='btn btn-sm btn-light delete_row' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-times text-danger'></i></button></td></tr>";
         $('.select2').select2();
     
 });
@@ -418,9 +404,9 @@ $(document).on('click','.add-record',function(){
             success: function (data) {
               
                 $('#viewModal .modal-body').html(data.page);
-                $('#viewModal').modal('show');             
-                $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('pathology_test', 'can_edit')) {?><a href='#' class='edittest' data-record-id='"+id+"' data-loading-text='<i class= \"fa fa-circle-o-notch fa-spin\"></i>' data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
-    ?><a onclick='delete_record(" + id + ")'  href='#'  data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?>");
+                shModal('viewModal').show();             
+                $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('pathology_test', 'can_edit')) {?><a href='#' class='btn btn-sm btn-light edittest' data-record-id='"+id+"' data-loading-text='<i class= \"fa fa-circle-o-notch fa-spin\"></i>' data-bs-toggle='tooltip'  title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
+    ?><a onclick='delete_record(" + id + ")'  href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip'  title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?>");
                
             },
         });
@@ -428,17 +414,17 @@ $(document).on('click','.add-record',function(){
 
      $(document).on('click','.edittest',function(){
        var createModal=$('#addTestReportModal');
-       $('#viewModal').modal('hide');
+       shModal('viewModal').hide();
       var $this = $(this);
          var record_id=$this.data('recordId')
-       $this.button('loading');
+       $this.btnLoading();
       $.ajax({
           url: '<?php echo base_url(); ?>admin/pathology/editPathologyTest',
           type: "GET",
           data:{'id':record_id},
           dataType: 'json',
            beforeSend: function() {
-              $this.button('loading');
+              $this.btnLoading();
                 createModal.addClass('modal_loading');
           }, 
           success: function(res) {
@@ -457,16 +443,16 @@ $(document).on('click','.add-record',function(){
             getparameterdetails(pathology_parmeter_obj,post_parameter_value)
 
             });
-              $('#addTestReportModal').modal('show');
+              shModal('addTestReportModal').show();
                  createModal.removeClass('modal_loading');
           },
              error: function(xhr) { // if error occured
           alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
+             $this.btnReset();
                 createModal.removeClass('modal_loading');
          },
               complete: function() {
-                   $this.button('reset');
+                   $this.btnReset();
                    createModal.removeClass('modal_loading');
              }
       });
@@ -491,13 +477,13 @@ $(document).on('click','.add-record',function(){
  $(document).on('click','.addtest',function(){
        var createModal=$('#addTestReportModal');
       var $this = $(this);
-       $this.button('loading');
+       $this.btnLoading();
       $.ajax({
           url: '<?php echo base_url(); ?>admin/pathology/createPathologyTest',
           type: "POST",
           dataType: 'json',
            beforeSend: function() {
-              $this.button('loading');
+              $this.btnLoading();
                 createModal.addClass('modal_loading');
           },
           success: function(res) {
@@ -506,16 +492,16 @@ $(document).on('click','.add-record',function(){
 
               $('#addTestReportModal .modal-body').html(res.page);
               $('.select2').select2();
-              $('#addTestReportModal').modal('show');
+              shModal('addTestReportModal').show();
                  createModal.removeClass('modal_loading');
           },
              error: function(xhr) { // if error occured
           alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
+             $this.btnReset();
                 createModal.removeClass('modal_loading');
          },
               complete: function() {
-                   $this.button('reset');
+                   $this.btnReset();
                    createModal.removeClass('modal_loading');
              }
       });
@@ -534,7 +520,7 @@ $(document).on('click','.add-record',function(){
                 cache: false,
                 processData: false,
                  beforeSend: function() {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
           },
                 success: function (data) {
                     if (data.status == "fail") {
@@ -546,15 +532,15 @@ $(document).on('click','.add-record',function(){
                     } else {
                         successMsg(data.message);
                         $('.ajaxlist').DataTable().ajax.reload();
-                        $('#addTestReportModal').modal('hide');
+                        shModal('addTestReportModal').hide();
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 complete: function() {
-                 $("#formaddbtn").button('reset');
+                 $("#formaddbtn").btnReset();
              }
             });
         }));
@@ -572,11 +558,7 @@ $(document).on('click','.add-record',function(){
     }
 
     $(document).ready(function (e) {
-        $('#addTestReportModal,#viewModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('addTestReportModal', 'viewModal');
     });
 
 $(".modalbtnpatient").click(function(){

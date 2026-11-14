@@ -32,8 +32,8 @@ class Module extends Admin_Controller
 
     public function changeStatus()
     {
-        $short_code = $this->input->post("short_code");
-        $status     = $this->input->post("status");
+        $short_code = $this->input->post("short_code", TRUE);
+        $status     = $this->input->post("status", TRUE);
 
         if (!empty($short_code)) {
 
@@ -49,8 +49,8 @@ class Module extends Admin_Controller
     public function changePatientStatus()
     {
 
-        $id     = $this->input->post("id");
-        $status = $this->input->post("status");
+        $id     = $this->input->post("id", TRUE);
+        $status = $this->input->post("status", TRUE);
 
         if (!empty($id)) {
 

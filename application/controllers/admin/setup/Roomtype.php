@@ -20,7 +20,7 @@ class Roomtype extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'bed');
         $data['roomtype_list'] = $this->Roomtype_Model->roomtypelist();
         $this->load->view('layout/header');
-        $this->load->view('setup/Roomtype', $data);
+        $this->load->view('setup/roomtype', $data);
         $this->load->view('layout/footer');
     }
 

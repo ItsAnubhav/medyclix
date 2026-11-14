@@ -2,17 +2,14 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender_Patient();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('appointment_details'); ?></h3>
-                        <div class="box-tools pull-right">
+<div class="row g-0">
+    <div class="col-md-12">
+        <div class="card border-0 rounded-0">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0"><?php echo $this->lang->line('appointment_details'); ?></h5>
+                <div class="d-flex gap-2 align-items-center flex-wrap">
                             <?php if ($this->rbac->hasPrivilege('appointment', 'can_add')) {?>
-                                <a data-toggle="modal" data-backdrop="static" data-target="#myModal" class="btn btn-primary btn-sm addappointment"> <i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
+                                <a data-bs-toggle="modal"  data-bs-target="#myModal" class="btn btn-primary btn-sm addappointment"> <i class="fa fa-plus"></i> <?php echo $this->lang->line('add_appointment'); ?></a>
                             <?php }?>
                             <?php if ($this->rbac->hasPrivilege('visitor_book', 'can_view')) {?>
                                 <a  href="<?php echo base_url(); ?>admin/visitors" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('visitor_book'); ?></a>
@@ -20,22 +17,22 @@ $genderList      = $this->customlib->getGender_Patient();
                             <?php if ($this->rbac->hasPrivilege('phone_call_log', 'can_view')) {?>
                                 <a  href="<?php echo base_url(); ?>admin/generalcall" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('phone_call_log'); ?></a>
                             <?php }if (($this->rbac->hasPrivilege('postal_dispatch', 'can_view')) || ($this->rbac->hasPrivilege('postal_receive', 'can_view'))) {?>
-                                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" id="dropdownMenu1" data-toggle="dropdown">
+                                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" id="dropdownMenu1" data-bs-toggle="dropdown">
                                     <i class="fa fa-reorder"></i> <?php echo $this->lang->line('postal'); ?> <span class="caret"></span>
                                 </button>
-                                <ul class="dropdown-menu multi-level pull-right width300" role="menu" aria-labelledby="dropdownMenu1" id="easySelectable">
+                                <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="dropdownMenu1" id="easySelectable">
                                     <?php if ($this->rbac->hasPrivilege('postal_receive', 'can_view')) {?>
-                                        <li><a href="<?php echo base_url(); ?>admin/receive"><?php echo $this->lang->line('receive'); ?></a></li>
+                                        <li><a class="dropdown-item" href="<?php echo base_url(); ?>admin/receive"><?php echo $this->lang->line('receive'); ?></a></li>
                                     <?php }if ($this->rbac->hasPrivilege('postal_dispatch', 'can_view')) {?>
-                                        <li><a href="<?php echo base_url(); ?>admin/dispatch"><?php echo $this->lang->line('dispatch'); ?></a></li>
+                                        <li><a class="dropdown-item" href="<?php echo base_url(); ?>admin/dispatch"><?php echo $this->lang->line('dispatch'); ?></a></li>
                                     <?php }?>
                                 </ul>
                             <?php }if ($this->rbac->hasPrivilege('complain', 'can_view')) {?>
                                 <a  href="<?php echo base_url(); ?>admin/complaint" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('complain'); ?></a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body p-0">
                         <div class="download_label"><?php echo $this->lang->line('appointed_patient_list'); ?></div>
                         <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('appointment')." ".$this->lang->line('details'); ?>" >
                             <thead>
@@ -60,29 +57,27 @@ $genderList      = $this->customlib->getGender_Patient();
                                             } 
                                         }
                                     ?> 
-                                    <th class="text-right"><?php echo $this->lang->line('status'); ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('status'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
+                    </div><!-- /.card-body -->
+                </div><!-- /.card -->
+            </div><!-- /.col -->
+        </div><!-- /.row -->
 
-<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close pt4" data-dismiss="modal">&times;</button>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="row">
-                        <div class="col-sm-6 col-xs-6">
+                        <div class="col-sm-6 col-6">
                             <div class="form-group15">
                                 <div>
-                                    <select onchange="get_PatientDetails(this.value)" style="width:100%" class="form-control select2" name='' id="add_patient_report_id" >
+                                    <select onchange="get_PatientDetails(this.value)" class="w-100 form-control select2" name='' id="add_patient_report_id" >
                                         <option value="" selected><?php echo $this->lang->line('select_patient'); ?></option>
                                         <?php foreach ($patients as $dkey => $dvalue) {
     ?>
@@ -99,14 +94,20 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                                                             </div><!--./col-sm-8-->
                                                                         </div><!-- ./row -->
                                                                     </div>
-                        <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
+                        <form id="formadd" accept-charset="utf-8" method="post">
+                            <div class="pup-scroll-area">
                             <div class="modal-body pt0 pb0">
+                                <div class="sh-form-card">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                                    </div>
+                                <div class="p-2">
                                 <div class="row">
                                     <div class="col-lg-12 col-md-12 col-sm-12">
                                  <input type="hidden" name="patient_id" id="patientid" class="form-control">
                                     <div class="row">
                                         <div class="col-sm-3">
-                                              <div class="form-group">
+                                              <div class="mb-3">
                                                   <label><?php echo $this->lang->line('date'); ?></label>
                                                   <small class="req"> *</small>
                                                   <input type="text" id="date" name="date" class="form-control datetime">
@@ -114,7 +115,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                               </div>
                                         </div>
                                        <div class="col-sm-3">
-                                     <div class="form-group">
+                                     <div class="mb-3">
                              <label><?php echo $this->lang->line('patient_name'); ?></label>
                                      <small class="req">*</small>
                                <input type="text" name="patient_name" id="patient_name" class="form-control">
@@ -122,9 +123,9 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                                </div>
                                          </div>
                                              <div class="col-md-3">
-                                         <div class="form-group">
+                                         <div class="mb-3">
                                        <label> <?php echo $this->lang->line('gender'); ?></label>
-                                   <select class="form-control" style="width: 100%" id="gender" name="gender">
+                                   <select class="form-control w-100"  id="gender" name="gender">
                                     <option value=""><?php echo $this->lang->line('select') ?></option>
                                     <?php
                                         foreach ($genderList as $key => $value) {
@@ -141,13 +142,13 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                  </div>
                              </div>
                           <div class="col-sm-3">
-                            <div class="form-group">
+                            <div class="mb-3">
                          <label><?php echo $this->lang->line('email'); ?></label>
                           <input type="text" name="email" id="email"  class="form-control">
                                           </div>
                                      </div>
                                <div class="col-sm-3">
-                               <div class="form-group">
+                               <div class="mb-3">
                               <label><?php echo $this->lang->line('phone'); ?></label>
                             <small class="req">*</small>
                          <input type="text" name="mobileno" id="phone" class="form-control">
@@ -155,7 +156,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                               </div>
                                 </div>
                               <div class="col-sm-3">
-                                  <div class="form-group">
+                                  <div class="mb-3">
                                       <label><?php echo $this->lang->line('doctor'); ?></label>
                                       <small class="req"> *</small>
                                       <div>
@@ -163,7 +164,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                             if ((isset($disable_option)) && ($disable_option == true)) {
                                                 echo 'disabled';
                                             }
-                                            ?> name='doctor' id="doctorid" style="width:100%" >
+                                            ?> name='doctor' id="doctorid" class="w-100" >
                                                 <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select') ?></option>
                                                 <?php foreach ($doctors as $dkey => $dvalue) {
                                             ?>
@@ -180,10 +181,10 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                   </div>
                               </div>
                             <div class="col-sm-3">
-                                 <div class="form-group">
+                                 <div class="mb-3">
                                  <label><?php echo $this->lang->line('appointment_priority'); ?></label>
                                     <div>
-                                      <select class="form-control select2"  name='priority' style="width:100%" >
+                                      <select class="form-control select2 w-100"  name='priority' >
                                           <?php foreach ($appoint_priority_list as $dkey => $dvalue) { ?>
                                                 <option value="<?php echo $dvalue["id"]; ?>"> <?php echo $dvalue["appoint_priority"]; ?></option>
                                         <?php }?>
@@ -192,7 +193,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                 </div>
                             </div>
                           <div class="col-sm-3">
-                            <div class="form-group">
+                            <div class="mb-3">
                               <label for="appointment_status"><?php echo $this->lang->line('status'); ?></label>
                               <select name="appointment_status" class="form-control">
                               <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) {
@@ -205,7 +206,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                               <span class="text-danger"><?php echo form_error('appointment_status'); ?></span>
                         </div>
                           <div class="col-sm-8">
-                            <div class="form-group">
+                            <div class="mb-3">
                               <label for="message"><?php echo $this->lang->line('message'); ?></label>
                                 <small class="req">*</small>
                               <textarea name="message" id="note" class="form-control" ></textarea>
@@ -214,8 +215,8 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                           </div>
                            <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                             <div class="col-sm-4">
-                                 <div class="form-group">
-                                 <label><?php echo $this->lang->line('live') . " " . $this->lang->line('consultant') . " (" . $this->lang->line('on') . " " . $this->lang->line('video') . " " . $this->lang->line('conference') . ")"; ?></label>
+                                 <div class="mb-3">
+                                 <label><?php echo $this->lang->line('live_consultation_on_video_conference'); ?></label>
                                         <small class="req">*</small>
                                          <div>
                                              <select name="live_consult" id="live_consult" class="form-control">
@@ -240,10 +241,13 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                         </div><!--./row-->
                         </div><!--./col-md-12-->
                         </div><!--./row-->
+                        </div><!--./p-2-->
+                        </div><!--./sh-form-card-->
                         </div><!--./modal-body-->
-                        <div class="box-footer">
-                            <div class="pull-right">
-                            <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
+                        </div><!--./pup-scroll-area-->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                            <button type="submit" id="formaddbtn" class="btn btn-primary"><?php echo $this->lang->line('save'); ?></button>
                                                                             </div>
                                                                         </div>
                                                                     </form>
@@ -251,20 +255,20 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                                                             </div>
                                                         </div>
                                                         <!-- dd -->
-                                                        <div class="modal fade" id="myModaledit" role="dialog" aria-labelledby="myModalLabel">
-                                                            <div class="modal-dialog modal-lg" role="document">
-                                                                <div class="modal-content modal-media-content mx-2">
-                                                                    <div class="modal-header modal-media-header">
-                                                                        <button type="button" class="close pt4" data-dismiss="modal">&times;</button>
+                                                        <div class="modal fade sh-modal sh-modal-accent" id="myModaledit" tabindex="-1" aria-labelledby="myModaleditLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                         <div class="row">
-                                                                            <div class="col-sm-6 col-xs-8">
+                                                                            <div class="col-sm-6 col-8">
                                                                                 <div class="form-group15">
                                                                                             <div>
         <select onchange="get_ePatientDetails(this.value)" class="form-control select2"<?php
 if ($disable_option == true) {
     echo "disabled";
 }
-?> style="width:100%" id="eaddpatient_id" name='' >
+?> class="w-100" id="eaddpatient_id" name='' >
         <option value=""><?php echo $this->lang->line('select'); ?></option>
         <?php foreach ($patients as $dkey => $dvalue) {
     ?>
@@ -279,17 +283,23 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
         </div>
         <span class="text-danger"><?php echo form_error('refference'); ?></span>
         </div>
-        </div><!--./col-sm-6 col-xs-8 -->
+        </div><!--./col-sm-6 col-8 -->
         </div><!--./row-->
         </div>
-        <form id="formedit" accept-charset="utf-8"  method="post" class="ptt10">
+        <form id="formedit" accept-charset="utf-8"  method="post">
+        <div class="pup-scroll-area">
         <div class="modal-body pt0 pb0">
+            <div class="sh-form-card">
+                <div class="sh-card-header">
+                    <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                </div>
+            <div class="p-2">
             <div class="row">
                 <div class="col-lg-12 col-md-12 col-sm-12">
                     <div class="row">
                     <input type="hidden" name="id" id="id" value="<?php echo set_value('id'); ?>">
                     <div class="col-sm-3">
-                        <div class="form-group">
+                        <div class="mb-3">
                         <label><?php echo $this->lang->line('date') ?></label>
                         <small class="req"> *</small>
                         <input type="text" id="dates" name="date" class="form-control datetime" value="<?php echo set_value('dates'); ?>">
@@ -299,7 +309,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                 <input type="hidden" name="patient_id" id="edit_patient_id" class="form-control" value="<?php echo set_value('patient_id'); ?>">
                 <input type="hidden" name="appointment_no" id="edit_appointment_no" class="form-control" value="<?php echo set_value('patient_id'); ?>">
                 <div class="col-sm-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label><?php echo $this->lang->line('patient') . " " . $this->lang->line('name'); ?></label>
                     <small class="req"> *</small>
                     <input type="text" name="patient_name" id="edit_patient_name" class="form-control" value="<?php echo set_value('patient_name'); ?>">
@@ -307,7 +317,7 @@ if ((isset($patient_select)) && ($patient_select == $dvalue["id"])) {
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label> <?php echo $this->lang->line('gender'); ?></label>
                     <select class="form-control" id="edit_gender" name="gender">
                     <option value="<?php echo set_value('gender'); ?>"><?php echo $this->lang->line('select'); ?></option>
@@ -325,13 +335,13 @@ foreach ($genderList as $key => $value) {
                     </div>
                 </div>
                 <div class="col-sm-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label><?php echo $this->lang->line('email'); ?></label>
                     <input type="text" name="email" id="edit_email" class="form-control" value="<?php echo set_value('email'); ?>">
                     </div>
                 </div>
                 <div class="col-sm-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label><?php echo $this->lang->line('phone'); ?></label>
                     <small class="req">*</small>
                     <input type="text" name="mobileno" id="edit_phone" class="form-control" value="<?php echo set_value('mobileno'); ?>">
@@ -339,12 +349,12 @@ foreach ($genderList as $key => $value) {
                     </div>
                 </div>
                 <div class="col-sm-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label>
                     <?php echo $this->lang->line('doctor'); ?></label>
                     <small class="req"> *</small>
                     <div>
-                    <select class="form-control select2" name='doctor' style="width:100%" id="doctor" >
+                    <select class="form-control select2 w-100" name='doctor' id="doctor" >
                     <option value="<?php echo set_value('doctor'); ?>"><?php echo $this->lang->line('select') ?></option>
                     <?php foreach ($doctors as $dkey => $dvalue) {
     ?>
@@ -355,12 +365,12 @@ foreach ($genderList as $key => $value) {
                     </div>
                 </div>
                 <div class="col-sm-3">
-                    <div class="form-group">
+                    <div class="mb-3">
                     <label>
                     <?php echo $this->lang->line('appointment') . " " . $this->lang->line('priority'); ?></label>
                     
                         <div>
-                            <select class="form-control select2" name='priority' style="width:100%" id="edit_appoint_priority" >
+                            <select class="form-control select2 w-100" name='priority' id="edit_appoint_priority" >
                             <?php foreach ($appoint_priority_list as $dkey => $dvalue) {
     ?>
                             <option value="<?php echo $dvalue["id"]; ?>"><?php echo $dvalue["appoint_priority"]; ?></option>
@@ -370,7 +380,7 @@ foreach ($genderList as $key => $value) {
                     </div>
                 </div>
                       <div class="col-sm-3">
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="appointment_status"><?php echo $this->lang->line('status'); ?></label>
                                     <select name="appointment_status" class="form-control" id="appointment_status">
                                     <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) {
@@ -381,7 +391,7 @@ foreach ($genderList as $key => $value) {
                             </div>
                         </div>
                     <div class="col-sm-8">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label for="message"><?php echo $this->lang->line('message'); ?></label>
                             <small class="req"> *</small>
                             <textarea name="message" id="message" class="form-control"><?php echo set_value('message'); ?></textarea>
@@ -390,8 +400,8 @@ foreach ($genderList as $key => $value) {
                     </div>                        
                           <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                             <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('live') . " " . $this->lang->line('consultant') . " (" . $this->lang->line('on') . " " . $this->lang->line('video') . " " . $this->lang->line('conference') . ")"; ?></label>
+                                <div class="mb-3">
+                                    <label><?php echo $this->lang->line('live_consultation_on_video_conference'); ?></label>
                                       <select name="live_consult" id="edit_liveconsult" class="form-control">
                                     <?php foreach ($yesno_condition as $yesno_key => $yesno_value) {
                                                         ?>
@@ -411,28 +421,36 @@ foreach ($genderList as $key => $value) {
                       </div><!--./row-->
                       </div><!--./col-md-12-->
                       </div><!--./row-->
+                      </div><!--./p-2-->
+                      </div><!--./sh-form-card-->
 
                   </div><!--./modal-body-->
+                  </div><!--./pup-scroll-area-->
                   <div class="modal-footer">
-                  <div class="pull-right">
-                  <button type="submit" id="formeditbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info" ><?php echo $this->lang->line('save'); ?></button>
-                  </div>                  
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                  <button type="submit" id="formeditbtn" class="btn btn-primary"><?php echo $this->lang->line('save'); ?></button>
                   </div>
                   </form>
                   </div>
                   </div>
                   </div>
-                    <div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content modal-media-content mx-2">
-                        <div class="modal-header modal-media-header">
-                        <button type="button" class="close" data-toggle="tooltip" data-original-title="Close" data-dismiss="modal">&times;</button>
-                        <div class="modalicon">
-                        <div id="edit_delete"><a href="#" data-target="#editModal" data-toggle="tooltip" data-original-title="Edit"><i class="fa fa-pencil"></i></a><a href="#" data-toggle="tooltip" onclick="delete_recordById('<?php echo base_url(); ?>admin/appointment/delete/#', '<?php echo $this->lang->line('success_message') ?>')" data-original-title="Delete"><i class="fa fa-trash" ></i></a></div>
+                    <div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('appointment_information') ; ?></h5>
+                        <div class="d-flex align-items-center gap-2">
+                          <div id="edit_delete"><a href="#" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a><a href="#" data-bs-toggle="tooltip" onclick="if(window.currentAppointmentId){delete_record(window.currentAppointmentId);}return false;" title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a></div>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <h4 class="modal-title"><?php echo $this->lang->line('appointment') . " " . $this->lang->line('information'); ?></h4>
                         </div>
+                        <div class="pup-scroll-area">
                         <div class="modal-body pt0 pb0">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                        <div class="p-2">
                         <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">
                         <form id="view" accept-charset="utf-8" method="get" class="pt5 pb5">
@@ -472,7 +490,7 @@ foreach ($genderList as $key => $value) {
                                 <td width="35%"><span id="liveconsult"></span>
                                 </td>
                                 <th width="15%"><?php echo $this->lang->line('status'); ?></th>
-                                <td width="35%"><span id='status' style="text-transform: capitalize;"></span></td>
+                                <td width="35%"><span id='status' class="text-capitalize"></span></td>
                             </tr>
                         <?php } ?>
                             <tr>
@@ -488,8 +506,10 @@ foreach ($genderList as $key => $value) {
                         </form>
                         </div><!--./col-md-12-->
                         </div><!--./row-->
+                        </div><!--./p-2-->
+                        </div><!--./sh-form-card-->
                         </div>
-                        </div>
+                        </div><!--./pup-scroll-area-->
                     </div>
                   </div>
                                                         </div>
@@ -505,11 +525,8 @@ foreach ($genderList as $key => $value) {
                                                             });
 
                                                             function holdModal(modalId) {
-                                                                $('#' + modalId).modal({
-                                                                    backdrop: 'static',
-                                                                    keyboard: false,
-                                                                    show: true
-                                                                });
+                                                                var el = document.getElementById(modalId);
+                                                                if (el) bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false }).show();
                                                             }
 
                                                             (function ($) {
@@ -586,7 +603,7 @@ foreach ($genderList as $key => $value) {
                                                                 $("#formadd").on('submit', (function (e) {
                                                                   var did = $("#doctorid").val();
                                                                   $("#doctorinputid").val(did);
-                                                                    $("#formaddbtn").button('loading');
+                                                                    $("#formaddbtn").btnLoading();
                                                                     e.preventDefault();
                                                                     $.ajax({
                                                                         url: '<?php echo base_url(); ?>admin/appointment/add',
@@ -607,7 +624,7 @@ foreach ($genderList as $key => $value) {
                                                                                 successMsg(data.message);
                                                                                 window.location.reload(true);
                                                                             }
-                                                                            $("#formaddbtn").button('reset');
+                                                                            $("#formaddbtn").btnReset();
                                                                         },
                                                                         error: function () {
 
@@ -617,7 +634,7 @@ foreach ($genderList as $key => $value) {
                                                             });
                                                             $(document).ready(function (e) {
                                                                 $("#formedit").on('submit', (function (e) {
-                                                                    $("#formeditbtn").button('loading');
+                                                                    $("#formeditbtn").btnLoading();
                                                                     e.preventDefault();
                                                                     $.ajax({
                                                                         url: '<?php echo base_url(); ?>admin/appointment/update',
@@ -638,7 +655,7 @@ foreach ($genderList as $key => $value) {
                                                                                 successMsg(data.message);
                                                                                 window.location.reload(true);
                                                                             }
-                                                                            $("#formeditbtn").button('reset');
+                                                                            $("#formeditbtn").btnReset();
                                                                         },
                                                                         error: function () {
 
@@ -683,8 +700,8 @@ foreach ($genderList as $key => $value) {
                                                             }
 
                                                             function getRecord(id) {
-                                                                $("#viewModal").modal('hide');
-                                                                $('#myModaledit').modal({backdrop:'static'});
+                                                                shModal('viewModal').hide();
+                                                                shModal('myModaledit').show();
                                                                 $.ajax({
                                                                     url: '<?php echo base_url(); ?>admin/appointment/getDetailsAppointment',
                                                                     type: "POST",
@@ -735,7 +752,8 @@ foreach ($genderList as $key => $value) {
                                                             }
                                                             
                                                             function viewDetail(id) {
-                                                                $('#viewModal').modal({backdrop: 'static'});
+                                                                window.currentAppointmentId = id;
+                                                                shModal('viewModal').show();
                                                                 $.ajax({
                                                                     url: '<?php echo base_url(); ?>admin/appointment/getDetailsAppointment',
                                                                     type: "POST",
@@ -768,15 +786,15 @@ foreach ($genderList as $key => $value) {
 
                                                                         var label = "";
                                                                         if (data.appointment_status == "approved") {
-                                                                            var label = "class='label label-success'";
+                                                                            var label = "class='badge bg-success'";
                                                                         } else if (data.appointment_status == "pending") {
-                                                                            var label = "class='label label-warning'";
+                                                                            var label = "class='badge bg-warning'";
                                                                         } else if (data.appointment_status == "cancel") {
-                                                                            var label = "class='label label-danger'";
+                                                                            var label = "class='badge bg-danger'";
                                                                         }
 
-                                                                        $("#status").html("<small " + label + " >" + data.appointment_status + "</small>");
-                                                                        $("#edit_delete").html("<?php if ($this->rbac->hasPrivilege('appointment', 'can_edit')) {?><a href='#'' onclick='getRecord(" + id + ")' data-target='#editModal' data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('appointment', 'can_delete')) {?><a href='#' data-toggle='tooltip'  onclick='delete_record(" + id + ")' data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?>");
+                                                                        $("#status").html("<span " + label + ">" + data.appointment_status + "</span>");
+                                                                        $("#edit_delete").html("<?php if ($this->rbac->hasPrivilege('appointment', 'can_edit')) {?><a href='#' onclick='getRecord(" + id + ")' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('appointment', 'can_delete')) {?><a href='#' data-bs-toggle='tooltip' onclick='delete_record(" + id + ")' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php }?>");
                                                                     },
                                                                 });
                                                             }
@@ -821,6 +839,7 @@ foreach ($genderList as $key => $value) {
     'use strict';
     $(document).ready(function () {
         initDatatable('ajaxlist','admin/appointment/getappointmentdatatable');
+        modal_click_disabled('myModal', 'myModaledit', 'viewModal');
     });
 } ( jQuery ) )
 </script>

@@ -4,6 +4,10 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 class Toyyibpay extends Patient_Controller {
+	public $patient_data;
+	public $pay_method;
+	public $setting;
+
 
     public $api_config = "";
 
@@ -70,7 +74,7 @@ class Toyyibpay extends Patient_Controller {
 
               $curl = curl_init();
               curl_setopt($curl, CURLOPT_POST, 1);
-              curl_setopt($curl, CURLOPT_URL, 'https://dev.toyyibpay.com/index.php/api/createBill');  
+              curl_setopt($curl, CURLOPT_URL, 'https://toyyibpay.com/index.php/api/createBill');  
               curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
               curl_setopt($curl, CURLOPT_POSTFIELDS, $payment_data);
 
@@ -138,7 +142,7 @@ class Toyyibpay extends Patient_Controller {
                     $this->load->view('patient/payment/toyyibpay/index', $data);
                     $this->load->view("layout/patient/footer");
                 }else{
-                  $url = "https://dev.toyyibpay.com/".$obj[0]->BillCode;
+                  $url = "https://toyyibpay.com/".$obj[0]->BillCode;
                     header("Location: $url");
                 }
             }

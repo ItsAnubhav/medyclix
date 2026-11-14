@@ -6,6 +6,11 @@ if (!defined('BASEPATH')) {
 
 class Zoom_conference extends Admin_Controller
 {
+	public $conference_setting;
+	public $opd_ipd;
+	public $search_type;
+	public $time_format;
+
     public function __construct()
     {
         parent::__construct();
@@ -75,19 +80,20 @@ class Zoom_conference extends Admin_Controller
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
            
                 $data_insert = array(
-                'id'              => $this->input->post('id'),
-                'zoom_api_key'    => $this->input->post('zoom_api_key'),
-                'zoom_api_secret' => $this->input->post('zoom_api_secret'),
-                'use_doctor_api'  => $this->input->post('use_doctor_api'),
-                'use_zoom_app'    => $this->input->post('use_zoom_app'),
-                'opd_duration'    => $this->input->post('opd_duration'),
-                'ipd_duration'    => $this->input->post('ipd_duration'),
+                'id'              => $this->input->post('id', TRUE),
+                'zoom_api_key'    => $this->input->post('zoom_api_key', TRUE),
+                'zoom_api_secret' => $this->input->post('zoom_api_secret', TRUE),
+                'use_doctor_api'  => $this->input->post('use_doctor_api', TRUE),
+                'use_zoom_app'    => $this->input->post('use_zoom_app', TRUE),
+                'opd_duration'    => $this->input->post('opd_duration', TRUE),
+                'ipd_duration'    => $this->input->post('ipd_duration', TRUE),
             );
             $this->setting_model->addzoomdetails($data_insert);
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/zoom_conference');         
 		} 
 
+            $data['module'] = 'live_consultation';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/conference/index', $data);
             $this->load->view('layout/footer', $data);
@@ -124,7 +130,7 @@ class Zoom_conference extends Admin_Controller
         }
 
         $this->load->library('zoom_api', $params);
-        $oAuthURL = $this->zoom_api->token($_GET['code']);
+        $oAuthURL = $this->zoom_api->token($this->input->get('code', TRUE));
 
         if ($oAuthURL['status']) {
             $this->session->unset_userdata('zoom_access_token');
@@ -137,8 +143,8 @@ class Zoom_conference extends Admin_Controller
     
     public function getopdipd()
     {
-        $opd_ipd    = $this->input->post('opdipd_group');
-        $patient_id = $this->input->post('patient_id');
+        $opd_ipd    = $this->input->post('opdipd_group', TRUE);
+        $patient_id = $this->input->post('patient_id', TRUE);
 
         if ($opd_ipd == 'opd') {
             $result = $this->patient_model->getOpd($patient_id);
@@ -187,7 +193,8 @@ This Function used for Live Consultation Page
         }
         $data["doctor_select"]  = $doctorid;
         $data["disable_option"] = $disable_option;
-        $this->load->view('layout/header');
+        $data['module'] = 'live_consultation';
+        $this->load->view('layout/header', $data);
         if ($role->id == 3) {
             $this->load->view('admin/conference/consult', $data);
         } else {
@@ -195,7 +202,7 @@ This Function used for Live Consultation Page
             $data['roles'] = $roles;
             $this->load->view('admin/conference/staffconsult', $data);
         }
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
 /*
@@ -235,49 +242,48 @@ This function used for get Consultation record For datatable
                     $selected2 = "";
                 }
                 $action_delete = "";
-                $form          = "<form class='chgstatus_form' method='POST' action='" . site_url() . "admin/zoom_conference/chgstatus' ><input type='hidden' name='conference_id' value='$value->id'><select class='form-control w-120-px chgstatus_dropdown' name='chg_status'><option value='0' $selected0  >" . $this->lang->line('awaited') . "</option><option value='1' $selected1 >" . $this->lang->line('cancelled') . "</option><option value='2' $selected2 >" . $this->lang->line('finished') . "</option></select></form>";
+                $form          = "<form class='chgstatus_form' method='POST' action='" . site_url() . "admin/zoom_conference/chgstatus' ><input type='hidden' name='conference_id' value='" . (int)$value->id . "'><select class='form-control w-120-px chgstatus_dropdown' name='chg_status'><option value='0' $selected0  >" . $this->lang->line('awaited') . "</option><option value='1' $selected1 >" . $this->lang->line('cancelled') . "</option><option value='2' $selected2 >" . $this->lang->line('finished') . "</option></select></form>";
 
                 if ($value->status == 0) {
-                    $action_button = "<a href='#'  data-target='#modal-chkstatus' data-toggle='modal' class='btn btn-xs label-success starsuccessbtn' data-id=" . $value->id . " ><span class=' font-w-normal'><i class='fa fa-video-camera'></i> " . $this->lang->line('start') . "</span></a>";
+                    $action_button = "<a href='#' class='btn btn-info sh-btn-start js-open-livestatus' data-id='" . (int)$value->id . "'><i class='fa fa-video-camera me-1'></i>" . $this->lang->line('start') . "</a>";
                 } else {
                     $action_button = "";
                 }
-                
+
                 if ($value->api_type != 'self') {
-                    if ($this->rbac->hasPrivilege('live_consultation', 'can_delete')) {                     
-                        $action_delete = "<a href='#' onclick=delete_recordById('admin/zoom_conference/delete/" . $value->id . "/" . $return_response->id . "')  data-target='' data-toggle='tooltip' title=" . $this->lang->line('delete') . " class='btn btn-default btn-xs' ><i class='fa fa-remove'></i></a>";
+                    if ($this->rbac->hasPrivilege('live_consultation', 'can_delete')) {
+                        $action_delete = "<a href='#' onclick=\"delete_recordById('admin/zoom_conference/delete/" . (int)$value->id . "/" . (int)$return_response->id . "'); return false;\" data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "' class='btn btn-sm btn-outline-danger'><i class='fa fa-trash'></i></a>";
                     }
                 } else {
                     $action_delete = "";
                 }
-				
-                $name        = ($value->create_for_surname == "") ? $value->create_for_name : $value->create_for_name . " " . $value->create_for_surname;
-                $created_for = $name . " (" . $value->create_for_role_name . ": " . $value->create_for_employee_id . ")";
 
-                $pname        = ($value->patient_name == "") ? $value->patient_name : $value->patient_name;
-                $patient_name = $pname . " (" . $value->pid . ")";
+                $name        = ($value->create_for_surname == "") ? html_escape($value->create_for_name) : html_escape($value->create_for_name) . " " . html_escape($value->create_for_surname);
+                $created_for = $name . " (" . html_escape($value->create_for_role_name) . ": " . html_escape($value->create_for_employee_id) . ")";
+
+                $patient_name = html_escape($value->patient_name) . " (" . html_escape($value->pid) . ")";
 
                 //==============================
-                $row[] = $value->title;
-                $row[] = $value->description;
+                $row[] = html_escape($value->title);
+                $row[] = html_escape($value->description);
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
 
                 if($value->api_type!=""){
                     $row[] = $this->lang->line($value->api_type);
                 }   else{
                     $row[] = "";
-                } 
-                
+                }
+
                 if ($value->created_id == $logged_staff_id) {
                     $row[] = $this->lang->line('self');
                 } else {
-                    $name  = ($value->create_by_surname == "") ? $value->create_by_name : $value->create_by_name . " " . $value->create_by_surname;
-                    $row[] = $name . " (" . $value->create_by_role_name . ": " . $value->create_by_employee_id . ")";
+                    $name  = ($value->create_by_surname == "") ? html_escape($value->create_by_name) : html_escape($value->create_by_name) . " " . html_escape($value->create_by_surname);
+                    $row[] = $name . " (" . html_escape($value->create_by_role_name) . ": " . html_escape($value->create_by_employee_id) . ")";
                 }
                 $row[] = $created_for;
                 $row[] = $patient_name;
                 $row[] = $form;
-                $row[] = $action_button . $action_delete;
+                $row[] = "<div class='d-flex align-items-center justify-content-end gap-1'>" . $action_button . $action_delete . "</div>";
                 //====================
 
                 $dt_data[] = $row;
@@ -538,8 +544,8 @@ This function used for get Consultation record For datatable
             } else {
                 $insert_array = array(
                     'id'              => $this->customlib->getStaffID(),
-                    'zoom_api_key'    => $this->input->post('zoom_api_key'),
-                    'zoom_api_secret' => $this->input->post('zoom_api_secret'),
+                    'zoom_api_key'    => $this->input->post('zoom_api_key', TRUE),
+                    'zoom_api_secret' => $this->input->post('zoom_api_secret', TRUE),
                 );
                 $insert_id = $this->staff_model->update($insert_array);
                 $response  = array('status' => 1, 'message' => $this->lang->line('success_message'));
@@ -601,34 +607,34 @@ This function used for get Consultation record For datatable
                 'zoom_api_secret' => "",
             );
             $this->load->library('zoom_api', $params);
-            $select_group = $this->input->post('select_group');
+            $select_group = $this->input->post('select_group', TRUE);
             if ($select_group == 'opd') {
-                $visitid = $this->input->post('visit_id');
+                $visitid = $this->input->post('visit_id', TRUE);
             } else {
                 $visitid = null;
             }
 
             if ($select_group == 'ipd') {
-                $ipdid = $this->input->post('opdipd_id');
+                $ipdid = $this->input->post('opdipd_id', TRUE);
             } else {
                 $ipdid = null;
             }
 
             $insert_array = array(
-                'staff_id'         => $this->input->post('staff_id'),
-                'patient_id'       => $this->input->post('patient_id'),
-                'title'            => $this->input->post('title'),
+                'staff_id'         => $this->input->post('staff_id', TRUE),
+                'patient_id'       => $this->input->post('patient_id', TRUE),
+                'title'            => $this->input->post('title', TRUE),
                 'visit_details_id' => $visitid,
                 'ipd_id'           => $ipdid,
-                'date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format),
-                'duration'         => $this->input->post('duration'),
-                'password'         => $this->input->post('password'),
+                'date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format),
+                'duration'         => $this->input->post('duration', TRUE),
+                'password'         => $this->input->post('password', TRUE),
                 'created_id'       => $this->customlib->getStaffID(),
                 'api_type'         => $api_type,
                 'purpose'          => 'consult',
-                'host_video'       => $this->input->post('host_video'),
-                'client_video'     => $this->input->post('client_video'),
-                'description'      => $this->input->post('description'),
+                'host_video'       => $this->input->post('host_video', TRUE),
+                'client_video'     => $this->input->post('client_video', TRUE),
+                'description'      => $this->input->post('description', TRUE),
                 'timezone'         => $this->customlib->getTimeZone(),
             );
 
@@ -638,7 +644,7 @@ This function used for get Consultation record For datatable
                 if (isset($response['data'])) {
                     $insert_array['return_response'] = json_encode($response['data']);
                     $conferenceid                    = $this->conference_model->add($insert_array);
-                    $sender_details                  = array('patient_id' => $this->input->post('patient_id'), 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('mobileno'), 'email' => $this->input->post('email'));
+                    $sender_details                  = array('patient_id' => $this->input->post('patient_id', TRUE), 'conference_id' => $conferenceid, 'contact_no' => $this->input->post('mobileno', TRUE), 'email' => $this->input->post('email', TRUE));
                     $this->mailsmsconf->mailsms('live_consult', $sender_details);
                     $response = array('status' => 1, 'message' => $this->lang->line('success_message'));
                 } else {
@@ -649,17 +655,17 @@ This function used for get Consultation record For datatable
                 $response = array('status' => 0, 'error' => array('Something went wrong.'));
             }
 
-            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('staff_id'));
-            
+            $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('staff_id', TRUE));
+
             if ($select_group == $this->lang->line('opd')) {
 
                 $event_data = array(
-                    'consultation_title'            => $this->input->post('title'),
-                    'patient_id'                    => $this->input->post('patient_id'),
-                    'consultation_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format),
-                    'doctor_id'                     => $this->input->post('staff_id'),
+                    'consultation_title'            => $this->input->post('title', TRUE),
+                    'patient_id'                    => $this->input->post('patient_id', TRUE),
+                    'consultation_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format),
+                    'doctor_id'                     => $this->input->post('staff_id', TRUE),
                     'doctor_name'                   => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
-                    'consultation_duration_minutes' => $this->input->post('duration'),
+                    'consultation_duration_minutes' => $this->input->post('duration', TRUE),
                     'opd_no'                        => $this->customlib->getSessionPrefixByType('opd_no') . $ipdid,
                     'checkup_id'                    => $this->customlib->getSessionPrefixByType('checkup_id') . $visitid,
                 );
@@ -667,29 +673,29 @@ This function used for get Consultation record For datatable
                 $this->system_notification->send_system_notification('live_opd_consultation_add', $event_data);
             } else if ($select_group == $this->lang->line('ipd')) {
                 $event_data = array(
-                    'consultation_title'            => $this->input->post('title'),
-                    'patient_id'                    => $this->input->post('patient_id'),
-                    'consultation_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format),
-                    'doctor_id'                     => $this->input->post('staff_id'),
+                    'consultation_title'            => $this->input->post('title', TRUE),
+                    'patient_id'                    => $this->input->post('patient_id', TRUE),
+                    'consultation_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format),
+                    'doctor_id'                     => $this->input->post('staff_id', TRUE),
                     'doctor_name'                   => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
-                    'consultation_duration_minutes' => $this->input->post('duration'),
+                    'consultation_duration_minutes' => $this->input->post('duration', TRUE),
                     'ipd_no'                        => $this->customlib->getSessionPrefixByType('ipd_no') . $ipdid,
                 );
 
                 $this->system_notification->send_system_notification('live_ipd_consultation_add', $event_data);
 
             } else {
-				
-                $date   =   $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format);
+
+                $date   =   $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format);
                 $date   =   $this->customlib->YYYYMMDDHisTodateFormat($date, $this->customlib->getHospitalTimeFormat());
 
                 $event_data = array(
-                    'consultation_title'            => $this->input->post('title'),
-                    'patient_id'                    => $this->input->post('patient_id'),
-                    'consultation_date'             => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post('date'), $this->time_format),
-                    'doctor_id'                     => $this->input->post('staff_id'),
+                    'consultation_title'            => $this->input->post('title', TRUE),
+                    'patient_id'                    => $this->input->post('patient_id', TRUE),
+                    'consultation_date'             => $this->customlib->YYYYMMDDHisTodateFormat($this->input->post('date', TRUE), $this->time_format),
+                    'doctor_id'                     => $this->input->post('staff_id', TRUE),
                     'doctor_name'                   => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
-                    'consultation_duration_minutes' => $this->input->post('duration'),
+                    'consultation_duration_minutes' => $this->input->post('duration', TRUE),
                 );
 
                 $this->system_notification->send_system_notification('patient_consultation_add', $event_data);
@@ -717,9 +723,10 @@ This Function is used for get Live meeting
         $data['role']            = $role;
         $data['logged_staff_id'] = $this->customlib->getStaffID();
         $data['staffList']       = $this->staff_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'live_consultation';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/conference/meeting', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
 /*
@@ -784,28 +791,28 @@ This Function is used for get Live meeting for datatable list
                         $label_type    = 'label-success';
                     }
 
-                    $action_button = "<a href='#' data-target='#modal-chkstatus' data-toggle='modal' class='btn btn-xs label-success starsuccessbtn' data-id=" . $value->id . " ><span class='font-w-normal' " . $label_type . "'><i class='fa fa-video-camera'></i> " . $label_display . "</span></a>";
+                    $action_button = "<a href='#' class='btn btn-info sh-btn-start js-open-livestatus' data-id='" . (int)$value->id . "'><i class='fa fa-video-camera me-1'></i>" . $label_display . "</a>";
                 } else {
                     $action_button = "";
                 }
                 $action_delete = "";
                 if ($value->created_id == $logged_staff_id) {
                     if ($this->rbac->hasPrivilege('live_meeting', 'can_delete')) {
-                        $action_delete = "<a href='#' onclick=delete_recordById('admin/zoom_conference/delete/" . $value->id . "/" . $return_response->id . "')  data-target='' data-toggle='tooltip' title=" . $this->lang->line('delete') . " class='btn btn-default btn-xs' ><i class='fa fa-remove'></i></a>";
+                        $action_delete = "<a href='#' onclick=\"delete_recordById('admin/zoom_conference/delete/" . (int)$value->id . "/" . (int)$return_response->id . "'); return false;\" data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "' class='btn btn-sm btn-outline-danger'><i class='fa fa-trash'></i></a>";
                     }
                 } else {
                     $action_delete = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                 }
                 //==============================
-                $row[] = $value->title;
-                $row[] = $value->description;
+                $row[] = html_escape($value->title);
+                $row[] = html_escape($value->description);
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
-                $row[] = $value->duration;
+                $row[] = html_escape($value->duration);
                 $row[] = $this->lang->line($value->api_type);
                 if ($value->created_id == $logged_staff_id) {
                     $row[] = $this->lang->line('self');
                 } else {
-                    $row[] = $value->create_by_name . " " . $value->create_by_surname . " (" . $value->create_by_employee_id .")";
+                    $row[] = html_escape($value->create_by_name) . " " . html_escape($value->create_by_surname) . " (" . html_escape($value->create_by_employee_id) . ")";
                 }
                 $row[] = $form;
                 $row[] = $action_button . ' ' . $action_delete;
@@ -866,21 +873,21 @@ This Function is used for add meeting for staff
             $this->load->library('zoom_api', $params);
             //============
             $insert_array = array(
-                'title'        => $this->input->post('title'),
-                'date'         => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format),
-                'duration'     => $this->input->post('duration'),
-                'password'     => $this->input->post('password'),
+                'title'        => $this->input->post('title', TRUE),
+                'date'         => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format),
+                'duration'     => $this->input->post('duration', TRUE),
+                'password'     => $this->input->post('password', TRUE),
                 'created_id'   => $this->customlib->getStaffID(),
                 'api_type'     => $api_type,
-                'host_video'   => $this->input->post('host_video'),
-                'client_video' => $this->input->post('client_video'),
-                'description'  => $this->input->post('description'),
+                'host_video'   => $this->input->post('host_video', TRUE),
+                'client_video' => $this->input->post('client_video', TRUE),
+                'description'  => $this->input->post('description', TRUE),
                 'purpose'      => 'meeting',
                 'timezone'     => $this->customlib->getTimeZone(),
             );
 
             $response = $this->zoom_api->createAMeeting($insert_array);
-            $staff    = $this->input->post('staff[]');
+            $staff    = $this->input->post('staff[]', TRUE);
 
             if ($response['status']) {
                 if (isset($response['data'])) {
@@ -892,9 +899,9 @@ This Function is used for add meeting for staff
                         $sender_details = array();
                         foreach ($staff_mail_sms_list as $staff_mail_sms_list_key => $staff_mail_sms_list_value) {
                             $sender_details[] = array(
-                                'title'       => $this->input->post('title'),
-                                'date'        => $this->input->post('date'),
-                                'duration'    => $this->input->post('duration'),
+                                'title'       => $this->input->post('title', TRUE),
+                                'date'        => $this->input->post('date', TRUE),
+                                'duration'    => $this->input->post('duration', TRUE),
                                 'employee_id' => $staff_mail_sms_list_value->employee_id,
                                 'department'  => $staff_mail_sms_list_value->department,
                                 'designation' => $staff_mail_sms_list_value->designation,
@@ -916,9 +923,9 @@ This Function is used for add meeting for staff
                     }
 
                     $event_data = array(
-                        'meeting_title'            => $this->input->post('title'),
-                        'meeting_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'), $this->time_format),
-                        'meeting_duration_minutes' => $this->input->post('duration'),
+                        'meeting_title'            => $this->input->post('title', TRUE),
+                        'meeting_date'             => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE), $this->time_format),
+                        'meeting_duration_minutes' => $this->input->post('duration', TRUE),
                         'staff_list'               => $staff_list_array,
                     );
 
@@ -956,9 +963,9 @@ This Function is used for check the status of Live Consultation
             $response = array('status' => 0, 'error' => $data);
         } else {
             $insert_array = array(
-                'status' => $this->input->post('chg_status'),
+                'status' => $this->input->post('chg_status', TRUE),
             );
-            $insert_id = $this->conference_model->update($this->input->post('conference_id'), $insert_array);
+            $insert_id = $this->conference_model->update($this->input->post('conference_id', TRUE), $insert_array);
             $response  = array('status' => 1, 'message' => $this->lang->line('update_message'));
         }
         redirect("admin/zoom_conference/consult");
@@ -977,9 +984,9 @@ This Function is used for check the status of Live Consultation
             $response = array('status' => 0, 'error' => $data);
         } else {
             $insert_array = array(
-                'status' => $this->input->post('chg_status'),
+                'status' => $this->input->post('chg_status', TRUE),
             );
-            $insert_id = $this->conference_model->update($this->input->post('conference_id'), $insert_array);
+            $insert_id = $this->conference_model->update($this->input->post('conference_id', TRUE), $insert_array);
             $response  = array('status' => 1, 'message' => $this->lang->line('update_message'));
         }
         echo json_encode($response);
@@ -1001,9 +1008,9 @@ This Function is used for check the status of Live Meeting
             $response = array('status' => 0, 'error' => $data);
         } else {
             $insert_array = array(
-                'status' => $this->input->post('chg_status'),
+                'status' => $this->input->post('chg_status', TRUE),
             );
-            $insert_id = $this->conference_model->update($this->input->post('conference_id'), $insert_array);
+            $insert_id = $this->conference_model->update($this->input->post('conference_id', TRUE), $insert_array);
             $response  = array('status' => 1, 'message' => $this->lang->line('update_message'));
         }
         redirect("admin/zoom_conference/meeting");
@@ -1025,9 +1032,10 @@ This Function is used for check the status of Live Meeting
         $data['searchlist']      = $this->search_type;
         $data['meetingList']     = $this->conferencehistory_model->getmeeting();
         $data['stafflist']       = $this->staff_model->getall('', 1);
-        $this->load->view('layout/header');
+        $data['module'] = 'live_consultation';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/conference/meeting_report', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function consult_report()
@@ -1046,16 +1054,17 @@ This Function is used for check the status of Live Meeting
         $data["searchlist"]      = $this->search_type;
         $data['consultList']     = $this->conferencehistory_model->getconsult();
         $data['stafflist']       = $this->staff_model->getall('', 1);
-        $this->load->view('layout/header');
+        $data['module'] = 'live_consultation';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/conference/consult_report', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function liveconsultationreport()
     {
-        $search['search_type'] = $this->input->post('search_type');
-        $search['date_from']   = $this->input->post('date_from');
-        $search['date_to']     = $this->input->post('date_to');
+        $search['search_type'] = $this->input->post('search_type', TRUE);
+        $search['date_from']   = $this->input->post('date_from', TRUE);
+        $search['date_to']     = $this->input->post('date_to', TRUE);
         $start_date            = '';
         $end_date              = '';
         $fields                = $this->customfield_model->get_custom_fields('ipd', '', '', 1);
@@ -1075,8 +1084,8 @@ This Function is used for check the status of Live Meeting
             $data['end_date']   = $dates['to_date'];
         }
 
-        $data['created_by']  = $this->input->post('created_by');
-        $data['module_type'] = $this->input->post('select_module');
+        $data['created_by']  = $this->input->post('created_by', TRUE);
+        $data['module_type'] = $this->input->post('select_module', TRUE);
         $dt_response = $this->conference_model->getliveconsultreports($data);
         
         $dt_response = json_decode($dt_response);
@@ -1086,14 +1095,14 @@ This Function is used for check the status of Live Meeting
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview'>";
-                $action = "<button type='button' class='btn btn-default btn-xs viewer-list pull-right' id='load'  data-recordid='" . $value->id . "' title= '" . $this->lang->line('join') . "' data-loading-text='looading..'><i class='fa fa-list'></i></button>";
+                $action = "<button type='button' class='btn btn-default btn-xs viewer-list pull-right' id='load'  data-recordid='" . (int)$value->id . "' title= '" . $this->lang->line('join') . "' data-loading-text='looading..'><i class='fa fa-list'></i></button>";
 
                 $action .= "</div'>";
                 $staff_id = $this->customlib->getStaffID();
                 if ($value->created_id == $staff_id) {
                     $created_by = $this->lang->line('self');
                 } else {
-                    $created_by = $value->create_by_name . " " . $value->create_by_surname . "  (" . $value->create_by_employee_id.")";
+                    $created_by = html_escape($value->create_by_name) . " " . html_escape($value->create_by_surname) . "  (" . html_escape($value->create_by_employee_id) . ")";
                 }
 
                 $module_type = '';
@@ -1106,7 +1115,7 @@ This Function is used for check the status of Live Meeting
 
                 //==============================
                 $row[]     = $module_type;
-                $row[]     = $value->title;
+                $row[]     = html_escape($value->title);
                 $row[]     = composePatientName($value->patient_name, $value->patient_id);
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->customlib->getHospitalTimeFormat());
                 $row[]     = $this->lang->line($value->api_type);
@@ -1127,9 +1136,9 @@ This Function is used for check the status of Live Meeting
 
     public function livemeetingreport()
     {
-        $search['search_type'] = $this->input->post('search_type');
-        $search['date_from']   = $this->input->post('date_from');
-        $search['date_to']     = $this->input->post('date_to');
+        $search['search_type'] = $this->input->post('search_type', TRUE);
+        $search['date_from']   = $this->input->post('date_from', TRUE);
+        $search['date_to']     = $this->input->post('date_to', TRUE);
         $start_date            = '';
         $end_date              = '';
         $fields                = $this->customfield_model->get_custom_fields('ipd', '', '', 1);
@@ -1152,7 +1161,7 @@ This Function is used for check the status of Live Meeting
 
         }
 
-        $data['created_by'] = $this->input->post('created_by');
+        $data['created_by'] = $this->input->post('created_by', TRUE);
         $dt_response        = $this->conference_model->getlivemeetingreports($data);
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -1168,11 +1177,11 @@ This Function is used for check the status of Live Meeting
                 if ($value->created_id == $staff_id) {
                     $created_by = $this->lang->line('self');
                 } else {
-                    $created_by = $value->create_by_name . " " . $value->create_by_surname . "  (" . $value->create_by_employee_id.")";
+                    $created_by = html_escape($value->create_by_name) . " " . html_escape($value->create_by_surname) . "  (" . html_escape($value->create_by_employee_id) . ")";
                 }
 
                 //==============================
-                $row[]     = $value->title;
+                $row[]     = html_escape($value->title);
                 $row[]     = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->customlib->getHospitalTimeFormat());
                 $row[]     = $this->lang->line($value->api_type);
                 $row[]     = $created_by;
@@ -1213,8 +1222,8 @@ This Function is used for check the status of Live Meeting
 
     public function getViewerList()
     {
-        $recordid     = $this->input->post('recordid');
-        $type         = $this->input->post('type');
+        $recordid     = $this->input->post('recordid', TRUE);
+        $type         = $this->input->post('type', TRUE);
         $data['type'] = 'staff';
 
         if (isset($type)) {
@@ -1231,11 +1240,11 @@ This Function is used for check the status of Live Meeting
     public function checkvalidation()
     {        
         $param = array(
-            'search_type'   => $this->input->post('search_type'),
-            'created_by'    => $this->input->post('created_by'),
-            'date_from'     => $this->input->post('date_from'),
-            'date_to'       => $this->input->post('date_to'),
-            'select_module' => $this->input->post('select_module'),
+            'search_type'   => $this->input->post('search_type', TRUE),
+            'created_by'    => $this->input->post('created_by', TRUE),
+            'date_from'     => $this->input->post('date_from', TRUE),
+            'date_to'       => $this->input->post('date_to', TRUE),
+            'select_module' => $this->input->post('select_module', TRUE),
         );
 
         $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));      

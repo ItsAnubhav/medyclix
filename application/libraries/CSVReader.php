@@ -12,10 +12,10 @@ class CSVReader {
 
     function parse_file($p_Filepath) {
         $file = fopen($p_Filepath, 'r');
-        $this->fields = fgetcsv($file, $this->max_row_size, $this->separator, $this->enclosure);
-        $keys = str_getcsv($this->fields[0]);        
+        $this->fields = fgetcsv($file, $this->max_row_size, $this->separator, $this->enclosure, "\\");
+        $keys = str_getcsv($this->fields[0]);
         $i = 1;
-        while (($row = fgetcsv($file, $this->max_row_size, $this->separator, $this->enclosure)) != false) {
+        while (($row = fgetcsv($file, $this->max_row_size, $this->separator, $this->enclosure, "\\")) != false) {
             if ($row != null) { // skip empty lines
                 $values = str_getcsv($row[0]);
                 if (count($keys) == count($values)) {
@@ -39,7 +39,7 @@ class CSVReader {
         if (($buffer = fgets($handler, $length)) !== false) {
             $buffer = $this->autoUTF($buffer);
             $keys = str_getcsv('Name');
-            while (($row = fgetcsv($handler, 2, $separator, '"')) != false) {                
+            while (($row = fgetcsv($handler, 2, $separator, '"', "\\")) != false) {                
                 if ($row != null) { // skip empty lines
                     $values = str_getcsv($row[0]);
                     if (count($keys) == count($values)) {

@@ -1,98 +1,146 @@
-<?php 
+<?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
- ?>
-<div class="row">
-    <div class="col-lg-12 col-md-12 col-sm-12">
-        <div class="table-responsive">
-            
-			 <table class="mb0 examples tablelr0space noborder">
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('case_id'); ?></th>
-                    <td width="35%"><span id="opd_no"><?php echo $result['case_reference_id'] ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line("recheckup_id"); ?></th>
-                    <td width="35%"><span id="opd_no"><?php echo $this->customlib->getSessionPrefixByType('checkup_id').$result['id'] ?></span></td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('opd_no'); ?></th>
-                    <td width="35%"><span id="opd_no"><?php echo $this->customlib->getSessionPrefixByType('opd_no').$result['opd_details_id'] ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('old_patient'); ?></th>
-                    <td width="35%"><span id="old_patient"><?php echo $this->lang->line($result['patient_old']); ?></span></td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('patient_name'); ?></th>
-                    <td width="35%"><span id="patient_name"><?php echo composePatientName($result['patient_name'],$result['patient_id']);?></span></td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('guardian_name'); ?></th>
-                    <td width="35%"><span id='guardian_name'><?php echo $result['guardian_name'] ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('gender'); ?></th>
-                    <td width="35%"><span id='gen'><?php echo (isset($result['gender'])) ? $this->lang->line(strtolower($result['gender'])) : ""; ?></span></td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('marital_status'); ?></th>
-                    <td width="35%"><span id="marital_status"><?php echo (isset($result['marital_status'])) ? $this->lang->line(strtolower($result['marital_status'])) : "";?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('phone'); ?></th>
-                    <td width="35%"><span id="contact"><?php echo $result['mobileno'] ?></span></td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('email'); ?></th>
-                    <td width="35%"><span id='email' style="text-transform: none"><?php echo $result['email'] ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('address'); ?></th>
-                    <td width="35%"><span id='patient_address'><?php echo $result['address'] ?></span></td>
-                </tr>
-                <tr>  
-                    <th width="15%"><?php echo $this->lang->line('age'); ?></th>
-                    <td width="35%"><span id="age"><?php echo $this->customlib->getPatientAge($result['age'],$result['month'],$result['day']); ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('blood_group'); ?></th>
-                    <td width="35%"><span id="blood_group"><?php echo $result['blood_group_name'] ?></span></td>
-                </tr>               
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('known_allergies'); ?></th>
-                    <td width="35%"><span id="known_allergies"><?php echo $result['known_allergies'] ?></span>
-                    </td>
-                    <th width="15%"><?php echo $this->lang->line('appointment_date'); ?></th>
-                    <td width="35%"><span id="appointment_date"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date']));  ?></span>
-                    </td>  
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('case'); ?></th>
-                    <td width="35%"><span id='case'><?php echo $result['case_type'] ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('casualty'); ?></th>
-                    <td width="35%"><span id="casualty"><?php echo $this->lang->line($result['casualty']) ?></span>
-                    </td>
-                </tr>
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('reference'); ?></th>
-                    <td width="35%"><span id="refference"><?php echo $result['refference'] ?></span></td>                    
-                    <th width="15%"><?php echo $this->lang->line('tpa'); ?></th>
-                    <td width="35%"><span id="organisation"><?php echo $result['organisation_name'] ?></span></td>
-                </tr>                                  
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('consultant_doctor'); ?></th>
-                    <td width="35%"><span id='doc'><?php echo composeStaffNameByString($result['name'], $result['surname'], $result['employee_id']); ?></span></td>
-                    <th width="15%"><?php echo $this->lang->line('note'); ?></th>
-                    <td width="35%"><span id='note'><?php echo $result['note'] ?></span></td>
-                </tr>                                    
-                <tr>
-                    <th width="15%"><?php echo $this->lang->line('symptoms'); ?></th>
-                    <td width="50%"><span id='symptoms'><?php if($result['symptoms']){ echo nl2br($result['symptoms']); } ?></span></td>    
-                </tr> 
-                <?php  if (!empty($fields)) {
-                foreach ($fields as $fields_key => $fields_value) {
-                    $display_field = $result["$fields_value->name"];
-                    if ($fields_value->type == "link") {
-                        $display_field = "<a href=" . $result["$fields_value->name"] . " target='_blank'>" . $result["$fields_value->name"] . "</a>";
+?>
+<div class="p-1">
+    <div class="sh-form-card">
+        <div class="sh-card-header">
+            <span class="sh-card-header-title"><?php echo $this->lang->line('visit_details'); ?></span>
+        </div>
+        <div class="sh-info-grid">
 
+            <!-- Row 1 -->
+            <div class="row g-0">
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('case_id'); ?></span>
+                    <span class="sh-info-value highlight"><?php echo $result['case_reference_id'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('recheckup_id'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->customlib->getSessionPrefixByType('checkup_id') . $result['id']; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('opd_no'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->customlib->getSessionPrefixByType('opd_no') . $result['opd_details_id']; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('old_patient'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->lang->line($result['patient_old']) ?: '—'; ?></span>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('patient_name'); ?></span>
+                    <span class="sh-info-value highlight"><?php echo composePatientName($result['patient_name'], $result['patient_id']); ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('guardian_name'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['guardian_name'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('gender'); ?></span>
+                    <span class="sh-info-value"><?php echo isset($result['gender']) ? $this->lang->line(strtolower($result['gender'])) : '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('marital_status'); ?></span>
+                    <span class="sh-info-value"><?php echo isset($result['marital_status']) ? $this->lang->line(strtolower($result['marital_status'])) : '—'; ?></span>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('phone'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['mobileno'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('email'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['email'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('address'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['address'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('age'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->customlib->getPatientAge($result['age'], $result['month'], $result['day']); ?></span>
+                </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('blood_group'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['blood_group_name'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('known_allergies'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['known_allergies'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('appointment_date'); ?></span>
+                    <span class="sh-info-value"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date'])); ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('case'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['case_type'] ?: '—'; ?></span>
+                </div>
+            </div>
+
+            <!-- Row 5 -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('casualty'); ?></span>
+                    <span class="sh-info-value"><?php echo $this->lang->line($result['casualty']) ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('reference'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['refference'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('tpa'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['organisation_name'] ?: '—'; ?></span>
+                </div>
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('consultant_doctor'); ?></span>
+                    <span class="sh-info-value"><?php echo composeStaffNameByString($result['name'], $result['surname'], $result['employee_id']); ?></span>
+                </div>
+            </div>
+
+            <!-- Row 6: Note (full width) -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-12 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('note'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['note'] ?: '—'; ?></span>
+                </div>
+            </div>
+
+            <!-- Row 7: Symptoms (full width) -->
+            <div class="row g-0 sh-row-divider">
+                <div class="col-12 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('symptoms'); ?></span>
+                    <span class="sh-info-value"><?php echo $result['symptoms'] ? nl2br($result['symptoms']) : '—'; ?></span>
+                </div>
+            </div>
+
+            <!-- Custom fields -->
+            <?php if (!empty($fields)) { ?>
+            <div class="row g-0 sh-row-divider">
+                <?php foreach ($fields as $fields_key => $fields_value) {
+                    $display_field = $result[$fields_value->name];
+                    if ($fields_value->type == 'link') {
+                        $display_field = '<a href="' . $result[$fields_value->name] . '" target="_blank">' . $result[$fields_value->name] . '</a>';
                     }
                 ?>
-                <tr>
-                    <th width="10%"><?php echo $fields_value->name; ?></th> 
-                    <td width="10%"><?php echo $display_field; ?></td>
-                </tr>
-                <?php }
-                }?>                              
-                                  
-            </table>
-        </div>                       
-    </div>  
+                <div class="col-6 col-md-3 sh-info-item">
+                    <span class="sh-info-label"><?php echo $fields_value->name; ?></span>
+                    <span class="sh-info-value"><?php echo $display_field ?: '—'; ?></span>
+                </div>
+                <?php } ?>
+            </div>
+            <?php } ?>
+
+        </div>
+    </div>
 </div>

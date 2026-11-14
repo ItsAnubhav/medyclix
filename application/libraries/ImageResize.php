@@ -4,6 +4,10 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 class ImageResize {
+	public $files;
+	public $upload_error_no;
+    public $CI;
+
 	
 	protected $dir_path         = "";
     protected $thumb_path       = "";

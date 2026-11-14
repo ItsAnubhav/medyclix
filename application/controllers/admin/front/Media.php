@@ -12,6 +12,7 @@ class Media extends Admin_Controller
         parent::__construct();
         $this->config->load('image_valid');
         $this->load->model("filetype_model");
+        $this->load->library('SaasValidation');
     }
 
     public function index()
@@ -24,9 +25,10 @@ class Media extends Admin_Controller
         $this->session->set_userdata('top_menu', 'Front CMS');
         $this->session->set_userdata('sub_menu', 'admin/front/media');
         $data['mediaTypes'] = $this->customlib->mediaType();
-        $this->load->view('layout/header');
+        $data['module'] = 'front_cms';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/front/media/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getMedia()
@@ -38,9 +40,9 @@ class Media extends Admin_Controller
 
     public function getPage()
     {
-        $keyword    = $this->input->get('keyword');
-        $file_type  = $this->input->get('file_type');
-        $is_gallery = $this->input->get('is_gallery');
+        $keyword    = $this->input->get('keyword', TRUE);
+        $file_type  = $this->input->get('file_type', TRUE);
+        $is_gallery = $this->input->get('is_gallery', TRUE);
         if (!isset($is_gallery)) {
             $is_gallery = 1;
         }
@@ -100,7 +102,7 @@ class Media extends Admin_Controller
         if (!$this->rbac->hasPrivilege('media_manager', 'can_delete')) {
             access_denied();
         }
-        $record_id = $this->input->post('record_id');
+        $record_id = $this->input->post('record_id', TRUE);
         $record    = $this->cms_media_model->get($record_id);
         if ($record) {
 
@@ -108,6 +110,19 @@ class Media extends Admin_Controller
             $thumb_path       = "uploads/gallery/media/thumb/" . $record['img_name'];
             $del_record       = $this->cms_media_model->remove($record_id);
             if ($del_record) {
+
+                // SaaS: release the freed storage from the quota.
+                if (!empty($record['file_size'])) {
+                    try {
+                        $kb = $this->media_storage->convertBytesToKB((int) $record['file_size']);
+                        if ($kb > 0) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (media delete): ' . $e->getMessage());
+                    }
+                }
+
                 if (is_readable($destination_path) && unlink($destination_path) && is_readable($thumb_path) && unlink($thumb_path)) {
 
                 }
@@ -169,44 +184,55 @@ class Media extends Admin_Controller
         $output .= "<div class='fadeoverlay'>";
         $output .= "<div class='fadeheight'>";
         $output .= "<img class='' data-fid='" . $result->id . "' data-content_type='" . $result->file_type . "' data-content_name='" . $result->img_name . "' data-is_image='" . $is_image . "' data-vid_url='" . $result->vid_url . "' data-img='" . base_url() . $result->dir_path . $result->img_name . "' src='" .  $this->media_storage->getImageURL($result->dir_path . $result->img_name) . "'>";
-        $output .= "</div>";
         if ($is_video == 1) {
-            $output .= "<i class='fa fa-youtube-play videoicon'></i>";
-        }
-        if ($is_image == 1) {
-            $output .= "<i class='fa fa-picture-o videoicon'></i>";
+            $output .= "<span class='mediatype-badge mediatype-video'><i class='fa fa-play'></i> VIDEO</span>";
+        } else {
+            $output .= "<span class='mediatype-badge mediatype-img'><i class='fa fa-picture-o'></i> IMG</span>";
         }
         if (!$is_gallery) {
             $output .= "<div class='overlay3'>";
             if ($this->rbac->hasPrivilege('media_manager', 'can_view')) {
-                $output .= "<a href='#' title='" . $this->lang->line('view') . "' class='uploadcheckbtn' data-record_id='" . $result->id . "' data-toggle='modal' data-target='#detail' data-image='" . $file . "' data-source='" . $file_src . "' data-media_name='" . $result->img_name . "' data-media_size='" . $result->file_size . "' data-media_type='" . $result->file_type . "'><i class='fa fa-navicon'></i></a>";
+                $output .= "<a href='#' title='" . $this->lang->line('view') . "' class='uploadcheckbtn' data-record_id='" . $result->id . "' data-bs-toggle='modal' data-bs-target='#detail' data-image='" . $file . "' data-source='" . $file_src . "' data-media_name='" . $result->img_name . "' data-media_size='" . $result->file_size . "' data-media_type='" . $result->file_type . "'><i class='fa fa-eye'></i></a>";
             }
             if ($this->rbac->hasPrivilege('media_manager', 'can_delete')) {
-                $output .= "<a href='#' title='" . $this->lang->line('delete') . "' class='uploadclosebtn' data-record_id='" . $result->id . "' data-toggle='modal' data-target='#confirm-delete'><i class=' fa fa-trash-o'></i></a>";
+                $output .= "<a href='#' title='" . $this->lang->line('delete') . "' class='uploadclosebtn' data-record_id='" . $result->id . "' data-bs-toggle='modal' data-bs-target='#confirm-delete'><i class='fa fa-trash'></i></a>";
             }
-
-            $output .= "<p class='processing'>Processing...</p>";
+            $output .= "<p class='processing' style='display:none;'>Processing...</p>";
             $output .= "</div>";
         }
-        if ($is_video == 1) {
-            $output .= "<p class=''>" . $result->vid_title . "</p>";
-        } else {
-            $output .= "<p class=''>" . $result->img_name . "</p>";
-        }
+        $output .= "</div>";
+        $bytes = intval($result->file_size);
+        if ($bytes >= 1048576)      $size_fmt = round($bytes / 1048576, 1) . ' MB';
+        elseif ($bytes >= 1024)     $size_fmt = round($bytes / 1024, 0) . ' KB';
+        elseif ($bytes > 0)         $size_fmt = $bytes . ' B';
+        else                        $size_fmt = ($is_video == 1) ? 'YouTube' : '';
+        $caption = ($is_video == 1) ? $result->vid_title : $result->img_name;
+        $output .= "<div class='img-caption'><span class='img-caption-name'>" . htmlspecialchars($caption) . "</span><span class='img-caption-size'>" . $size_fmt . "</span></div>";
         $output .= "</div>";
         $output .= "</div>";
         return $output;
     }
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
     public function addVideo()
     {
         if (!$this->rbac->hasPrivilege('media_manager', 'can_add')) {
             access_denied();
         }
         $this->form_validation->set_error_delimiters('', '');
-        $video_url = $this->input->post('video_url');
+        $video_url = $this->input->post('video_url', TRUE);
 
         if (isset($_FILES['files']) && $video_url == "") {          
-             $this->form_validation->set_rules('files', 'files', 'callback_handle_upload|trim|xss_clean');
+             $this->form_validation->set_rules('files', 'files', 'callback_handle_upload|callback_validateCanUploadFile[files]|trim|xss_clean');
         } else {           
             $this->form_validation->set_rules('video_url', $this->lang->line('url'), 'required|trim|xss_clean');
         }
@@ -257,7 +283,9 @@ class Media extends Admin_Controller
                 }
 
                 if ($validation == 1) {
+                    $uploaded_bytes = 0;
                     foreach ($responses['images'] as $key => $value) {
+                        $uploaded_bytes += (int) $value['file_size'];
                         $data = array(
                             'img_name'   => $value['store_name'],
                             'file_type'  => $value['file_type'],
@@ -270,6 +298,17 @@ class Media extends Admin_Controller
                         $data['record_id'] = $insert_id;
                         $img_array[]       = $data;
                     }
+
+                    // SaaS: add total stored (resized) size to the storage quota usage.
+                    try {
+                        $kb = $this->media_storage->convertBytesToKB($uploaded_bytes);
+                        if ($kb > 0) {
+                            $this->saasvalidation->updateResouceQuota('storage', $kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (media add): ' . $e->getMessage());
+                    }
+
                     $response_array['status'] = 1;
                     $response_array['msg']    = $this->lang->line('success_message');
 
@@ -285,7 +324,7 @@ class Media extends Admin_Controller
             echo json_encode($response_array);
         } else {       
 
-            $url     = $this->input->post('video_url');
+            $url     = $this->input->post('video_url', TRUE);
             $youtube = "https://www.youtube.com/oembed?url=" . $url . "&format=json";
             $curl    = curl_init($youtube);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
@@ -322,6 +361,17 @@ class Media extends Admin_Controller
                         'dir_path'   => $upload_response->dir_path,
                     );
                     $insert_id = $this->cms_media_model->add($data);
+
+                    // SaaS: add stored size to the storage quota usage (URL/video thumb).
+                    try {
+                        $kb = $this->media_storage->convertBytesToKB((int) $upload_response->file_size);
+                        if ($kb > 0) {
+                            $this->saasvalidation->updateResouceQuota('storage', $kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (media url add): ' . $e->getMessage());
+                    }
+
                     echo json_encode(array('status' => 1, 'msg' => 'file upload successfully', 'error' => ''));
                 } else {
                     echo json_encode(array('status' => 0, 'msg' => 'Please try again', 'error' => ''));

@@ -8,7 +8,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     if (!empty($print_details['print_header'])) {
                         echo $this->media_storage->getImageURL($print_details['print_header']);
                     }
-                    ?>" style="height:100px; width:100%;" class="img-responsive">
+                    ?>" class="img-fluid sh-print-header-img">
                 <?php }?>
                 </div> 
 <table class="table-print-full" width="100%">

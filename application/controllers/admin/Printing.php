@@ -9,6 +9,18 @@ class Printing extends Admin_Controller
     {
         parent::__construct();
         $this->load->library('media_storage');
+        $this->load->library('SaasValidation');
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the uploaded header image would
+     * push the tenant over its storage quota. SaasValidation sets the message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function opdpresprinting()
@@ -259,10 +271,16 @@ class Printing extends Admin_Controller
 
     public function update()
     {       
-        $id            = $this->input->post('id');
-        $result = $this->printing_model->get($id, '');        
-        $function_name = $this->input->post('function_name');
-        $this->form_validation->set_rules('header_image', 'header_image', 'callback_handle_upload');        
+        $id            = $this->input->post('id', TRUE);
+        $result = $this->printing_model->get($id, '');
+        $function_name = $this->input->post('function_name', TRUE);
+        $this->form_validation->set_rules('header_image', 'header_image', 'callback_handle_upload|callback_validateCanUploadFile[header_image]');
+
+        // SaaS: snapshot the existing header image size for quota release/diff below.
+        // print_header stores a full relative path (uploads/printing/<file>), so the
+        // empty-path form of getUploadedFileSize() resolves it directly from FCPATH.
+        $old_header = (!empty($result['print_header'])) ? $result['print_header'] : '';
+        $old_kb     = (!empty($old_header)) ? $this->media_storage->getUploadedFileSize($old_header, '') : 0;
         
         if ($this->form_validation->run() == false) {
             $this->load->view('layout/header');
@@ -351,7 +369,7 @@ class Printing extends Admin_Controller
             $this->load->view('layout/footer');
         } else {
                 
-                $removeheader_image   = $this->input->post('removeheader_image');  
+                $removeheader_image   = $this->input->post('removeheader_image', TRUE);  
                 if ($removeheader_image != '') {                        
                     $insertData = array(
                         'id'           => $id,
@@ -360,21 +378,54 @@ class Printing extends Admin_Controller
                      $this->printing_model->add($insertData);
                      
                      $last_id   = str_replace('uploads/printing/', "", $result['print_header']);
-                     
+
                      $this->media_storage->filedelete($last_id, "./uploads/printing/");
+
+                    // SaaS: release the removed header image's storage. Zero out the
+                    // snapshot so the upload block below (if a new file is also sent in
+                    // the same request) only adds the new size instead of diffing again.
+                    if ($old_kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (printing remove header): ' . $e->getMessage());
+                        }
+                    }
+                    $old_kb     = 0;
+                    $old_header = '';
                 }
                 
             $insertData = array(
                 'id'           => $id,
-                'print_footer' => $this->input->post('footer_content'),
+                'print_footer' => $this->input->post('footer_content', TRUE),
                 'is_active'    => 'yes',
             ); 
 				
 			if (isset($_FILES["header_image"]) && !empty($_FILES['header_image']['name'])) {
                 $file_name = $this->media_storage->fileupload("header_image", "./uploads/printing/");
-				 
+
                 if (!IsNullOrEmptyString($file_name)) {
 					$insertData['print_header'] = 'uploads/printing/' . $file_name;
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    // If the old image was already removed above, $old_kb is 0 → add-only.
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('header_image');
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (printing update header): ' . $e->getMessage());
+                    }
+
+                    // Remove the orphaned old physical file (replace without an explicit
+                    // remove never deleted it). Skipped when $old_header was cleared above.
+                    if (!empty($old_header)) {
+                        $old_basename = str_replace('uploads/printing/', '', $old_header);
+                        $this->media_storage->filedelete($old_basename, './uploads/printing/');
+                    }
                 }
             }
 			
@@ -492,7 +543,10 @@ class Printing extends Admin_Controller
     }
     
     public function index()
-    {        
+    {
+        if (!$this->rbac->hasPrivilege('print_appointment_header_footer', 'can_view')) {
+            access_denied();
+        }
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/printing/appointmentprinting');
         $this->session->set_userdata('sub_menu', 'admin/printing');

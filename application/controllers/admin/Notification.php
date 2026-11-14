@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Notification extends Admin_Controller
 {
+	public $patient_notification;
+
 
     public function __construct()
     {
@@ -33,7 +35,7 @@ class Notification extends Admin_Controller
         if (!empty($notifications)) {
             foreach ($notifications as $key => $value) {
                 $created_by_name = $this->notification_model->getcreatedByName($value["created_id"]);
-                $roles           = $value["roles"];
+                $roles           = $value["roles"] ?? '';
                 $arr             = explode(",", $roles);
                 if ($user_role->name == "Super Admin") {
                     $rname                                            = $this->notification_model->getRole($arr);
@@ -61,6 +63,7 @@ class Notification extends Admin_Controller
             $data['notificationlist'] = array();
         }
 
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/notificationList', $data);
         $this->load->view('layout/footer', $data);
@@ -87,26 +90,27 @@ class Notification extends Admin_Controller
             $patient     = "No";
             $staff       = "No";
             $staff_roles = array();
-            $visible     = $this->input->post('visible');
+            $visible     = $this->input->post('visible', TRUE);
             foreach ($visible as $key => $value) {
                 $staff_roles[] = array('role_id' => $value, 'send_notification_id' => '');
                 $staff         = "Yes";
             }
             $data = array(
-                'message'         => $this->input->post('message'),
-                'title'           => $this->input->post('title'),
-                'date'            => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date')), 
+                'message'         => $this->input->post('message', TRUE),
+                'title'           => $this->input->post('title', TRUE),
+                'date'            => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE)),
                 'created_by'      => 'admin',
                 'created_id'      => $this->customlib->getStaffID(),
                 'visible_patient' => $patient,
                 'visible_staff'   => $staff,
-                'publish_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('publish_date')), 
+                'publish_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('publish_date', TRUE)),
             );
             $this->notification_model->insertBatch($data, $staff_roles);
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('success_message') . '</div>');
             redirect('admin/notification/add');
         }
         $data['roles'] = $this->role_model->get();
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/notificationAdd', $data);
         $this->load->view('layout/footer', $data);
@@ -116,14 +120,17 @@ class Notification extends Admin_Controller
     {
         $userdata         = $this->customlib->getUserData();
         $user_id          = $userdata["id"];
-        $usernotification = $this->notification_model->get($id);
+        $notification     = $this->notification_model->get($id);
+        if (empty($notification)) {
+            $this->session->set_flashdata('msg', '<div class="alert alert-danger">' . $this->lang->line('record_not_found') . '</div>');
+            redirect('admin/notification/index');
+        }
         if (!$this->rbac->hasPrivilege('notice_board', 'can_edit')) {
-            if ($usernotification['created_id'] != $user_id) {
+            if ($notification['created_id'] != $user_id) {
                 access_denied();
             }
         }
         $data['id']           = $id;
-        $notification         = $this->notification_model->get($id);
         $data['notification'] = $notification;
         $data['roles']        = $this->role_model->get();
         $data['title']        = $this->lang->line('edit_notification');
@@ -137,9 +144,9 @@ class Notification extends Admin_Controller
 
         } else {
             $patient     = "No";
-            $staff       = "No";           
-            $prev_roles  = $this->input->post('prev_roles');
-            $visible     = $this->input->post('visible');
+            $staff       = "No";
+            $prev_roles  = $this->input->post('prev_roles', TRUE);
+            $visible     = $this->input->post('visible', TRUE);
             $staff_roles = array();
             $inst_staff  = array();
             foreach ($visible as $key => $value) {
@@ -165,20 +172,21 @@ class Notification extends Admin_Controller
 
             $data = array(
                 'id'              => $id,
-                'message'         => $this->input->post('message'),
-                'title'           => $this->input->post('title'),
-                'date'            => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date')), 
+                'message'         => $this->input->post('message', TRUE),
+                'title'           => $this->input->post('title', TRUE),
+                'date'            => $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE)),
                 'created_by'      => 'admin',
                 'created_id'      => 1,
                 'visible_patient' => $patient,
                 'visible_staff'   => $staff,
-                'publish_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('publish_date')), 
+                'publish_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('publish_date', TRUE)),
             );
             $this->notification_model->insertBatch($data, $insert, $to_be_del);
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('notification_added_successfully') . '</div>');
             redirect('admin/notification/index');
         }
 
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/notificationEdit', $data);
         $this->load->view('layout/footer', $data);
@@ -213,7 +221,7 @@ class Notification extends Admin_Controller
         $data['notificationlist'] = $notificationlist;
         $this->form_validation->set_rules('email_type', $this->lang->line('email_type'), 'required');
         if ($this->input->server('REQUEST_METHOD') == "POST") {
-            $ids          = $this->input->post('ids');
+            $ids          = $this->input->post('ids', TRUE);
             $update_array = array();
             foreach ($ids as $id_key => $id_value) {
                 $array = array(
@@ -221,9 +229,9 @@ class Notification extends Admin_Controller
                     'is_mail' => 0,
                     'is_sms'  => 0,
                 );
-                $mail         = $this->input->post('mail_' . $id_value);
-                $sms          = $this->input->post('sms_' . $id_value);
-                $notification = $this->input->post('notification_' . $id_value);
+                $mail         = $this->input->post('mail_' . $id_value, TRUE);
+                $sms          = $this->input->post('sms_' . $id_value, TRUE);
+                $notification = $this->input->post('notification_' . $id_value, TRUE);
                 if (isset($mail)) {
                     $array['is_mail'] = $mail;
                 }
@@ -237,6 +245,10 @@ class Notification extends Admin_Controller
                     $array['is_notification'] = 0;
                     $array['is_mobileapp']    = 0;
                 }
+                 //if ($this->module_lib->hasModule('whatsapp_messaging') && $this->module_lib->hasActive('whatsapp_messaging')){
+                    $whatsapp = $this->input->post('whatsapp_' . $id_value, TRUE);
+                    $array['is_whatsapp'] = isset($whatsapp) ? (int) $whatsapp : 0;
+                // }
 
                 $update_array[] = $array;
 
@@ -248,6 +260,7 @@ class Notification extends Admin_Controller
         }
 
         $data['title'] = $this->lang->line('email_config_list');
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/setting', $data);
         $this->load->view('layout/footer', $data);
@@ -268,7 +281,7 @@ class Notification extends Admin_Controller
         $data['notificationlist'] = $notificationlist;
 
         if ($this->input->server('REQUEST_METHOD') == "POST") {
-            $ids          = $this->input->post('ids');
+            $ids          = $this->input->post('ids', TRUE);
             $update_array = array();
             foreach ($ids as $id_key => $id_value) {
                 $array = array(
@@ -278,9 +291,9 @@ class Notification extends Admin_Controller
                     'is_patient' => 0,
 
                 );
-                $event   = $this->input->post('event_' . $id_value);
-                $staff   = $this->input->post('staff_' . $id_value);
-                $patient = $this->input->post('patient_' . $id_value);
+                $event   = $this->input->post('event_' . $id_value, TRUE);
+                $staff   = $this->input->post('staff_' . $id_value, TRUE);
+                $patient = $this->input->post('patient_' . $id_value, TRUE);
 
                 if (isset($event)) {
                     $array['is_active'] = $event;
@@ -304,6 +317,7 @@ class Notification extends Admin_Controller
         }
 
         $data['title'] = $this->lang->line('email_config_list');
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/setting', $data);
         $this->load->view('layout/footer', $data);
@@ -311,7 +325,7 @@ class Notification extends Admin_Controller
 
     public function gettemplate()
     {
-        $id             = $this->input->post('id');
+        $id             = $this->input->post('id', TRUE);
         $data['record'] = $this->notificationsetting_model->get($id);
         $template       = $this->load->view('admin/notification/gettemplate', $data, true);
         $response       = array('status' => 1, 'template' => $template);
@@ -337,11 +351,15 @@ class Notification extends Admin_Controller
         } else {
 
             $data_update = array(
-                'id'          => $this->input->post('temp_id'),
-                'template'    => $this->input->post('template_message'),
-                'template_id' => $this->input->post('template_id'),
-                'subject'     => $this->input->post('template_subject'),
+                'id'                   => $this->input->post('temp_id', TRUE),
+                'template'             => $this->input->post('template_message', TRUE),
+                'template_id'          => $this->input->post('template_id', TRUE),
+                'subject'              => $this->input->post('template_subject', TRUE),
             );
+
+            // if ($this->module_lib->hasModule('whatsapp_messaging') && $this->module_lib->hasActive('whatsapp_messaging')){
+                $data_update["whatsapp_template_id"]=$this->input->post('whatsapp_template_id', TRUE);
+            // }
 
             $this->notificationsetting_model->update($data_update);
             $response = array('status' => 1, 'message' => $this->lang->line('update_message'));
@@ -356,11 +374,11 @@ class Notification extends Admin_Controller
     public function read()
     {
         $array           = array('status' => "fail", 'msg' => $this->lang->line('something_went_wrong'));
-        $notification_id = $this->input->post('notice');
+        $notification_id = $this->input->post('notice', TRUE);
         if ($notification_id != "") {
             $staffid = $this->customlib->getStaffID();
             $data    = $this->notification_model->updateStatusforStaff($notification_id, $staffid);
-            $array   = array('status' => "success", 'data' => $data, 'msg' => $this->lang->line('delete_success_message'));
+            $array   = array('status' => "success", 'data' => $data, 'msg' => $this->lang->line('delete_message'));
         }
 
         echo json_encode($array);
@@ -382,7 +400,7 @@ class Notification extends Admin_Controller
 
         $this->form_validation->set_rules('email_type', $this->lang->line('email_type'), 'required');
         if ($this->input->server('REQUEST_METHOD') == "POST") {
-            $ids          = $this->input->post('ids');
+            $ids          = $this->input->post('ids', TRUE);
             $update_array = array();
             foreach ($ids as $id_key => $id_value) {
                 $array = array(
@@ -390,9 +408,9 @@ class Notification extends Admin_Controller
                     'is_mail' => 0,
                     'is_sms'  => 0,
                 );
-                $mail         = $this->input->post('mail_' . $id_value);
-                $sms          = $this->input->post('sms_' . $id_value);
-                $notification = $this->input->post('notification_' . $id_value);
+                $mail         = $this->input->post('mail_' . $id_value, TRUE);
+                $sms          = $this->input->post('sms_' . $id_value, TRUE);
+                $notification = $this->input->post('notification_' . $id_value, TRUE);
 
                 if (isset($mail)) {
                     $array['is_mail'] = $mail;
@@ -421,6 +439,7 @@ class Notification extends Admin_Controller
 
         $data['is_patient_notification'] = $this->patient_notification;
         $data['title']                   = $this->lang->line('email_config_list');
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/notification/system_notification_setting', $data);
         $this->load->view('layout/footer', $data);
@@ -443,10 +462,10 @@ class Notification extends Admin_Controller
         } else {
 
             $data_update = array(
-                'id'              => $this->input->post('temp_id'),
-                'subject'         => $this->input->post('template_subject'),
-                'staff_message'   => $this->input->post('staff_message'),
-                'patient_message' => $this->input->post('patient_message'),
+                'id'              => $this->input->post('temp_id', TRUE),
+                'subject'         => $this->input->post('template_subject', TRUE),
+                'staff_message'   => $this->input->post('staff_message', TRUE),
+                'patient_message' => $this->input->post('patient_message', TRUE),
             );
 
             $this->notificationsetting_model->update_system_notification($data_update);
@@ -461,7 +480,7 @@ class Notification extends Admin_Controller
 
     public function getsystem_notification_setting()
     {
-        $id                              = $this->input->post('id');
+        $id                              = $this->input->post('id', TRUE);
         $data['record']                  = $this->notificationsetting_model->get_system_notification($id);
         $data['is_patient_notification'] = $this->patient_notification;
         $template                        = $this->load->view('admin/notification/getsystem_notification', $data, true);

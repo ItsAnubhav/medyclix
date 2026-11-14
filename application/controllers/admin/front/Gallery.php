@@ -32,9 +32,10 @@ class Gallery extends Admin_Controller
         $notice_content     = $this->config->item('ci_front_gallery_content');
         $listResult         = $this->cms_program_model->getByCategory($notice_content);
         $data['listResult'] = $listResult;
-        $this->load->view('layout/header');
+        $data['module'] = 'front_cms';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/front/gallery/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function create()
@@ -50,11 +51,12 @@ class Gallery extends Admin_Controller
         $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/gallery/create', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
-            $gallery_images = $this->input->post('gallery_images');
+            $gallery_images = $this->input->post('gallery_images', TRUE);
             $gallery_array  = array();
             if (isset($gallery_images)) {
                 foreach ($gallery_images as $gallery_key => $gallery_value) {
@@ -64,21 +66,21 @@ class Gallery extends Admin_Controller
                     $gallery_array[]           = $array;
                 }
             }
-            $category = $this->input->post('content_category');
+            $category = $this->input->post('content_category', TRUE);
             if (isset($category)) {
                 $contents_category = $category;
             } else {
                 $contents_category = "";
             }
             $data = array(
-                'title'            => $this->input->post('title'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'feature_image'    => $this->input->post('image'),
-                'sidebar'          => $this->input->post('sidebar'),
+                'title'            => $this->input->post('title', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
                 'type'             => $this->config->item('ci_front_gallery_content'),
-                'meta_description' => $this->input->post('meta_description'),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
 
             $data['slug'] = $this->slug->create_uri($data);
@@ -105,9 +107,10 @@ class Gallery extends Admin_Controller
 
         if ($this->form_validation->run() == false) {
 
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/gallery/edit', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
             $old_gallery = array();
@@ -118,7 +121,7 @@ class Gallery extends Admin_Controller
                 }
             }
 
-            $gallery_images = $this->input->post('gallery_images');
+            $gallery_images = $this->input->post('gallery_images', TRUE);
             $gallery_array  = array();
             if (isset($gallery_images)) {
                 $new_gallery = $gallery_images;
@@ -138,18 +141,18 @@ class Gallery extends Admin_Controller
             }
 
             $data = array(
-                'id'               => $this->input->post('id'),
-                'title'            => $this->input->post('title'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'feature_image'    => $this->input->post('image'),
-                'sidebar'          => $this->input->post('sidebar'),
+                'id'               => $this->input->post('id', TRUE),
+                'title'            => $this->input->post('title', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
                 'type'             => $this->config->item('ci_front_gallery_content'),
-                'meta_description' => $this->input->post('meta_description'),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
 
-            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id'));
+            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id', TRUE));
             $data['url']  = $this->config->item('ci_front_page_read_url') . $data['slug'];
             $this->cms_program_model->update_batch($data, $gallery_array, $remove_list);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');

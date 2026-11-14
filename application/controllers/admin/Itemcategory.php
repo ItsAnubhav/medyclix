@@ -20,6 +20,7 @@ class Itemcategory extends Admin_Controller
         $data['title']        = $this->lang->line('item_category_list');
         $category_result      = $this->itemcategory_model->get();
         $data['categorylist'] = $category_result;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/itemcategory/itemcategoryList', $data);
         $this->load->view('layout/footer', $data);
@@ -45,13 +46,14 @@ class Itemcategory extends Admin_Controller
         $data['categorylist'] = $category_result;
         $this->form_validation->set_rules('itemcategory', $this->lang->line('item_category'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'inventory';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/itemcategory/itemcategoryList', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'item_category' => $this->input->post('itemcategory'),
-                'description'   => $this->input->post('description'),
+                'item_category' => $this->input->post('itemcategory', TRUE),
+                'description'   => $this->input->post('description', TRUE),
             );
             $this->itemcategory_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('item_category_added_successfully') . '</div>');
@@ -67,7 +69,7 @@ class Itemcategory extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('itemcategory_'.$row_value, $this->lang->line('item_category'), 'trim|required');        
+                $this->form_validation->set_rules('itemcategory_'.$row_value, $this->lang->line('item_category'), 'trim|required|xss_clean');
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -84,8 +86,8 @@ class Itemcategory extends Admin_Controller
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                 
                 $data  = array(
-                    'item_category' => $this->input->post('itemcategory_'.$row_values),
-                    'description' => $this->input->post('description_'.$row_values));
+                    'item_category' => $this->input->post('itemcategory_'.$row_values, TRUE),
+                    'description'   => $this->input->post('description_'.$row_values, TRUE));
                 $this->itemcategory_model->add($data);
             }
             // save the multiple data 
@@ -106,8 +108,9 @@ class Itemcategory extends Admin_Controller
         if (!$this->rbac->hasPrivilege('item_category', 'can_edit')) {
             access_denied();
         }
-        $id = $this->input->post('cat_id');
+        $id = $this->input->post('cat_id', TRUE);
         $this->form_validation->set_rules('itemcategory', $this->lang->line('item_category'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('itemcategory'),
@@ -117,8 +120,8 @@ class Itemcategory extends Admin_Controller
         } else {
             $data = array(
                 'id'            => $id,
-                'item_category' => $this->input->post('itemcategory'),
-                'description'   => $this->input->post('description'),
+                'item_category' => $this->input->post('itemcategory', TRUE),
+                'description'   => $this->input->post('description', TRUE),
             );
             $this->itemcategory_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));

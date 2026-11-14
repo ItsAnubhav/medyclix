@@ -5,5 +5,8 @@ if (!defined('BASEPATH')) {
 }
 
 $config['envato_market_purchase_code'] = '';
-$config['envato_market_username'] = 'Test';
-$config['SHLK'] = 'ABC123-DEF456-GHI789-Q25ld01CeXZDZEFaTjdYNXQ1cEdobDJBZDVzZGtMV2poTWhsQWgvTmtiMD0=';
+$config['envato_market_username'] = '';
+$config['SHLK'] = '';
+$config['app_ver'] = 0;
+$config['app_product_code'] = 'SMS101';
+$config['android_product_code'] = 'SMS102';

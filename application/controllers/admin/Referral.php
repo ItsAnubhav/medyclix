@@ -5,6 +5,8 @@ if (!defined('BASEPATH')) {
 
 class Referral extends Admin_Controller
 {
+	public $time_format;
+
 
     public function __construct()
     {
@@ -30,9 +32,10 @@ class Referral extends Admin_Controller
         $this->session->set_userdata('sub_sidebar_menu', 'admin/referral/category');
         $this->session->set_userdata('sub_menu', 'admin/referral/commission');
         $data['category'] = $this->referral_category_model->get_category();
-        $this->load->view('layout/header');
+        $data['module'] = 'referral_payment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/referral/category', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function person()
@@ -41,12 +44,16 @@ class Referral extends Admin_Controller
             access_denied();
         }
         $this->session->set_userdata('top_menu', 'referral_payment');
+        // Top-level page: clear any stale Setup>Referral sub_menu so it doesn't stay highlighted
+        $this->session->set_userdata('sub_menu', '');
+        $this->session->set_userdata('sub_sidebar_menu', '');
         $data['category'] = $this->referral_category_model->get_category();
         $data['person']   = $this->referral_person_model->get_person();
         $data['type']     = $this->referral_category_model->get_type();
-        $this->load->view('layout/header');
+        $data['module'] = 'referral_payment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/referral/person', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function commission()
@@ -57,9 +64,10 @@ class Referral extends Admin_Controller
         $data["commission"] = $this->referral_commission_model->get_commission();
         $data['category']   = $this->referral_category_model->get_category();
         $data['type']       = $this->referral_category_model->get_type();
-        $this->load->view('layout/header');
+        $data['module'] = 'referral_payment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/referral/commission', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function payment()
@@ -69,13 +77,17 @@ class Referral extends Admin_Controller
         }
 
         $this->session->set_userdata('top_menu', 'referral_payment');
+        // Top-level page: clear any stale Setup>Referral sub_menu so it doesn't stay highlighted
+        $this->session->set_userdata('sub_menu', '');
+        $this->session->set_userdata('sub_sidebar_menu', '');
         $data["patients"] = $this->patient_model->getPatientListall();
         $data['type']     = $this->referral_category_model->get_type();
         $data['person']   = $this->referral_person_model->get_person();
         $data['payment']  = $this->referral_payment_model->get_payment();
-        $this->load->view('layout/header');
+        $data['module'] = 'referral_payment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/referral/payment', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function report()
@@ -91,18 +103,19 @@ class Referral extends Admin_Controller
         $data["patients"] = $this->patient_model->getPatientListall();
         $data['type']     = $this->referral_category_model->get_type();
         $data['person']   = $this->referral_person_model->get_person();
-        $this->load->view('layout/header');
+        $data['module'] = 'referral_payment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/referral/report', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
         $param = array(
-            'payee'         => $this->input->post('payee'),
-            'patient_type'  => $this->input->post('patient_type'),
-            'patient'       => $this->input->post('patient'),
-            'date'          => $this->input->post('date'),
+            'payee'         => $this->input->post('payee', TRUE),
+            'patient_type'  => $this->input->post('patient_type', TRUE),
+            'patient'       => $this->input->post('patient', TRUE),
+            'date'          => $this->input->post('date', TRUE),
         );
 
         $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -111,11 +124,11 @@ class Referral extends Admin_Controller
 
     public function referral_report()
     {
-        $payee        = $this->input->post('payee');
-        $patient_type = $this->input->post('patient_type');
-        $patient      = $this->input->post('patient');
-     
-        $date = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date'));       
+        $payee        = $this->input->post('payee', TRUE);
+        $patient_type = $this->input->post('patient_type', TRUE);
+        $patient      = $this->input->post('patient', TRUE);
+
+        $date = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE));       
         
         $reportdata   = $this->report_model->referralRecord($payee, $patient_type, $patient, $date);    
         $currency_symbol = $this->customlib->getHospitalCurrencyFormat();

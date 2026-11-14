@@ -7,10 +7,7 @@ $genderList = $this->customlib->getGender();
 <script src="<?php echo base_url(); ?>backend/dist/js/nprogress.js"></script>
 <script src="<?php echo base_url(); ?>backend/dist/js/dropify.min.js"></script>
 <!-- -->
-<form id="editbill" accept-charset="utf-8" method="post" class="ptt10">
-    <div class="row">
-        <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
-            <div class="row">
+<form id="editbill" accept-charset="utf-8" method="post">
                 <?php foreach ($detail as $pkey => $pvalue) {
                     ?>
                     <input type="hidden" name="previous_bill_id[]" value="<?php echo $pvalue['id'] ?>">
@@ -18,9 +15,15 @@ $genderList = $this->customlib->getGender();
                 <?php } ?>
                 <input name="bill_basic_id" type="hidden" class="form-control" value="<?php echo $result['id']; ?>" />
                 <input name="purchase_no" type="hidden" class="form-control" value="<?php echo $pvalue['id']; ?>" />
-                <input name="invoice_no" id="editinvoiceno" type="hidden" class="form-control" value="" />
-                <input name="supplier_id" id="editsupplierid" type="hidden" class="form-control" value="" />
-                <input name="date" id="editdate_supplier" type="hidden" class="form-control" value="" />
+                <input name="invoice_no" id="editinvoiceno" type="hidden" class="form-control" value="<?php echo html_escape($result['invoice_no']); ?>" />
+                <input name="supplier_id" id="editsupplierid" type="hidden" class="form-control" value="<?php echo $result['supplier_id']; ?>" />
+                <input name="date" id="editdate_supplier" type="hidden" class="form-control" value="<?php echo $this->customlib->YYYYMMDDHisTodateFormat($result['date']); ?>" />
+                <span id="editBillMeta"
+                    data-supplier-id="<?php echo $result['supplier_id']; ?>"
+                    data-invoice-no="<?php echo html_escape($result['invoice_no']); ?>"
+                    data-date="<?php echo $this->customlib->YYYYMMDDHisTodateFormat($result['date']); ?>"
+                    data-purchase-no="<?php echo $result['id']; ?>"
+                ></span>
 
                 <script type="text/javascript">
                     function geteditQuantity(id, batch = '') {
@@ -48,17 +51,15 @@ $genderList = $this->customlib->getGender();
  
                     function geteditExpire(id) {
                         var batch_no = $("#batch_edit_no" + id).val();
-                        $('#edit_expiry_date' + id).val('');
                         $.ajax({
                             type: "POST",
                             url: base_url + "admin/pharmacy/getExpireDate",
                             data: {'batch_no': batch_no},
                             dataType: 'json',
                             success: function (data) {
-                                if (data != null) {
+                                if (data != null && data.expiry) {
                                     $('#edit_expiry_date' + id).val(data.expiry);
-                                    geteditQuantity(id, batch_no)
-
+                                    geteditQuantity(id, batch_no);
                                 }
                             }
                         });
@@ -119,174 +120,165 @@ $genderList = $this->customlib->getGender();
                                 });
                                 $("#batch_edit_no" + rowid).html("<option value=''><?php echo $this->lang->line('select') ?></option>");
                                 $('#batch_edit_no' + rowid).append(div_data);
-                                $('#mrp_edit_more' + rowid).val(res.mrp);
+                                if (res.length > 0) { $('#mrp_edit_more' + rowid).val(res[0].mrp); }
                                 geteditExpire(rowid)
                             }
                         });
                     }
                 </script>
-                <div class="col-md-12" style="clear: both;">
-                    <div class="table-responsive">
-                        <table class="table tableover table-striped table-bordered table-hover tablefull12" id="edittableID">
-                            <tr style="font-size: 13px">
-                                <th width="13%"><?php echo $this->lang->line('medicine_category'); ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="11%"><?php echo $this->lang->line('medicine_name'); ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="8%"><?php echo $this->lang->line('batch_no'); ?><small style="color:red;"> *</small></th>
-                                <th width="9%"><?php echo $this->lang->line('expiry_date'); ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="7%"><?php echo $this->lang->line('mrp') . " " . ' (' . $currency_symbol . ')'; ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="7%"><?php echo $this->lang->line('batch_amount'); ?></th>
-                                <th width="8%"><?php echo $this->lang->line('sale_price') . " " . ' (' . $currency_symbol . ')'; ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="7%"><?php echo $this->lang->line('packing_qty'); ?></th>
-                                <th width="4%" class="text-right;"><?php echo $this->lang->line('quantity'); ?><small class="req" style="color:red;"> *</small> </th>
-                                <th width="10%" class="text-right"><?php echo $this->lang->line('purchase_price') . " " . ' (' . $currency_symbol . ')'; ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="7%" class="text-right"><?php echo $this->lang->line('tax'); ?><small class="req" style="color:red;"> *</small></th>
-                                <th width="11%" class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?><small class="req" style="color:red;"> *</small></th>
-                            </tr>
-                            <?php
-                            $i = 0;
-                            foreach ($detail as $key => $value) {                              
-                                ?>
+                <!-- Card 1: Medicine Table -->
+                <div class="sh-form-card mb-3">
+                    <div class="sh-card-header">
+                        <span class="sh-card-header-title"><?php echo $this->lang->line('medicine_name'); ?></span>
+                    </div>
+                    <div class="p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped table-bordered table-hover tblProducts mb-0" id="edittableID">
+                                <thead>
+                                <tr class="white-space-nowrap">
+                                    <th width="10%"><?php echo $this->lang->line('medicine_category'); ?><small class="req"> *</small></th>
+                                    <th width="10%"><?php echo $this->lang->line('medicine_name'); ?><small class="req"> *</small></th>
+                                    <th><?php echo $this->lang->line('batch_no'); ?><small class="req"> *</small></th>
+                                    <th><?php echo $this->lang->line('expiry_date'); ?><small class="req"> *</small></th>
+                                    <th><?php echo $this->lang->line('mrp') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></th>
+                                    <th><?php echo $this->lang->line('batch_amount'); ?></th>
+                                    <th><?php echo $this->lang->line('sale_price') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></th>
+                                    <th><?php echo $this->lang->line('packing_qty'); ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('quantity'); ?><small class="req"> *</small></th>
+                                    <th class="text-end"><?php echo $this->lang->line('purchase_price') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></th>
+                                    <th class="text-end"><?php echo $this->lang->line('tax'); ?><small class="req"> *</small></th>
+                                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php $i = 0; foreach ($detail as $key => $value) { ?>
                                 <script type="text/javascript">
-                                    getmedicine_edit_name('<?php echo $value['medicine_id'] ?>', '<?php echo $i ?>' );
                                     getmedicine_edit_name('<?php echo $value['medicine_category_id'] ?>', '<?php echo $i ?>', '<?php echo $value['medicine_id'] ?>')
                                 </script>
-                                <tr id="row<?php echo $i ?>">
-                                    <td width="16%"> 
-                                        <input name="id" type="hidden" class="form-control" value="<?php echo $value['id']; ?>" />
-                                        <select class="form-control" name='medicine_category_id[]'  onchange="getmedicine_edit_name(this.value, '<?php echo $i ?>', '<?php echo $value['medicine_id'] ?>')">
-                                            <option value=""><?php echo $this->lang->line('select'); ?>
-                                            </option>
-                                            <?php foreach ($medicineCategory as $dkey => $dvalue) {
-                                                ?>
-                                                <option value="<?php echo $dvalue["id"]; ?>" <?php if ($value["medicine_category_id"] == $dvalue["id"]) echo "selected"; ?> ><?php echo $dvalue["medicine_category"] ?>
-                                                </option>   
+                                <tr id="row<?php echo $i ?>" class="white-space-nowrap">
+                                    <td>
+                                        <input name="id" type="hidden" value="<?php echo $value['id']; ?>">
+                                        <select class="form-control" name='medicine_category_id[]' onchange="getmedicine_edit_name(this.value, '<?php echo $i ?>', '<?php echo $value['medicine_id'] ?>')">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach ($medicineCategory as $dkey => $dvalue) { ?>
+                                            <option value="<?php echo $dvalue["id"]; ?>" <?php if ($value["medicine_category_id"] == $dvalue["id"]) echo "selected"; ?>><?php echo $dvalue["medicine_category"] ?></option>
                                             <?php } ?>
                                         </select>
-                                        <span class="text-danger"><?php echo form_error('medicine_category_id[]'); ?>
-                                        </span>
-                                    </td>
-                                    <td >
-                                        <select class="form-control select2" style="width: 100%" id="medicine_edit_name<?php echo $i ?>" name='medicine_name[]' onchange="geteditbatchnolist(this.value, '<?php echo $i ?>')">
-                                            <option value="<?php echo set_value('medicine_name'); ?>"><?php echo $this->lang->line('select'); ?>
-                                            </option>  
-                                        </select> 
-                                        <span class="text-danger"><?php echo form_error('medicine_name[]'); ?>
-                                    </td>
-                                    <td >
-                                        <input type="text" name="batch_no[]" id="batch_edit_no<?php echo $i ?>" class="form-control batch_no" value="<?php echo $value['batch_no']; ?>" >
-                                        <span class="text-danger"><?php echo form_error('batch_no[]'); ?>
-                                        </span>
-                                    </td>
-                                    <td >
-                                        <input type="text" name="expiry_date[]" id="edit_expiry_date<?php echo $i ?>" class="form-control expires_date" value="" >
-                                        <span class="text-danger"><?php echo form_error('expiry_date[]'); ?>
-                                        </span>
-                                    </td>
-                                    <td >
-                                        <input type="text" name="mrp[]" id="mrp_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['mrp']; ?>" >
-                                        <span class="text-danger"><?php echo form_error('mrp[]'); ?>
-                                        </span>
-                                    </td>
-                                    <td >
-                                        <input type="text" name="batch_amount[]" id="batchamount_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['batch_amount']; ?>" >
-                                        <span class="text-danger"><?php echo form_error('mrp[]'); ?>
-                                        </span>
+                                        <span class="text-danger"><?php echo form_error('medicine_category_id[]'); ?></span>
                                     </td>
                                     <td>
-                                        <input type="text" name="sale_rate[]" id="sale_rate_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['sale_rate']; ?>" >
-                                        <span class="text-danger"><?php echo form_error('sale_rate[]'); ?>
-                                        </span>
+                                        <select class="form-control select2" id="medicine_edit_name<?php echo $i ?>" name='medicine_name[]' onchange="geteditbatchnolist(this.value, '<?php echo $i ?>')">
+                                            <option value="<?php echo set_value('medicine_name'); ?>"><?php echo $this->lang->line('select'); ?></option>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('medicine_name[]'); ?></span>
                                     </td>
                                     <td>
-                                        <input type="text" name="packing_qty[]" id="packing_qty_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['packing_qty']; ?>" >
-                                        <span class="text-danger"><?php echo form_error('packing_qty[]'); ?>
-                                        </span>
+                                        <input type="text" name="batch_no[]" id="batch_edit_no<?php echo $i ?>" class="form-control batch_no" value="<?php echo $value['batch_no']; ?>">
+                                        <span class="text-danger"><?php echo form_error('batch_no[]'); ?></span>
                                     </td>
-                                    <td class="text-right">                                      
-                                        <div class="input-group">
-                                            <input type="text" name="quantity[]" onchange="multiply(<?php echo $i ?>)" onfocus="geteditQuantity(<?php echo $i ?>)" value="<?php echo $value['quantity']; ?>" id="quantity_edit<?php echo $i ?>" class="form-control text-right">                                           
-                                        </div>                                       
-                                        <input type="hidden" name="medicine_batch_id[]" id="medicine_batch_id<?php echo $i ?>" >
-                                        <input type="hidden" name="bill_detail_id[]" value="<?php echo $value["id"] ?>" >
+                                    <td>
+                                        <input type="text" name="expiry_date[]" id="edit_expiry_date<?php echo $i ?>" class="form-control expires_date" value="<?php echo $this->customlib->getMedicine_expire_month($value['expiry']); ?>">
+                                        <span class="text-danger"><?php echo form_error('expiry_date[]'); ?></span>
                                     </td>
-                                    <td class="text-right">
-                                        <input type="text" name="purchase_price[]" onchange="multiply(<?php echo $i ?>)" id="purchase_price_edit<?php echo $i ?>" placeholder="purchase Price" class="form-control text-right" value=""/>
+                                    <td>
+                                        <input type="text" name="mrp[]" id="mrp_edit_more<?php echo $i ?>" class="form-control" value="<?php echo $value['mrp']; ?>">
+                                        <span class="text-danger"><?php echo form_error('mrp[]'); ?></span>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="batch_amount[]" id="batchamount_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['batch_amount']; ?>">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="sale_rate[]" id="sale_rate_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['sale_rate']; ?>">
+                                        <span class="text-danger"><?php echo form_error('sale_rate[]'); ?></span>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="packing_qty[]" id="packing_qty_edit<?php echo $i ?>" class="form-control" value="<?php echo $value['packing_qty']; ?>">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="quantity[]" onchange="multiply(<?php echo $i ?>)" onfocus="geteditQuantity(<?php echo $i ?>)" value="<?php echo $value['quantity']; ?>" id="quantity_edit<?php echo $i ?>" class="form-control text-end">
+                                        <input type="hidden" name="medicine_batch_id[]" id="medicine_batch_id<?php echo $i ?>">
+                                        <input type="hidden" name="bill_detail_id[]" value="<?php echo $value["id"] ?>">
+                                    </td>
+                                    <td class="text-end">
+                                        <input type="text" name="purchase_price[]" onchange="multiply(<?php echo $i ?>)" id="purchase_price_edit<?php echo $i ?>" class="form-control text-end" value="<?php echo $value['purchase_price']; ?>">
                                         <span class="text-danger"><?php echo form_error('purchase_price[]'); ?></span>
                                     </td>
-                                    <td class="text-right">
-                                         <div class="form-group"> 
-                                                <div class="input-group">
-                                                <input type="text" class="form-control right-border-none" name="purchase_tax[]" id="purchase_tax_edit<?php echo $i ?>" value="<?php echo $value["tax"] ?>"  autocomplete="off">
-                                                <span class="input-group-addon "> %</span>
-                                                </div>
+                                    <td class="text-end">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control right-border-none" name="purchase_tax[]" id="purchase_tax_edit<?php echo $i ?>" value="<?php echo $value["tax"] ?>" autocomplete="off">
+                                            <span class="input-group-text">%</span>
                                         </div>
                                     </td>
-                                    <td class="text-right">
-                                        <input type="text" name="amount[]" id="amount_edit<?php echo $i ?>" placeholder="Amount" class="form-control text-right" value="<?php echo $value['amount']; ?>"/>
+                                    <td class="text-end" width="10%">
+                                        <input type="text" name="amount[]" id="amount_edit<?php echo $i ?>" class="form-control text-end" value="<?php echo $value['amount']; ?>">
                                         <span class="text-danger"><?php echo form_error('amount[]'); ?></span>
                                     </td>
-                                    <?php if ($i != 0) { ?>
-                                        <td><button type='button' onclick="delete_row('<?php echo $i ?>')" class='closebtn'><i class='fa fa-remove'></i></button></td>
-                                    <?php } else { ?>
-                                        <td><button type="button" onclick="editMore()" style="color:#2196f3" class="closebtn"><i class="fa fa-plus"></i></button></td>
-                                    <?php } ?>
+                                    <td>
+                                        <?php if ($i != 0) { ?>
+                                        <button type="button" onclick="delete_row('<?php echo $i ?>')" class="btn btn-sm btn-outline-danger"><i class="fa fa-remove"></i></button>
+                                        <?php } else { ?>
+                                        <button type="button" onclick="editMore()" class="btn btn-info btn-sm"><i class="fa fa-plus"></i></button>
+                                        <?php } ?>
+                                    </td>
                                 </tr>
-                                <?php
-                                $i++;
-                            }
-                            ?>
-                        </table>
-                    </div>  
-                    <div class="divider"></div>                  
-                    <div class="row">   
-                        <div class="col-sm-5 col-lg-6 col-md-6">
-                            <table class="printablea4" width="100%">
-                                <tr>
-                                    <th><?php echo $this->lang->line('note'); ?></th>
-                                    <td><textarea name="note" id="note" class="form-control"><?php echo $result["note"] ?></textarea></td>
-                                </tr>
+                                <?php $i++; } ?>
+                                </tbody>
                             </table>
-                            <div class="form-group">
-                                <label><?php echo $this->lang->line('attach_document') ?></label>
-                                <input type="file" name="file" id="fileedit" class="form-control filestyle" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cards 2 & 3: Note/File + Billing Summary -->
+                <div class="d-flex flex-wrap gap-3">
+                    <!-- Card 2: Note + Attach -->
+                    <div class="sh-card-wrap">
+                        <div class="sh-form-card h-100">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('note'); ?></span>
                             </div>
-                        </div><!--./col-sm-6-->
-                        <div class="col-sm-7 col-lg-6 col-md-6">
-                            <div class="table-responsive">
-                                <table class="printablea4">
-                                    <tr>
-                                        <th width="25%"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable" width="75%" colspan="2"><input type="text" placeholder="Total" value="<?php echo $result["total"] ?>" value="0" name="total" id="edittotal"  style="width: 50%; float: right" class="form-control"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable"><h4 style="float: right;font-size: 12px; padding-left: 5px;"> %</h4><input type="text" placeholder="<?php echo $this->lang->line('discount'); ?>" value="" name="discount_percent" id="editdiscount_percent" style="width: 70%; float: right;font-size: 12px;" class="form-control"/></td>
-                                        <td class="text-right ipdbilltable"><input type="text" placeholder="Discount" value="<?php echo $result["discount"] ?>" name="discount" id="editdiscount" style="width: 85%; float: right" class="form-control"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable">                                            
-                                        </td>
-                                        <td class="text-right ipdbilltable"><input type="text" placeholder="Tax" name="tax" value="<?php echo $result["tax"] ?>" id="edittax" style="width: 85%; float: right" class="form-control"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th><?php echo $this->lang->line('net_amount') . "(" . $currency_symbol . ")"; ?></th>
-                                        <td class="text-right ipdbilltable" width="40%" colspan="2"><input type="text" placeholder="Net Amount" value="<?php echo $result["net_amount"] ?>" name="net_amount" id="editnet_amount" style="width: 50%; float: right" class="form-control"/></td>
-                                    </tr>
-                                </table>
-                            </div>   
-                        </div><!--.col-sm-6-->
-                    </div><!--./row-->  
-                </div><!--.col-sm-12-->                
-            </div><!--./row-->
-        </div><!--./col-md-12--> 
-        <div class="box-footer" style="clear: both">
-            <div class="pull-right">
-                <input type="button" onclick="addEditTotal()" value="<?php echo $this->lang->line('calculate'); ?>" class="btn btn-info"/>&nbsp;
-                <button type="submit" style="display: none" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="editbillsave" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
-            </div>
-        </div><!--./box-footer-->
-    </div><!--./row-->
+                            <div class="px-2 py-3">
+                                <div class="mb-3">
+                                    <textarea name="note" id="note" class="form-control"><?php echo $result["note"] ?></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label"><?php echo $this->lang->line('attach_document'); ?></label>
+                                    <input type="file" name="file" id="fileedit" class="form-control filestyle">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 3: Billing Summary (edit variant — no payment section) -->
+                    <div class="sh-card-wrap">
+                        <div class="sh-form-card h-100 overflow-hidden">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('net_amount'); ?> (<?php echo $currency_symbol; ?>)</span>
+                            </div>
+                            <div class="sh-summary-row border-bottom">
+                                <span><?php echo $this->lang->line('total'); ?> (<?php echo $currency_symbol; ?>)</span>
+                                <input type="text" placeholder="<?= $this->lang->line('total') ?>" value="<?php echo $result["total"] ?>" name="total" id="edittotal" class="form-control sh-summary-input text-end">
+                            </div>
+                            <div class="sh-summary-row border-bottom">
+                                <span><?php echo $this->lang->line('discount'); ?> (<?php echo $currency_symbol; ?>)</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <input type="text" name="discount_percent" id="editdiscount_percent" class="form-control sh-summary-input-pct text-end discount_percent" placeholder="%">
+                                    <span class="text-muted small">%</span>
+                                    <input type="text" name="discount" id="editdiscount" value="<?php echo $result["discount"] ?>" class="form-control sh-summary-input text-end">
+                                </div>
+                            </div>
+                            <div class="sh-summary-row border-bottom">
+                                <span><?php echo $this->lang->line('tax'); ?> (<?php echo $currency_symbol; ?>)</span>
+                                <input type="text" name="tax" id="edittax" value="<?php echo $result["tax"] ?>" class="form-control sh-summary-input sh-summary-input-tax text-end">
+                            </div>
+                            <div class="sh-summary-row border-bottom">
+                                <span><?php echo $this->lang->line('net_amount'); ?></span>
+                                <input type="text" name="net_amount" id="editnet_amount" value="<?php echo $result["net_amount"] ?>" class="form-control sh-summary-input text-end">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
 </form> 
 
 <script type="text/javascript">
@@ -303,29 +295,21 @@ $genderList = $this->customlib->getGender();
     });
 	
     var expiry_date = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'DD', 'm' => 'MM', 'Y' => 'YYYY',]) ?>';
-    $('.expires_date').datepicker({
-        format: "M/yyyy",
-        viewMode: "months",
-        minViewMode: "months",
-        autoclose: true
-    });
+    // .expires_date pickers initialized by parent purchase.php editPurchase() success callback (calls initMonthYearPicker)
 
     function editMore() {
         var table = document.getElementById("edittableID");
         var table_len = (table.rows.length);
         var id = parseInt(table_len);
 
-        var div = "<td><select class='form-control' name='medicine_category_id[]' onchange='getmedicine_edit_name(this.value," + id + ")'><option value='<?php echo set_value('medicine_category_id'); ?>'><?php echo $this->lang->line('select') ?></option><?php foreach ($medicineCategory as $dkey => $dvalue) { ?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["medicine_category"] ?></option><?php } ?></select></td><td><select class='form-control select2' name='medicine_name[]' onchange='getmedicinedetails(this.value," + id + ")' id='medicine_edit_name" + id + "' ><option value='<?php echo set_value('medicine_name'); ?>'><?php echo $this->lang->line('select') ?></option></select></td><td><input type='text' id='batch_edit_no" + id + "' name='batch_no[]' class='form-control'></td><td><input type='text' id='edit_expiry_date" + id + "' name='expiry_date[]' class='form-control expires_date'></td><td><input type='text' id='mrp_edit_more" + id + "' name='mrp[]' class='form-control'></td><td><input type='text' id='batchamount_edit" + id + "' name='batch_amount[]' class='form-control'></td><td><input type='text' id='sale_rate_edit" + id + "' name='sale_rate[]' class='form-control'></td><td><input type='text' id='packing_qty_edit" + id + "' name='packing_qty[]' class='form-control'></td><td><div class='input-group'><input type='text' name='quantity[]' onchange='multiply(" + id + ")' onfocus='geteditQuantity(" + id + ")' id='quantity_edit" + id + "' class='form-control text-right'></div><input type='hidden' name='available_quantity[]' id='available_edit_quantity" + id + "'><input type=hidden class=form-control value='0' name='bill_detail_id[]'  /><input type='hidden' name='medicine_batch_id[]' id='medicine_batch_id" + id + "'></td><td> <input type='text' name='purchase_price[]' onchange='multiply(" + id + ")' id='purchase_price_edit" + id + "'  class='form-control text-right'></td><td><div class='form-group'><div class='input-group'><input type='text'  class='form-control right-border-none'  name='purchase_tax[]' id='purchase_tax" + id + "'  autocomplete='off'><span class='input-group-addon '> %</span></div></div></td><td><input type='text' name='amount[]' id='amount_edit" + id + "'  class='form-control text-right'></td>";
+        var div = "<td><select class='form-control' name='medicine_category_id[]' onchange='getmedicine_edit_name(this.value," + id + ")'><option value='<?php echo set_value('medicine_category_id'); ?>'><?php echo $this->lang->line('select') ?></option><?php foreach ($medicineCategory as $dkey => $dvalue) { ?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["medicine_category"] ?></option><?php } ?></select></td><td><select class='form-control select2' name='medicine_name[]' onchange='getmedicinedetails(this.value," + id + ")' id='medicine_edit_name" + id + "' ><option value='<?php echo set_value('medicine_name'); ?>'><?php echo $this->lang->line('select') ?></option></select></td><td><input type='text' id='batch_edit_no" + id + "' name='batch_no[]' class='form-control'></td><td><input type='text' id='edit_expiry_date" + id + "' name='expiry_date[]' class='form-control expires_date'></td><td><input type='text' id='mrp_edit_more" + id + "' name='mrp[]' class='form-control'></td><td><input type='text' id='batchamount_edit" + id + "' name='batch_amount[]' class='form-control'></td><td><input type='text' id='sale_rate_edit" + id + "' name='sale_rate[]' class='form-control'></td><td><input type='text' id='packing_qty_edit" + id + "' name='packing_qty[]' class='form-control'></td><td><div class='input-group'><input type='text' name='quantity[]' onchange='multiply(" + id + ")' onfocus='geteditQuantity(" + id + ")' id='quantity_edit" + id + "' class='form-control text-end'></div><input type='hidden' name='available_quantity[]' id='available_edit_quantity" + id + "'><input type=hidden class=form-control value='0' name='bill_detail_id[]'  /><input type='hidden' name='medicine_batch_id[]' id='medicine_batch_id" + id + "'></td><td> <input type='text' name='purchase_price[]' onchange='multiply(" + id + ")' id='purchase_price_edit" + id + "'  class='form-control text-end'></td><td><div class='mb-3'><div class='input-group'><input type='text'  class='form-control right-border-none'  name='purchase_tax[]' id='purchase_tax" + id + "'  autocomplete='off'><span class='input-group-text '> %</span></div></div></td><td width='10%'><input type='text' name='amount[]' id='amount_edit" + id + "'  class='form-control text-end'></td>";
 
-        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "'>" + div + "<td><button type='button' onclick='delete_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
+        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "' class='white-space-nowrap'>" + div + "<td><button type='button' onclick='delete_row(" + id + ")' class='btn btn-sm btn-outline-danger'><i class='fa fa-remove'></i></button></td></tr>";
 
-        var expiry_date = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'DD', 'm' => 'MM', 'Y' => 'YYYY',]) ?>';
-        $('.expires_date').datepicker({
-            format: "M/yyyy",
-            viewMode: "months",
-            minViewMode: "months",
-            autoclose: true,
-        });
+        // Month/year-only picker — defined in parent purchase.php (not handled by global .date delegation).
+        if (typeof initMonthYearPicker === 'function') {
+            document.querySelectorAll('#edittableID .expires_date').forEach(initMonthYearPicker);
+        }
         $('.select2').select2();
     }
 
@@ -349,7 +333,7 @@ $genderList = $this->customlib->getGender();
                 }
 
             tax_amount +=parseFloat((inpvalue) * tax_inpvalue / 100);
-            total += parseInt(inpvalue);
+            total += parseFloat(inpvalue);
         }
         $("#edittax").val(tax_amount.toFixed(2));
         var discount_percent = $("#editdiscount_percent").val();
@@ -375,14 +359,16 @@ $genderList = $this->customlib->getGender();
     }
 
     function delete_row(id) {
-        var table = document.getElementById("edittableID");
-        var rowCount = table.rows.length;
-        $("#row" + id).html("");
+        if (confirm("<?php echo $this->lang->line('are_you_sure'); ?>")) {
+            var table = document.getElementById("edittableID");
+            var rowCount = table.rows.length;
+            $("#row" + id).html("");
+        }
     }
 
     $(document).ready(function (e) {
         $("#editbill").on('submit', (function (e) {
-            $("#editbillsave").button('loading');
+            $("#editbillsave").btnLoading();
             var table = document.getElementById("edittableID");
             var rowCount = table.rows.length;
             for (var k = 0; k < rowCount; k++) {
@@ -395,6 +381,9 @@ $genderList = $this->customlib->getGender();
                 }
             }
             e.preventDefault();
+            $('#editsupplierid').val($('#editsupplier').val());
+            $('#editinvoiceno').val($('#invoicenoup').val());
+            $('#editdate_supplier').val($('#dateedit_supplier').val());
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/pharmacy/updateSupplierBill',
                 type: "POST",
@@ -417,7 +406,7 @@ $genderList = $this->customlib->getGender();
                 },
                 error: function () {}
             });
-            $("#editbillsave").button('reset');
+            $("#editbillsave").btnReset();
         }));
     });   
 </script>

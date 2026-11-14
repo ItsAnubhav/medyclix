@@ -1,36 +1,24 @@
-<style type="text/css">
-    @media print
-    {
-        .no-print, .no-print *
-        {
-            display: none !important;
-        }
-    }
-</style>
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <!-- left column -->
             <div class="col-md-12">
                 <!-- general form elements -->
-                <div class="box box-primary border0 mb0">
+                <div class="card border0 mb0">
                      <?php $this->load->view('admin/report/_finance');?>  
-                     <div class="box-header ptbnull"></div>
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('processing_transaction_report') ?></h3>
-                            <div class="box-tools pull-right"></div>
+                     <div class="card-header ptbnull"></div>
+                        <div class="card-header">
+                            <h3 class="card-title"><?php echo $this->lang->line('processing_transaction_report') ?></h3>
+                            <div class="d-flex gap-2 align-items-center flex-wrap float-end"></div>
                         </div>
-                    <div class="box-body pb0">
+                    <div class="card-body pb0">
                         <div class="row">
                              
                         </div>
                     </div>
            
-    <div class="box-body">    
+    <div class="card-body">    
         <div class="table-responsive">  
             <div class="download_label"> <?php echo $this->lang->line('processing_transaction_report') ?></div>
             <table class="table table-striped table-bordered table-hover transaction-list" data-export-title="<?php echo $this->lang->line('processing_transaction_report') ?>">
@@ -62,67 +50,67 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 </div>
             </div>
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div>
-<div class="modal fade" id="collectionModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content MX-2">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title"><?php echo $this->lang->line('collection_list'); ?></h4>
-        </div>
-        <div class="scroll-area">
-            <div class="modal-body">
-              ...
+<div class="modal fade sh-modal sh-modal-branded" id="collectionModal" tabindex="-1" aria-labelledby="collectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="collectionModalLabel"><?php echo $this->lang->line('collection_list'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>        
-      </div><!-- /.modal-content -->
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
+</div><!-- /.modal -->
 
 <script type="text/javascript">
-      var date_format_new = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
+    // Linked .start_date / .end_date pickers — same pattern as transactionreport.php
     $(document).ready(function(){
-
-    $(".start_date").datepicker({
-              format: date_format_new,
-              setDate: new Date(),
-              autoclose: true,
-              todayHighlight: true
-    }).on('changeDate', function (selected) {
-        var minDate = new Date(selected.date.valueOf());
-        $('.end_date').datepicker('setStartDate', minDate);
-    });
-
-    $(".end_date").datepicker({
-              format: date_format_new,
-              setDate: new Date(),
-              autoclose: true,
-              todayHighlight: true
-    }).on('changeDate', function (selected) {
-            var maxDate = new Date(selected.date.valueOf());
-            $('.start_date').datepicker('setEndDate', maxDate);
+        document.querySelectorAll('.start_date').forEach(function(startEl) {
+            if (!startEl.classList.contains('date')) startEl.classList.add('date');
+            SHPicker.onChange(startEl, function(e) {
+                if (!e.date) return;
+                document.querySelectorAll('.end_date').forEach(function(endEl) {
+                    SHPicker.setRestriction(endEl, { minDate: e.date });
+                });
+            });
         });
-
-});
+        document.querySelectorAll('.end_date').forEach(function(endEl) {
+            if (!endEl.classList.contains('date')) endEl.classList.add('date');
+            SHPicker.onChange(endEl, function(e) {
+                if (!e.date) return;
+                document.querySelectorAll('.start_date').forEach(function(startEl) {
+                    SHPicker.setRestriction(startEl, { maxDate: e.date });
+                });
+            });
+        });
+    });
 $(document).ready(function() {
     initDatatable('transaction-list','admin/transaction/processingtransaction');
 });
     $(document).on('click','.daily_collection',function(e){
-         var $btn = $(this);  
+         var $btn = $(this);
         e.preventDefault();
-       var form = $(this);
+        var dateText = $(this).closest('tr').find('td:first').text().trim();
         $.ajax({
             url: baseurl+'admin/transaction/gettransactionbydate',
             type: "POST",
             data: {'date': $(this).data('date')},
             dataType: 'json',
             beforeSend: function() {
-          $btn.button('loading');
+          $btn.btnLoading();
             },
             success: function (data) {
-                  $btn.button('reset');
+                  $btn.btnReset();
            $('#collectionModal .modal-body').html(data.page);
+           $('#collectionModalLabel').text(dateText);
            $('#collectionModal .example').DataTable({ 
             dom: "Bfrtip",
             buttons: [
@@ -187,14 +175,14 @@ $(document).ready(function() {
             ]
         });
 
-           $('#collectionModal').modal('show');
+           shModal('collectionModal').show();
             },
     error: function(xhr) { // if error occured
         alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-      $btn.button('reset');
+      $btn.btnReset();
     },
     complete: function() {
-    $btn.button('reset');
+    $btn.btnReset();
     }
         });
     });

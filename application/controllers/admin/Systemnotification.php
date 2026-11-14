@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Systemnotification extends Admin_Controller
 {
+	public $notificationurl;
+
 
     public function __construct()
     {
@@ -18,6 +20,10 @@ class Systemnotification extends Admin_Controller
 
     public function index()
     {
+        if (!$this->rbac->hasPrivilege('notification_center', 'can_view')) {
+            access_denied();
+            return;
+        }
         $notifications = $this->notification_model->getSystemNotification();
 
         $config['base_url']        = base_url() . "admin/systemnotification/index";
@@ -43,9 +49,51 @@ class Systemnotification extends Admin_Controller
         $page             = ($this->uri->segment(4)) ? ($this->uri->segment(4)) : 0;
         $notificationlist = $this->notification_model->getSystemNotification($config['per_page'], $page);
 
-        $data["notifications"]   = $notificationlist;
-        $data['notificationurl'] = $this->notificationurl;
+        $grouped     = array('today' => array(), 'yesterday' => array(), 'earlier_this_week' => array(), 'older' => array());
+        $today_ts    = strtotime(date('Y-m-d'));
+        $yest_ts     = strtotime('-1 day', $today_ts);
+        $week_ts     = strtotime('-7 days', $today_ts);
+        $unread_cnt  = 0;
+        foreach ($notificationlist as $row) {
+            $row_ts = strtotime(date('Y-m-d', strtotime($row['date'])));
+            if ($row_ts >= $today_ts) {
+                $grouped['today'][] = $row;
+            } elseif ($row_ts >= $yest_ts) {
+                $grouped['yesterday'][] = $row;
+            } elseif ($row_ts >= $week_ts) {
+                $grouped['earlier_this_week'][] = $row;
+            } else {
+                $grouped['older'][] = $row;
+            }
+            if (empty($row['readdone']) || $row['readdone'] != 'no') {
+                $unread_cnt++;
+            }
+        }
+
+        $type_color_map = array(
+            'appointment'        => 'info',
+            'opd'                => 'teal',
+            'ipd'                => 'info',
+            'pharmacy'           => 'warn',
+            'pathology'          => 'warn',
+            'radiology'          => 'violet',
+            'blood_bank'         => 'danger',
+            'live_consultation'  => 'violet',
+            'referral'           => 'teal',
+            'certificate'        => 'success',
+            'ambulance'          => 'danger',
+            'birth_death_record' => 'success',
+            'human_resource'     => 'success',
+        );
+
+        $data["notifications"]      = $notificationlist;
+        $data["notifications_by_day"] = $grouped;
+        $data["unread_count"]       = $unread_cnt;
+        $data["read_count"]         = sizeof($notificationlist) - $unread_cnt;
+        $data["type_color_map"]     = $type_color_map;
+        $data['notificationurl']    = $this->notificationurl;
         $this->pagination->initialize($config);
+        $data['module'] = 'messaging';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/systemnotification/index', $data);
         $this->load->view('layout/footer', $data);
@@ -53,16 +101,35 @@ class Systemnotification extends Admin_Controller
 
     public function deleteall()
     {
+        if (!$this->rbac->hasPrivilege('notification_center', 'can_view')) {
+            echo json_encode(array('status' => 0));
+            return;
+        }
         $role_id = $this->customlib->getLoggedInUserID();
         $this->notification_model->deleteByUser($role_id);
         $return = array('status' => 1, 'msg' => $this->lang->line('data_deleted_successfully'));
         echo json_encode($return);
     }
 
+    public function deleteone()
+    {
+        if (!$this->rbac->hasPrivilege('notification_center', 'can_view')) {
+            echo json_encode(array('status' => 0));
+            return;
+        }
+        $id      = (int)$this->input->post("id", TRUE);
+        $role_id = $this->customlib->getLoggedInUserID();
+        $ok      = $this->notification_model->deleteSystemNotificationForUser($id, $role_id);
+        echo json_encode(array('status' => $ok ? 1 : 0, 'msg' => $this->lang->line('data_deleted_successfully')));
+    }
+
 //-------------------------------------------------------------------------------------------------------
     public function updateStatus()
     {
-        $notification_id = $this->input->post("id");
+        if (!$this->rbac->hasPrivilege('notification_center', 'can_view')) {
+            return;
+        }
+        $notification_id = $this->input->post("id", TRUE);
         $userdata = $this->customlib->getUserData();
         $userid   = $userdata["id"];
         $data     = array('notification_id' => $notification_id,
@@ -245,6 +312,51 @@ class Systemnotification extends Admin_Controller
 
         $this->session->set_flashdata('opdnpres_data', $data);
         redirect("admin/patient/profile/" . $patient_id);
+    }
+
+//----------------------------------------------------------------------------------------------------
+
+    public function pollNotifications()
+    {
+        if (!$this->input->is_ajax_request()) {
+            redirect('admin/admin/dashboard');
+            return;
+        }
+        if (!$this->rbac->hasPrivilege('notification_center', 'can_view')) {
+            echo json_encode(array('status' => 0));
+            return;
+        }
+
+        $last_check_raw = $this->input->post('last_check', TRUE);
+        $since_datetime = '';
+        if (!empty($last_check_raw)) {
+            $ts = strtotime($last_check_raw);
+            if ($ts !== false) {
+                $since_datetime = date('Y-m-d H:i:s', $ts);
+            }
+        }
+        if (empty($since_datetime)) {
+            $since_datetime = date('Y-m-d H:i:s', time() - 60);
+        }
+
+        $new_notifications = $this->notification_model->getNewNotificationsSince($since_datetime);
+        $unread_count_row  = $this->notification_model->getCountUnreadNotification();
+
+        foreach ($new_notifications as &$_n) {
+            $_type = isset($_n['notification_type']) ? $_n['notification_type'] : '';
+            $_icon = ($_type !== '') ? @$this->customlib->notification_icon($_type) : '';
+            $_n['icon_class']   = $_icon ? $_icon : 'fa fa-bell';
+            $_n['module_label'] = ($_type !== '')
+                ? ucwords(str_replace('_', ' ', $_type))
+                : 'System';
+        }
+        unset($_n);
+
+        echo json_encode(array(
+            'status'            => 1,
+            'new_notifications' => $new_notifications,
+            'unread_count'      => (int) $unread_count_row->count,
+        ));
     }
 
 //----------------------------------------------------------------------------------------------------

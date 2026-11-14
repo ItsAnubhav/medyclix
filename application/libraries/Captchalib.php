@@ -20,7 +20,7 @@ class Captchalib
     public function generate_captcha()
     {
         $captcha_config = array(
-            'img_path'      => 'backend/captcha_images/',
+            'img_path'      => FCPATH.'backend/captcha_images/',
             'img_url'       => base_url().'backend/captcha_images/',
             'font_path'     => FCPATH.'system/fonts/texb.ttf',
             'img_width'     => '150',
@@ -35,7 +35,7 @@ class Captchalib
                'grid'           => array(7, 91, 175)
             )
         );
-        
+
         $captcha = create_captcha($captcha_config);
         // Unset previous captcha and set new captcha word
         $this->CI->session->unset_userdata('captchaCode');

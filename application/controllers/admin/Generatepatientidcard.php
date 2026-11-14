@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Generatepatientidcard extends Admin_Controller
 {
+	public $sch_setting_detail;
+
 
     public function __construct()
     {
@@ -34,14 +36,15 @@ class Generatepatientidcard extends Admin_Controller
         $this->form_validation->set_rules('patient_id_card', $this->lang->line('id_card_template'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == true) {
-            $search = $this->input->post('search');
+            $search = $this->input->post('search', TRUE);
             $data['searchby']        = "filter";
-            $patient                 = $this->input->post('patient_id');
+            $patient                 = $this->input->post('patient_id', TRUE);
             $data['patient']         = $patient;
-            $patient_id_card         = $this->input->post('patient_id_card');
+            $patient_id_card         = $this->input->post('patient_id_card', TRUE);
             $data['patient_id_card'] = $patient_id_card;
         }
 
+        $data['module'] = 'certificate';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/patientidcard/generatepatientidcard', $data);
         $this->load->view('layout/footer', $data);
@@ -49,7 +52,7 @@ class Generatepatientidcard extends Admin_Controller
   
     public function checkpatientidcardvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('patient_id_card', $this->lang->line('id_card_template'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
@@ -61,8 +64,8 @@ class Generatepatientidcard extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'patient_id'      => $this->input->post('patient_id'),
-                'patient_id_card' => $this->input->post('patient_id_card'),
+                'patient_id'      => $this->input->post('patient_id', TRUE),
+                'patient_id_card' => $this->input->post('patient_id_card', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -72,8 +75,8 @@ class Generatepatientidcard extends Admin_Controller
 
     public function getpatientlistdatatable()
     {
-        $patient = $this->input->post('patient_id');
-        $idcard  = $this->input->post('patient_id_card');
+        $patient = $this->input->post('patient_id', TRUE);
+        $idcard  = $this->input->post('patient_id_card', TRUE);
 
         $idcardResult = $this->Generatepatientidcard_model->getidcardbyid($idcard);
         if ($patient == 'all') {
@@ -116,9 +119,9 @@ class Generatepatientidcard extends Admin_Controller
 
     public function generatemultiple()
     {
-        $patientid               = $this->input->post('data');
+        $patientid               = $this->input->post('data', TRUE);
         $patient_array           = json_decode($patientid);
-        $idcard                  = $this->input->post('patient_id_card');
+        $idcard                  = $this->input->post('patient_id_card', TRUE);
         $data                    = array();
         $results                 = array();
         $pat_arr                 = array();

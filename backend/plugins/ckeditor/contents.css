@@ -132,3 +132,14 @@ a > img {
 	border: none;
 	outline: 1px solid #0782C1;
 }
+
+/* Dark mode — applied when bodyClass:'variant-b' is set in CKEDITOR.config */
+body.variant-b {
+	background-color: #1A2027;
+	color: #E8EDF2;
+}
+body.variant-b a               { color: #4EA2FF; }
+body.variant-b hr              { border-top-color: rgba(255,255,255,.1); }
+body.variant-b blockquote      { border-color: rgba(255,255,255,.2); color: #C5CDD5; }
+body.variant-b pre             { background: #222A33; color: #C5CDD5; }
+body.variant-b figure          { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }

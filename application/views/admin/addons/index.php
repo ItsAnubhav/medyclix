@@ -1,106 +1,69 @@
-<style>
-    .card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        word-wrap: break-word;
-        background-color: #fff;
-        background-clip: border-box;
-        border: 1px solid rgba(0, 0, 0, .125);
-        border-radius: .25rem;
-    }
-
-    .card-body {
-        flex: 1 1 auto;
-        padding: 1.25rem;
-    }
-.addon-services {
-    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-}
-
-</style>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <?php $this->load->view('setting/sidebar'); ?>
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('addons'); ?></h3>
-                        <div class="box-tools pull-right displaynone">
-                            <div class="row pb20">
-                                <div class="col-md-offset-1 col-lg-9 col-md-9 col-sm-12">
-                                    <form method="POST" action="#" id="searchform">
-                                        <div class="input-group input-group-sm">
-                                            <input type="text" name="table_search" class="form-control pull-right post_search_text" placeholder="<?php echo $this->lang->line('search'); ?>">
-                                            <div class="input-group-btn">
-                                                <button type="submit" class="btn btn-default  post_search_submit"><i class="fa fa-search"></i></button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('addons'); ?></h3>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
+                        <form class="d-flex align-items-center justify-content-center gap-2 flex-nowrap mb-3 mx-auto sh-w-560" role="form" action="<?php echo current_url(); ?>" method="post" enctype="multipart/form-data" id="local_form">
+                            <div class="flex-grow-1 relative z-index-1 mb-0 sh-w-420">
+                                <input class="filestyle form-control sh-h-40" data-height="40" type="file" name="file" id="exampleInputFile">
+                                <span class="text-danger"><?php echo form_error('file'); ?></span>
                             </div>
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
-                        <div class="row pb20">
-                            <div class="col-md-offset-2 col-lg-8 col-md-8 col-sm-12">
-                                <form class="form-inline row" role="form" action="<?php echo current_url(); ?>" method="post" enctype="multipart/form-data" id="local_form">
-                                    <?php //echo validation_errors(); ?>
-                                    <div class="form-group mb-2 col-lg-9 col-md-9 col-sm-8 relative z-index-1">
-                                        <label for="staticEmail2" class="sr-only">Email</label>
-                                        <input class="filestyle form-control" data-height="40" type="file" name="file" id="exampleInputFile" style="height:40px;">
-										<span class="text-danger"><?php echo form_error('file'); ?></span>
-                                    </div>
-                                    <div class="col-lg-3 col-md-3 col-sm-4">
-                                        <button type="submit" class="btn btn-primary mb-2 full-width ms-md-n1-3 ms-lg-n1-3" style="height:42px;"><i class="fa fa-upload"></i> <?php echo $this->lang->line('upload'); ?></button>                                       
-                                    </div>     
-                                </form>
-                            </div>
-                        </div>
+                            <button type="submit" class="btn btn-primary text-nowrap sh-h-42"><i class="fa fa-upload"></i> <?php echo $this->lang->line('upload'); ?></button>
+                        </form>
                         <form class="post-list">
                             <input type="hidden" value="" />
                         </form>
-                        <div style="position: relative; min-height: 300px;">                            
+                        <div class="position-relative sh-min-h-300">                            
                             <div class="modal_loader_div" style="display: none;"></div>
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="pagination-container"></div>
-                                    <div class="pagination-nav pull-right"></div>
+                                    <div class="pagination-nav float-end"></div>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <!-- right column -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
 
-<div id="addonUpdateModal" class="modal fade">
-    <div class="modal-dialog">
+
+<div id="addonUpdateModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="addonUpdateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('update_your_addon'); ?></h4>
+                <h5 class="modal-title" id="addonUpdateModalLabel"><?php echo $this->lang->line('update_your_addon'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="<?php echo site_url('admin/admin/updateAddonVerify'); ?>" method="POST" id="update_addon_verify">
-                <div class="modal-body addon_update_modal-body">
-                    <div class="error_message">
-                    </div>
-                    <input type="hidden" name="addon" class="addon_name" value="">
-                    <input type="hidden" name="product_id" class="product_id" value="">
-                    <div class="form-group">
-                        <label class="ainline"><span>Envato Market Purchase Code for Addon Update ( <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> How to find it?</a> )</span></label>
-                        <input type="text" class="form-control" id="input-addon_check_update_envato_market_purchase_code" name="addon_check_update_envato_market_purchase_code">
-                        <div id="error" class="input-error text text-danger"></div>
+                <div class="pup-scroll-area">
+                    <div class="modal-body addon_update_modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="error_message">
+                                </div>
+                                <input type="hidden" name="addon" class="addon_name" value="">
+                                <input type="hidden" name="product_id" class="product_id" value="">
+                                <div class="mb-3">
+                                    <label class="ainline"><span>Envato Market Purchase Code for Addon Update ( <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> How to find it?</a> )</span></label>
+                                    <input type="text" class="form-control" id="input-addon_check_update_envato_market_purchase_code" name="addon_check_update_envato_market_purchase_code">
+                                    <div id="error" class="input-error text text-danger"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
                     <button type="submit" class="btn btn-info" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Saving..."><?php echo $this->lang->line('update'); ?></button>
                 </div>
             </form>
@@ -211,7 +174,7 @@
         let product_id = _button.data('productId');
         let directory = _button.data('directory');
 
-        _button.button('loading');
+        _button.btnLoading();
         $.ajax({
             url: base_url + 'admin/addons/install',
             type: "POST",
@@ -222,7 +185,7 @@
             dataType: 'json',
             cache: false,
             beforeSend: function() {
-                _button.button('loading');
+                _button.btnLoading();
             },
             success: function(data) {
 
@@ -237,10 +200,10 @@
             },
             error: function(xhr) { // if error occured
                 alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                _button.button('reset');
+                _button.btnReset();
             },
             complete: function() {
-                _button.button('reset');
+                _button.btnReset();
             }
         });
     });
@@ -260,7 +223,7 @@
         e.preventDefault();
         let form = $(this);
         let $this = $(this).find("button[type=submit]:focus");
-        $this.button('loading');
+        $this.btnLoading();
         let actionUrl = form.attr('action');
         $.ajax({
             url: actionUrl,
@@ -271,7 +234,7 @@
             beforeSend: function() {
                 $('.addon_update_modal-body .error_message').html("");
                 $("[class^='input-error']").html("");
-                $this.button('loading');
+                $this.btnLoading();
             },
             success: function(response, textStatus, xhr) {
                 if (xhr.status != 200) {
@@ -295,11 +258,11 @@
 
                  }
               
-                $this.button('reset');
+                $this.btnReset();
             },
             error: function(xhr) { // if error occured
              
-                $this.button('reset');
+                $this.btnReset();
 
                 if (xhr.status != 200) {
                     console.log("sdfsdfdsf");
@@ -312,7 +275,7 @@
 
             },
             complete: function() {
-                $this.button('reset');
+                $this.btnReset();
             }
 
         });
@@ -342,7 +305,7 @@ let update_addon=(product_id,directory)=>{
                     successMsg(data.msg);
                     
                     posts.init();
-                    $('#addonUpdateModal').modal('hide');
+                    shModal('addonUpdateModal').hide();
                 }
             },
             error: function(xhr) { // if error occured
@@ -362,7 +325,7 @@ let update_addon=(product_id,directory)=>{
         let product_id = _button.data('productId');
         let directory = _button.data('directory');
 
-        _button.button('loading');
+        _button.btnLoading();
         $.ajax({
             url: base_url + 'admin/addons/install',
             type: "POST",
@@ -375,7 +338,7 @@ let update_addon=(product_id,directory)=>{
             cache: false,
 
             beforeSend: function() {
-                _button.button('loading');
+                _button.btnLoading();
             },
             success: function(data) {
 
@@ -390,10 +353,10 @@ let update_addon=(product_id,directory)=>{
             },
             error: function(xhr) { // if error occured
                 alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                _button.button('reset');
+                _button.btnReset();
             },
             complete: function() {
-                _button.button('reset');
+                _button.btnReset();
             }
         });
     });
@@ -407,7 +370,7 @@ let update_addon=(product_id,directory)=>{
 			let product_id = _button.data('productId');
 			let directory = _button.data('directory');
 
-			_button.button('loading');
+			_button.btnLoading();
 			$.ajax({
 				url: base_url + 'admin/addons/uninstall',
 				type: "POST",
@@ -420,7 +383,7 @@ let update_addon=(product_id,directory)=>{
 				cache: false,
 	
 				beforeSend: function() {
-					_button.button('loading');
+					_button.btnLoading();
 				},
 				success: function(data) {
 	
@@ -431,15 +394,14 @@ let update_addon=(product_id,directory)=>{
 					} else {
 						successMsg(data.msg);
 						posts.init();
-						// location.reload(true);
 					}
 				},
 				error: function(xhr) { // if error occured
 					alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-					_button.button('reset');
+					_button.btnReset();
 				},
 				complete: function() {
-					_button.button('reset');
+					_button.btnReset();
 				}
 			});
 		}

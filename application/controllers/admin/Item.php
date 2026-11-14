@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Item extends Admin_Controller
 {
+	public $search_type;
+
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class Item extends Admin_Controller
         $data['itemlist']    = $item_result;
         $itemcategory        = $this->itemcategory_model->get();
         $data['itemcatlist'] = $itemcategory;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/item/itemList', $data);
         $this->load->view('layout/footer', $data);
@@ -43,23 +46,22 @@ class Item extends Admin_Controller
                 $row = array();
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $link   = " <a href='#' class='detail_popover'  data-toggle='popover' title=''>";
+                $link   = " <a href='#' class='detail_popover'  data-bs-toggle='popover' title=''>";
                 $div    = "<div class='fee_detail_popover' style='display: none'>";               
 
                 if ($this->rbac->hasPrivilege('item', 'can_edit')) {
-                    $action .= " <a href='#' onclick='get_data(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('edit') . "'> <i class='fa fa-pencil'></i></a>";
+                    $action .= " <a href='#' onclick='get_data(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "'> <i class='fa fa-pencil'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('item', 'can_delete')) {
-                    $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
                 $action .= "</div>";
-                $row[]     = $link . $value->name . '</a>' . $div . "</div>" . $action;
+                $row[]     = $link . $value->name . '</a>' . $div . "</div>";
                 $row[]     = $value->item_category;
                 $row[]     = $value->unit;
                 $row[]     = $value->added_stock - $value->issued;
-                $row[]     = $value->description;
-                $row[]     = "";
+                $row[]     = $value->description . $action;
                 $dt_data[] = $row;
             }
         }
@@ -76,10 +78,10 @@ class Item extends Admin_Controller
     {
         $start_date             = '';
         $end_date               = '';
-        $search['search_type']  = $this->input->post('search_type');
-        $search['userroletype'] = $this->input->post('userroletype');
-        $search['date_from']    = $this->input->post('date_from');
-        $search['date_to']      = $this->input->post('date_to');
+        $search['search_type']  = $this->input->post('search_type', TRUE);
+        $search['userroletype'] = $this->input->post('userroletype', TRUE);
+        $search['date_from']    = $this->input->post('date_from', TRUE);
+        $search['date_to']      = $this->input->post('date_to', TRUE);
 
         if ($search['search_type'] == 'period') {
             $start_date = $this->customlib->dateFormatToYYYYMMDD($search['date_from']);
@@ -129,7 +131,7 @@ class Item extends Admin_Controller
         $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'trim|required|xss_clean');
         $this->form_validation->set_rules(
             'item_category_id', $this->lang->line('item_category'), array(
-                'required',
+                'required', 'xss_clean',
                 array('check_exists', array($this->item_model, 'valid_check_exists')),
             )
         );
@@ -145,10 +147,10 @@ class Item extends Admin_Controller
         } else {
 
             $data = array(
-                'item_category_id' => $this->input->post('item_category_id'),
-                'name'             => $this->input->post('name'),
-                'unit'             => $this->input->post('unit'),
-                'description'      => $this->input->post('description'),
+                'item_category_id' => $this->input->post('item_category_id', TRUE),
+                'name'             => $this->input->post('name', TRUE),
+                'unit'             => $this->input->post('unit', TRUE),
+                'description'      => $this->input->post('description', TRUE),
             );
 
             $insert_id = $this->item_model->add($data);
@@ -236,7 +238,7 @@ class Item extends Admin_Controller
         $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'trim|required|xss_clean');
         $this->form_validation->set_rules(
             'item_category_id', $this->lang->line('item_category'), array(
-                'required',
+                'required', 'xss_clean',
                 array('check_exists', array($this->item_model, 'valid_check_exists')),
             )
         );
@@ -251,11 +253,11 @@ class Item extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg);
         } else {
             $data = array(
-                'id'               => $this->input->post('id'),
-                'name'             => $this->input->post('name'),
-                'item_category_id' => $this->input->post('item_category_id'),
-                'unit'             => $this->input->post('unit'),
-                'description'      => $this->input->post('description'),
+                'id'               => $this->input->post('id', TRUE),
+                'name'             => $this->input->post('name', TRUE),
+                'item_category_id' => $this->input->post('item_category_id', TRUE),
+                'unit'             => $this->input->post('unit', TRUE),
+                'description'      => $this->input->post('description', TRUE),
             );
 
             $insert_id = $this->item_model->add($data);
@@ -270,9 +272,10 @@ class Item extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'reports/inventory');
         $this->session->set_userdata('subsub_menu', 'reports/inventory/itemreport');         
         $data["searchlist"] = $this->search_type;
-        $this->load->view('layout/header');
+        $data['module'] = 'inventory';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/item/itemreport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function additemreport()
@@ -281,14 +284,15 @@ class Item extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'reports/inventory');
         $this->session->set_userdata('subsub_menu', 'reports/inventory/additemreport');
         $data["searchlist"] = $this->search_type;
-        $this->load->view('layout/header');
+        $data['module'] = 'inventory';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/item/additemreport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
@@ -298,9 +302,9 @@ class Item extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type' => $this->input->post('search_type'),
-                'date_from'   => $this->input->post('date_from'),
-                'date_to'     => $this->input->post('date_to'),
+                'search_type' => $this->input->post('search_type', TRUE),
+                'date_from'   => $this->input->post('date_from', TRUE),
+                'date_to'     => $this->input->post('date_to', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -310,9 +314,9 @@ class Item extends Admin_Controller
 
     public function additemreportrecords()
     {
-        $search['search_type'] = $this->input->post('search_type');
-        $search['date_from']   = $this->input->post('date_from');
-        $search['date_to']     = $this->input->post('date_to');
+        $search['search_type'] = $this->input->post('search_type', TRUE);
+        $search['date_from']   = $this->input->post('date_from', TRUE);
+        $search['date_to']     = $this->input->post('date_to', TRUE);
         $start_date            = '';
         $end_date              = '';
         $currency_symbol = $this->customlib->getHospitalCurrencyFormat();

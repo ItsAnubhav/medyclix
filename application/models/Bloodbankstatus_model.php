@@ -271,4 +271,25 @@ class Bloodbankstatus_model extends MY_Model
 
     }
 
+    /**
+     * Dashboard widget: stock units per blood group.
+     * Returns: ['O+'=>24, 'A+'=>18, 'B+'=>12, 'AB+'=>3, 'O-'=>8, 'A-'=>2, 'B-'=>5, 'AB-'=>1]
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getStockByGroup()
+    {
+        $groups = $this->db->where('is_blood_group', 1)->get('blood_bank_products')->result_array();
+        $stock = array();
+        foreach ($groups as $g) {
+            $row = $this->db->select('SUM(blood_donor_cycle.quantity) as total', false)
+                ->join('blood_donor', 'blood_donor.id = blood_donor_cycle.blood_donor_id')
+                ->where('blood_donor.blood_bank_product_id', $g['id'])
+                ->where('blood_donor_cycle.available', 1)
+                ->get('blood_donor_cycle')
+                ->row_array();
+            $stock[$g['name']] = (int)($row['total'] ?? 0);
+        }
+        return $stock;
+    }
+
 }

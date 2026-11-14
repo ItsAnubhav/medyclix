@@ -117,7 +117,7 @@ class Chat extends Patient_Controller {
         }
 
         $data['chat_user'] = $this->chatuser_model->searchForUser($keyword, $chat_user_id, $patinet_id, 'patient');
-        $userlist = $this->load->view('admin/chat/_partialSearchUser', $data, true);
+        $userlist = $this->load->view('patient/chat/_partialSearchUser', $data, true);
         $array = array('status' => '1', 'error' => '', 'page' => $userlist);
 
         echo json_encode($array);
@@ -159,9 +159,9 @@ class Chat extends Patient_Controller {
             );
             $insert_data = array('user_type' => strtolower($user_type), 'create_patient_id' => null);
 
-            if ($user_type == "patient") {
+            if (strtolower($user_type) == "patient") {
                 $insert_data['patient_id'] = $user_id;
-            } elseif ($user_type == "Staff") {
+            } elseif (strtolower($user_type) == "staff") {
                 $insert_data['staff_id'] = $user_id;
             }
             $insert_message = array(

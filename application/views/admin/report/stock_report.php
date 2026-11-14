@@ -2,96 +2,20 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 
-<style type="text/css">
-    /*REQUIRED*/
-    .carousel-row {
-        margin-bottom: 10px;
-    }
-    .slide-row {
-        padding: 0;
-        background-color: #ffffff;
-        min-height: 150px;
-        border: 1px solid #e7e7e7;
-        overflow: hidden;
-        height: auto;
-        position: relative;
-    }
-    .slide-carousel {
-        width: 20%;
-        float: left;
-        display: inline-block;
-    }
-    .slide-carousel .carousel-indicators {
-        margin-bottom: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, .5);
-    }
-    .slide-carousel .carousel-indicators li {
-        border-radius: 0;
-        width: 20px;
-        height: 6px;
-    }
-    .slide-carousel .carousel-indicators .active {
-        margin: 1px;
-    }
-    .slide-content {
-        position: absolute;
-        top: 0;
-        left: 20%;
-        display: block;
-        float: left;
-        width: 80%;
-        max-height: 76%;
-        padding: 1.5% 2% 2% 2%;
-        overflow-y: auto;
-    }
-    .slide-content h4 {
-        margin-bottom: 3px;
-        margin-top: 0;
-    }
-    .slide-footer {
-        position: absolute;
-        bottom: 0;
-        left: 20%;
-        width: 78%;
-        height: 20%;
-        margin: 1%;
-    }
-    /* Scrollbars */
-    .slide-content::-webkit-scrollbar {
-        width: 5px;
-    }
-    .slide-content::-webkit-scrollbar-thumb:vertical {
-        margin: 5px;
-        background-color: #999;
-        -webkit-border-radius: 5px;
-    }
-    .slide-content::-webkit-scrollbar-button:start:decrement,
-    .slide-content::-webkit-scrollbar-button:end:increment {
-        height: 5px;
-        display: block;
-    }
-    .printablea4{width: 100%;}
-    .printablea4>tbody>tr>th,
-    .printablea4>tbody>tr>td{padding:5px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-</style>
-
-<div class="content-wrapper" style="min-height: 946px;">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<!-- Main content -->
+    <div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                  <?php $this->load->view('admin/report/_pharmacy');?>
-                 <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('stock_report'); ?></h3>
+                 <div class="card-header ptbnull"></div>
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('stock_report'); ?></h3>
                     </div>
                     <form id="form1" action="" method="post">
-                        <div class="box-body row">
+                        <div class="card-body row pb-0">
                             <?php echo $this->customlib->getCSRF(); ?>
-                             <div class="col-sm-6 col-md-4">
-                                <div class="form-group">
+                             <div class="col-sm-6 col-md-3">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('medicine_category'); ?></label>
                                      <select class="form-control select2" name='medicine_category'  >
                                             <option value="<?php echo set_value('medicine_category_id'); ?>"><?php echo $this->lang->line('select'); ?>
@@ -104,8 +28,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         </select>
                                 </div>
                             </div>
-                            <div class="col-sm-6 col-md-4">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-3">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('stock_type'); ?></label>
                                      <select name="stock_type" class="form-control select2 supplier_select2"  id="" name='' >
                                         <option value=""><?php echo $this->lang->line('all'); ?></option>
@@ -116,17 +40,18 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <div class="col-sm-12">
-                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                            <div class="col-sm-6 col-md-auto d-flex align-items-end ps-md-3">
+                                <div class="mb-3">
+                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2 checkbox-toggle">
+                                        <i class="fa fa-search"></i>
+                                        <?php echo $this->lang->line('search'); ?>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </form>
-                    <div class="box border0 clear">
-                        <div class="box-body">
-                            <div class="box-header ptbnull mb10"></div>
-                             <div class="table-responsive-mobile">   
+                    <div class="card-body pt-0">
+                        <div class="table-responsive-mobile">
                             <table class="table table-striped table-bordered table-hover ajaxlist " cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('medicines_stock'); ?>">
                                 <thead>
                                     <tr>
@@ -141,16 +66,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </thead>
                                 <tbody>
                                 </tbody>
-                            </table>                            
+                            </table>
                           </div>
-                        </div>  
                     </div>
 
                 </div>
             </div>
         </div>
-</section>
-</div>
 
 
 <script>

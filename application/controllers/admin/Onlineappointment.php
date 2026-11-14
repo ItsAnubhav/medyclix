@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Onlineappointment extends Admin_Controller
 {
+	public $time_format;
+
     public function __construct()
     {
         parent::__construct();
@@ -21,16 +23,17 @@ class Onlineappointment extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/onlineappointment');
         $this->session->set_userdata('sub_menu', 'admin/onlineappointment');
-        $this->load->view('layout/header');
+        $data['module'] = 'appointment';
+        $this->load->view('layout/header', $data);
         $data['doctors']         = $this->staff_model->getStaffbyrole(3);
-        $doctor                  = $this->input->post("doctor");
+        $doctor                  = $this->input->post("doctor", TRUE);
         $data['charge_category'] = $this->charge_category_model->getCategoryByModule("appointment");
         $this->form_validation->set_rules("doctor", $this->lang->line("doctor"), "trim|required|xss_clean");
         $this->form_validation->set_rules("shift", $this->lang->line("shift"), "trim|required|xss_clean");
 
         if ($this->form_validation->run() == false) {
             $this->load->view('admin/onlineappointment/index', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $data["days"]               = $this->customlib->getDaysname();
             $doc_data                   = $this->onlineappointment_model->getDocData($doctor);
@@ -44,7 +47,7 @@ class Onlineappointment extends Admin_Controller
             $data['appointment_charge'] = $data['standard_charge'] + ($data['standard_charge'] * $data['percentage'] / 100);
             $data['duration']           = isset($doc_data['consult_duration']) ? $doc_data['consult_duration'] : "";
             $this->load->view('admin/onlineappointment/index', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         }
     }
 
@@ -55,9 +58,9 @@ class Onlineappointment extends Admin_Controller
         }
         $data                = array();
         $data['total_count'] = 1;
-        $day                 = $this->input->post('day');
-        $doctor_id           = $this->input->post("doctor");
-        $shift               = $this->input->post("shift");
+        $day                 = $this->input->post('day', TRUE);
+        $doctor_id           = $this->input->post("doctor", TRUE);
+        $shift               = $this->input->post("shift", TRUE);
 
         $getDoctorGlobalShiftId = $this->onlineappointment_model->getDoctorGlobalShiftId($doctor_id, $shift);        
         $prev_record = $this->onlineappointment_model->getShiftdata($doctor_id, $day, $getDoctorGlobalShiftId['id']);
@@ -87,9 +90,9 @@ class Onlineappointment extends Admin_Controller
         $this->form_validation->set_rules('charge_id', $this->lang->line('charge_id'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('doctor', $this->lang->line("doctor"), 'trim|required|xss_clean');
         $this->form_validation->set_rules('shift', $this->lang->line('shift'), 'trim|required|xss_clean');
-        $total_rows = $this->input->post("total_row");
+        $total_rows = $this->input->post("total_row", TRUE);
         if (!empty($total_rows)) {
-            foreach ($this->input->post('total_row') as $key => $value) {
+            foreach ($this->input->post('total_row', TRUE) as $key => $value) {
                 $this->form_validation->set_rules('time_from_' . $value, 'Time From', 'trim|required|xss_clean');
                 $this->form_validation->set_rules('time_to_' . $value, 'Time To', 'trim|required|xss_clean');
             }
@@ -104,121 +107,120 @@ class Onlineappointment extends Admin_Controller
                 'charge_id'    => form_error('charge_id'),
             );
             if (!empty($total_rows)) {
-                foreach ($this->input->post('total_row') as $key => $value) {
+                foreach ($this->input->post('total_row', TRUE) as $key => $value) {
                     $json['time_from_' . $value] = form_error('time_from_' . $value);
                     $json['time_to_' . $value]   = form_error('time_to_' . $value);
                 }
             }
-            $json_array = array('status' => '0', 'error' => $json);
+            $json_array = array('status' => 0, 'error' => $json);
         } else {
 
             /************************* Time Validation Code Start ******************************/
-            $shift_id           = $this->input->post("shift");
+            $shift_id           = $this->input->post("shift", TRUE);
             $global_shift       = $this->onlineappointment_model->getGlobalShift($shift_id);
             $global_shift_start = date("H:i:s", strtotime($global_shift["start_time"]));
             $global_shift_end   = date("H:i:s", strtotime($global_shift["end_time"]));
+            $time_error_status  = null;
+
             if (!empty($total_rows)) {
                 foreach ($total_rows as $total_key => $total_value) {
-                    $first_start = date("H:i:s", strtotime($this->input->post('time_from_' . $total_value)));
-                    $first_end   = date("H:i:s", strtotime($this->input->post('time_to_' . $total_value)));
+                    $first_start = date("H:i:s", strtotime($this->input->post('time_from_' . $total_value, TRUE)));
+                    $first_end   = date("H:i:s", strtotime($this->input->post('time_to_' . $total_value, TRUE)));
                     if ($first_start >= $first_end) {
-                        echo json_encode(array("status" => 3));
-                        return;
+                        $time_error_status = 3;
+                        break;
                     }
                     if ($first_start < $global_shift_start || $first_end > $global_shift_end) {
-                        echo json_encode(array("status" => 5));
-                        return;
+                        $time_error_status = 5;
+                        break;
                     }
                     foreach ($total_rows as $total_key1 => $total_value1) {
                         if ($total_key < $total_key1) {
-                            $second_start = date("H:i:s", strtotime($this->input->post('time_from_' . $total_value1)));
-                            $second_end   = date("H:i:s", strtotime($this->input->post('time_to_' . $total_value1)));
+                            $second_start = date("H:i:s", strtotime($this->input->post('time_from_' . $total_value1, TRUE)));
+                            $second_end   = date("H:i:s", strtotime($this->input->post('time_to_' . $total_value1, TRUE)));
                             if ($second_start >= $second_end) {
-                                echo json_encode(array("status" => 3, "shift_one" => $total_value, "shift_two" => $total_value1));
-                                return;
+                                $time_error_status = 3;
+                                break 2;
                             }
                             if ($first_start <= $second_end && $second_start <= $first_end) {
-                                echo json_encode(array("status" => 4, "shift_one" => $total_value, "shift_two" => $total_value1));
-                                return;
+                                $time_error_status = 4;
+                                break 2;
                             }
-                        } else {
-                            continue;
                         }
                     }
                 }
             }
             /************************* Time Validation Code End ******************************/
 
-            $consult_fee  = $this->input->post('consult_fee');
-            $consult_time = $this->input->post('consult_time');
-            $charge_id    = $this->input->post('charge_id');
-            $day          = $this->input->post('day');
-            $doctor_id    = $this->input->post('doctor');
-            $total_row    = $this->input->post('total_row');
-            $insert_array = array();
-            $update_array = array();
-            $old_input    = array();
-            $prev_array   = $this->input->post('prev_array');
-            if (isset($prev_array)) {
-                foreach ($prev_array as $prev_arr_key => $prev_arr_value) {
-                    $old_input[] = $prev_arr_value;
-                }
-            }
-            $preserve_array = array();
-            if (isset($total_row)) {
-                foreach ($total_row as $total_key => $total_value) {
-                    $prev_id = $this->input->post('prev_id_' . $total_value);
-                    
-                     $getDoctorGlobalShiftId =   $this->onlineappointment_model->getDoctorGlobalShiftId($doctor_id, $shift_id);
-                     
-                    if ($prev_id == 0) {
-                        $insert_array[] = array(
-                            'day'             => $day,
-                            'staff_id'        => $doctor_id,
-                            'doctor_global_shift_id' => $getDoctorGlobalShiftId['id'],
-                            'start_time'      => date("H:i:s", strtotime($this->input->post('time_from_' . $total_value))),
-                            'end_time'        => date("H:i:s", strtotime($this->input->post('time_to_' . $total_value))),
-                        );
-                    } else {
-                        $preserve_array[] = $prev_id;                
-                        
-                        $update_array[]   = array(
-                            'id'              => $prev_id,
-                            'staff_id'        => $doctor_id,                      
-                            'doctor_global_shift_id' => $getDoctorGlobalShiftId['id'],                            
-                            'day'             => $day,
-                            'start_time'      => date("H:i:s", strtotime($this->input->post('time_from_' . $total_value))),
-                            'end_time'        => date("H:i:s", strtotime($this->input->post('time_to_' . $total_value))),
-                        );
+            if ($time_error_status !== null) {
+                $json_array = array('status' => $time_error_status);
+            } else {
+                $consult_fee  = $this->input->post('consult_fee', TRUE);
+                $consult_time = $this->input->post('consult_time', TRUE);
+                $charge_id    = $this->input->post('charge_id', TRUE);
+                $day          = $this->input->post('day', TRUE);
+                $doctor_id    = $this->input->post('doctor', TRUE);
+                $total_row    = $this->input->post('total_row', TRUE);
+                $insert_array = array();
+                $update_array = array();
+                $old_input    = array();
+                $prev_array   = $this->input->post('prev_array', TRUE);
+                if (isset($prev_array)) {
+                    foreach ($prev_array as $prev_arr_key => $prev_arr_value) {
+                        $old_input[] = $prev_arr_value;
                     }
                 }
-            }
+                $preserve_array         = array();
+                $getDoctorGlobalShiftId = $this->onlineappointment_model->getDoctorGlobalShiftId($doctor_id, $shift_id);
+                if (isset($total_row)) {
+                    foreach ($total_row as $total_key => $total_value) {
+                        $prev_id = $this->input->post('prev_id_' . $total_value, TRUE);
+                        if ($prev_id == 0) {
+                            $insert_array[] = array(
+                                'day'                    => $day,
+                                'staff_id'               => $doctor_id,
+                                'doctor_global_shift_id' => $getDoctorGlobalShiftId['id'],
+                                'start_time'             => date("H:i:s", strtotime($this->input->post('time_from_' . $total_value, TRUE))),
+                                'end_time'               => date("H:i:s", strtotime($this->input->post('time_to_' . $total_value, TRUE))),
+                            );
+                        } else {
+                            $preserve_array[] = $prev_id;
+                            $update_array[]   = array(
+                                'id'                     => $prev_id,
+                                'staff_id'               => $doctor_id,
+                                'doctor_global_shift_id' => $getDoctorGlobalShiftId['id'],
+                                'day'                    => $day,
+                                'start_time'             => date("H:i:s", strtotime($this->input->post('time_from_' . $total_value, TRUE))),
+                                'end_time'               => date("H:i:s", strtotime($this->input->post('time_to_' . $total_value, TRUE))),
+                            );
+                        }
+                    }
+                }
 
-            $delete_array = array_diff($old_input, $preserve_array);
+                $delete_array = array_diff($old_input, $preserve_array);
+                $insert_array = $this->security->xss_clean($insert_array);
+                $update_array = $this->security->xss_clean($update_array);
 
-            $insert_array = $this->security->xss_clean($insert_array);
-            $update_array = $this->security->xss_clean($update_array);
+                $result        = $this->onlineappointment_model->add($delete_array, $insert_array, $update_array);
+                $shift_details = array(
+                    "staff_id"         => $doctor_id,
+                    "consult_duration" => $consult_time,
+                    "charge_id"        => $charge_id,
+                );
+                $prev_shift = $this->onlineappointment_model->getShiftDetails($doctor_id);
+                $prev_shift = $this->security->xss_clean($prev_shift);
 
-            $result        = $this->onlineappointment_model->add($delete_array, $insert_array, $update_array);
-            $shift_details = array(
-                "staff_id"         => $doctor_id,
-                "consult_duration" => $consult_time,
-                "charge_id"        => $charge_id,
-            );
-            $prev_shift = $this->onlineappointment_model->getShiftDetails($doctor_id);
+                if (!empty($prev_shift)) {
+                    $this->onlineappointment_model->updateShiftDetails($shift_details);
+                } else {
+                    $this->onlineappointment_model->addShiftDetails($shift_details);
+                }
 
-            $prev_shift = $this->security->xss_clean($prev_shift);
-
-            if (!empty($prev_shift)) {
-                $this->onlineappointment_model->updateShiftDetails($shift_details);
-            } else {
-                $this->onlineappointment_model->addShiftDetails($shift_details);
-            }
-			
-            if ($result) {
-                $json_array = array('status' => '1', 'error' => '', 'message' => $this->lang->line('success_message'));
-            } else {
-                $json_array = array('status' => '2', 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
+                if ($result) {
+                    $json_array = array('status' => 1, 'error' => '', 'message' => $this->lang->line('success_message'));
+                } else {
+                    $json_array = array('status' => 2, 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
+                }
             }
         }
 
@@ -233,19 +235,24 @@ class Onlineappointment extends Admin_Controller
             access_denied();
         }
         $this->session->set_userdata('top_menu', 'appointment');
-        $this->load->view('layout/header');
+        // Operational page (top-level Appointment menu): clear any stale
+        // Setup>Appointment sub_menu so the Setup group doesn't stay highlighted
+        $this->session->set_userdata('sub_menu', '');
+        $this->session->set_userdata('sub_sidebar_menu', '');
+        $data['module'] = 'appointment';
+        $this->load->view('layout/header', $data);
         $doctors         = $this->staff_model->getStaffbyrole(3);
         $data['doctors'] = $doctors;
         $this->form_validation->set_rules('doctor', $this->lang->line("doctor"), 'trim|required|xss_clean');     
 
         if ($this->form_validation->run() == false) {
             $this->load->view('admin/onlineappointment/patientSchedule', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $doctors         = $this->staff_model->getStaffbyrole(3);
             $data['doctors'] = $doctors;
-            $doctor_id       = $this->input->post("doctor");
-            $date            = $this->input->post("date");
+            $doctor_id       = $this->input->post("doctor", TRUE);
+            $date            = $this->input->post("date", TRUE);
             if ($doctor_id == '') {
                 $doctor_id = "null";
             }
@@ -255,7 +262,7 @@ class Onlineappointment extends Admin_Controller
             $data['doctor_id'] = $doctor_id;
             $data['date']      = $date;
             $this->load->view('admin/onlineappointment/patientSchedule', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         }
     }
 
@@ -274,7 +281,7 @@ class Onlineappointment extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $column_first = '<a href="#" data-toggle="popover" class="detail_popover">' . $value->patient_name . " (" . $value->id . ") " . '</a>';
+                $column_first = '<a href="#" data-bs-toggle="popover" class="detail_popover">' . $value->patient_name . " (" . $value->id . ") " . '</a>';
                 //==============================
                 $row[] = $column_first;
                 $row[] = $value->mobileno;
@@ -296,8 +303,8 @@ class Onlineappointment extends Admin_Controller
 
     public function getdoctor()
     {
-        $spec_id = $this->input->post('id');
-        $active  = $this->input->post('active');
+        $spec_id = $this->input->post('id', TRUE);
+        $active  = $this->input->post('active', TRUE);
         $result  = $this->staff_model->getdoctorbyspecilist($spec_id);
         echo json_encode($result);
     }
@@ -309,10 +316,14 @@ class Onlineappointment extends Admin_Controller
         }
         
         $this->session->set_userdata('top_menu', 'appointment');
+        // Operational page (top-level Appointment menu): clear any stale
+        // Setup>Appointment sub_menu so the Setup group doesn't stay highlighted
+        $this->session->set_userdata('sub_menu', '');
+        $this->session->set_userdata('sub_sidebar_menu', '');
 
         $data   = array();
         $queue  = array();
-        $submit = $this->input->post("submit");
+        $submit = $this->input->post("submit", TRUE);
         if (isset($submit)) {
             $this->form_validation->set_rules('doctor', $this->lang->line('doctor'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('global_shift', $this->lang->line('shift'), 'trim|required|xss_clean');
@@ -321,11 +332,11 @@ class Onlineappointment extends Admin_Controller
             if ($this->form_validation->run() == false) {
                 $data["resultlist"] = array();
             } else {
-                $doctor       = $this->input->post("doctor");
-                $date         = $this->input->post("date");
+                $doctor       = $this->input->post("doctor", TRUE);
+                $date         = $this->input->post("date", TRUE);
                 $date         = $this->customlib->dateFormatToYYYYMMDD($date);
-                $shift        = $this->input->post("slot");
-                $global_shift = $this->input->post("global_shift");
+                $shift        = $this->input->post("slot", TRUE);
+                $global_shift = $this->input->post("global_shift", TRUE);
                 
                 if ($submit == "regenerate") {
                     $this->deleteQueue($doctor, $date, $shift);
@@ -398,9 +409,26 @@ class Onlineappointment extends Admin_Controller
         
         $doctors         = $this->staff_model->getStaffbyrole(3);
         $data['doctors'] = $doctors;
-        $this->load->view('layout/header');
+        $data['module'] = 'appointment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/onlineappointment/patientQueue', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
+    }
+
+    public function patientqueue_print()
+    {
+        if (!$this->rbac->hasPrivilege('patient_queue', 'can_view')) {
+            access_denied();
+        }
+        $doctor       = $this->input->post('doctor', TRUE);
+        $date_raw     = $this->input->post('date', TRUE);
+        $shift        = $this->input->post('shift', TRUE);
+        $doctor_name  = $this->input->post('doctor_name', TRUE);
+        $date         = $this->customlib->dateFormatToYYYYMMDD($date_raw);
+        $data['resultlist']   = $this->onlineappointment_model->getPatientQueue($doctor, $date, $shift);
+        $data['doctor_name']  = $doctor_name;
+        $data['date_display'] = $date_raw;
+        $this->load->view('admin/onlineappointment/print/patientQueue_print', $data);
     }
 
     public function deleteQueue($doctor, $date, $shift)
@@ -428,9 +456,10 @@ class Onlineappointment extends Admin_Controller
         }
         
         $data["shift"] = $shift;
-        $this->load->view('layout/header');
+        $data['module'] = 'appointment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/onlineappointment/globalShift', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getGlobalShift($id)
@@ -453,9 +482,9 @@ class Onlineappointment extends Admin_Controller
             $msg  = array("name" => form_error('name'), "time_from" => form_error('time_from'), "time_to" => form_error('time_to'));
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $name      = $this->input->post("name");
-            $time_from = date("H:i:s", strtotime($this->input->post("time_from")));
-            $time_to   = date("H:i:s", strtotime($this->input->post("time_to")));
+            $name      = $this->input->post("name", TRUE);
+            $time_from = date("H:i:s", strtotime($this->input->post("time_from", TRUE)));
+            $time_to   = date("H:i:s", strtotime($this->input->post("time_to", TRUE)));
 
             if ($time_from < $time_to) {
                 $shift = array(
@@ -488,13 +517,13 @@ class Onlineappointment extends Admin_Controller
             $msg  = array("name" => form_error('name'));
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $time_from = date("H:i:s", strtotime($this->input->post("time_from")));
-            $time_to   = date("H:i:s", strtotime($this->input->post("time_to")));
-            
+            $time_from = date("H:i:s", strtotime($this->input->post("time_from", TRUE)));
+            $time_to   = date("H:i:s", strtotime($this->input->post("time_to", TRUE)));
+
                 if ($time_from < $time_to) {
                     $shift = array(
-                        "id"         => $this->input->post('shiftid'),
-                        "name"       => $this->input->post('name'),
+                        "id"         => $this->input->post('shiftid', TRUE),
+                        "name"       => $this->input->post('name', TRUE),
                         "start_time" => $time_from,
                         "end_time"   => $time_to,
                     );
@@ -525,9 +554,10 @@ class Onlineappointment extends Admin_Controller
         $data['doctor']       = $doctors;
         $global_shift         = $this->onlineappointment_model->globalShift();
         $data["global_shift"] = $global_shift;
-        $this->load->view('layout/header');
+        $data['module'] = 'appointment';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/onlineappointment/doctorGlobalShift', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getDoctorGlobalShfit($id)
@@ -547,9 +577,9 @@ class Onlineappointment extends Admin_Controller
         if (!$this->rbac->hasPrivilege('online_appointment_doctor_shift', 'can_edit')) {
             access_denied();
         }
-        $doctor_id    = $this->input->post("doctor_id");
-        $shift_id     = $this->input->post("shift_id");
-        $status       = $this->input->post("status");
+        $doctor_id    = $this->input->post("doctor_id", TRUE);
+        $shift_id     = $this->input->post("shift_id", TRUE);
+        $status       = $this->input->post("status", TRUE);
         $insert_array = array();
         $delete_array = array();
         if ($status == 1) {
@@ -570,7 +600,7 @@ class Onlineappointment extends Admin_Controller
 
     public function doctorShiftById()
     {
-        $doctor_id = $this->input->post("doctor_id");
+        $doctor_id = $this->input->post("doctor_id", TRUE);
         $shift     = $this->onlineappointment_model->doctorShiftById($doctor_id);
         echo json_encode($shift);
     }
@@ -580,7 +610,7 @@ class Onlineappointment extends Admin_Controller
         if (!$this->rbac->hasPrivilege('patient_queue', 'can_edit')) {
             access_denied();
         }
-        $position  = $this->input->post("position");
+        $position  = $this->input->post("position", TRUE);
         $queueData = array();
         $data      = array();
         $i         = 1;
@@ -601,10 +631,10 @@ class Onlineappointment extends Admin_Controller
 
     public function getShift()
     {
-        $dates        = $this->input->post("date");
+        $dates        = $this->input->post("date", TRUE);
         $date         = $this->customlib->dateFormatToYYYYMMDD($dates);
-        $doctor       = $this->input->post("doctor");
-        $global_shift = $this->input->post("global_shift");
+        $doctor       = $this->input->post("doctor", TRUE);
+        $global_shift = $this->input->post("global_shift", TRUE);
         $day          = date("l", strtotime($date));        
         $getDoctorGlobalShiftId = $this->onlineappointment_model->getDoctorGlobalShiftId($doctor, $global_shift);        
         $shift        = $this->onlineappointment_model->getShiftdata($doctor, $day, $getDoctorGlobalShiftId['id']);
@@ -613,17 +643,19 @@ class Onlineappointment extends Admin_Controller
     }
 
     public function getShiftById(){
-        $shift_id = $this->input->post("id");
-        $date = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("date"));
-        $shift = $this->onlineappointment_model->getShiftById($shift_id);        
-        $end_time = date("Y-m-d",strtotime($date))." ".$shift['end_time'];
-        $end_time = date("Y-m-d H:i:s" ,strtotime($end_time));
-        $current_time = date("Y-m-d H:i:s");
-        if($current_time>$end_time){
-            echo json_encode(array("status" => 1));
-        }else{
+        $shift_id = $this->input->post("id", TRUE);
+        $date = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE));
+        $shift = $this->onlineappointment_model->getShiftById($shift_id);
+        if (empty($shift)) {
             echo json_encode(array("status" => 0));
+            return;
         }
+        // Return shift end_time and date — JS does timezone-safe comparison using client local time
+        echo json_encode(array(
+            "status"   => 0,
+            "end_time" => $shift['end_time'],
+            "date"     => $date
+        ));
     }
 
     public function deleteglobalshift($id)

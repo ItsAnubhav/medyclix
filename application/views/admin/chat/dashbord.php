@@ -1,13 +1,11 @@
-<div class="content-wrapper" style="min-height: 946px;">
-    <section class="content">
-        <div class="box box-primary">  
+<div class="card">  
             <div class="row">
                 <div class="col-md-4">
                     <div class="chatleftside">
                         <div class="custom-search-input">
                             <div class="input-group col-md-11">
-                                <input type="text" class="  search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
-                                <button class="btn btn-default" type="button">
+                                <input type="text" class="search-query form-control" placeholder="<?php echo $this->lang->line('search'); ?>" />
+                                <button class="btn btn-secondary" type="button">
                                     <i class="fa fa-search"></i>
                                 </button>
                                 <button type="button" class="chataddbtn" onclick="new_message()" ><i class="fa fa-plus"></i></button>
@@ -37,17 +35,15 @@
                     </div><!--./chatrightside-->                     
                 </div><!--./col-md-8--> 
             </div><!--./row-->    
-        </div><!--./box box-primary-->  
-    </section>
-</div> 
+        </div><!--./box box-primary--> 
 
 <div class="modal" id="message_model">
     <div class="modal-dialog">
         <div class="modal-content mx-2">
             <!-- Modal Header -->
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('new_message'); ?></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><?php echo $this->lang->line('new_message'); ?></h5>
             </div>
             <!-- Modal body -->
                 <form id="form1" name="employeeform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
@@ -56,7 +52,7 @@
                             <div id="upload_documents_hide_show">
                                 <h4></h4>
                                 <div class="col-md-12">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('search') ?><small class="req"> *</small></label>
                                         <input id="user_name" onkeyup="get_user()" name="first_title" placeholder="" type="text" class="form-control" value="" autocomplete="off">
                                         <span class="text-danger"></span>
@@ -67,7 +63,7 @@
                             </div>
                     </div>    
                     <div class="modal-footer">
-                        <a href="<?php echo base_url(); ?>admin/chat" class="btn btn-info pull-right"><?php echo $this->lang->line('close') ?></a>
+                        <a href="<?php echo base_url(); ?>admin/chat" class="btn btn-info float-end"><?php echo $this->lang->line('close') ?></a>
                     </div>
                 </form>
         </div>
@@ -75,11 +71,7 @@
 </div> 
 <script>
     function new_message() {
-        $('#message_model').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('message_model'),{backdrop:'static',keyboard:false}).show();
     }
     $(document).ready(function () {
         var objDiv = document.getElementById("parentDiv");

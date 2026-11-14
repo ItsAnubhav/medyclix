@@ -3,18 +3,15 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $title="";
 ?>
 <script src="<?php echo base_url(); ?>backend/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                            <h3 class="box-title titlefix"><?php echo $this->lang->line('discharged_patient'); ?></h3>
-                        <div class="box-tools addmeeting">
+                <div class="card">
+                    <div class="card-header">
+                            <h3 class="card-title titlefix"><?php echo $this->lang->line('discharged_patient'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap addmeeting">
                         </div>    
-                    </div><!-- /.box-header -->
-                        <div class="box-body">
+                    </div><!-- /.card-header -->
+                        <div class="card-body">
                             <div class="download_label"><?php
                                 if ($title == 'old_patient') {
                                     echo $this->lang->line('opd_old_patient');
@@ -44,7 +41,7 @@ $title="";
                                             } 
                                         }
                                     ?> 
-                                    <th class="text-right"><?php echo $this->lang->line('total_visit'); ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('total_visit'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -53,45 +50,44 @@ $title="";
                         </div>
                 </div>  
             </div>
-        </div> 
-    </section>
-</div>
+        </div>
 
-<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close pt4" data-dismiss="modal">&times;</button>
-                <div class="row">
-                    <div class="col-sm-6 col-xs-6">
-                        <div class="form-group15">
-                            <div>
-                                <select onchange="get_PatientDetails(this.value)"  class="form-control patient_list_ajax" <?php
-                                if ($disable_option == true) {
-                                    
-                                }
-                                ?> style="width:100%" name='' id="addpatient_id">
-                                </select>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered pup100">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_patient'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        <form id="formadd" accept-charset="utf-8" action="<?php echo base_url() . "admin/patient" ?>" enctype="multipart/form-data" method="post">
+            <div class="scroll-area">
+                <div class="modal-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-6 col-6">
+                            <div class="form-group15">
+                                <div>
+                                    <select onchange="get_PatientDetails(this.value)"  class="form-control patient_list_ajax" <?php
+                                    if ($disable_option == true) {
+
+                                    }
+                                    ?> class="w-100" name='' id="addpatient_id">
+                                    </select>
+                                </div>
+                                <span class="text-danger"><?php echo form_error('refference'); ?></span>
                             </div>
-                            <span class="text-danger"><?php echo form_error('refference'); ?></span>
-                        </div>
-                    </div><!--./col-sm-8-->
-                    <div class="col-sm-4 col-xs-5">
-                        <div class="form-group15">
-                            <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
-                                <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a> 
-                            <?php } ?> 
+                        </div><!--./col-sm-8-->
+                        <div class="col-sm-4 col-5">
+                            <div class="form-group15">
+                                <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+                                    <a data-bs-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient"><i class="fa fa-plus"></i>  <span><?php echo $this->lang->line('new_patient'); ?></span></a>
+                                <?php } ?>
 
-                            <?php if ($this->rbac->hasPrivilege('discharged_patients', 'can_view')) { ?>
-                                <a  href="<?php echo base_url() ?>admin/patient/discharged_patients" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('discharged_patient'); ?></a> 
-                            <?php } ?>
-                        </div>
-                    </div><!--./col-sm-4--> 
-                </div><!-- ./row -->                
-            </div><!--./modal-header-->
-        <form id="formadd" accept-charset="utf-8" action="<?php echo base_url() . "admin/patient" ?>" enctype="multipart/form-data" method="post">              
-            <div class="scroll-area">                    
-                <div class="modal-body pt0 pb0">
+                                <?php if ($this->rbac->hasPrivilege('discharged_patients', 'can_view')) { ?>
+                                    <a  href="<?php echo base_url() ?>admin/patient/discharged_patients" class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('discharged_patient'); ?></a>
+                                <?php } ?>
+                            </div>
+                        </div><!--./col-sm-4-->
+                    </div><!-- ./row -->
                     <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">                            
                                 <input name="patient_id" id="patient_id" type="hidden" class="form-control" />
@@ -102,45 +98,45 @@ $title="";
                                 <div class="row row-eq">
                                     <div class="col-lg-8 col-md-8 col-sm-8">
                                         <div id="ajax_load"></div>
-                                        <div class="row ptt10" id="patientDetails" style="display:none">
-                                            <div class="col-md-9 col-sm-9 col-xs-9">
+                                        <div class="row ptt10" id="patientDetails" class="d-none">
+                                            <div class="col-md-9 col-sm-9 col-9">
                                                 <ul class="singlelist">
                                                     <li class="singlelist24bold">
                                                         <span id="listname"></span></li>
                                                     <li>
-                                                        <i class="fas fa-user-secret" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('guardian'); ?>"></i>
+                                                        <i class="fas fa-user-secret" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('guardian'); ?>"></i>
                                                         <span id="guardian"></span>
                                                     </li>
                                                 </ul>   
                                                 <ul class="multilinelist">   
                                                     <li>
-                                                        <i class="fas fa-venus-mars" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('gender'); ?>"></i>
+                                                        <i class="fas fa-venus-mars" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('gender'); ?>"></i>
                                                         <span id="genders"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-tint" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('blood_group'); ?>"></i>
+                                                        <i class="fas fa-tint" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('blood_group'); ?>"></i>
                                                         <span id="blood_group"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-ring" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('marital_status'); ?>"></i>
+                                                        <i class="fas fa-ring" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('marital_status'); ?>"></i>
                                                         <span id="marital_status"></span>
                                                     </li> 
                                                 </ul>  
                                                 <ul class="singlelist">  
                                                     <li>
-                                                        <i class="fas fa-hourglass-half" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('age'); ?>"></i>
+                                                        <i class="fas fa-hourglass-half" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('age'); ?>"></i>
                                                         <span id="age"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fa fa-phone-square" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('phone'); ?>"></i> 
+                                                        <i class="fa fa-phone-square" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('phone'); ?>"></i> 
                                                         <span id="listnumber"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fa fa-envelope" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('email'); ?>"></i>
+                                                        <i class="fa fa-envelope" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('email'); ?>"></i>
                                                         <span id="email"></span>
                                                     </li>
                                                     <li>
-                                                        <i class="fas fa-street-view" data-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('address'); ?>"></i>
+                                                        <i class="fas fa-street-view" data-bs-toggle="tooltip" data-placement="top" title="<?php echo $this->lang->line('address'); ?>"></i>
                                                         <span id="address"></span>
                                                     </li>
                                                     <li>
@@ -161,13 +157,13 @@ $title="";
                                                     </li>   
                                                 </ul>                               
                                             </div><!-- ./col-md-9 -->
-                                            <div class="col-md-3 col-sm-3 col-xs-3"> 
-                                                <div class="pull-right">  
+                                            <div class="col-md-3 col-sm-3 col-3"> 
+                                                <div class="float-end">  
                                                 
                                                     <?php
                                                     $file = "uploads/patient_images/no_image.png";
                                                     ?>        
-                                                    <img class="modal-profile-user-img img-responsive" src="<?php echo $this->media_storage->getImageURL($file); ?>" id="image" alt="User profile picture">
+                                                    <img class="modal-profile-user-img img-fluid" src="<?php echo $this->media_storage->getImageURL($file); ?>" id="image" alt="User profile picture">
                                                 </div>           
                                             </div><!-- ./col-md-3 --> 
                                         </div>
@@ -175,47 +171,47 @@ $title="";
                                             <div class="col-md-12"> 
                                                 <div class="dividerhr"></div>
                                             </div><!--./col-md-12-->
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('height'); ?></label> 
                                                     <input name="height" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('weight'); ?></label> 
                                                     <input name="weight" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('bp'); ?></label> 
                                                     <input name="bp" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('pulse'); ?></label> 
                                                     <input name="pulse" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('temperature'); ?></label> 
                                                     <input name="temperature" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-2 col-xs-4">
-                                                <div class="form-group">
+                                            <div class="col-sm-2 col-4">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('respiration'); ?></label> 
                                                     <input name="respiration" type="text" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="col-sm-3 col-xs-6">
-                                                <div class="form-group">
+                                            <div class="col-sm-3 col-6">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                         <?php echo $this->lang->line('symptoms_type') ; ?></label>
-                                                    <div><select name='symptoms_type'  id="act"  class="form-control select2 act" style="width:100%">
+                                                    <div><select name='symptoms_type'  id="act"  class="form-control select2 act w-100" >
                                                             <option value=""><?php echo $this->lang->line('select') ?></option>
                                                             <?php foreach ($symptomsresulttype as $dkey => $dvalue) {
                                                                 ?>
@@ -228,7 +224,7 @@ $title="";
                                                 </div>
                                             </div>                                            
                                             <input name="rows[]" type="hidden" value="1">
-                                                <div class="col-sm-3 col-xs-6">
+                                                <div class="col-sm-3 col-6">
                                                     <label for="exampleInputFile"> 
                                                         <?php echo $this->lang->line('symptoms_title'); ?></label>
                                                     <div id="dd" class="wrapper-dropdown-3">
@@ -238,14 +234,14 @@ $title="";
                                                         </ul>
                                                     </div>
                                                 </div>
-                                            <div class="col-sm-6 col-xs-12">
-                                                <div class="form-group">
+                                            <div class="col-sm-6 col-12">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('symptoms_description'); ?></label>
                                                     <textarea class="form-control" id="symptoms_description" name="symptoms" ></textarea> 
                                                 </div> 
                                             </div>                                        
                                             <div class="col-sm-12">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('note'); ?></label> 
                                                     <textarea name="note" rows="3" class="form-control" ><?php echo set_value('note'); ?></textarea>
                                                 </div>
@@ -260,7 +256,7 @@ $title="";
                                     <div class="col-lg-4 col-md-4 col-sm-4 col-eq ptt10">
                                         <div class="row">
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('appointment_date'); ?></label>
                                                     <small class="req"> *</small>
                                                     <input id="admission_date" name="appointment_date" placeholder="" type="text" class="form-control datetime" />
@@ -268,7 +264,7 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('case'); ?></label>
                                                     <div><input class="form-control" type='text' name='case' />
@@ -277,7 +273,7 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('casualty'); ?></label>
                                                     <div>
@@ -297,7 +293,7 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('old_patient'); ?></label>
                                                     <div>
@@ -317,7 +313,7 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                             <?php echo $this->lang->line('tpa'); ?></label>
                                                     <div><select class="form-control" onchange="get_Charges(this.value)" id="organisation" name='organisation' >
@@ -332,7 +328,7 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                     <?php echo $this->lang->line('reference'); ?></label>
                                                     <div><input class="form-control" type='text' name='refference' />
@@ -341,14 +337,14 @@ $title="";
                                                 </div>
                                             </div>
                                             <div class="col-sm-12">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="exampleInputFile">
                                                         <?php echo $this->lang->line('consultant_doctor'); ?></label><small class="req"> *</small>
                                                     <div><select name='consultant_doctor' id="consultant_doctor" class="form-control select2" <?php
                                                         if ($disable_option == true) {
                                                             echo "disabled";
                                                         }
-                                                        ?> style="width:100%">
+                                                        ?> class="w-100">
                                                             <option value=""><?php echo $this->lang->line('select') ?></option>
                                                             <?php foreach ($doctors as $dkey => $dvalue) {
                                                                 ?>
@@ -367,9 +363,9 @@ $title="";
                                                 </div>
                                             </div>
                                     <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('charge_category'); ?></label>
-                        <select name="charge_category" style="width: 100%" class="form-control charge_category select2">
+                        <select name="charge_category" class="w-100 form-control charge_category select2">
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
                                                 <?php foreach ($charge_category as $key => $value) {
                                                     ?>
@@ -382,43 +378,43 @@ $title="";
                                                 </div>
                                             </div>     
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                             <label><?php echo $this->lang->line('charge'); ?></label><small class="req"> *</small>
-                                            <select name="charge_id" style="width: 100%" class="form-control charge select2">
+                                            <select name="charge_id" class="w-100 form-control charge select2">
                                     <option value=""><?php echo $this->lang->line('select')?></option>
                                             </select>
                                                     <span class="text-danger"><?php echo form_error('apply_charge'); ?></span>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                            <div class="form-group"> 
+                                            <div class="mb-3"> 
                                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('tax'); ?></label>
                                                     <div class="input-group">
                                                         <input type="text" class="form-control right-border-none" name="percentage" id="percentage" readonly autocomplete="off">
-                                                        <span class="input-group-addon "> %</span>
+                                                        <span class="input-group-text "> %</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")" ?></label>
                                                     <input type="text" readonly name="standard_charge" id="standard_charge" class="form-control" value="<?php echo set_value('standard_charge'); ?>"> 
                                                     <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
                                                 </div>
                                             </div> 
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('applied_charge') . " (" . $currency_symbol . ")" ?></label><small class="req"> *</small><input type="text" name="amount" id="apply_charge" onkeyup="update_amount(this.value)" class="form-control">    
                                                     <span class="text-danger"><?php echo form_error('amount'); ?></span>
                                                 </div>
                                             </div>
                                         <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('amount'). " (" . $currency_symbol . ")" ?></label><small class="req"> *</small><input type="text" name="apply_amount" readonly id="apply_amount" class="form-control">
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label for="pwd"><?php echo $this->lang->line('payment_mode'); ?></label>
                                                     <select name="payment_mode" class="form-control payment_mode">
                                                         <?php foreach ($payment_mode as $payment_key => $payment_value) {
@@ -433,29 +429,29 @@ $title="";
                                                 </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label for="pwd"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")" ; ?></label><small class="req"> *</small>
                                                 <input type="text" name="paid_amount" id="paid_amount" class="form-control">    
                                                 <span class="text-danger"><?php echo form_error('paid_amount'); ?></span>
                                             </div>
                                         </div>
-                                        <div class="cheque_div" style="display: none;">
+                                        <div class="cheque_div d-none" >
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small> 
                                                     <input type="text" name="cheque_no" id="cheque_no" class="form-control">
                                                     <span class="text-danger"></span>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small> 
                                                     <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
                                                     <span class="text-danger"></span>
                                                 </div>
                                             </div>
                                             <div class="col-sm-12">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('attach_document'); ?></label>
                                                 <input type="file" class="filestyle form-control" name="document">
                                                 <span class="text-danger"><?php echo form_error('document'); ?></span> 
@@ -464,7 +460,7 @@ $title="";
                                     </div>
                                         <?php if ($this->module_lib->hasActive('live_consultation')) { ?>
                                             <div class="col-sm-6">
-                                                <div class="form-group">
+                                                <div class="mb-3">
                                                     <label>
                                                     <?php echo $this->lang->line('live_consultation'); ?></label>
                                                     <select name="live_consult"  class="form-control">
@@ -492,33 +488,30 @@ $title="";
                 </div>
             </div>  
 
-                <div class="box-footer">
-                    <div class="pull-right">
-                    <button type="submit" id="formaddbtn" name="save" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle" ></i> <span><?php echo $this->lang->line('save'); ?></span></button>
-                    </div>
-                    <div class="pull-right mr-10">
-                        <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing') ?>" name="save_print" class="btn btn-info pull-right printsavebtn"><?php echo $this->lang->line('save_print'); ?></button>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" name="save" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <span><?php echo $this->lang->line('save'); ?></span></button>
+                    <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing') ?>" name="save_print" class="btn btn-info printsavebtn"><?php echo $this->lang->line('save_print'); ?></button>
                 </div>
-            </form>                
+            </form>
         </div>
-    </div>    
+    </div>
 </div>
 
-<div class="modal fade" id="myModaledit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"><?php echo $this->lang->line('patient_details'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="myModaledit" tabindex="-1" aria-labelledby="myModaleditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModaleditLabel"><?php echo $this->lang->line('patient_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0">
+            <div class="modal-body">
                 <div class="row">
                     <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
                         <form id="formedit" accept-charset="utf-8" enctype="multipart/form-data" method="post" class="ptt10">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small> 
                                         <input id="patient_name" name="name" placeholder="" type="text" class="form-control"  value="<?php echo set_value('name'); ?>" />
                                         <input type="hidden" id="updateid" name="updateid">
@@ -527,13 +520,13 @@ $title="";
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('guardian_name'); ?></label>
                                         <input type="text" id="guardian_name" name="guardian_name" value="<?php echo set_value('guardian_name'); ?>" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('gender'); ?></label><small class="req"> *</small> 
                                         <select class="form-control" id="gender" name="gender">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -549,7 +542,7 @@ $title="";
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="pwd"><?php echo $this->lang->line('marital_status'); ?></label>
                                         <select name="marital_status" id="marital_status" class="form-control">
                                             <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -561,7 +554,7 @@ $title="";
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputFile">
 <?php echo $this->lang->line('patient_photo'); ?></label>
                                         <div><input class="filestyle form-control" type='file' name='file' id="file" size='20' />
@@ -571,19 +564,19 @@ $title="";
                                     </div>
                                 </div>  
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('email'); ?></label>
                                         <input type="text" id="email" value="<?php echo set_value('email'); ?>" name="email" class="form-control">
                                     </div>
                                 </div> 
                                 <div class="col-sm-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="pwd"><?php echo $this->lang->line('phone'); ?></label>
                                         <input id="contact" autocomplete="off" name="contact" placeholder="" type="text" class="form-control"  value="<?php echo set_value('contact'); ?>" />
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label> <?php echo $this->lang->line('blood_group'); ?></label><small class="req"> *</small> 
                                         <select class="form-control" id="blood_group" name="blood_group">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -599,27 +592,23 @@ $title="";
                                     </div>
                                 </div>
                                 <div class="col-sm-2">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('age'); ?></label>
-                                        <div style="clear: both;overflow: hidden;">
-                                            <input type="text" placeholder="Age" id="age" name="age" value="<?php echo set_value('age'); ?>" class="form-control" style="width: 40%; float: left;">
-                                            <input type="text" placeholder="Month" id="month" name="month" value="<?php echo set_value('month'); ?>" class="form-control" style="width: 56%;float: left; margin-left: 5px;">
+                                        <div class="sh-clear">
+                                            <input type="text" placeholder="<?= $this->lang->line('age') ?>" id="age" name="age" value="<?php echo set_value('age'); ?>" class="form-control sh-print-left-40" >
+                                            <input type="text" placeholder="<?= $this->lang->line('month') ?>" id="month" name="month" value="<?php echo set_value('month'); ?>" class="form-control sh-print-left-56" >
                                         </div>
                                     </div>
                                 </div> 
 
-                            </div><!--./row-->   
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>                    
-                    </div><!--./col-md-12-->       
-                </div><!--./row--> 
+                            </div><!--./row-->
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
+                    </div><!--./col-md-12-->
+                </div><!--./row-->
             </div>
-            <div class="box-footer">
-                <div class="pull-right paddA10">
-                </div>
-            </div>
-            </form>   
+            </form>
         </div>
-    </div>    
+    </div>
 </div>
 
 <script type="text/javascript">
@@ -697,11 +686,11 @@ $title="";
                 var text = $(this).text().toLowerCase();
                 var match = text.indexOf(valThis);
                 if (match >= 0) {
-                    $(this).show();
+                    $(this).removeClass('d-none');
                     noresult = 1;
                     $('.no-results-found').remove();
                 } else {
-                    $(this).hide();
+                    $(this).addClass('d-none');
                 }
             });
         }
@@ -745,7 +734,7 @@ $title="";
         var password = makeid(5)
        if(id==''){
             $("#ajax_load").html("");
-            $("#patientDetails").hide();
+            $("#patientDetails").addClass('d-none');
        }else{
              
             $.ajax({
@@ -757,7 +746,7 @@ $title="";
                 
                 if (res) {
                     $("#ajax_load").html("");
-                    $("#patientDetails").show();
+                    $("#patientDetails").removeClass('d-none');
                     $('#patient_unique_id').html(res.id);
                     $('#patient_id').val(res.id);
                     $('#password').val(password);
@@ -792,7 +781,7 @@ $title="";
                     $("#image").attr("src", '<?php echo base_url() ?>' + res.image);
                 } else {
                     $("#ajax_load").html("");
-                    $("#patientDetails").hide();
+                    $("#patientDetails").addClass('d-none');
                 }
             }
         });
@@ -877,7 +866,7 @@ $title="";
 	});
 
     function getchargecode(charge_category,charge_id) {
-      var div_data = "<option value=''>Select</option>";
+      var div_data = "<option value=''><?= $this->lang->line('select') ?></option>";
       if(charge_category != ""){
           $.ajax({
             url: base_url+'admin/charges/getchargeDetails',
@@ -1060,7 +1049,7 @@ $title="";
                 cache: false,
                 processData: false,
                 beforeSend: function() {
-                 sub_btn_clicked.button('loading') ; 
+                 sub_btn_clicked.btnLoading() ; 
                  },
                 success: function (data) {
                     if (data.status == "fail") {
@@ -1075,17 +1064,17 @@ $title="";
                            printVisitBill(data.opd_id);
                         }  
                         table.ajax.reload( null, false );
-                        $('#myModal').modal('hide');
+                        shModal('myModal').hide();
                     }
-                      sub_btn_clicked.button('reset') ; 
+                      sub_btn_clicked.btnReset() ; 
 
                 },
                  error: function(xhr) { // if error occured
         alert("Error occured.please try again");
-       sub_btn_clicked.button('reset')  ;
+       sub_btn_clicked.btnReset()  ;
     },
     complete: function() {
-        sub_btn_clicked.button('reset');  
+        sub_btn_clicked.btnReset();  
     }
             }); 
         }));
@@ -1120,7 +1109,7 @@ $title="";
                         patientid = $("#pid").val();
                         printVisitBill(patientid, data.id);
                     }
-                    $("#formrevisitbtn").button('reset');
+                    $("#formrevisitbtn").btnReset();
                 },
                 error: function () {
                     
@@ -1212,11 +1201,7 @@ $title="";
     }
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId); if(_el) bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }
 
 </script>
@@ -1226,7 +1211,7 @@ $title="";
 $(".addpatient").click(function(){	
     $('.select2-selection__rendered').html("");
 	$('#formadd').trigger("reset");
-	$("#patientDetails").hide();
+	$("#patientDetails").addClass('d-none');
 });
 
 $(".modalbtnpatient").click(function(){		
@@ -1237,9 +1222,9 @@ $(".modalbtnpatient").click(function(){
 	$(document).on('change','.payment_mode',function(){
 		var mode=$(this).val();
 		if(mode == "Cheque"){
-			$('.cheque_div').css("display", "block");
+			$('.cheque_div').removeClass('d-none');
 		}else{
-			$('.cheque_div').css("display", "none");
+			$('.cheque_div').addClass('d-none');
 		}
 	});
 

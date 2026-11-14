@@ -6,12 +6,18 @@ if (!defined('BASEPATH')) {
 
 class Prescription extends Admin_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $opd_prefix;
+	public $payment_mode;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->config->load("payroll");
         $this->load->library('Enc_lib');
+        $this->load->library('SaasValidation');
         $this->marital_status = $this->config->item('marital_status');
         $this->payment_mode   = $this->config->item('payment_mode');
         $this->blood_group    = $this->config->item('bloodgroup');
@@ -72,6 +78,19 @@ class Prescription extends Admin_Controller
         $data['opd_prefix'] = $this->opd_prefix;
 
         $this->load->view("admin/patient/prescriptionmanual", $data);
+    }
+
+    public function prescriptionmanual_print($visitid)
+    {
+        if (!$this->rbac->hasPrivilege('manual_prescription', 'can_view')) { access_denied(); }
+        $result                   = $this->prescription_model->getmanual($visitid);
+        $opddata                  = $this->patient_model->getopdvisitDetailsbyvisitid($visitid);
+        $data['blood_group_name'] = $opddata['blood_group_name'];
+        $data['print_details']    = $this->printing_model->getheaderfooter('opdpre');
+        $data['result']           = $result;
+        $data['visitid']          = $visitid;
+        $data['opd_prefix']       = $this->opd_prefix;
+        $this->load->view('admin/patient/print/prescriptionmanual_print', $data);
     }
 
     public function getIPDPrescription()
@@ -169,7 +188,7 @@ class Prescription extends Admin_Controller
  
     public function addopdPrescription()
     {
-        $data['visit_details_id'] = $this->input->post('visit_detail_id');
+        $data['visit_details_id'] = $this->input->post('visit_detail_id', TRUE);
         $data['medicineCategory'] = $this->medicine_category_model->getMedicineCategory();
         $data['intervaldosage']   = $this->medicine_dosage_model->getIntervalDosage();
         $data['durationdosage']   = $this->medicine_dosage_model->getDurationDosage();
@@ -219,7 +238,7 @@ class Prescription extends Admin_Controller
 
     public function editopdPrescription()
     {
-        $prescription_id = $this->input->post('prescription_id');
+        $prescription_id = $this->input->post('prescription_id', TRUE);
         $result          = $this->prescription_model->getPrescriptionByTable($prescription_id, 'opd_prescription');
         
         $data['medicineCategory'] = $this->medicine_category_model->getMedicineCategory();
@@ -243,6 +262,21 @@ class Prescription extends Admin_Controller
 
     public function deleteopdPrescription($prescription_id)
     {
+        // SaaS: release the prescription document's storage from the quota and remove the file
+        // before the basic record (which holds the attachment) is deleted.
+        $saas_row = $this->prescription_model->getIpdPrescriptionBasicById($prescription_id);
+        if (!empty($saas_row) && !empty($saas_row['attachment'])) {
+            $saas_kb = $this->media_storage->getUploadedFileSize($saas_row['attachment'], 'uploads/prescription_document');
+            if ($saas_kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $saas_kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (prescription deleteopdPrescription): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($saas_row['attachment'], 'uploads/prescription_document');
+        }
+
         $this->prescription_model->deleteopdPrescription($prescription_id);
         $json = array('status' => 'success', 'error' => '', 'msg' => $this->lang->line('delete_message'));
         echo json_encode($json);

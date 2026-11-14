@@ -49,7 +49,7 @@ class Complaint_model extends MY_Model
     public function complaint_list($id = null)
     {
         $this->db->select('complaint.*,complaint_type.complaint_type')
-        ->join('complaint_type','complaint.complaint_type_id = complaint_type.id')
+        ->join('complaint_type','complaint.complaint_type_id = complaint_type.id','left')
         ->from('complaint');
         if ($id != null) {
             $this->db->where('complaint.id', $id);

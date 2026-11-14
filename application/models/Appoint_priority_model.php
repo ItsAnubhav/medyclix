@@ -55,7 +55,6 @@ class Appoint_priority_model extends MY_Model
             return false;
         } else {
             return true;
-            //return $return_value;
         }
     }
 
@@ -81,7 +80,6 @@ class Appoint_priority_model extends MY_Model
             return false;
         } else {
             return true;
-            //return $return_value;
         }
     }
 }

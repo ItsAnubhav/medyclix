@@ -1,8 +1,6 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                    <ul class="tablists">
                           <?php
                         if ($this->rbac->hasPrivilege('symptoms_head', 'can_view')) { ?>
@@ -16,23 +14,23 @@
             </div>
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary" id="exphead">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('symptoms_type_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="exphead">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title"><?php echo $this->lang->line('symptoms_type_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
                             <?php if ($this->rbac->hasPrivilege('symptoms_type', 'can_add')) { ?>
                                 <a onclick="addModal()"  class="btn btn-primary btn-sm symptoms_head"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_symptoms_type'); ?></a>
                             <?php } ?>     
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('symptoms_type_list'); ?></div>
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
-                            <table class="table table-striped table-bordered table-hover example">
+                            <table class="table table-striped table-bordered table-hover example setup-symptoms-type-fixed">
                                 <thead>
                                     <tr>
-                                        <th><?php echo $this->lang->line('symptoms_type'); ?></th>                                       
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th><?php echo $this->lang->line('symptoms_type'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -43,23 +41,20 @@
                                     } else {
                                         foreach ($symptomsresult as $category) {
                                             ?>
-                                            <tr>                                               
+                                            <tr>
                                                 <td class="mailbox-name"><?php echo $category['symptoms_type'] ?></td>
-                                                <td class="mailbox-date pull-right no-print">
-                                                    <?php
-                                                    if ($this->rbac->hasPrivilege('symptoms_type', 'can_edit')) {
-                                                        ?>
-                                                        <a data-target="#editmyModal" onclick="get(<?php echo $category['id'] ?>)" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
-                                                            <i class="fa fa-pencil"></i>
-                                                        </a>
-                                                        <?php
-                                                    }
-                                                    if ($this->rbac->hasPrivilege('symptoms_type', 'can_delete')) {
-                                                        ?>
-                                                        <a class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/symptoms/deletesymtype/<?php echo $category['id'] ?>', '<?php echo $this->lang->line('delete_confirm'); ?>')">
-                                                            <i class="fa fa-trash"></i>
-                                                        </a>
-                                                    <?php } ?>
+                                                <td class="text-end">
+                                                    <div class="rowoptionview mt-mius0">
+                                                        <?php if ($this->rbac->hasPrivilege('symptoms_type', 'can_edit')) { ?>
+                                                            <a data-bs-target="#editmyModal" onclick="get(<?php echo $category['id'] ?>)" class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                                <i class="fa fa-pencil"></i>
+                                                            </a>
+                                                        <?php } if ($this->rbac->hasPrivilege('symptoms_type', 'can_delete')) { ?>
+                                                            <a class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/symptoms/deletesymtype/<?php echo $category['id'] ?>', '<?php echo $this->lang->line('delete_confirm'); ?>')">
+                                                                <i class="fa fa-trash"></i>
+                                                            </a>
+                                                        <?php } ?>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             <?php
@@ -69,72 +64,85 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div>
             <!-- right column -->
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div>
 
- <!-- add multiple data modal -->
-<div class="modal fade" id="addmultiplerow" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header overflow-hidden">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_symptoms_type') ;?></h4> 
+<!-- add multiple data modal -->
+<div class="modal fade sh-modal sh-modal-accent" id="addmultiplerow" tabindex="-1" aria-labelledby="addSymptomsTypeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSymptomsTypeLabel"><?php echo $this->lang->line('add_symptoms_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-                <form id="form_add_multiple" action="<?php echo site_url('admin/symptoms/add_multiple_symadd') ?>" class="ptt10" method="post" accept-charset="utf-8">
-                    <div class="modal-body pt0">
-                        <div class="row">
-                            <div class="col-md-12">    
-                                <div class="table-responsive overflow-visible mb0">
-                                    <table class="table table-striped mb0 table-bordered table-hover tablefull12 tblProducts" id="tableID_vitals">
-                                        <thead>
-                                            <tr class="font13 white-space-nowrap">
-                                                <th width="90%"><?php echo $this->lang->line('symptoms_type'); ?><small class="req" style="color:red;"> *</small></th>
-                                                <th width="10%"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody  id="set_row">                                       
-                                        </tbody>
-                                    </table>                                
-                                    <a class="btn btn-info addplus-xs" onclick="addrow()" data-added="0"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add')?></a>
-                                </div>                         
+            <form id="form_add_multiple" action="<?php echo site_url('admin/symptoms/add_multiple_symadd') ?>" method="post" accept-charset="utf-8">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('symptoms_type'); ?></span>
+                            </div>
+                            <div class="table-responsive overflow-visible">
+                                <table class="table mb0 tblProducts sh-tbl-transparent" id="tableID_vitals">
+                                    <thead>
+                                        <tr>
+                                            <th><?php echo $this->lang->line('symptoms_type'); ?> <small class="req">*</small></th>
+                                            <th class="sh-col-46"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="set_row"></tbody>
+                                </table>
+                            </div>
+                            <div class="p-3 pt-2 text-end">
+                                <a class="btn btn-primary btn-sm" onclick="addrow()" data-added="0"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></a>
                             </div>
                         </div>
-                    </div>         
-                        <div class="modal-footer">
-                            <div class="pull-right">
-                                <button type="submit" id="formadd_multiple_btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                            </div>
-                        </div>  
-                </form>                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formadd_multiple_btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 <!-- add multiple data modal -->
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_symptoms_type'); ?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editSymptomsTypeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSymptomsTypeLabel"><?php echo $this->lang->line('edit_symptoms_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editformadd" action="<?php echo site_url('admin/symptoms/editsymtype') ?>" name="employeeform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="modal-body pt0 pb0">
-                    <div class="ptt10">
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('symptoms_type'); ?></label><small class="req"> *</small>
-                            <input  id="symptomstype" name="symptoms_type" placeholder="" type="text" class="form-control"  value="" />
-                            <span class="text-danger"><?php echo form_error('symptoms'); ?></span>
-                             <input type="hidden" id="symptoms_id" name="symptoms_id">
+            <form id="editformadd" action="<?php echo site_url('admin/symptoms/editsymtype') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input type="hidden" id="symptoms_id" name="symptoms_id">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('symptoms_type'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-0 col-12">
+                                        <label for="symptomstype" class="form-label"><?php echo $this->lang->line('symptoms_type'); ?><small class="req"> *</small></label>
+                                        <input id="symptomstype" name="symptoms_type" type="text" class="form-control" />
+                                        <span class="text-danger"><?php echo form_error('symptoms'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div><!--./modal-->        
+                </div>
                 <div class="modal-footer">
-                    <button type="submit" id="editformaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="editformaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
@@ -172,7 +180,7 @@
 <script>
     $(document).ready(function (e) {
         $('#formadd').on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -193,7 +201,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -203,7 +211,7 @@
     });
 
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'Json',
             url: '<?php echo base_url(); ?>admin/symptoms/getsymtype_data/' + id,
@@ -216,7 +224,7 @@
 
     $(document).ready(function (e) {
         $('#editformadd').on('submit', (function (e) {
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -237,7 +245,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('reset');
+                    $("#editformaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -251,17 +259,14 @@
 	});
 
     $(document).ready(function (e) {
-        $('#addmultiplerow,#editmyModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('addmultiplerow');
+        modal_click_disabled('editmyModal');
     });
 </script>
 
 <script>
 function addModal(){
-    $('#addmultiplerow').modal('show');
+    shModal('addmultiplerow').show();
     $('#form_add_multiple').trigger("reset");
     $('#set_row').html('');
     addrow();
@@ -271,7 +276,7 @@ var total_rows=0;
 addrow();
 function addrow(){
     var id = total_rows+1;   
-    var div = "<tr id='name_row_"+id+"'><td><input class='form-control' name='symptoms_id_"+id+"' id='symptoms_id_"+id+"' value='' type='hidden' /><input type='hidden' name='total_rows[]' value='" + id + "'><input name='symptoms_type_"+id+"' id='symptoms_type_"+id+"'  type='text' class='form-control'  /></td><td><button type='button' data-rowid='"+id+"' class='closebtn delete_row'><i class='fa fa-remove'></i></button></td></tr>";
+    var div = "<tr id='name_row_"+id+"'><td><input class='form-control' name='symptoms_id_"+id+"' id='symptoms_id_"+id+"' value='' type='hidden' /><input type='hidden' name='total_rows[]' value='" + id + "'><input name='symptoms_type_"+id+"' id='symptoms_type_"+id+"'  type='text' class='form-control'  /></td><td class='text-center align-middle sh-col-46'><button type='button' data-rowid='"+id+"' class='closebtn delete_row btn btn-danger btn-sm'><i class='fa fa-remove'></i></button></td></tr>";
     $('#set_row').append(div);   
     total_rows++;      
 }
@@ -286,7 +291,7 @@ $(document).on('click','.delete_row',function(e){
 
 $(document).ready(function (e) {
         $('#form_add_multiple').on('submit', (function (e) {
-            $("#formadd_multiple_btn").button('loading');
+            $("#formadd_multiple_btn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -310,7 +315,7 @@ $(document).ready(function (e) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formadd_multiple_btn").button('reset');
+                    $("#formadd_multiple_btn").btnReset();
                 },
                 error: function () {
 

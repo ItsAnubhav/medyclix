@@ -5,7 +5,8 @@ if (!defined('BASEPATH'))
 
 class Aes {
 
-public $ENCRYPTION_ALGORITHM = 'AES-256-CBC';
+    public $ENCRYPTION_ALGORITHM = 'AES-256-CBC';
+    public $CI;
 
     function __construct() {
         $this->CI = & get_instance();

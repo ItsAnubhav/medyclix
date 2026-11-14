@@ -5,6 +5,8 @@ if (!defined('BASEPATH'))
 
 class Pesapal extends Patient_Controller
 {
+	public $setting;
+
 
     public $pay_method = "";
     public $amount = 0;
@@ -71,7 +73,7 @@ class Pesapal extends Patient_Controller
         $consumer_secret  = $this->pay_method->api_secret_key;
         $signature_method = new OAuthSignatureMethod_HMAC_SHA1();
         $iframelink       = 'https://www.pesapal.com/API/PostPesapalDirectOrderV4';
-        $amount           = number_format($data['amount'], 2);
+        $amount           = number_format((float) $data['amount'], 2);
         $desc             = "Bill payment hospital";
         $type             = 'MERCHANT';
         $reference        = time();

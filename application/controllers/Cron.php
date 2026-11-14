@@ -2,6 +2,8 @@
 
 class Cron extends CI_Controller
 {
+	public $cron_key;
+
 
     private $setting_result;
     public function __construct($key = "")
@@ -9,10 +11,15 @@ class Cron extends CI_Controller
         parent::__construct();
         $setting_result = $this->setting_model->getSetting();
     
-        $this->setting_result=$setting_result;
-        $this->cron_key = $setting_result->cron_secret_key;
-        $this->cron_key;
+        $this->setting_result = $setting_result;
+        $this->cron_key       = $setting_result->cron_secret_key;
         $this->set_timezone();
+        $this->load->library('mailer');
+        $this->load->library('smsgateway');
+        $this->load->library('pushnotification');
+        if (file_exists(APPPATH . 'libraries/Whatsappgateway.php')) {
+            $this->load->library('whatsappgateway');
+        }
     }
 
     public function index($key = "")
@@ -22,10 +29,139 @@ class Cron extends CI_Controller
             $this->expMedicineNotification($key);
             $this->outofStockMedicineNotification($key);
             $this->lowStockMedicineNotification($key);
+            $this->messageQueue($key);
         } else {
             echo "Invalid Key or Direct access is not allowed";
             return;
         }
+    }
+
+    // -------------------------------------------------------------------
+    // MESSAGE QUEUE PROCESSOR
+    // Picks up to batch_size pending messages, dispatches them, handles retries.
+    // -------------------------------------------------------------------
+    public function messageQueue($key = '')
+    {
+        if (($key == '') || ($this->cron_key != $key)) {
+            echo "Invalid Key or Direct access is not allowed";
+            return;
+        }
+
+        $setting = $this->setting_result;
+        $batch   = isset($setting->message_queue_batch_size) ? (int) $setting->message_queue_batch_size : 50;
+
+        // Lock rows inside a transaction to prevent duplicate processing
+        $this->db->trans_start();
+        $messages = $this->db->query(
+            "SELECT * FROM message_queue WHERE status='pending' ORDER BY priority DESC, id ASC LIMIT $batch FOR UPDATE"
+        )->result();
+
+        if (empty($messages)) {
+            $this->db->trans_complete();
+            return;
+        }
+
+        $ids = array_column($messages, 'id');
+        $this->db->where_in('id', $ids)->update('message_queue', [
+            'status'     => 'processing',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $this->db->trans_complete();
+
+        foreach ($messages as $msg) {
+            $this->_processQueueMessage($msg, $setting);
+        }
+    }
+
+    private function _processQueueMessage($msg, $setting)
+    {
+        $max_attempts = isset($setting->message_queue_attempts) ? (int) $setting->message_queue_attempts : 3;
+        $payload      = json_decode($msg->sender_details, true);
+        $sent         = false;
+
+        if (empty($payload['forward_through'])) {
+            $this->_deleteQueueMessage($msg->id);
+            return;
+        }
+
+        switch ($payload['forward_through']) {
+
+            case 'email':
+                $files = isset($payload['files']) ? $payload['files'] : [];
+                $cc    = isset($payload['cc'])    ? $payload['cc']    : '';
+                $sent  = $this->mailer->send_mail(
+                    $payload['forward_value'],
+                    $payload['subject'],
+                    $payload['message'],
+                    $files,
+                    $cc
+                );
+                break;
+
+            case 'sms':
+                $sent = $this->smsgateway->send(
+                    $payload['forward_value'],
+                    $payload['message'],
+                    isset($payload['template_id']) ? $payload['template_id'] : null
+                );
+                break;
+
+            case 'notification':
+                $push_array = [
+                    'title' => isset($payload['title'])   ? $payload['title']   : '',
+                    'body'  => isset($payload['message']) ? $payload['message'] : '',
+                ];
+                $this->pushnotification->send($payload['forward_value'], $push_array, 'notification');
+                $sent = true;
+                break;
+
+            case 'whatsapp':
+                if (isset($this->whatsappgateway)) {
+                    $sent = $this->whatsappgateway->sentWhatsappMsg(
+                        $payload['forward_value'],
+                        $payload['message'],
+                        isset($payload['template_id']) ? $payload['template_id'] : null
+                    );
+                }
+                break;
+        }
+
+        if ($sent === true) {
+            $this->_deleteQueueMessage($msg->id);
+            return;
+        }
+
+        $new_attempts = (int) $msg->attempts + 1;
+
+        if ($new_attempts >= $max_attempts) {
+            // Move to failed table
+            $this->db->insert('failed_message_queue', [
+                'notification_type' => $msg->notification_type,
+                'sender_details'    => $msg->sender_details,
+                'schedule_date'     => $msg->schedule_date,
+                'priority'          => $msg->priority,
+                'status'            => 'failed',
+                'sent_at'           => $msg->sent_at,
+                'created_at'        => $msg->created_at,
+                'updated_at'        => date('Y-m-d H:i:s'),
+                'attempts'          => $new_attempts,
+                'failed_at'         => date('Y-m-d H:i:s'),
+            ]);
+            $this->_deleteQueueMessage($msg->id);
+        } else {
+            // Retry later
+            $this->db->where('id', $msg->id)
+                ->set('attempts', 'attempts+1', false)
+                ->update('message_queue', [
+                    'status'     => 'pending',
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+        }
+    }
+
+    private function _deleteQueueMessage($id)
+    {
+        $this->db->where('id', $id)->delete('message_queue');
     }
 
 
@@ -111,7 +247,7 @@ class Cron extends CI_Controller
                         );
 
                         $send_data = array(
-                            'message'         => 'Medicine Expire Alert',
+                            'message'         => $this->lang->line('medicine_expire_alert'),
                             'title'           => 'Medicine ' . $medicine_data[$i] . ' Expire Alert',
                             'date'            => date('Y-m-d'),
                             'created_by'      => 'admin',
@@ -170,7 +306,7 @@ class Cron extends CI_Controller
                         );
 
                         $send_data = array(
-                            'message'         => 'Medicine Out of Stock Alert',
+                            'message'         => $this->lang->line('medicine_out_of_stock_alert'),
                             'title'           => 'Medicine ' . $medicine_data[$i] . ' Out of Stock Alert',
                             'date'            => date('Y-m-d'),
                             'created_by'      => 'admin',
@@ -230,7 +366,7 @@ class Cron extends CI_Controller
                         );
 
                         $send_data = array(
-                            'message'         => 'Low Medicine Stock Alert',
+                            'message'         => $this->lang->line('low_medicine_stock_alert'),
                             'title'           => 'Medicine ' . $medicine_data[$i] . ' low stock Alert',
                             'date'            => date('Y-m-d'),
                             'created_by'      => 'admin',

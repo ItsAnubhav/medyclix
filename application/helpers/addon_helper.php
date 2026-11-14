@@ -6,6 +6,10 @@ if (!function_exists('logMessage')) {
 
     function logMessage($message, $logFile = FCPATH . '/addons/error_log.txt')
     {
+        $dir = dirname($logFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
         $formattedMessage = date('Y-m-d H:i:s') . " - " . $message . PHP_EOL;
         file_put_contents($logFile, $formattedMessage, FILE_APPEND);
     }
@@ -37,40 +41,54 @@ function read_json($file_path)
 
 function execute_sql($file_path)
 {
-    $return_array = [];
-    // Read the SQL file
+    $return_array = ['status' => true, 'msg' => 'All queries executed successfully'];
+						
     $CI = &get_instance();
+
     $sql = file_get_contents($file_path);
 
     if ($sql === false) {
-        logMessage("Error reading the SQL file.");
-        $return_array = ['status' => 0, 'msg' => 'Error reading the SQL file.'];
-        return $return_array;
+        logMessage("Error: Unable to read SQL file: $file_path");
+        return ['status' => false, 'msg' => 'Error reading the SQL file.'];
+							 
     }
 
-    // Split the file content into individual SQL statements
-    $queries = explode(";", $sql);
+    logMessage("Loaded SQL file: $file_path");
+    logMessage("Starting multi-query execution...");
+
     $CI->db->db_debug = false;
 
-    // Execute each SQL statement
-    foreach ($queries as $query) {
-        $query = trim($query);
-        if (!empty($query)) {
+    if ($CI->db->conn_id->multi_query($sql)) {
+								  
+							  
+							 
 
+        do {
 
-            if ($CI->db->query($query)) {
+										 
 
-                logMessage("Query executed successfully.");
-                $return_array = ['status' => true, 'msg' => "Query executed successfully"];
-            } else {
-                $dbError = ($CI->db->error());
-                logMessage("Error executing query: Code: " . $dbError['code'] . ' -  ' . 'Error : ' . $dbError['message']);
-                $return_array = ['status' => false, 'msg' => "Error executing query: Code: " . $dbError['code'] . ' -  ' . 'Error : ' . $dbError['message']];
-                break;
+            if ($result = $CI->db->conn_id->store_result()) {
+                $result->free();
             }
-        }
+
+            if ($error = $CI->db->conn_id->error) {
+                logMessage("SQL ERROR: " . $error);
+                $return_array = ['status' => false, 'msg' => "SQL Error: $error"];
+                break;
+            } else {
+                logMessage("Query chunk executed successfully.");
+            }
+        } while ($CI->db->conn_id->more_results() && $CI->db->conn_id->next_result());
+    } else {
+        $error = $CI->db->conn_id->error;
+        logMessage("SQL ERROR (init): " . $error);
+        $return_array = ['status' => false, 'msg' => "SQL Error: $error"];
     }
+
+    logMessage("SQL Execution finished with status: " . ($return_array['status'] ? 'SUCCESS' : 'FAILED'));
+
     $CI->db->db_debug = true;
+
     return $return_array;
 }
 
@@ -204,7 +222,6 @@ function getDirectoryStructure($dir, $backup_json_path) // for creating json bac
 
 
 
-    // return $paths;
 }
 
 
@@ -297,7 +314,6 @@ function createBackUpFiles($pathsToCopy, $destinationBase) // it will store back
 
         if (!file_exists($sourceFile)) {
             continue;
-            // return;
         }
 
         // Get the directory and filename of the source file
@@ -313,7 +329,6 @@ function createBackUpFiles($pathsToCopy, $destinationBase) // it will store back
         if (!is_dir($destinationDir)) {
 
             if (!mkdir($destinationDir, 0755, true)) {
-                //   echo "Failed to create directory: $destinationDir";
                 logMessage("Failed to create the directory.:" . $destinationDir);
                 return false;
             }
@@ -323,7 +338,6 @@ function createBackUpFiles($pathsToCopy, $destinationBase) // it will store back
         $destinationFile = $destinationDir . $fileName;
 
         if (copy($sourceFile, $destinationFile)) {
-            // echo "File copied successfully to $destinationFile";
             logMessage("File copied successfully.:  " . $sourceFile);
         } else {
             logMessage("Failed to copy file.:" . $sourceFile);
@@ -358,9 +372,7 @@ function deleteFilesAndDirectories($array = [])
                 // If it's a file, delete it
                 unlink($path);
             }
-            // echo "Deleted: $path\n";
         } else {
-            // echo "Path does not exist: $path\n";
         }
     }
 }
@@ -388,58 +400,77 @@ function deleteDirectory($dir)
 function updateLicense($product_id)
 {
     $CI = &get_instance();
-    $filename =  APPPATH . "config\license.php";
-    $searchAddonProd = '$config[\'addon_prod\']'; // Text to search for
-    $newAddonProd = '$config[\'addon_prod\']'; // Text to replace with
+    $filename = APPPATH . "config/license.php";
+																	   
+																	  
 
-    $searchAddonVer = '$config[\'addon_ver\']'; // Text to search for
-    $newAddonVer = '$config[\'addon_ver\']'; // Text to replace with
+																	 
+																	
 
-    if (file_exists($filename)) {
-        $addon_details = $CI->addons_model->getAddonWithVersion($product_id);
-        $addon_prod_array = $CI->config->item('addon_prod');
-        $addon_ver_array = $CI->config->item('addon_ver');
-
-
-        if (($key = array_search($addon_details->addon_prod, $addon_prod_array)) !== false) {
-            unset($addon_prod_array[$key]);
-        }
+								 
+																			 
+															
+														  
 
 
-        if (($key = array_search($addon_details->addon_ver, $addon_ver_array)) !== false) {
-            unset($addon_ver_array[$key]);
-        }
+																							 
+										   
+		 
 
 
+    $searchAddonProd = '$config[\'addon_prod\']';
+    $searchAddonVer  = '$config[\'addon_ver\']';
+		 
 
-        $addon_prod_array_comma =  implode(',', array_map(function ($val) {
-            return sprintf("'%s'", $val);
-        }, $addon_prod_array));
-        $newAddonProd = $newAddonProd . " = array(" . $addon_prod_array_comma . ");";
+    if (!file_exists($filename)) return;
 
+    $addon_details    = $CI->addons_model->getAddonWithVersion($product_id);
+    $addon_prod_array = $CI->config->item('addon_prod');
+    $addon_ver_array  = $CI->config->item('addon_ver');
 
-        $addon_ver_array_comma =  implode(',', array_map(function ($val) {
-            return sprintf("'%s'", $val);
-        }, $addon_ver_array));
-        $newAddonVer = $newAddonVer . " = array(" . $addon_ver_array_comma . ");";
-
-        // Read the file into an array of lines
-        $lines = file($filename);
-
-        // Loop through each line and replace if search text is found
-        foreach ($lines as &$line) {
-            if (strpos($line, $searchAddonProd) !== false) {
-
-                // Replace from the found text to the end of the line
-                $line = substr($line, 0, strpos($line, $searchAddonProd)) . $newAddonProd . PHP_EOL;
-            } else if (strpos($line, $searchAddonVer) !== false) {
-
-                // Replace from the found text to the end of the line
-                $line = substr($line, 0, strpos($line, $searchAddonVer)) . $newAddonVer . PHP_EOL;
-            }
-        }
-
-        // Write the updated lines back to the file
-        file_put_contents($filename, implode('', $lines));
+    // Check array existence
+										 
+    if (!is_array($addon_prod_array) || !is_array($addon_ver_array)) {
+        return; // or logMessage + return
     }
+
+    // REMOVE old values if present
+    if (($key = array_search($addon_details->addon_prod, $addon_prod_array)) !== false) {
+        unset($addon_prod_array[$key]);
+    }
+    if (($key = array_search($addon_details->addon_ver, $addon_ver_array)) !== false) {
+        unset($addon_ver_array[$key]);
+    }
+
+    // ADD new values
+    $addon_prod_array[] = $addon_details->addon_prod;
+    $addon_ver_array[]  = $addon_details->addon_ver;
+																				  
+
+    // Remove duplicates + reindex
+    $addon_prod_array = array_values(array_unique($addon_prod_array));
+    $addon_ver_array  = array_values(array_unique($addon_ver_array));
+
+    // Convert arrays into config code
+    $addon_prod_array_comma = implode(',', array_map(fn($v) => "'$v'", $addon_prod_array));
+    $addon_ver_array_comma  = implode(',', array_map(fn($v) => "'$v'", $addon_ver_array));
+
+    $newAddonProd = "$searchAddonProd = array($addon_prod_array_comma);";
+    $newAddonVer  = "$searchAddonVer = array($addon_ver_array_comma);";
+																  
+
+    // Replace lines in file
+    $lines = file($filename);
+    foreach ($lines as &$line) {
+        if (strpos($line, $searchAddonProd) !== false) {
+            $line = $newAddonProd . PHP_EOL;
+        } elseif (strpos($line, $searchAddonVer) !== false) {
+            $line = $newAddonVer . PHP_EOL;
+        }
+
+												   
+														  
+    }
+
+    file_put_contents($filename, implode('', $lines));
 }

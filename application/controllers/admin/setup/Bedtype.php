@@ -27,7 +27,7 @@ class Bedtype extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->bedtype_model, 'valid_bed_type')),
             )
         );
@@ -40,7 +40,7 @@ class Bedtype extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $bedtype = array('name' => $this->input->post('name'));
+            $bedtype = array('name' => $this->input->post('name', TRUE));
             $this->bedtype_model->savebed($bedtype);           
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -66,7 +66,7 @@ class Bedtype extends Admin_Controller
         } else {
 
             $bedtype = array(
-                'name' => $this->input->post('name'),
+                'name' => $this->input->post('name', TRUE),
                 'id'   => $id,
             );
 

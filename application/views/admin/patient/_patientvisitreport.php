@@ -1,24 +1,24 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="box border0 clear" id="visit_report">
-    <h3 class="mb0"><?= $this->lang->line("patient_visits"); ?></h3>
-    <div class="table-responsive">
-        <div id="printhead">
+<div class="card border0 clear" id="visit_report">
+    <div class="pd-section-banner">
+        <span><?= $this->lang->line("patient_visit_report"); ?></span>
+        <div class="ms-auto d-flex gap-1" id="printhead" style="display:none!important;">
             <h5 class="text-center"><?php echo $this->lang->line("patient_visit_report") . "<br>"; ?></h5>
         </div>
-        <div>
-            <div class="box-header with-border" id="headreport" style="display:none;">
-                <h3 class="box-title text-center"><?php if(!empty($patient_name)){ echo composePatientName($patient_name,$patient_id) .' '.$this->lang->line("visit_details"); } ?></h3>
-			</div>
+        <div id="headreport" class="d-none">
+            <span class="pd-section-banner-sub"><?php if(!empty($patient_name)){ echo composePatientName($patient_name,$patient_id) .' '.$this->lang->line("visit_details"); } ?></span>
         </div>
-        <div class="download_label"><?php echo $this->lang->line('opd_report'); ?></div>
-        <div class="ptt10">
-            <a class="btn btn-default btn-xs pull-right" id="print" onclick="printDiv()"><i class="fa fa-print"></i></a> 
-            <a class="btn btn-default btn-xs pull-right" id="btnExport" onclick="tablesToExcel(array1, array2, array3, array4, array5, array6, array7, 'myfile.xls');"> <i class="fa fa-file-excel-o"></i> </a>
+        <div class="ms-auto d-flex gap-1">
+            <a class="btn btn-secondary btn-sm" id="print" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('print'); ?>" onclick="printDiv()"><i class="fa fa-print"></i></a>
+            <a class="btn btn-secondary btn-sm" id="btnExport" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('export_to_excel'); ?>" onclick="tablesToExcel(array1, array2, array3, array4, array5, array6, array7, 'myfile.xls');"><i class="fa fa-file-excel-o"></i></a>
         </div>
+    </div>
+    <div class="download_label"><?php echo $this->lang->line('opd_report'); ?></div>
+    <div class="pd-section-header"><?= $this->lang->line("opd_details"); ?></div>
+    <div class="table-responsive">
         <table class="table table-striped table-bordered table-hover allajaxlist" id="1">
-            <caption><h4 class="bolds"><?= $this->lang->line("opd_details"); ?></h4></caption>
             <thead>
                 <tr>
                     <th><?php echo $this->lang->line('opd_no'); ?></th>
@@ -56,10 +56,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             </tbody>
         </table>
     </div>
+    <div class="pd-section-header"><?= $this->lang->line("ipd_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('ipd_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('ipd_report'); ?></div>
         <table class="table table-striped table-bordered table-hover allajaxlist" id="2">
-        <caption><h4 class="bolds"><?= $this->lang->line("ipd_details"); ?></h4></caption>
             <thead>
                <tr>
                     <th><?php echo $this->lang->line('ipd_no'); ?></th>
@@ -96,18 +96,18 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             </tbody>
         </table>
     </div>
+    <div class="pd-section-header"><?= $this->lang->line("pharmacy_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('pharmacy_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('pharmacy_report'); ?></div>
         <table class="table table-striped table-bordered table-hover allajaxlist" id="3">
-        <caption><h4 class="bolds"><?= $this->lang->line("pharmacy_details"); ?></h4></caption>
             <tr>
                 <th><?php echo $this->lang->line('bill_no'); ?></th>
                 <th><?php echo $this->lang->line('case_id'); ?></th>
                 <th><?php echo $this->lang->line('date'); ?></th>
-                <th class="text-right"><?php echo $this->lang->line('discount') . " " . '(' . $currency_symbol . ')'; ?></th>
-                <th class="text-right"><?php echo $this->lang->line('amount') . " " . '(' . $currency_symbol . ')'; ?></th>
-                <th class="text-right"><?php echo $this->lang->line('paid_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
-                <th class="text-right"><?php echo $this->lang->line("balance_amount") . " " . '(' . $currency_symbol . ')'; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('discount') . " " . '(' . $currency_symbol . ')'; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('amount') . " " . '(' . $currency_symbol . ')'; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('paid_amount')  . " " . '(' . $currency_symbol . ')'; ?></th>
+                <th class="text-end"><?php echo $this->lang->line("balance_amount") . " " . '(' . $currency_symbol . ')'; ?></th>
             </tr>
             <tbody>
                 <?php
@@ -132,45 +132,44 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td><?php echo $this->customlib->getSessionPrefixByType('pharmacy_billing') . $value['id']; ?></td>
                             <td><?php echo $case_id ; ?></td>
                             <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-                            <td class="text-right"><?php echo $value['discount']." (".$value['discount_percentage']."%)"; ?></td>
-                            <td class="text-right">
+                            <td class="text-end"><?php echo $value['discount']." (".$value['discount_percentage']."%)"; ?></td>
+                            <td class="text-end">
                                <?php echo $value['net_amount']; ?>
                             </td>
-                            <td class="text-right"><?php echo  number_format((float)$value['paid_amount']-$value['refund_amount'], 2, '.', ''); ?></td>
-                            <td class="text-right">
+                            <td class="text-end"><?php echo  number_format((float)$value['paid_amount']-$value['refund_amount'], 2, '.', ''); ?></td>
+                            <td class="text-end position-relative" >
                                 <?php echo number_format((float)$balance_amount, 2, '.', '');; ?>
+                                <div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm ' onclick="viewDetail(<?php echo $value['id']; ?>)"  data-module-type="pharmacy"  data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div>
                             </td>
-                            <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs ' onclick="viewDetail(<?php echo $value['id']; ?>)"  data-module-type="pharmacy"  data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                         </tr>
                         
                 <?php
                     } ?>
                     <tr>
                         <td colspan="3"></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo  $currency_symbol.number_format($total_balance,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo  $currency_symbol.number_format($total_balance,2); ?></td>
                     </tr>
                 <?php }
                 ?>
             </tbody>
         </table>
     </div>
+    <div class="pd-section-header"><?= $this->lang->line("pathology_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('pathology_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('pathology_report'); ?></div>
         <table class="table table-striped table-bordered table-hover allajaxlist" id="4">
-        <caption><h4 class="bolds"><?= $this->lang->line("pathology_details"); ?></h4></caption>
             <thead>
                 <tr>
                     <th><?php echo $this->lang->line('bill_no'); ?></th>
                     <th><?php echo $this->lang->line('case_id'); ?></th>
                     <th><?php echo $this->lang->line('date');  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-                    <th></th>
+                    <th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -197,11 +196,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td><?php echo $this->customlib->getSessionPrefixByType('pathology_billing') . $value['id']; ?></td>
                             <td><?php echo $case_id ; ?></td>
                             <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-                            <td class="text-right"><?php echo $value['discount'].' ('.$value['discount_percentage'].'%)'; ?></td>
-                            <td class="text-right"><?php echo $value['net_amount']; ?></td>
-                            <td class="text-right"><?php echo $value['paid_amount']; ?></td>
-                            <td class="text-right"><?php echo number_format($balance_amount, 2); ?></td>
-                            <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="pathology"  data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
+                            <td class="text-end"><?php echo $value['discount'].' ('.$value['discount_percentage'].'%)'; ?></td>
+                            <td class="text-end"><?php echo $value['net_amount']; ?></td>
+                            <td class="text-end"><?php echo $value['paid_amount']; ?></td>
+                            <td class="text-end position-relative" ><?php echo number_format($balance_amount, 2); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="pathology"  data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                         </tr>
                         
                 <?php
@@ -209,10 +207,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     ?>
                     <tr>
                         <td colspan="3"></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo  $currency_symbol.number_format($total_balance,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo  $currency_symbol.number_format($total_balance,2); ?></td>
                     </tr>
                 <?php }
                 ?>
@@ -220,20 +218,19 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         </table>
     </div>
 
+    <div class="pd-section-header"><?= $this->lang->line("radiology_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('radiology_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('radiology_report'); ?></div>
         <table class="table table-striped table-bordered table-hover allajaxlist" id="5">
-        <caption><h4 class="bolds"><?= $this->lang->line("radiology_details"); ?></h4></caption>
             <thead>
                 <tr>
                     <th><?php echo $this->lang->line('bill_no'); ?></th>
                     <th><?php echo $this->lang->line('case_id'); ?></th>
                     <th><?php echo $this->lang->line('date'); ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('discount'). " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-                    <th></th>
+                    <th class="text-end"><?php echo $this->lang->line('discount'). " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -261,20 +258,19 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td><?php echo $this->customlib->getSessionPrefixByType('radiology_billing') . $value['id']; ?></td>
                             <td><?php echo $case_id ; ?></td>
                             <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?></td>
-                            <td class="text-right"><?php echo $value['discount'].' ('.$value['discount_percentage'].'%)' ; ?></td>
-                            <td class="text-right"><?php echo $value['net_amount']; ?></td>
-                            <td class="text-right"><?php echo $value['paid_amount']; ?></td>
-                            <td class="text-right"><?php echo number_format($balance_amount, 2); ?></td>
-                            <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="radiology" data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
+                            <td class="text-end"><?php echo $value['discount'].' ('.$value['discount_percentage'].'%)' ; ?></td>
+                            <td class="text-end"><?php echo $value['net_amount']; ?></td>
+                            <td class="text-end"><?php echo $value['paid_amount']; ?></td>
+                            <td class="text-end position-relative" ><?php echo number_format($balance_amount, 2); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="radiology" data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                         </tr>                       
                 <?php
                     } ?>
                      <tr>
                         <td colspan="3"></td>
-                        <td class="text-right"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
                     </tr>
                 <?php }
                 ?>
@@ -282,10 +278,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         </table>
     </div>
 
+    <div class="pd-section-header"><?= $this->lang->line("blood_bank_issue_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
-        <table class="table table-striped table-bordered table-hover allajaxlist" id="6">
-        <caption><h4 class="bolds"><?= $this->lang->line("blood_bank_issue_details"); ?></h4></caption> 
+        <table class="table table-striped table-bordered table-hover allajaxlist" id="6"> 
             <thead>
                   <tr>  
                     <th><?php echo $this->lang->line('bill_no'); ?></th>
@@ -293,10 +289,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     <th><?php echo $this->lang->line('issue_date'); ?></th>
                     <th><?php echo $this->lang->line('donor_name'); ?></th>
                     <th><?php echo $this->lang->line('bags'); ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -319,30 +315,29 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date_of_issue'], $this->customlib->getHospitalTimeFormat()); ?></td>
                         <td><?php echo $value['donor_name']; ?></td>
                         <td><?php echo $this->customlib->bag_string($value['bag_no'],$value['volume'],$value['unit']); ?></td>
-                        <td class="text-right"><?php echo calculatePercent($value['net_amount'],$value['discount_percentage']).' ('.$value['discount_percentage'].'%)'; ?></td>
-                        <td class="text-right"><?php echo $value['net_amount']; ?></td>
-                        <td class="text-right"><?php echo $value['paid_amount']; ?></td>
-                        <td class="text-right"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?></td>
-                        <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="blood_issue"  data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
+                        <td class="text-end"><?php echo calculatePercent($value['net_amount'],$value['discount_percentage']).' ('.$value['discount_percentage'].'%)'; ?></td>
+                        <td class="text-end"><?php echo $value['net_amount']; ?></td>
+                        <td class="text-end"><?php echo $value['paid_amount']; ?></td>
+                        <td class="text-end position-relative" ><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="blood_issue"  data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                     </tr>
                    <?php
                 } ?>
                 <tr>
                     <td colspan="5"></td>
-                    <td class="text-right"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
                 </tr>
             <?php }
                 ?>
             </tbody>
         </table>
     </div>
-     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
+    <div class="pd-section-header"><?= $this->lang->line("blood_bank_component_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('blood_bank_report'); ?></div>
+    <div class="table-responsive">
         <table class="table table-striped table-bordered table-hover allajaxlist" id="6">
-        <caption><h4 class="bolds"><?= $this->lang->line("blood_bank_component_details"); ?></h4></caption>
             <thead>
                  <tr>
                 <th><?php echo $this->lang->line('bill_no'); ?></th>
@@ -351,10 +346,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 <th><?php echo $this->lang->line('donor_name'); ?></th>
                 <th><?php echo $this->lang->line('component'); ?></th>
                 <th><?php echo $this->lang->line('bags'); ?></th>                                  
-                <th class="text-right"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
-                <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
-                <th class="text-right"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")"; ?></th>
+                <th class="text-end"><?php echo $this->lang->line('balance_amount') . " (" . $currency_symbol . ")"; ?></th>
             </tr>
             </thead>
             <tbody>
@@ -380,20 +375,19 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <td><?php echo $value['donor_name']; ?></td>
                         <td><?php echo $value['component_name']; ?></td>
                         <td><?php echo $this->customlib->bag_string($value['bag_no'],$value['volume'],$value['unit']); ?></td>
-                        <td class="text-right"><?php echo calculatePercent($value['net_amount'],$value['discount_percentage']).' ('.$value['discount_percentage'].'%)'; ?></td>
-                        <td class="text-right"><?php echo $value['net_amount']; ?></td>
-                        <td class="text-right"><?php echo $value['paid_amount']; ?></td>
-                        <td class="text-right"><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?></td>
-                        <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs view_detail' data-module-type="component_issue"  data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
+                        <td class="text-end"><?php echo calculatePercent($value['net_amount'],$value['discount_percentage']).' ('.$value['discount_percentage'].'%)'; ?></td>
+                        <td class="text-end"><?php echo $value['net_amount']; ?></td>
+                        <td class="text-end"><?php echo $value['paid_amount']; ?></td>
+                        <td class="text-end position-relative" ><?php echo amountFormat($value['net_amount'] - $value['paid_amount']); ?><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm view_detail' data-module-type="component_issue"  data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                     </tr>
                    <?php
                 } ?>
                 <tr>
                     <td colspan="6"></td>
-                    <td class="text-right"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                    <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("discount"); ?>: </b><?php echo $currency_symbol.number_format($total_discount,2).' ('.number_format($total_discount_percent,2).'%)'; ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                    <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
                 </tr>
             <?php }
                 ?>
@@ -401,20 +395,19 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             </tbody>
         </table>
     </div>
+    <div class="pd-section-header"><?= $this->lang->line("ambulance_details"); ?></div>
+    <div class="download_label"><?php echo $this->lang->line('ambulance_report'); ?></div>
     <div class="table-responsive">
-        <div class="download_label"><?php echo $this->lang->line('ambulance_report'); ?></div>
         <table class="table table-striped table-bordered table-hover allajaxlist" id="7">
-        <caption><h4 class="bolds"><?= $this->lang->line("ambulance_details"); ?></h4></caption>
             <thead>
                 <tr>
                     <th><?php echo $this->lang->line('bill_no'); ?></th>
                     <th><?php echo $this->lang->line('case_id'); ?></th>
                     <th><?php echo $this->lang->line('date'); ?></th>
                     <th><?php echo $this->lang->line('vehicle_number'); ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
-                    <th class="text-right"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
-                    <th></th>
+                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";  ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('balance_amount')."(".$currency_symbol.")"; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -440,25 +433,25 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td><?php echo $this->customlib->YYYYMMDDHisTodateFormat($value['date'], $this->customlib->getHospitalTimeFormat()); ?>
                             </td>
                             <td><?php echo $value['vehicle_model']; ?></td>
-                            <td class="text-right">
+                            <td class="text-end">
                                <?php echo $value['net_amount']; ?>
                             </td>
-                            <td class="text-right">
+                            <td class="text-end">
                                 <?php echo $value['paid_amount']; ?>
                             </td>
-                            <td class="text-right">
+                            <td class="text-end position-relative" >
                                 <?php echo number_format($balance_amount, 2); ?>
+                                <div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-secondary btn-sm'  onclick="viewDetailBill('<?php echo $value['id']; ?>')" data-module-type="ambulance"  data-bs-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div>
                             </td>
-                            <td><div class='rowoptionview'><a href='javascript:void(0)'  data-loading-text=' ' data-record-id='<?php echo $value['id']; ?>' class='btn btn-default btn-xs'  onclick="viewDetailBill('<?php echo $value['id']; ?>')" data-module-type="ambulance"  data-toggle='tooltip' title='' ><i class='fa fa-reorder'></i></a></div></td>
                         </tr>
                         
                 <?php
                     } ?>
                     <tr>
                         <td colspan="4"></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
-                        <td class="text-right"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_amount"); ?>: </b><?php echo $currency_symbol.number_format($total_net,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_paid"); ?>: </b><?php echo $currency_symbol.number_format($total_paid,2); ?></td>
+                        <td class="text-end"><b><?= $this->lang->line("total_balance"); ?>: </b><?php echo $currency_symbol.number_format($total_balance,2); ?></td>
                     </tr>
                 <?php
                 }
@@ -493,7 +486,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             dataType:"JSON",
             beforeSend: function(){
                $('#reportdata,#edit_deletebill').html("");
-           $('#viewModal').modal('show');
+           shModal('viewModal').show();
            view_modal.addClass('modal_loading');
            },
            complete: function(){

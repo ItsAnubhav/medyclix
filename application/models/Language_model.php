@@ -51,8 +51,8 @@ class Language_model extends MY_Model
     public function set_userlang($id, $data)
     {        
         $this->db->where('id', $id);
-        $this->db->update('staff', $data);       
-        return $record_id;        
+        $this->db->update('staff', $data);
+        return $this->db->affected_rows();
     }
 
     /**

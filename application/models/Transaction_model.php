@@ -8,9 +8,9 @@ class Transaction_model extends MY_Model
 {    
     public function pharmacyPaymentByTransactionId($transaction_id)
     {
-        $query = $this->db->select('transactions.*,pharmacy_bill_basic.id as pharmacy_bill_basic_id,patients.note as pnote,patients.id as patient_id,patients.patient_name,patients.guardian_name,patients.gender,patients.id as patient_unique_id,patients.mobileno,patients.email,patients.dob,patients.image,patients.address')
+        $query = $this->db->select('transactions.*,pharmacy_bill_basic.id as pharmacy_bill_basic_id,patients.note as pnote,patients.id as patient_id,IFNULL(patients.patient_name, pharmacy_bill_basic.customer_name) as patient_name,patients.guardian_name,patients.gender,patients.id as patient_unique_id,IFNULL(patients.mobileno, pharmacy_bill_basic.customer_phone) as mobileno,patients.email,patients.dob,patients.image,patients.address')
             ->join("pharmacy_bill_basic", "pharmacy_bill_basic.id = transactions.pharmacy_bill_basic_id")
-            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id")
+            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id", "left")
             ->where("transactions.id", $transaction_id)
             ->order_by("transactions.id", "desc")
             ->get("transactions");
@@ -43,8 +43,8 @@ class Transaction_model extends MY_Model
     public function radiologyPaymentByTransactionId($transaction_id)
     {
         $query = $this->db->select('transactions.*,radiology_billing.id as radiology_billing_id,patients.note as pnote,patients.id as patient_id,patients.patient_name,patients.age,patients.month,patients.gender,patients.id as patient_unique_id,patients.mobileno,patients.email,patients.dob,patients.image,patients.address,staff.name,staff.surname,staff.employee_id')
-            ->join("radiology_billing", "radiology_billing.id = transactions.radiology_billing_id")
-            ->join("patients", "patients.id = radiology_billing.patient_id")
+            ->join("radiology_billing", "radiology_billing.id = transactions.radiology_billing_id", 'LEFT')
+            ->join("patients", "patients.id = radiology_billing.patient_id", 'LEFT')
             ->join("staff", "staff.id = transactions.received_by",'LEFT')
             ->where("transactions.id", $transaction_id)
             ->order_by("transactions.id", "desc")
@@ -78,7 +78,7 @@ class Transaction_model extends MY_Model
     {
         $query = $this->db->select('transactions.*,pharmacy_bill_basic.id as pharmacy_bill_basic_id,patients.note as pnote')
             ->join("pharmacy_bill_basic", "pharmacy_bill_basic.id = transactions.pharmacy_bill_basic_id")
-            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id")
+            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id", "left")
             ->where("transactions.pharmacy_bill_basic_id", $pharmacy_bill_basic_id)
             ->order_by("transactions.payment_date", "desc")
             ->get("transactions");
@@ -119,7 +119,7 @@ class Transaction_model extends MY_Model
     public function pharmacyTotalPayments($pharmacy_bill_basic_id)
     {        
         $query = $this->db->select('IFNULL((select sum(amount) as amount_paid from transactions WHERE transactions.pharmacy_bill_basic_id =pharmacy_bill_basic.id and transactions.type="payment" ),0) as total_paid, IFNULL((select sum(amount) as refund from transactions WHERE transactions.pharmacy_bill_basic_id =pharmacy_bill_basic.id and transactions.type="refund" ),0) as refund_amount, pharmacy_bill_basic.*')                 
-            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id")
+            ->join("patients", "patients.id = pharmacy_bill_basic.patient_id", "left")
             ->where("pharmacy_bill_basic.id", $pharmacy_bill_basic_id)           
             ->get("pharmacy_bill_basic");
         return $query->row();
@@ -324,14 +324,112 @@ class Transaction_model extends MY_Model
                    WHEN (ambulance_call_id IS NOT NULL) THEN ambulance_call_id       
                 END AS reference,
                 section,transactions.opd_id as module_id,patients.patient_name,patients.id as `patient_id`,'opd' head,'opd_no' module_no,staff.name,staff.surname,staff.employee_id from transactions LEFT JOIN ipd_details on ipd_details.id = transactions.ipd_id LEFT JOIN patients on patients.id = transactions.patient_id LEFT JOIN opd_details on opd_details.id = transactions.opd_id LEFT JOIN pharmacy_bill_basic on pharmacy_bill_basic.id = transactions. pharmacy_bill_basic_id LEFT JOIN pathology_billing on pathology_billing.id = transactions.pathology_billing_id LEFT JOIN radiology_billing on radiology_billing.id = transactions.radiology_billing_id LEFT JOIN blood_issue on blood_issue.id = transactions.blood_issue_id LEFT JOIN appointment on appointment.id = transactions.appointment_id LEFT JOIN staff on staff.id = transactions.received_by where date_format(transactions.payment_date,'%Y-%m-%d') >='". $start_date."'and date_format(transactions.payment_date,'%Y-%m-%d') <= '".$end_date."' and  1=1 ".$condition." ";
-               $this->datatables->query($sql) 
+               $this->datatables->query($sql)
               ->searchable('transactions.id,patients.patient_name,patients.id,reference,transactions.payment_date,staff.name,staff.surname,staff.employee_id,transactions.type,transactions.payment_mode,transactions.case_reference_id,opd_id,ipd_id,pharmacy_bill_basic_id,pathology_billing_id,radiology_billing_id,transactions.blood_donor_cycle_id,blood_issue_id,ambulance_call_id,transactions.amount')
               ->orderable('transactions.id,transactions.payment_date,patients.patient_name,reference,ward,staff.name,transactions.type,transactions.payment_mode,transactions.amount')
               ->sort('transactions.payment_date','desc')
               ->query_where_enable(TRUE);
         return $this->datatables->generate('json');
-    } 
-    
+    }
+
+    public function allTransactionRecord($start_date, $end_date, $collect_staff = null)
+    {
+        $txn_cond = $inc_cond = $exp_cond = '';
+        if (!empty($collect_staff)) {
+            $txn_cond = " AND transactions.received_by = " . $collect_staff;
+            $inc_cond = " AND income.generated_by = "      . $collect_staff;
+            $exp_cond = " AND expenses.generated_by = "    . $collect_staff;
+        }
+
+        $part1 = "SELECT transactions.id,
+                   transactions.type,
+                   transactions.amount,
+                   transactions.payment_date,
+                   transactions.payment_mode,
+                   CASE
+                       WHEN appointment_id IS NOT NULL         THEN 'appointment'
+                       WHEN ipd_id IS NOT NULL                 THEN 'ipd_no'
+                       WHEN opd_id IS NOT NULL                 THEN 'opd_no'
+                       WHEN pharmacy_bill_basic_id IS NOT NULL THEN 'pharmacy_billing'
+                       WHEN pathology_billing_id IS NOT NULL   THEN 'pathology_billing'
+                       WHEN radiology_billing_id IS NOT NULL   THEN 'radiology_billing'
+                       WHEN blood_issue_id IS NOT NULL         THEN 'blood_bank_billing'
+                       WHEN ambulance_call_id IS NOT NULL      THEN 'ambulance_call_billing'
+                   END AS ward,
+                   CASE
+                       WHEN appointment_id IS NOT NULL         THEN appointment_id
+                       WHEN ipd_id IS NOT NULL                 THEN ipd_id
+                       WHEN opd_id IS NOT NULL                 THEN opd_id
+                       WHEN pharmacy_bill_basic_id IS NOT NULL THEN pharmacy_bill_basic_id
+                       WHEN pathology_billing_id IS NOT NULL   THEN pathology_billing_id
+                       WHEN radiology_billing_id IS NOT NULL   THEN radiology_billing_id
+                       WHEN blood_issue_id IS NOT NULL         THEN blood_issue_id
+                       WHEN ambulance_call_id IS NOT NULL      THEN ambulance_call_id
+                   END AS reference,
+                   transactions.section,
+                   patients.patient_name,
+                   patients.id AS patient_id,
+                   staff.name,
+                   staff.surname,
+                   staff.employee_id
+            FROM transactions
+            LEFT JOIN patients ON patients.id = transactions.patient_id
+            LEFT JOIN staff    ON staff.id    = transactions.received_by
+            WHERE date_format(transactions.payment_date,'%Y-%m-%d') >= '" . $start_date . "'
+              AND date_format(transactions.payment_date,'%Y-%m-%d') <= '" . $end_date . "'
+              " . $txn_cond;
+
+        $part2 = "SELECT income.id,
+                   '' AS type,
+                   income.amount,
+                   CONCAT(income.date, ' 00:00:00') AS payment_date,
+                   '' AS payment_mode,
+                   'income' AS ward,
+                   NULL AS reference,
+                   'Income' AS section,
+                   income.name AS patient_name,
+                   NULL AS patient_id,
+                   staff.name,
+                   staff.surname,
+                   staff.employee_id
+            FROM income
+            LEFT JOIN staff ON staff.id = income.generated_by
+            WHERE income.date >= '" . $start_date . "'
+              AND income.date <= '" . $end_date . "'
+              AND income.is_deleted = 'no'
+              " . $inc_cond;
+
+        $part3 = "SELECT expenses.id,
+                   '' AS type,
+                   -expenses.amount AS amount,
+                   CONCAT(expenses.date, ' 00:00:00') AS payment_date,
+                   '' AS payment_mode,
+                   'expenses' AS ward,
+                   NULL AS reference,
+                   'Expense' AS section,
+                   expenses.name AS patient_name,
+                   NULL AS patient_id,
+                   staff.name,
+                   staff.surname,
+                   staff.employee_id
+            FROM expenses
+            LEFT JOIN staff ON staff.id = expenses.generated_by
+            WHERE expenses.date >= '" . $start_date . "'
+              AND expenses.date <= '" . $end_date . "'
+              " . $exp_cond;
+
+        // Wrap full UNION in a derived table so DataTables can safely append
+        // WHERE / ORDER BY / LIMIT to the outer SELECT.
+        $sql = "SELECT * FROM ($part1 UNION ALL $part2 UNION ALL $part3) AS all_transactions";
+
+        $this->datatables->query($sql)
+            ->searchable('id,patient_name,ward,section,name,type,payment_mode,amount')
+            ->orderable('id,payment_date,patient_name,reference,ward,name,type,payment_mode,amount')
+            ->sort('payment_date', 'desc')
+            ->query_where_enable(FALSE);
+        return $this->datatables->generate('json');
+    }
+
     public function appointmentpatientRecord($start_date, $end_date,$collect_staff=null) {
 
         $condition="";
@@ -902,9 +1000,9 @@ class Transaction_model extends MY_Model
        $sql="SELECT `pharmacy_bill_basic`.*,ipd_prescription_basic.ipd_id,ipd_prescription_basic.visit_details_id, 
 
         IFNULL((select sum(amount) as amount_paid from transactions WHERE transactions.pharmacy_bill_basic_id =pharmacy_bill_basic.id and transactions.type='payment' ".$condition_payment_mode." ), 0) as paid_amount,
-        IFNULL((select sum(amount) as refund from transactions WHERE transactions.pharmacy_bill_basic_id =pharmacy_bill_basic.id and transactions.type='refund' ), 0) as refund_amount, `patients`.`patient_name`, `patients`.`id` as `pid`,patients.gender, patients.as_of_date,patients.age,patients.month,patients.day,staff.name,staff.surname,staff.employee_id ".$field_variable." FROM `pharmacy_bill_basic` LEFT JOIN `patients` ON `patients`.`id` = `pharmacy_bill_basic`.`patient_id`  LEFT JOIN `ipd_prescription_basic` ON `ipd_prescription_basic`.`id` = `pharmacy_bill_basic`.`ipd_prescription_basic_id` LEFT JOIN staff on staff.id = pharmacy_bill_basic.generated_by  ".$custom_join." where DATE(pharmacy_bill_basic.date) >='". $start_date."' and DATE(pharmacy_bill_basic.date) <= '".$end_date."' ".$condition."";
+        IFNULL((select sum(amount) as refund from transactions WHERE transactions.pharmacy_bill_basic_id =pharmacy_bill_basic.id and transactions.type='refund' ), 0) as refund_amount, IFNULL(`patients`.`patient_name`, `pharmacy_bill_basic`.`customer_name`) as `patient_name`, `patients`.`id` as `pid`,patients.gender, patients.as_of_date,patients.age,patients.month,patients.day,staff.name,staff.surname,staff.employee_id ".$field_variable." FROM `pharmacy_bill_basic` LEFT JOIN `patients` ON `patients`.`id` = `pharmacy_bill_basic`.`patient_id`  LEFT JOIN `ipd_prescription_basic` ON `ipd_prescription_basic`.`id` = `pharmacy_bill_basic`.`ipd_prescription_basic_id` LEFT JOIN staff on staff.id = pharmacy_bill_basic.generated_by  ".$custom_join." where DATE(pharmacy_bill_basic.date) >='". $start_date."' and DATE(pharmacy_bill_basic.date) <= '".$end_date."' ".$condition."";
              $this->datatables->query($sql) 
-              ->searchable('pharmacy_bill_basic.id,patients.patient_name'.$custom_field_column)
+              ->searchable('pharmacy_bill_basic.id,patients.patient_name,pharmacy_bill_basic.customer_name'.$custom_field_column)
               ->orderable('
                 pharmacy_bill_basic.id, pharmacy_bill_basic.date,  patients.patient_name,patients.age, patients.gender,pharmacy_bill_basic.ipd_prescription_basic_id,
                 pharmacy_bill_basic.doctor_name,  staff.name'.$custom_field_column.', `pharmacy_bill_basic`.`total`,`pharmacy_bill_basic`.`discount` ,
@@ -1561,6 +1659,33 @@ class Transaction_model extends MY_Model
         return $query->row();
     }
  
+    /**
+     * Case-level payment totals for Service Posting (matches PDF payment details).
+     * Paid excludes advance so Advance can stay a separate UI field.
+     */
+    public function getCasePaymentSummary($case_id)
+    {
+        $case_id = (int) $case_id;
+        if ($case_id < 1) {
+            return array('total_paid' => 0, 'total_advance' => 0, 'total_refund' => 0);
+        }
+
+        $row = $this->db->select("
+                IFNULL(SUM(CASE WHEN type = 'payment' AND (amount_type IS NULL OR amount_type = '' OR amount_type != 'advance') THEN amount ELSE 0 END), 0) AS total_paid,
+                IFNULL(SUM(CASE WHEN type = 'payment' AND amount_type = 'advance' THEN amount ELSE 0 END), 0) AS total_advance,
+                IFNULL(SUM(CASE WHEN type = 'refund' THEN amount ELSE 0 END), 0) AS total_refund
+            ", false)
+            ->where('case_reference_id', $case_id)
+            ->get('transactions')
+            ->row_array();
+
+        return array(
+            'total_paid'    => !empty($row['total_paid']) ? (float) $row['total_paid'] : 0,
+            'total_advance' => !empty($row['total_advance']) ? (float) $row['total_advance'] : 0,
+            'total_refund'  => !empty($row['total_refund']) ? (float) $row['total_refund'] : 0,
+        );
+    }
+
     public function getopdIpdrefundbyCaseId($case_id){
         $query = $this->db->select('*')
                ->group_start()     
@@ -1656,18 +1781,27 @@ class Transaction_model extends MY_Model
 
     public function get_monthTransaction($where)
     {
-        $result=$this->db->select('sum(amount) as total')->from('transactions');
+        $this->db->select("sum(case when type = 'refund' then -amount else amount end) as total")
+                 ->from('transactions');
         $this->db->where($where);
-        $result=$this->db->get()->row_array();
+        $result = $this->db->get()->row_array();
         if($result['total']>0){
             return $result['total'];
         }else{
             return 0;
-        }        
+        }
     }
 
      public function validate_paymentamount()
      {
+        // Advances are allowed before charges exist and may exceed current balance.
+        // Never block billing or other flows when advance is exhausted or zero.
+        $payment_type = $this->input->post('payment_type');
+        $amount_type  = $this->input->post('amount_type');
+        if ($payment_type === 'advance' || $amount_type === 'advance') {
+            return true;
+        }
+
         $final_amount=0 ;
         $amount = $this->input->post('amount');
         $payment_amount = $this->input->post('payment_amount');
@@ -1684,6 +1818,38 @@ class Transaction_model extends MY_Model
         }else{          
             return true;
         }        
+    }
+
+    /**
+     * Sum of IPD advance payments (amount_type = advance). Read-only; never used as a gate.
+     */
+    public function getIpdAdvanceTotal($ipd_id)
+    {
+        $query = $this->db->select('IFNULL(SUM(amount),0) as total_advance', false)
+            ->where('ipd_id', $ipd_id)
+            ->where('type', 'payment')
+            ->where('amount_type', 'advance')
+            ->get('transactions');
+        $row = $query->row_array();
+        return isset($row['total_advance']) ? (float) $row['total_advance'] : 0;
+    }
+
+    /**
+     * Sum of advance payments for a case (OPD/IPD). Read-only; never used as a gate.
+     */
+    public function getAdvanceTotalByCaseId($case_id)
+    {
+        $query = $this->db->select('IFNULL(SUM(amount),0) as total_advance', false)
+            ->group_start()
+                ->or_where('opd_id !=', null)
+                ->or_where('ipd_id !=', null)
+            ->group_end()
+            ->where('case_reference_id', $case_id)
+            ->where('type', 'payment')
+            ->where('amount_type', 'advance')
+            ->get('transactions');
+        $row = $query->row_array();
+        return isset($row['total_advance']) ? (float) $row['total_advance'] : 0;
     } 
     
     public function getTransactionByAppointmentId($appointment_id){
@@ -1761,7 +1927,7 @@ class Transaction_model extends MY_Model
     public function getopdpaymentdetails()
     {
         $payment_id = $this->input->post('payment_id');
-        $this->db->select('payment_mode,amount,cheque_no,cheque_date,note,payment_date')->from('transactions')->where('id',$payment_id);
+        $this->db->select('payment_mode,amount,cheque_no,cheque_date,note,payment_date,amount_type')->from('transactions')->where('id',$payment_id);
         $query = $this->db->get();
         $result = $query->row_array();
         return $result;
@@ -1897,13 +2063,152 @@ class Transaction_model extends MY_Model
               LEFT JOIN staff on staff.id = radiology_report.collection_specialist 
 			  left JOIN organisation ON patients.organisation_id = organisation.id ".$custom_join." 
               where 0=0 ".$condition." and  date_format(radiology_billing.date,'%Y-%m-%d')  >='". $start_date."'and date_format(radiology_billing.date,'%Y-%m-%d') <= '".$end_date."' " ;             
-              $this->datatables->query($sql)  
+              $this->datatables->query($sql)
               ->searchable('radiology_billing.date,patients.patient_name,lab.lab_name,radio.test_name,radiology_billing.note,radiology_billing.doctor_name,staff.name,charges.standard_charge,radiology_report.tax_percentage'.$custom_field_column)
               ->orderable('module_no,radiology_billing.date,patients.patient_name,lab.lab_name,radio.test_name,radiology_billing.note,radiology_billing.doctor_name,staff.name,head,charges.standard_charge,radiology_report.tax_percentage'.$custom_field_column)
               ->sort('radiology_report.radiology_bill_id','desc')
               ->group_by('radiology_report.radiology_bill_id')
               ->query_where_enable(TRUE);
         return $this->datatables->generate('json');
-    } 
-    
+    }
+
+    /**
+     * Dashboard widget: unified recent-activity feed (last N events).
+     * UNIONs the most recent rows across:
+     *   - patients (new registrations)
+     *   - transactions (payments received)
+     *   - appointment (new appointments)
+     * Sorted by event timestamp DESC, capped at $limit.
+     *
+     * Raw SQL required because CI Query Builder can't UNION across heterogeneous
+     * tables. The $limit is integer-cast to be safe.
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getRecentActivity($limit = 10)
+    {
+        $limit = (int)$limit;
+        if ($limit <= 0 || $limit > 50) {
+            $limit = 10;
+        }
+        $sql = "
+            (SELECT 'patient'      AS source,
+                    patients.id    AS row_id,
+                    patients.patient_name AS subject,
+                    'registered new patient' AS action_text,
+                    CONCAT('#', patients.id) AS detail,
+                    'OPD'          AS module,
+                    'info'         AS module_class,
+                    NULL           AS amount,
+                    patients.created_at AS sort_at,
+                    'patient'      AS subject_type
+             FROM patients
+             ORDER BY patients.created_at DESC
+             LIMIT 8)
+            UNION ALL
+            (SELECT 'transaction',
+                    transactions.id,
+                    IFNULL(patients.patient_name, '—'),
+                    'posted bill payment',
+                    CONCAT('#TXN-', transactions.id),
+                    UPPER(IFNULL(transactions.payment_mode, 'Billing')),
+                    'info',
+                    transactions.amount,
+                    transactions.payment_date,
+                    'patient'
+             FROM transactions
+             LEFT JOIN patients ON patients.id = transactions.patient_id
+             WHERE transactions.payment_date IS NOT NULL
+             ORDER BY transactions.payment_date DESC
+             LIMIT 8)
+            UNION ALL
+            (SELECT 'appointment',
+                    appointment.id,
+                    IFNULL(patients.patient_name, '—'),
+                    CONCAT('appointment ', LOWER(IFNULL(NULLIF(appointment.appointment_status, ''), 'booked'))),
+                    CONCAT('#APT-', appointment.id),
+                    'Appointment',
+                    'warn',
+                    NULL,
+                    appointment.date,
+                    'patient'
+             FROM appointment
+             LEFT JOIN patients ON patients.id = appointment.patient_id
+             WHERE appointment.date <= NOW()
+             ORDER BY appointment.date DESC
+             LIMIT 8)
+            ORDER BY sort_at DESC
+            LIMIT {$limit}
+        ";
+        return $this->db->query($sql)->result_array();
+    }
+
+    /**
+     * Credit payment transactions for admin collection list.
+     * $status: outstanding | settled | all
+     */
+    public function getCreditBills($status = 'outstanding')
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $this->db->select('transactions.*, patients.patient_name, patients.patient_unique_id, patients.mobileno, ipd_details.id as ipdid, credit_staff.name as credit_doctor_name, credit_staff.surname as credit_doctor_surname, credit_staff.employee_id as credit_doctor_employee_id')
+            ->from('transactions')
+            ->join('patients', 'patients.id = transactions.patient_id', 'left')
+            ->join('ipd_details', 'ipd_details.case_reference_id = transactions.case_reference_id', 'left')
+            ->join('staff as credit_staff', 'credit_staff.id = transactions.credit_doctor_id', 'left')
+            ->where('transactions.type', 'payment')
+            ->where('transactions.section', 'Service Posting')
+            ->group_start()
+                ->where('transactions.payment_mode', 'Credit')
+                ->or_where('transactions.credit_settled_at IS NOT NULL', null, false)
+            ->group_end();
+
+        if ($status === 'outstanding') {
+            $this->db->where('transactions.payment_mode', 'Credit');
+            $this->db->where('transactions.credit_settled_at IS NULL', null, false);
+        } elseif ($status === 'settled') {
+            $this->db->where('transactions.credit_settled_at IS NOT NULL', null, false);
+        }
+
+        $this->db->order_by('transactions.payment_date', 'asc');
+        $this->db->group_by('transactions.id');
+        return $this->db->get()->result_array();
+    }
+
+    public function getCreditOutstandingTotal()
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $row = $this->db->select('IFNULL(SUM(amount),0) as total', false)
+            ->from('transactions')
+            ->where('type', 'payment')
+            ->where('section', 'Service Posting')
+            ->where('payment_mode', 'Credit')
+            ->where('credit_settled_at IS NULL', null, false)
+            ->get()
+            ->row_array();
+        return isset($row['total']) ? (float) $row['total'] : 0;
+    }
+
+    public function settleCreditPayment($transaction_id, $staff_id)
+    {
+        $this->load->model('bill_model');
+        $this->bill_model->ensureCreditBillingSchema();
+
+        $txn = $this->db->where('id', (int) $transaction_id)->get('transactions')->row_array();
+        if (empty($txn) || $txn['payment_mode'] !== 'Credit') {
+            return false;
+        }
+
+        $data = array(
+            'id'                => (int) $transaction_id,
+            'payment_mode'      => 'Cash',
+            'credit_settled_at' => date('Y-m-d H:i:s'),
+            'credit_settled_by' => (int) $staff_id,
+        );
+        $this->add($data);
+        return true;
+    }
+
 }

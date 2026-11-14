@@ -22,6 +22,7 @@ class Users extends Admin_Controller
         $this->session->set_userdata('inner_menu', 'users/index');
         $staffList         = $this->staff_model->getAll();
         $data['staffList'] = $staffList;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/users/userList', $data);
         $this->load->view('layout/footer', $data);
@@ -29,9 +30,9 @@ class Users extends Admin_Controller
 
     public function changeStatus()
     {
-        $id     = $this->input->post('id');
-        $status = $this->input->post('status');
-        $role   = $this->input->post('role');
+        $id     = $this->input->post('id', TRUE);
+        $status = $this->input->post('status', TRUE);
+        $role   = $this->input->post('role', TRUE);
         $data   = array('id' => $id, 'is_active' => $status);
         if ($role != "staff") {
             $result = $this->user_model->changeStatus($data);
@@ -60,7 +61,7 @@ class Users extends Admin_Controller
                 $row = array();
                 //====================================
                 $checkbox_status = $value->user_tbl_active == "yes" ? "checked='checked'" : "";
-                $action          = '<div class="material-switch" ><input id="patient' . $value->user_tbl_id . '" name="someSwitchOption" type="checkbox" data-role="patient" class="chk" data-rowid="' . $value->user_tbl_id . '" value="checked" ' . $checkbox_status . ' /><label for="patient' . $value->user_tbl_id . '" class="label-success"></label></div>';
+                $action          = '<div class="form-check form-switch d-inline-flex m-0"><input class="form-check-input chk" type="checkbox" role="switch" id="patient' . $value->user_tbl_id . '" data-role="patient" data-rowid="' . $value->user_tbl_id . '" ' . $checkbox_status . ' /></div>';
 
                 //==============================
                 $row[]     = $value->id;
@@ -90,7 +91,7 @@ class Users extends Admin_Controller
                 $row = array();
                 //====================================
                 $checkbox_status = $value->user_tbl_active == "yes" ? "checked='checked'" : "";
-                $action          = '<div class="material-switch"><input id="patient' . $value->user_tbl_id . '" name="someSwitchOption001" type="checkbox" data-role="patient" class="chk" data-rowid="' . $value->user_tbl_id . '" value="checked" ' . $checkbox_status . ' /><label for="patient"' . $value->user_tbl_id . '" class="label-success"></label></div>';
+                $action          = '<div class="form-check form-switch d-inline-flex m-0"><input class="form-check-input chk" type="checkbox" role="switch" id="patient' . $value->user_tbl_id . '" data-role="patient" data-rowid="' . $value->user_tbl_id . '" ' . $checkbox_status . ' /></div>';
 
                 //==============================
                 $row[]     = $value->id;

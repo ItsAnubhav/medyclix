@@ -1,4 +1,4 @@
-<div class="box border0">
+<div class="card border0">
     <ul class="tablists">
 
         <?php if ($this->rbac->hasPrivilege('bed_status', 'can_view')) { ?>
@@ -9,7 +9,7 @@
 
             <li><a href="<?php echo site_url('admin/setup/bed') ?>" class="<?php echo set_sidebar_Submenu('admin/setup/bed'); ?>"><?php echo $this->lang->line('bed'); ?></a></li>
 
-        <?php } if ($this->rbac->hasPrivilege('bed_type', 'can_view')) { ?>  
+        <?php } if ($this->rbac->hasPrivilege('bed_type', 'can_view')) { ?>
 
             <li><a href="<?php echo site_url('admin/setup/bedtype') ?>" class="<?php echo set_sidebar_Submenu('admin/setup/bedtype'); ?>"><?php echo $this->lang->line('bed_type'); ?></a></li>
 
@@ -19,9 +19,9 @@
 
         <?php } if ($this->rbac->hasPrivilege('floor', 'can_view')) { ?>
 
-            <li><a href="<?php echo site_url('admin/setup/floor') ?>" class="<?php echo set_sidebar_Submenu('admin/setup/floor'); ?>"><?php echo $this->lang->line('floor'); ?></a></li>  
+            <li><a href="<?php echo site_url('admin/setup/floor') ?>" class="<?php echo set_sidebar_Submenu('admin/setup/floor'); ?>"><?php echo $this->lang->line('floor'); ?></a></li>
 
-        <?php } ?>              
-                                                          
+        <?php } ?>
+
     </ul>
 </div>

@@ -7,6 +7,8 @@ if (!defined('BASEPATH')) {
 class Staffattendancemodel extends MY_Model
 {
 
+    public $current_date;
+
     public function __construct()
     {
         parent::__construct();
@@ -115,7 +117,6 @@ class Staffattendancemodel extends MY_Model
                 $this->db->trans_rollback();
                 return false;
             } else {
-                //return $return_value;
             }
             return $insert_id;
         }
@@ -268,10 +269,40 @@ class Staffattendancemodel extends MY_Model
             $query = $this->db->query("select staff_attendance.id,staff_attendance.created_at as attendence_dt, staff_attendance.staff_attendance_type_id,staff_attendance.biometric_attendence,staff_attendance.qrcode_attendance,staff_attendance.user_agent,staff_attendance.biometric_device_data,staff_attendance.remark,staff.name,staff.surname,staff.employee_id,staff.contact_no,staff.email,roles.name as user_type,IFNULL(staff_attendance.date, 'xxx') as date,staff.id as staff_id, staff_attendance_type.type as `att_type`,staff_attendance_type.key_value as `key`,staff_attendance_type.long_lang_name,staff_attendance_type.long_name_style  from staff left join staff_roles on staff_roles.staff_id = staff.id left join roles on staff_roles.role_id = roles.id left join staff_attendance on (staff.id = staff_attendance.staff_id) and staff_attendance.date = " . $this->db->escape($date) . " left join staff_attendance_type on staff_attendance_type.id = staff_attendance.staff_attendance_type_id where staff.is_active = 1 $condition order by staff_attendance.created_at asc");
         } else {
             $query = $this->db->query("select staff_attendance.staff_attendance_type_id,staff_attendance.created_at as attendence_dt,staff_attendance.biometric_attendence,staff_attendance.qrcode_attendance,staff_attendance.user_agent,staff_attendance.biometric_device_data,staff_attendance.remark,staff.name,staff.surname,staff.employee_id,staff.contact_no,staff.email,roles.name as user_type,IFNULL(staff_attendance.date, 'xxx') as date, IFNULL(staff_attendance.id, 0) as id, staff.id as staff_id ,staff_attendance_type.type as `att_type`,staff_attendance_type.key_value as `key`,staff_attendance_type.long_lang_name,staff_attendance_type.long_name_style from staff left join staff_roles on (staff.id = staff_roles.staff_id) left join roles on (roles.id = staff_roles.role_id) left join staff_attendance on (staff.id = staff_attendance.staff_id) and staff_attendance.date = " . $this->db->escape($date) . " left join staff_attendance_type on staff_attendance_type.id = staff_attendance.staff_attendance_type_id where roles.name = " . $this->db->escape($user_type) . " and staff.is_active = 1 $condition order by staff_attendance.created_at asc");
-            
+
         }
         return $query->result_array();
     }
-    
-    
+
+    /**
+     * Dashboard widget: total + present count per role for a given date.
+     * Returns array of ['role_id', 'name', 'total', 'present'].
+     *
+     * Raw SQL required because we need a single query with a conditional COUNT
+     * on the LEFT JOIN attendance row — CI Query Builder doesn't express
+     * conditional aggregates cleanly here. The date parameter is escaped.
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getDashboardAttendanceByRole($date = null)
+    {
+        if ($date === null) {
+            $date = date('Y-m-d');
+        }
+        $esc = $this->db->escape($date);
+        $sql = "SELECT
+                    roles.id   AS role_id,
+                    roles.name AS name,
+                    COUNT(DISTINCT staff.id) AS total,
+                    SUM(CASE WHEN staff_attendance.id IS NOT NULL THEN 1 ELSE 0 END) AS present
+                FROM staff
+                LEFT JOIN staff_roles ON staff_roles.staff_id = staff.id
+                LEFT JOIN roles       ON roles.id = staff_roles.role_id
+                LEFT JOIN staff_attendance ON staff_attendance.staff_id = staff.id AND staff_attendance.date = {$esc}
+                WHERE staff.is_active = 1 AND roles.id IS NOT NULL
+                GROUP BY roles.id, roles.name
+                HAVING total > 0
+                ORDER BY total DESC";
+        return $this->db->query($sql)->result_array();
+    }
+
 }

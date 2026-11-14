@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Audit extends Admin_Controller
 {
+	public $search_type;
+
 
     public function __construct()
     {
@@ -19,6 +21,7 @@ class Audit extends Admin_Controller
     public function unauthorized()
     {
         $data = array();
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('unauthorized', $data);
         $this->load->view('layout/footer', $data);
@@ -35,9 +38,10 @@ class Audit extends Admin_Controller
         $data['title']      = $this->lang->line('audit_trail_report');
         $data['title_list'] = $this->lang->line('audit_trail_list');
         $data["searchlist"] = $this->search_type;        
-        $this->load->view('layout/header');
+        $data['module'] = 'reports';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/audit/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getDatatable()

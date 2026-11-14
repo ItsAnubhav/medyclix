@@ -49,12 +49,12 @@
         <div class="col-sm-12">
             <div class="form-group">
                 <label><?php echo $this->lang->line('description'); ?></label>
-                <textarea class="form-control" id="description" name="description" placeholder="" rows="2" placeholder="Enter ..."><?php echo set_value('description'); ?><?php echo set_value('description', $ward_data['description']) ?></textarea>
+                <textarea class="form-control" id="description" name="description" placeholder="" rows="2" placeholder="<?= $this->lang->line('enter') ?>"><?php echo set_value('description'); ?><?php echo set_value('description', $ward_data['description']) ?></textarea>
             </div>
         </div>
     </div><!-- /.box-body -->
     <div class="modal-footer">
-        <div class="pull-right">
+        <div class="float-end">
             <button type="submit" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
         </div>
     </div>

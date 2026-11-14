@@ -224,6 +224,23 @@ class Radio_model extends MY_Model
             ->get('radiology_billing');
         return $query->row_array();
     }
+
+    /**
+     * Patient dashboard — returns the last N OPD-allotted radiology bills
+     * for a given patient. "OPD-allotted" means the billing's case_reference_id
+     * matches an opd_details row (vs ipd_details). Joined to opd_details so
+     * the view can show the OPD number (opd_id) tag. Read-only, no audit log.
+     */
+    public function getPatientLastOpdRadiology($patient_id, $limit = 5)
+    {
+        $this->db->select('radiology_billing.id, radiology_billing.date, radiology_billing.net_amount, radiology_billing.doctor_name, radiology_billing.transaction_id, opd_details.id AS opd_id');
+        $this->db->from('radiology_billing');
+        $this->db->join('opd_details', 'opd_details.case_reference_id = radiology_billing.case_reference_id', 'inner');
+        $this->db->where('radiology_billing.patient_id', $patient_id);
+        $this->db->order_by('radiology_billing.date', 'desc');
+        $this->db->limit($limit);
+        return $this->db->get()->result_array();
+    }
 	
     public function getRadiologyBillByID($id, $patient_panel = null)
     {
@@ -312,6 +329,27 @@ class Radio_model extends MY_Model
             $this->log($message, $record_id, $action);
         }
 
+        // On update, remove any existing reports for this bill that are no longer present in
+        // the form. Done BEFORE inserting new rows (so the just-added tests aren't deleted) and
+        // derived from the rows actually kept ($updateReports) rather than the client-posted
+        // prev_reports — which gets wiped when the TPA toggle reloads the modal body, previously
+        // leaving the old tests behind as duplicates.
+        if ($pathology_billing_id > 0) {
+            $keep_ids = array();
+            if (!empty($updateReports)) {
+                foreach ($updateReports as $ur) {
+                    if (isset($ur['id']) && $ur['id'] > 0) {
+                        $keep_ids[] = $ur['id'];
+                    }
+                }
+            }
+            $this->db->where('radiology_bill_id', $pathology_billing_id);
+            if (!empty($keep_ids)) {
+                $this->db->where_not_in('id', $keep_ids);
+            }
+            $this->db->delete('radiology_report');
+        }
+
         if (!empty($addReports)) {
             foreach ($addReports as $report_key => $report_value) {
                 $addReports[$report_key]['radiology_bill_id'] = $id;
@@ -323,11 +361,8 @@ class Radio_model extends MY_Model
             $this->db->update_batch('radiology_report', $updateReports, 'id');
         }
 
-        if (!empty($deleteReports) && $pathology_billing_id > 0) {
-            $this->db->where_in('id', $deleteReports);
-            $this->db->where('radiology_bill_id', $pathology_billing_id);
-            $this->db->delete('radiology_report');
-        }
+        // Deletion of removed tests is handled robustly above (before the inserts), derived
+        // from the rows actually kept rather than the client-posted prev_reports.
 
         if (isset($transcation_data) && !empty($transcation_data)) {
             $transcation_data['radiology_billing_id'] = $id;
@@ -487,7 +522,9 @@ class Radio_model extends MY_Model
         //=======================Code Start===========================
         $this->db->where('id', $id);
         $this->db->delete('radio');
-        $this->db->where("radiology_id", $id)->delete('radiology_parameterdetails');
+        if (!empty($id)) {
+            $this->db->where("radiology_id", $id)->delete('radiology_parameterdetails');
+        }
         $message   = DELETE_RECORD_CONSTANT . " On  Radiology Paramete Details where radiology id " . $id;
         $action    = "Delete";
         $record_id = $id;
@@ -513,7 +550,9 @@ class Radio_model extends MY_Model
         $this->db->where('id', $id);
         $this->db->delete('radiology_billing');
 		
-		$this->db->delete("transactions", array("radiology_billing_id" => $id)); 
+		if (!empty($id)) {
+			$this->db->delete("transactions", array("radiology_billing_id" => $id));
+		}
 
         $message   = DELETE_RECORD_CONSTANT . " On Radiology Billing id " . $id;
         $action    = "Delete";
@@ -871,6 +910,7 @@ class Radio_model extends MY_Model
 
     public function getPatientRadiologyReportParameterDetails($radiology_report_id)
     {
+        $radiology_report_id = (int) $radiology_report_id;
         $sql    = "SELECT radiology_parameterdetails.*,radiology_parameter.range_from,radiology_parameter.range_to,radiology_report.radiology_result,radiology_parameter.parameter_name,radiology_parameter.description,radiology_parameter.reference_range,unit.unit_name,IFNULL(radiology_report_parameterdetails.id,0) as `radiology_report_parameterdetail_id`,radiology_report_parameterdetails.radiology_report_id,radiology_report_parameterdetails.radiology_parameterdetail_id,radiology_report_parameterdetails.radiology_report_value FROM `radiology_report` INNER join radiology_parameterdetails on radiology_parameterdetails.radiology_id=radiology_report.radiology_id INNER JOIN radiology_parameter on radiology_parameterdetails.radiology_parameter_id=radiology_parameter.id INNER JOIN unit on radiology_parameter.unit=unit.id LEFT join radiology_report_parameterdetails on radiology_report_parameterdetails.radiology_parameterdetail_id=radiology_parameterdetails.id and radiology_report_parameterdetails.radiology_report_id=radiology_report.id WHERE radiology_report.id =" . $radiology_report_id;
         $query  = $this->db->query($sql);
         $result = $query->result();
@@ -936,7 +976,9 @@ class Radio_model extends MY_Model
         $this->db->trans_strict(false); # See Note 01. If you wish can remove as well
         //=======================Code Start===========================
         $this->db->where('id', $id)->delete('radiology_billing');
-        $this->db->where('radiology_bill_id', $id)->delete('radiology_report');
+        if (!empty($id)) {
+            $this->db->where('radiology_bill_id', $id)->delete('radiology_report');
+        }
         $message   = DELETE_RECORD_CONSTANT . " On Radiology Report where Radiology Bill Id " . $id;
         $action    = "Delete";
         $record_id = $id;

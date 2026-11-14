@@ -9,8 +9,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <title><?php echo $this->customlib->getAppName() . " : School Management System" ?></title>
         <!--favican-->
         <link href="<?php echo base_url(); ?>backend/images/s-favican.png" rel="shortcut icon" type="image/x-icon">
-        <!-- Bootstrap 3.3.5 -->
-        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="<?php echo base_url(); ?>backend/bootstrap5/css/bootstrap.min.css">
         <style type="text/css">
 
             ::selection { background-color: #E13300; color: white; }
@@ -83,10 +82,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <div class="container text-center">
             <div class="row">
                 <div class="space30">
-                    <img src="<?php echo base_url(); ?>/backend/images/errorimg.png" class="img-responsive margin-auto" /></div>
+                    <img src="<?php echo base_url(); ?>/backend/images/errorimg.png" class="img-fluid margin-auto" /></div>
                 <h2 style="color:#e30f66">The page you were looking for doesn't exist.</h2>
                 <p class="font-size2">You may have mistyped the address or the page may have moved.</p>
-                <button onclick="history.go(-1);"  name="search"  class="btn btn2 btn-primary btn-sm checkbox-toggle">Back to Previous Page</button>
+                <button onclick="history.go(-1);"  name="search"  class="btn btn2 btn-primary btn-sm checkbox-toggle"><?= $this->lang->line('back_to_previous_page') ?></button>
             </div>
         </div>
         <div id="container">

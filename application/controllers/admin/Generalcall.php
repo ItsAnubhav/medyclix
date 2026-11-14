@@ -22,26 +22,27 @@ class Generalcall extends Admin_Controller
 
         $this->session->set_userdata('top_menu', 'front_office');
         $this->session->set_userdata('sub_menu', 'admin/generalcall');
-        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'required');
-        $this->form_validation->set_rules('contact', $this->lang->line('phone_number'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('contact', $this->lang->line('phone_number'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
 
-            $this->load->view('layout/header');
-            $this->load->view('admin/frontoffice/generalcallview');
-            $this->load->view('layout/footer');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
+            $this->load->view('admin/frontoffice/generalcallview', $data);
+            $this->load->view('layout/footer', $data);
         } else {
-            $date           = $this->input->post('date');
-            $follow_up_date = $this->input->post('follow_up_date');
+            $date           = $this->input->post('date', TRUE);
+            $follow_up_date = $this->input->post('follow_up_date', TRUE);
             $calls          = array(
-                'name'           => $this->input->post('name'),
-                'contact'        => $this->input->post('contact'),
+                'name'           => $this->input->post('name', TRUE),
+                'contact'        => $this->input->post('contact', TRUE),
                 'date'           => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description'    => $this->input->post('description'),
+                'description'    => $this->input->post('description', TRUE),
                 'follow_up_date' => $this->customlib->dateFormatToYYYYMMDD($follow_up_date),
-                'call_duration'  => $this->input->post('call_dureation'),
-                'note'           => $this->input->post('note'),
-                'call_type'      => $this->input->post('call_type'),
+                'call_duration'  => $this->input->post('call_dureation', TRUE),
+                'note'           => $this->input->post('note', TRUE),
+                'call_type'      => $this->input->post('call_type', TRUE),
             );
 
             $this->general_call_model->add($calls);
@@ -66,17 +67,14 @@ class Generalcall extends Admin_Controller
                     $followupdate = "";
                 }
 
-                $action = "<a href='#' onclick=getRecord('" . $value->id . "') class='btn btn-default btn-xs'  data-toggle='tooltip' data-target='#calldetails' title='' data-original-title=" . $this->lang->line('view') . "><i class='fa fa-reorder' aria-hidden='true'></i></a>";
-
-
-                $delete_message = $this->lang->line("delete_message");
-                $delete_message = str_replace(" ", "&nbsp;", $delete_message);
-                if ($this->rbac->hasPrivilege('phone_call_log', 'can_delete')) {
-                    $action .= "<a href='#' onclick=delete_ById(" . $value->id . ") class='btn btn-default btn-xs pull-right' data-toggle='tooltip' title=''  data-target='#editmyModal' data-original-title=" . $this->lang->line('delete') . "><i class='fa fa-trash'></i></a>";
-                }
+                $action = "<a href='#' onclick=\"getRecord('" . $value->id . "')\" class='btn btn-sm btn-outline-info' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder' aria-hidden='true'></i></a>";
 
                 if ($this->rbac->hasPrivilege('phone_call_log', 'can_edit')) {
-                    $action .= "<a href='#' onclick=get('" . $value->id . "') class='btn btn-default btn-xs pull-right' data-toggle='tooltip' title='' data-target='#editmyModal'  data-original-title=" . $this->lang->line('edit') . "><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='#' onclick=\"get('" . $value->id . "')\" class='btn btn-sm btn-outline-primary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                }
+
+                if ($this->rbac->hasPrivilege('phone_call_log', 'can_delete')) {
+                    $action .= "<a href='#' onclick=\"delete_ById(" . $value->id . ")\" class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 //==============================
@@ -85,7 +83,7 @@ class Generalcall extends Admin_Controller
                 $row[]     = $this->customlib->YYYYMMDDTodateFormat($value->date);
                 $row[]     = $followupdate;
                 $row[]     = $this->lang->line(strtolower($value->call_type));
-                $row[]     = $action;
+                $row[]     = "<div class='white-space-nowrap'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -101,10 +99,10 @@ class Generalcall extends Admin_Controller
     public function add()
     {
         $date = "";
-        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'required');
-        $this->form_validation->set_rules('name', $this->lang->line('name'), 'required');
-        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'numeric');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'trim|numeric|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -116,24 +114,24 @@ class Generalcall extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $follow_up_date = $this->input->post('follow_up_date');
-            $getdate        = $this->input->post('date');
- 
+            $follow_up_date = $this->input->post('follow_up_date', TRUE);
+            $getdate        = $this->input->post('date', TRUE);
+
             if (!empty($follow_up_date)) {
                 $date = $this->customlib->dateFormatToYYYYMMDD($follow_up_date);
             } else {
                 $date = null;
             }
- 
+
             $calls = array(
-                'name'           => $this->input->post('name'),
-                'contact'        => $this->input->post('contact'),
+                'name'           => $this->input->post('name', TRUE),
+                'contact'        => $this->input->post('contact', TRUE),
                 'date'           => $this->customlib->dateFormatToYYYYMMDD($getdate),
-                'description'    => $this->input->post('description'),
+                'description'    => $this->input->post('description', TRUE),
                 'follow_up_date' => $date,
-                'call_duration'  => $this->input->post('call_dureation'),
-                'note'           => $this->input->post('note'),
-                'call_type'      => $this->input->post('call_type'),
+                'call_duration'  => $this->input->post('call_dureation', TRUE),
+                'note'           => $this->input->post('note', TRUE),
+                'call_type'      => $this->input->post('call_type', TRUE),
             );
             $this->general_call_model->add($calls);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -148,10 +146,10 @@ class Generalcall extends Admin_Controller
         }
 
         $date = "";
-        $id   = $this->input->post('id');
-        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'required|callback_check_default');
+        $id   = $this->input->post('id', TRUE);
+        $this->form_validation->set_rules('call_type', $this->lang->line('call_type'), 'required|callback_check_default|xss_clean');
         $this->form_validation->set_message('check_default', $this->lang->line('the_call_type_field_is_required'));
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -162,20 +160,20 @@ class Generalcall extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $follow_up_date = $this->input->post('follow_up_date');
+            $follow_up_date = $this->input->post('follow_up_date', TRUE);
             if (!empty($follow_up_date)) {
                 $date = $this->customlib->dateFormatToYYYYMMDD($follow_up_date);
             }
-            $getdate      = $this->input->post('date');
+            $getdate      = $this->input->post('date', TRUE);
             $calls_update = array(
-                'name'           => $this->input->post('name'),
-                'contact'        => $this->input->post('contact'),
+                'name'           => $this->input->post('name', TRUE),
+                'contact'        => $this->input->post('contact', TRUE),
                 'date'           => $this->customlib->dateFormatToYYYYMMDD($getdate),
-                'description'    => $this->input->post('description'),
+                'description'    => $this->input->post('description', TRUE),
                 'follow_up_date' => $date,
-                'call_duration'  => $this->input->post('call_dureation'),
-                'note'           => $this->input->post('note'),
-                'call_type'      => $this->input->post('call_type'),
+                'call_duration'  => $this->input->post('call_dureation', TRUE),
+                'note'           => $this->input->post('note', TRUE),
+                'call_type'      => $this->input->post('call_type', TRUE),
             );
 
             $this->general_call_model->call_update($id, $calls_update);

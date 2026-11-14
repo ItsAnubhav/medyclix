@@ -1,9 +1,9 @@
 <table class="table table-striped table-bordered table-hover example" id="testreport" cellspacing="0" width="100%" >
     <thead>
         <tr>
-            <th><?php echo $this->lang->line('applied') . " " . $this->lang->line('date'); ?></th>
-            <th><?php echo $this->lang->line('instruction') . " " . $this->lang->line('date'); ?></th>
-            <th><?php echo $this->lang->line('consultant') . " " . $this->lang->line('doctor'); ?></th>
+            <th><?php echo $this->lang->line('applied_date'); ?></th>
+            <th><?php echo $this->lang->line('instruction_date') ; ?></th>
+            <th><?php echo $this->lang->line('consultant_doctor'); ?></th>
             <th><?php echo $this->lang->line('instruction'); ?></th>
         </tr>
     </thead>
@@ -15,8 +15,8 @@ foreach ($result as $detail) {
             <tr>
                 <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($detail->date)) ?></td>
                 <td><?php echo date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($detail->ins_date)); ?></td>
-                <td><?php echo $detail->name . " " . $detail->surname; ?></td>
-                <td><?php echo $detail->instruction; ?></td>
+                <td><?php echo html_escape($detail->name) . " " . html_escape($detail->surname); ?></td>
+                <td><?php echo html_escape($detail->instruction); ?></td>
             </tr>
             <?php
 $count++;
@@ -95,7 +95,7 @@ $count++;
     });
 
     function deleteRecord(id) {
-        if (confirm('<?php echo $this->lang->line('delete_conform') ?>')) {
+        if (confirm('<?php echo $this->lang->line('delete_confirm') ?>')) {
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/operationtheatre/deleteConsultant/' + id,
                 type: "POST",

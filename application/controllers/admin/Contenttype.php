@@ -23,9 +23,10 @@ class Contenttype extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'admin/contenttype');       
         $contenttype         = $this->contenttype_model->get();
         $data["contenttype"] = $contenttype;        
-        $this->load->view('layout/header');
-        $this->load->view('admin/contenttype/index',$data);
-        $this->load->view('layout/footer');
+        $data['module'] = 'download_center';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/contenttype/index', $data);
+        $this->load->view('layout/footer', $data);
     }
 
     public function add()
@@ -43,8 +44,8 @@ class Contenttype extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             
-                $data  = array('name' => $this->input->post("name"),'description' => $this->input->post("description"));
-                $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('add_message'));
+                $data  = array('name' => $this->input->post("name", TRUE),'description' => $this->input->post("description", TRUE));
+                $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
              
              $this->contenttype_model->add($data);
         }
@@ -68,8 +69,8 @@ class Contenttype extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             
-                $data  = array('id' => $this->input->post("id"),'name' => $this->input->post("name"),'description' => $this->input->post("description"));
-                $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('add_message'));
+                $data  = array('id' => $this->input->post("id", TRUE),'name' => $this->input->post("name", TRUE),'description' => $this->input->post("description", TRUE));
+                $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
              
              $this->contenttype_model->add($data);
         }
@@ -87,7 +88,10 @@ class Contenttype extends Admin_Controller
     }
     
     public function get_data($id)
-    {        
+    {      
+		if (!$this->rbac->hasPrivilege('content_type', 'can_view')) {
+            access_denied();
+        }
         $result = $this->contenttype_model->get($id);
         echo json_encode($result);
     }

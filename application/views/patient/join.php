@@ -20,38 +20,17 @@
 		
 		<link href="<?php echo base_url(); ?>uploads/school_content/admin_small_logo/<?php echo $mini_logo; ?>" rel="shortcut icon" type="image/x-icon">
 		<link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.11.2/css/bootstrap.css" />
+		<link rel="stylesheet" href="<?php echo base_url(); ?>backend/css/sh-theme.css">
     </head>
-    <body oncontextmenu="return false;">
-        <style type="text/css">
-            body {
-                padding-top: 50px;
-            }
-            .navbar-inverse {
-                background-color: #313131;
-                border-color: #404142;
-            }
-            .navbar-header h4 {
-                margin: 0;
-                padding: 15px 15px;
-                color: #c4c2c2;
-            }
-            .navbar-right h5 {
-                margin: 0;
-                padding: 9px 5px;
-                color: #c4c2c2;
-            }
-            .navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form{
-                border-color: transparent;
-            }
-        </style>
+    <body oncontextmenu="return false;" class="sh-conference-join">
 
-        <nav id="nav-tool" class="navbar navbar-inverse navbar-fixed-top">
+<nav id="nav-tool" class="navbar navbar-inverse navbar-fixed-top">
             <div class="container">
                 <div class="navbar-header">
                     <h4><i class="fab fa-chromecast"></i> Live Consultation Title : <?php echo $title; ?></h4>
                 </div>
                 <div class="navbar-form navbar-right">
-                    <h5><i class="far fa-user-circle" style=""></i> Host By : <?php echo $host; ?></h5>
+                    <h5><i class="far fa-user-circle"></i> Host By : <?php echo $host; ?></h5>
                 </div>
             </div>
         </nav>

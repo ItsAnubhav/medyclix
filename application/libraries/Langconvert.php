@@ -4,6 +4,8 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 class Langconvert {
+	public $session_name;
+
 
     private $_CI;
 

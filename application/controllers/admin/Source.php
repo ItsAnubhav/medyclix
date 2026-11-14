@@ -15,16 +15,17 @@ class Source extends Admin_Controller
 
     public function index()
     {
-        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required');
+        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $data['source_list'] = $this->source_model->source_list();
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/sourceview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $source = array(
                 'source'      => $this->input->post('source'),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->source_model->add($source);
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('success_message') . '</div>');
@@ -39,7 +40,7 @@ class Source extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('source_'.$row_value, $this->lang->line('source'), 'trim|required');        
+                $this->form_validation->set_rules('source_'.$row_value, $this->lang->line('source'), 'trim|required|xss_clean');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array('source' => form_error('source_'.$row_value));
@@ -55,7 +56,7 @@ class Source extends Admin_Controller
             foreach ($total_rows as $row_key => $row_values) {                 
                 $data  = array(
                     'source' => $this->input->post('source_'.$row_values),
-                    'description' => $this->input->post('description_'.$row_values));
+                    'description' => $this->input->post('description_'.$row_values, TRUE));
                 $this->source_model->add($data);
             }
             // save the multiple data 
@@ -76,18 +77,19 @@ class Source extends Admin_Controller
         if (!$this->rbac->hasPrivilege('setup_front_office', 'can_edit')) {
             access_denied();
         }
-        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required');
+        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $data['source_list'] = $this->source_model->source_list();
             $data['source_data'] = $this->source_model->source_list($source_id);
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/sourceeditview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
             $source = array(
                 'source'      => $this->input->post('source'),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->source_model->update($source_id, $source);
             $this->session->set_flashdata('msg', '<div class="alert alert-success"> ' . $this->lang->line('source_updated_successfully') . '</div>');
@@ -101,7 +103,7 @@ class Source extends Admin_Controller
         if (!$this->rbac->hasPrivilege('setup_front_office', 'can_edit')) {
             access_denied();
         }
-        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required');
+        $this->form_validation->set_rules('source', $this->lang->line('source'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('source'),
@@ -111,7 +113,7 @@ class Source extends Admin_Controller
         } else {
             $source = array(
                 'source'      => $this->input->post('source'),
-                'description' => $this->input->post('description'),
+                'description' => $this->input->post('description', TRUE),
             );
             $this->source_model->update($id, $source);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));

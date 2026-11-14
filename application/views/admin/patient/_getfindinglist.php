@@ -21,7 +21,7 @@ function updateAllChecked() {
   $('#finding_description').val('');
   $("input[name=finding_title]").each(function() {
     if (this.checked) {
-      let old_text = $('#finding_description').val() ? $('#finding_description').val() + '\n' : '';  
+      let old_text = $('#finding_description').val() ? $('#finding_description').val() + '\n' : '';
       $('#finding_description').val(old_text + $(this).val());
       $('#efinding_description').val(old_text + $(this).val());
     }
@@ -41,8 +41,8 @@ $("input[name=finding_title]").change(function() {
        }
       }else{
         var desc = $('#finding_description').val();
-         var new_text = desc.replace(check_val,'');         
+         var new_text = desc.replace(check_val,'');
          $('#finding_description').val(new_text);
-      }  
+      }
   });
 </script>

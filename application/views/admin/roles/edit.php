@@ -1,17 +1,15 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <?php $this->load->view('setting/sidebar'); ?>
             <div class="col-md-3">
-                <div class="box box-primary" >
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('role'); ?></h3>
+                <div class="card" >
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('role'); ?></h3>
                     </div>
                     <form id="form1" action="<?php echo site_url('admin/roles/edit/' . $id) ?>" id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php if ($this->session->flashdata('msg')) { ?>
                                 <?php echo $this->session->flashdata('msg') ?>
                             <?php } ?>
@@ -21,7 +19,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             }
                             ?>      
                             <?php echo $this->customlib->getCSRF(); ?>                     
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <label for="exampleInputEmail1"><?php echo $this->lang->line('name'); ?></label>
                                 <input autofocus="" id="name" name="name" placeholder="" type="text" class="form-control" value="<?php
                                 if (isset($name)) {
@@ -31,7 +29,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 <span class="text-danger"><?php echo form_error('name'); ?></span>
                             </div>
 
-                            <div class="form-group">
+                            <div class="mb-3">
                                 <input autofocus="" name="id" placeholder="" type="hidden" class="form-control" value="<?php
                                 if (isset($id)) {
                                     echo $id;
@@ -40,20 +38,20 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             </div>
 
                         </div>
-                        <div class="box-footer">
-                            <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                         </div>
                     </form>
                 </div>
             </div>         
             <div class="col-md-7">
-                <div class="box box-primary" id="route">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('role_list'); ?></h3>
+                <div class="card" id="route">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('role_list'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">                         
-                            <div class="pull-right">
+                            <div class="float-end">
                             </div>
                         </div>
                         <div class="table-responsive mailbox-messages">
@@ -65,7 +63,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         </th>
                                         <th><?php echo $this->lang->line('type'); ?>
                                         </th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -90,21 +88,21 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                     ?>
                                                 </td>
 
-                                                <td class="mailbox-date pull-right no-print">
+                                                <td class="text-end text-nowrap no-print">
                                                     <?php
                                                     if (!$data['is_superadmin']) {
                                                         ?>
-                                                        <a href="<?php echo site_url('admin/roles/permission/' . $data['id']); ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('assign_permission'); ?>">
+                                                        <a href="<?php echo site_url('admin/roles/permission/' . $data['id']); ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('assign_permission'); ?>">
                                                             <i class="fa fa-tag"></i>
                                                         </a>
 
-                                                        <a href="<?php echo site_url('admin/roles/edit/' . $data['id']); ?>" class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                        <a href="<?php echo site_url('admin/roles/edit/' . $data['id']); ?>" class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                             <i class="fa fa-pencil"></i>
                                                         </a>
                                                         <?php
                                                         if (!$data['is_system']) {
                                                             ?>
-                                                            <a class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/roles/delete/<?php echo $data['id']?>')">
+                                                            <a class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/roles/delete/<?php echo $data['id']?>')">
                                                                 <i class="fa fa-remove"></i>
                                                             </a>
                                                             <?php
@@ -125,5 +123,3 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 </div>
             </div>          
         </div>
-    </section>
-</div>

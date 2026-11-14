@@ -22,6 +22,7 @@ class Ambulance_model extends MY_Model
 
     public function getpatientAmbulanceYearCounter($patient_id,$year)
     {
+		// Raw SQL required: YEAR() function and GROUP BY year not supported cleanly via CI Query Builder
 		$sql= "SELECT count(*) as `total_visits`,Year(date) as `year` FROM `ambulance_call` WHERE YEAR(date) >= ".$this->db->escape($year)." AND patient_id=".$this->db->escape($patient_id)." GROUP BY  YEAR(date)";
 		$query = $this->db->query($sql);
         return $query->result_array();
@@ -38,7 +39,7 @@ class Ambulance_model extends MY_Model
     {
          $query =  $this->db         
             ->select("ambulance_call.id, vehicles.vehicle_no,ambulance_call.net_amount, ambulance_call.date,IFNULL((SELECT sum(transactions.amount) from transactions WHERE transactions.ambulance_call_id=ambulance_call.id),0) as `amount_paid`")
-            ->join("vehicles", "ambulance_call.vehicle_id=vehicles.id")
+            ->join("vehicles", "ambulance_call.vehicle_id=vehicles.id", "left")
             ->where("ambulance_call.case_reference_id", $case_id)
             ->get("ambulance_call");
           return $query->result();

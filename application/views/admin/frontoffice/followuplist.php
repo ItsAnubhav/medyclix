@@ -16,7 +16,7 @@ echo date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyym
             <li>
                 <i class="fa fa-phone bg-blue"></i>
                 <div class="timeline-item">
-                    <span class="time"><a class="defaults-c text-right" data-toggle="tooltip" title="" onclick="delete_next_call(<?php echo $value['id']; ?>,<?php echo $id; ?>)" data-original-title="Delete"><i class="fa fa-trash"></i></a></span>
+                    <span class="time"><a class="defaults-c text-end" data-bs-toggle="tooltip" title="" onclick="delete_next_call(<?php echo $value['id']; ?>,<?php echo $id; ?>)" title="<?= $this->lang->line('delete') ?>"><i class="fa fa-trash"></i></a></span>
                     <h3 class="timeline-header"><a href="#"> <?php echo $value['followup_by']; ?></a> </h3>
                     <div class="timeline-body">
                         <?php echo $value['response']; ?>

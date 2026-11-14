@@ -6,6 +6,9 @@ if (!defined('BASEPATH')) {
 
 class Userlog extends Admin_Controller
 {
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -23,6 +26,7 @@ class Userlog extends Admin_Controller
         $this->session->set_userdata('subsub_menu', 'reports/log/userlog');
         $data["searchlist"]   = $this->search_type;
         $data["userroletype"] = $this->customlib->get_useroletype();
+        $data['module'] = 'reports';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/userlog/userlogList', $data);
         $this->load->view('layout/footer', $data);

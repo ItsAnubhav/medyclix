@@ -5,6 +5,10 @@ if (!defined('BASEPATH')) {
 
 class Paystack extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $payment_mode;
+
 
     public $payment_method = array();
     public $pay_method     = array();

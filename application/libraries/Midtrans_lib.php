@@ -7,6 +7,8 @@ require_once APPPATH . 'third_party/midtrans/midtrans-php/Midtrans.php';
 class Midtrans_lib
 {
 
+    public $CI;
+
     public function __construct()
     {
         $this->CI = &get_instance();
@@ -19,8 +21,7 @@ class Midtrans_lib
         //Set Your server key
         \Midtrans\Config::$serverKey = $server_key;
 
-        // Uncomment for production environment
-        // \Midtrans\Config::$isProduction = true;
+        \Midtrans\Config::$isProduction = true;
 
         \Midtrans\Config::$isSanitized = true;
         \Midtrans\Config::$is3ds       = true;

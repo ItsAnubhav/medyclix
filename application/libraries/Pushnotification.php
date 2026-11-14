@@ -13,6 +13,7 @@ class Pushnotification
 {
 
     public $CI;
+    private $message_queue = 0; // 0 = direct send, 1 = queue mode
 
     //com.qdocs.smarthospital2025
     private $fcmUrl = 'https://fcm.googleapis.com/v1/projects/smarthospitalver6/messages:send';
@@ -22,12 +23,44 @@ class Pushnotification
 
     public function __construct()
     {
-        $this->CI = &get_instance();
+        $this->CI           = &get_instance();
+        $this->CI->load->model('MsgQueue_model');
+        $this->message_queue = $this->CI->customlib->checkMessageMode();
+    }
+
+    /**
+     * Queue-aware push notification dispatcher.
+     * If queue mode ON  → inserts into message_queue table.
+     * If queue mode OFF → sends directly via Firebase.
+     */
+    public function sentNotification($notification_type, $app_key, $subject, $message, $priority = 0)
+    {
+        if (empty($app_key)) {
+            return false;
+        }
+
+        if ($this->message_queue) {
+            $data = [
+                'notification_type' => $notification_type,
+                'sender_details'    => json_encode([
+                    'forward_through' => 'notification',
+                    'forward_value'   => $app_key,
+                    'title'           => $subject,
+                    'message'         => $message,
+                ]),
+                'priority'          => $priority,
+                'schedule_date'     => '',
+            ];
+            return $this->CI->MsgQueue_model->add($data);
+        }
+
+        $push_array = ['title' => $subject, 'body' => $message];
+        return $this->send($app_key, $push_array, 'mail_sms');
     }
 
     public function send($tokens, $msg, $action = "")
-    {		 
-        $creadentials = new ServiceAccountCredentials('https://www.googleapis.com/auth/firebase.messaging', json_decode(file_get_contents($this->key_file_path), true));
+    {
+        $creadentials = new ServiceAccountCredentials($this->scope, json_decode(file_get_contents($this->key_file_path), true));
         $this->token = $creadentials->fetchAuthToken(HttpHandlerFactory::build());
         $data = [
             'token' => $tokens,
@@ -67,19 +100,15 @@ class Pushnotification
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
 
         $result = curl_exec($ch);
- 
-        if (!$result) {
-            $error = curl_error($ch);
-            $info = curl_getinfo($ch);
-            die("cURL request failed, error = {$error}; info = " . print_r($info, true));
-        }
-        if (curl_errno($ch)) {
-            echo 'error:' . curl_error($ch);
-        } else {
-            $tt = json_decode($result, true);           
-            return $result;
+        $errno  = curl_errno($ch);
+        $error  = curl_error($ch);
+        curl_close($ch);
+
+        if (!$result || $errno) {
+            log_message('error', 'Pushnotification cURL failed: ' . $error);
+            return false;
         }
 
-        curl_close($ch);
+        return $result;
     }
 }

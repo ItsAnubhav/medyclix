@@ -60,7 +60,7 @@ class Paypal_payment {
         $gateway->setUsername($this->api_config->api_username);
         $gateway->setPassword($this->api_config->api_password);
         $gateway->setSignature($this->api_config->api_signature);
-        $gateway->setTestMode(TRUE);
+        $gateway->setTestMode(FALSE);
         $params = array(
             'cancelUrl' => base_url('patient/paypal/getsuccesspayment'),
             'returnUrl' => base_url('patient/paypal/getsuccesspayment'),

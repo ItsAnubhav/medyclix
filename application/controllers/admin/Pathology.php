@@ -6,6 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Pathology extends Admin_Controller
 {
+	public $agerange;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $patient_login_prefix;
+	public $payment_mode;
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -15,6 +24,7 @@ class Pathology extends Admin_Controller
         $this->load->library('mailsmsconf');
         $this->load->library('datatables');
         $this->load->library('system_notification');
+        $this->load->library('SaasValidation');
         $this->load->config('image_valid');
         $this->marital_status       = $this->config->item('marital_status');
         $this->payment_mode         = $this->config->item('payment_mode');
@@ -55,9 +65,10 @@ class Pathology extends Admin_Controller
         $data["patients"] = $patients;
         $data['fields']   = $this->customfield_model->get_custom_fields('pathologytest', 1);
 
-        $this->load->view('layout/header');
+        $data['module'] = 'pathology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pathology/search', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function createPathologyTest()
@@ -106,12 +117,12 @@ class Pathology extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[pathologytest][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[pathologytest][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $check_duplicate_test = array();
 
-        $total_rows = $this->input->post('total_rows');
+        $total_rows = $this->input->post('total_rows', TRUE);
         if (!isset($total_rows)) {
             $this->form_validation->set_rules('no_records', $this->lang->line('no_records'), 'trim|required|xss_clean',
                 array('required' => $this->lang->line('no_parameter_selected')));
@@ -119,9 +130,9 @@ class Pathology extends Admin_Controller
 
         if (isset($total_rows) && !empty($total_rows)) {
             foreach ($total_rows as $row_key => $row_value) {
-                $parameter_name  = $this->input->post('parameter_name_' . $row_value);
-                $reference_range = $this->input->post('reference_range_' . $row_value);
-                $patho_unit      = $this->input->post('patho_unit_' . $row_value);
+                $parameter_name  = $this->input->post('parameter_name_' . $row_value, TRUE);
+                $reference_range = $this->input->post('reference_range_' . $row_value, TRUE);
+                $patho_unit      = $this->input->post('patho_unit_' . $row_value, TRUE);
 
                 if ($reference_range == "") {
                     $this->form_validation->set_rules('reference_range', $this->lang->line('reference_range'), 'trim|required|xss_clean');
@@ -189,44 +200,44 @@ class Pathology extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $id                     = $this->input->post('id');
+            $id                     = $this->input->post('id', TRUE);
             $insert_parameter_array = array();
             $update_parameter_array = array();
-            $prev_inserted_array    = $this->input->post('prev_inserted');
+            $prev_inserted_array    = $this->input->post('prev_inserted', TRUE);
             if (!isset($prev_inserted_array)) {
                 $prev_inserted_array = array();
             }
             $update_inserted_array = array();
-            $total_rows            = $this->input->post('total_rows');
+            $total_rows            = $this->input->post('total_rows', TRUE);
             foreach ($total_rows as $row_key => $row_value) {
-                $chk_new = $this->input->post('inserted_id_' . $row_value);
+                $chk_new = $this->input->post('inserted_id_' . $row_value, TRUE);
                 if ($chk_new == 0) {
                     $insert_parameter_array[] = array(
                         'pathology_id'           => 0,
-                        'pathology_parameter_id' => $this->input->post('parameter_name_' . $row_value),
+                        'pathology_parameter_id' => $this->input->post('parameter_name_' . $row_value, TRUE),
                     );
                 } else {
                     $update_inserted_array[]  = $chk_new;
                     $update_parameter_array[] = array(
                         'id'                     => $chk_new,
                         'pathology_id'           => $id,
-                        'pathology_parameter_id' => $this->input->post('parameter_name_' . $row_value),
+                        'pathology_parameter_id' => $this->input->post('parameter_name_' . $row_value, TRUE),
                     );
                 }
             }
-			
+
             $deleted_parameter_array = array_diff($prev_inserted_array, $update_inserted_array);
 
-            $parameter_id = $this->input->post('parameter_name');
+            $parameter_id = $this->input->post('parameter_name', TRUE);
             $pathology    = array(
-                'test_name'             => $this->input->post('test_name'),
-                'short_name'            => $this->input->post('short_name'),
-                'test_type'             => $this->input->post('test_type'),
-                'pathology_category_id' => $this->input->post('pathology_category_id'),
-                'sub_category'          => $this->input->post('sub_category'),
-                'report_days'           => $this->input->post('report_days'),
-                'method'                => $this->input->post('method'),
-                'charge_id'             => $this->input->post('code'),
+                'test_name'             => $this->input->post('test_name', TRUE),
+                'short_name'            => $this->input->post('short_name', TRUE),
+                'test_type'             => $this->input->post('test_type', TRUE),
+                'pathology_category_id' => $this->input->post('pathology_category_id', TRUE),
+                'sub_category'          => $this->input->post('sub_category', TRUE),
+                'report_days'           => $this->input->post('report_days', TRUE),
+                'method'                => $this->input->post('method', TRUE),
+                'charge_id'             => $this->input->post('code', TRUE),
 
             );
             if ($id > 0) {
@@ -234,11 +245,11 @@ class Pathology extends Admin_Controller
             }
             $insert_id = $this->pathology_model->add($pathology, $insert_parameter_array, $update_parameter_array, $deleted_parameter_array);
 
-            $custom_field_post  = $this->input->post("custom_fields[pathologytest]");
+            $custom_field_post  = $this->input->post("custom_fields[pathologytest]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[pathologytest][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[pathologytest][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $insert_id,
@@ -265,9 +276,9 @@ class Pathology extends Admin_Controller
 
     public function pathology_test()
     {
-        $id         = $this->input->post('id');
-        $test_name  = $this->input->post('test_name');
-        $short_name = $this->input->post('short_name');
+        $id         = $this->input->post('id', TRUE);
+        $test_name  = $this->input->post('test_name', TRUE);
+        $short_name = $this->input->post('short_name', TRUE);
 
         if ($test_name == "" && $short_name != "") {
             $this->form_validation->set_message('pathology_test', $this->lang->line('the_test_name_field_is_required'));
@@ -299,12 +310,12 @@ class Pathology extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[pathology][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[pathology][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $transaction_data     = array();
-        $pathology_billing_id = $this->input->post('pathology_billing_id');
-        $prescription_no      = $this->input->post('is_prescription_no_exist');
+        $pathology_billing_id = $this->input->post('pathology_billing_id', TRUE);
+        $prescription_no      = $this->input->post('is_prescription_no_exist', TRUE);
 
 
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
@@ -312,23 +323,26 @@ class Pathology extends Admin_Controller
         $this->form_validation->set_rules('patientid', $this->lang->line('patient'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('discount', $this->lang->line('discount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('tax', $this->lang->line('tax'), 'trim|required|xss_clean');
-        if ($pathology_billing_id == '') {
-           
+        if (empty($pathology_billing_id)) {
+
             $this->form_validation->set_rules(
                 'amount', $this->lang->line('amount'), array('trim', 'required', 'xss_clean', 'valid_amount',
                     array('check_exists', array($this->pathology_model, 'validate_paymentamount')),
                 )
             );
-            if ($this->input->post("payment_mode") == "Cheque") {
-                $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required');
-                $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required');
-                $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]');
+            if ($this->input->post("payment_mode", TRUE) == "Cheque") {
+                $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+                $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
+                $this->form_validation->set_rules('document', $this->lang->line('documents'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
             }
+            // SaaS: count pre-check — block a NEW pathology bill once the tenant hits
+            // its no_of_pathology limit. Create-only (this block runs only when pathology_billing_id is empty).
+            $this->form_validation->set_rules('validate_resource', $this->lang->line('pathology'), 'callback_validateCanAddNewResource[no_of_pathology,1]');
         }
 
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
 
-        $total_rows = $this->input->post('total_rows');
+        $total_rows = $this->input->post('total_rows', TRUE);
         if (!isset($total_rows) && !isset($pathology) && !isset($radiology)) {
             $this->form_validation->set_rules('no_records', $this->lang->line('no_records'), 'trim|required|xss_clean',
                 array('required' => $this->lang->line('no_test_selected')));
@@ -337,8 +351,8 @@ class Pathology extends Admin_Controller
         if (isset($total_rows) && !empty($total_rows)) {
             foreach ($total_rows as $row_key => $row_value) {
 
-                $test_name              = $this->input->post('test_name_' . $row_value);
-                $reportdate             = $this->input->post('reportdate_' . $row_value);
+                $test_name              = $this->input->post('test_name_' . $row_value, TRUE);
+                $reportdate             = $this->input->post('reportdate_' . $row_value, TRUE);
                 $check_duplicate_test[] = $test_name;
 
                 if ($test_name == "") {
@@ -370,10 +384,11 @@ class Pathology extends Admin_Controller
                 'date'           => form_error('date'),
                 'net_amount'     => form_error('net_amount'),
                 'total'          => form_error('total'),
+                'validate_resource' => form_error('validate_resource'),
             );
 
-            if ($pathology_billing_id == '') {
-                if ($this->input->post("payment_mode") == "Cheque") {
+            if (empty($pathology_billing_id)) {
+                if ($this->input->post("payment_mode", TRUE) == "Cheque") {
                     $msg['cheque_no']   = form_error('cheque_no');
                     $msg['cheque_date'] = form_error('cheque_date');
                 }
@@ -396,11 +411,11 @@ class Pathology extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
           
-            $patient_id        = $this->input->post('patientid');
-            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date'));
-            $doctor_name       = $this->input->post('doctor_name');
-            $doctor_id         = $this->input->post('consultant_doctor');
-            $case_reference_id = $this->input->post('case_reference_id');
+            $patient_id        = $this->input->post('patientid', TRUE);
+            $bill_date         = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post('date', TRUE));
+            $doctor_name       = $this->input->post('doctor_name', TRUE);
+            $doctor_id         = $this->input->post('consultant_doctor', TRUE);
+            $case_reference_id = $this->input->post('case_reference_id', TRUE);
             if (empty($doctor_id)) {
                 $doctor_id = null;
             }
@@ -416,15 +431,15 @@ class Pathology extends Admin_Controller
                 $prescription_no = null;
             }
 
-            $is_tpa = $this->input->post('is_tpa');
+            $is_tpa = $this->input->post('is_tpa', TRUE);
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id = null;
                 $insurance_id = null;
                 $insurance_validity = null;
-            }else{           
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+            }else{
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
 			
             if (empty($organisation_id)) {
@@ -438,23 +453,23 @@ class Pathology extends Admin_Controller
                 'doctor_id'                 => $doctor_id,
                 'case_reference_id'         => $case_reference_id,
                 'ipd_prescription_basic_id' => $prescription_no,
-                'total'                     => $this->input->post('total'),
-                'discount'                  => $this->input->post('discount'),
-                'discount_percentage'       => $this->input->post('discount_percent'),
-                'tax'                       => $this->input->post('tax'),
-                'net_amount'                => $this->input->post('net_amount'),
-                'note'                      => $this->input->post('note'),
+                'total'                     => $this->input->post('total', TRUE),
+                'discount'                  => $this->input->post('discount', TRUE),
+                'discount_percentage'       => $this->input->post('discount_percent', TRUE),
+                'tax'                       => $this->input->post('tax', TRUE),
+                'net_amount'                => $this->input->post('net_amount', TRUE),
+                'note'                      => $this->input->post('note', TRUE),
                 'generated_by'              => $this->customlib->getLoggedInUserID(),
                 'organisation_id'           => $organisation_id,
                 'insurance_validity'        => $insurance_validity,
                 'insurance_id'              => $insurance_id,
             );
 
-            $custom_field_post  = $this->input->post("custom_fields[pathology]");
+            $custom_field_post  = $this->input->post("custom_fields[pathology]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -469,8 +484,8 @@ class Pathology extends Admin_Controller
                 $data['id'] = $pathology_billing_id;
             }
 
-            $total_rows   = $this->input->post('total_rows');
-            $prev_reports = $this->input->post('prev_reports');
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            $prev_reports = $this->input->post('prev_reports', TRUE);
 
             $insert_array              = array();
             $update_array              = array();
@@ -482,34 +497,34 @@ class Pathology extends Admin_Controller
             }
 
             foreach ($total_rows as $row_key => $row_value) {
-                $test_report_id = $this->input->post('inserted_id_' . $row_value);
+                $test_report_id = $this->input->post('inserted_id_' . $row_value, TRUE);
                 if ($test_report_id == 0) {
                     $report = array(
                         'pathology_bill_id' => 0,
                         'patient_id'        => $patient_id,
-                        'pathology_id'      => $this->input->post('test_name_' . $row_value),
-                        'tax_percentage'    => $this->input->post('taxpercent_' . $row_value),
-                        'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value)),
-                        'apply_charge'      => $this->input->post('amount_' . $row_value),
+                        'pathology_id'      => $this->input->post('test_name_' . $row_value, TRUE),
+                        'tax_percentage'    => $this->input->post('taxpercent_' . $row_value, TRUE),
+                        'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value, TRUE)),
+                        'apply_charge'      => $this->input->post('amount_' . $row_value, TRUE),
                     );
                     $insert_array[] = $report;
                 } else if ($test_report_id > 0) {
                     $report = array(
                         'id'             => $test_report_id,
                         'patient_id'     => $patient_id,
-                        'pathology_id'   => $this->input->post('test_name_' . $row_value),
-                        'tax_percentage' => $this->input->post('taxpercent_' . $row_value),
-                        'reporting_date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value)),
-                        'apply_charge'   => $this->input->post('amount_' . $row_value),
+                        'pathology_id'   => $this->input->post('test_name_' . $row_value, TRUE),
+                        'tax_percentage' => $this->input->post('taxpercent_' . $row_value, TRUE),
+                        'reporting_date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post('reportdate_' . $row_value, TRUE)),
+                        'apply_charge'   => $this->input->post('amount_' . $row_value, TRUE),
                     );
                     $prev_reports_update_array[] = $test_report_id;
                     $update_array[]              = $report;
                 }
             }
 
-            if ($pathology_billing_id == '') {
+            if (empty($pathology_billing_id)) {
 
-                $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
+                $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
                 $payment_section = $this->config->item('payment_section');
 
                 $transaction_data = array(
@@ -517,22 +532,29 @@ class Pathology extends Admin_Controller
                     'patient_id'           => $patient_id,
                     'case_reference_id'    => $case_reference_id,
                     'section'              => $payment_section['pathology'],
-                    'amount'               => $this->input->post('amount'),
+                    'amount'               => $this->input->post('amount', TRUE),
                     'type'                 => 'payment',
-                    'ipd_id'               => $this->input->post('ipdid'),
-                    'payment_mode'         => $this->input->post('payment_mode'),
+                    'ipd_id'               => $this->input->post('ipdid', TRUE),
+                    'payment_mode'         => $this->input->post('payment_mode', TRUE),
                     'payment_date'         => $bill_date,
                     'received_by'          => $this->customlib->getLoggedInUserID(),
                 );
-				
-                if ($this->input->post('payment_mode') == "Cheque") {
+
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                     $transaction_data['cheque_date'] = $cheque_date;
-                    $transaction_data['cheque_no']   = $this->input->post('cheque_no');
+                    $transaction_data['cheque_no']   = $this->input->post('cheque_no', TRUE);
 
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
-                        $file_name = $this->media_storage->fileupload("document");
+                        $file_name = $this->media_storage->fileupload("document", './uploads/payment_document/');
                         $transaction_data['attachment']      = $file_name;
                         $transaction_data['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (pathology addBill): ' . $e->getMessage());
+                        }
                     }
                 }
             }
@@ -543,7 +565,7 @@ class Pathology extends Admin_Controller
             if ($pathology_billing_id > 0) {
                 if (!empty($custom_fields)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $inserted,
@@ -559,6 +581,16 @@ class Pathology extends Admin_Controller
                 if (!empty($custom_value_array)) {
                     $this->customfield_model->insertRecord($custom_value_array, $inserted);
                 }
+
+                // SaaS: a NEW pathology bill was created — increment the no_of_pathology count
+                // usage. Create-only branch ($pathology_billing_id empty); wrapped so an API hiccup never blocks the save.
+                if ($inserted) {
+                    try {
+                        $this->saasvalidation->updateResouceQuota('no_of_pathology', 1);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS no_of_pathology count increment failed (pathology addBill insert): ' . $e->getMessage());
+                    }
+                }
             }
 
             if ($inserted) {
@@ -566,14 +598,14 @@ class Pathology extends Admin_Controller
 
                 $event_data = array(
                     'patient_id'  => $patient_id,
-                    'case_id'     => $this->input->post('case_reference_id'),
-                    'bill_no'     => $this->input->post('bill_no'),
-                    'date'        => $this->customlib->YYYYMMDDTodateFormat($this->input->post('date')),
-                    'total'       => $this->input->post('total'),
-                    'discount'    => $this->input->post('discount'),
-                    'tax'         => $this->input->post('tax'),
-                    'net_amount'  => $this->input->post('net_amount'),
-                    'paid_amount' => $this->input->post('amount'),
+                    'case_id'     => $this->input->post('case_reference_id', TRUE),
+                    'bill_no'     => $this->input->post('bill_no', TRUE),
+                    'date'        => $this->customlib->YYYYMMDDTodateFormat($this->input->post('date', TRUE)),
+                    'total'       => $this->input->post('total', TRUE),
+                    'discount'    => $this->input->post('discount', TRUE),
+                    'tax'         => $this->input->post('tax', TRUE),
+                    'net_amount'  => $this->input->post('net_amount', TRUE),
+                    'paid_amount' => $this->input->post('amount', TRUE),
                 );
 
                 if ($doctor_id != "") {
@@ -603,9 +635,11 @@ class Pathology extends Admin_Controller
         }
 
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('name'),
+                'file' => form_error('file'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
@@ -617,19 +651,19 @@ class Pathology extends Admin_Controller
             $patient_id = $check_patient_id + 1;
 
             $patient_data = array(
-                'patient_name'      => $this->input->post('name'),
-                'mobileno'          => $this->input->post('contact'),
-                'marital_status'    => $this->input->post('marital_status'),
-                'email'             => $this->input->post('email'),
-                'gender'            => $this->input->post('gender'),
-                'guardian_name'     => $this->input->post('guardian_name'),
-                'blood_group'       => $this->input->post('blood_group'),
-                'address'           => $this->input->post('address'),
-                'known_allergies'   => $this->input->post('known_allergies'),
+                'patient_name'      => $this->input->post('name', TRUE),
+                'mobileno'          => $this->input->post('contact', TRUE),
+                'marital_status'    => $this->input->post('marital_status', TRUE),
+                'email'             => $this->input->post('email', TRUE),
+                'gender'            => $this->input->post('gender', TRUE),
+                'guardian_name'     => $this->input->post('guardian_name', TRUE),
+                'blood_group'       => $this->input->post('blood_group', TRUE),
+                'address'           => $this->input->post('address', TRUE),
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
                 'patient_unique_id' => $patient_id,
-                'note'              => $this->input->post('note'),
-                'age'               => $this->input->post('age'),
-                'month'             => $this->input->post('month'),
+                'note'              => $this->input->post('note', TRUE),
+                'age'               => $this->input->post('age', TRUE),
+                'month'             => $this->input->post('month', TRUE),
                 'is_active'         => 'yes',
             );
             $insert_id = $this->patient_model->add_patient($patient_data);
@@ -646,9 +680,17 @@ class Pathology extends Admin_Controller
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $insert_id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pathology addpatient): ' . $e->getMessage());
+                    }
+                }
             }
         }
         echo json_encode($array);
@@ -665,8 +707,8 @@ class Pathology extends Admin_Controller
             $array = array('status' => 0, 'error' =>$msg, 'message' => '');
             echo json_encode($array);
         } else {
-            $prescription_no = $this->input->post('prescription_no');
-            $date            = $this->input->post('date');
+            $prescription_no = $this->input->post('prescription_no', TRUE);
+            $date            = $this->input->post('date', TRUE);
             $pathology_tests = $this->pathology_model->getpathotestDetails();    
             $data["pathology_tests"] = $pathology_tests;
             $data["date"]            = $this->customlib->dateFormatToStrtotime($date);
@@ -694,7 +736,7 @@ class Pathology extends Admin_Controller
                 $patient_id        = $prescription_test->patient_id;
                 $total_rows        = count($prescription_test->tests);
                 $case_reference_id = $prescription_test->case_reference_id;     
-				$is_tpa= $this->input->post('is_tpa');
+				$is_tpa= $this->input->post('is_tpa', TRUE);
     
 				if($patient_id != 0){
 					
@@ -766,10 +808,10 @@ class Pathology extends Admin_Controller
 
     public function gettestpathodetails()
     {
-        $id     = $this->input->post('id');
-        $patient_id=$this->input->post('patient_id');
+        $id     = $this->input->post('id', TRUE);
+        $patient_id=$this->input->post('patient_id', TRUE);
         $is_tpa_valid=true;
-        if($this->input->post('is_tpa') == 1 && $patient_id != ""){          
+        if($this->input->post('is_tpa', TRUE) == 1 && $patient_id != ""){          
             $result = $this->pathology_model->getPathologyChargeByPatient($id,$patient_id);            
             if($result && !IsNullOrEmptyString($result->insurance_validity)){
                 if(strtotime($result->insurance_validity) >= strtotime(date('Y-m-d'))){
@@ -796,7 +838,7 @@ class Pathology extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_view')) {
             access_denied();
         }
-        $id             = $this->input->post("pathology_id");
+        $id             = $this->input->post("pathology_id", TRUE);
         $result         = $this->pathology_model->getDetails($id);
         $data['result'] = $result;
         $page = $this->load->view("admin/pathology/_pathologyDetails", $data, true);
@@ -814,16 +856,16 @@ class Pathology extends Admin_Controller
                 if ($custom_fields_value['validation']) {
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
-                    $this->form_validation->set_rules("custom_fields[pathology][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[pathology][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
                 }
             }
         }
-        $this->form_validation->set_rules('test_name', $this->lang->line('test_name'), 'required');
-        $this->form_validation->set_rules('short_name', $this->lang->line('short_name'), 'required');
-        $this->form_validation->set_rules('test_type', $this->lang->line('test_type'), 'required');
-        $this->form_validation->set_rules('pathology_category_id', $this->lang->line('category_name'), 'required');
-        $this->form_validation->set_rules('code', $this->lang->line('code'), 'required');
-        $this->form_validation->set_rules('charge_category_id', $this->lang->line('charge_category'), 'required');
+        $this->form_validation->set_rules('test_name', $this->lang->line('test_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('short_name', $this->lang->line('short_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('test_type', $this->lang->line('test_type'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_category_id', $this->lang->line('category_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('code', $this->lang->line('code'), 'required|xss_clean');
+        $this->form_validation->set_rules('charge_category_id', $this->lang->line('charge_category'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'test_name'             => form_error('test_name'),
@@ -850,29 +892,29 @@ class Pathology extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $id                         = $this->input->post('id');
-            $charge_category_id         = $this->input->post('charge_category_id');
-            $pre_pathology_parameter_id = $this->input->post("previous_pathology_parameter_id[]");
-            $pre_pathology_id           = $this->input->post("previous_pathology_id");
-            $pre_parameter_id           = $this->input->post("previous_parameter_id[]");
-            $new_parameter_id           = $this->input->post("new_parameter_id[]");
-            $parameter_id               = $this->input->post("parameter_name[]");
-            $custom_field_post          = $this->input->post("custom_fields[pathology]");
+            $id                         = $this->input->post('id', TRUE);
+            $charge_category_id         = $this->input->post('charge_category_id', TRUE);
+            $pre_pathology_parameter_id = $this->input->post("previous_pathology_parameter_id[]", TRUE);
+            $pre_pathology_id           = $this->input->post("previous_pathology_id", TRUE);
+            $pre_parameter_id           = $this->input->post("previous_parameter_id[]", TRUE);
+            $new_parameter_id           = $this->input->post("new_parameter_id[]", TRUE);
+            $parameter_id               = $this->input->post("parameter_name[]", TRUE);
+            $custom_field_post          = $this->input->post("custom_fields[pathology]", TRUE);
             $insert_data                = array();
             $pathology                  = array(
                 'id'                    => $id,
-                'test_name'             => $this->input->post('test_name'),
-                'short_name'            => $this->input->post('short_name'),
-                'test_type'             => $this->input->post('test_type'),
-                'pathology_category_id' => $this->input->post('pathology_category_id'),
-                'sub_category'          => $this->input->post('sub_category'),
-                'report_days'           => $this->input->post('report_days'),
-                'method'                => $this->input->post('method'),
-                'charge_id'             => $this->input->post('code'),
+                'test_name'             => $this->input->post('test_name', TRUE),
+                'short_name'            => $this->input->post('short_name', TRUE),
+                'test_type'             => $this->input->post('test_type', TRUE),
+                'pathology_category_id' => $this->input->post('pathology_category_id', TRUE),
+                'sub_category'          => $this->input->post('sub_category', TRUE),
+                'report_days'           => $this->input->post('report_days', TRUE),
+                'method'                => $this->input->post('method', TRUE),
+                'charge_id'             => $this->input->post('code', TRUE),
             );
             if (!empty($custom_fields)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[pathology][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $id,
@@ -913,7 +955,7 @@ class Pathology extends Admin_Controller
                 } else {
                     $coma = ',';
                 }
-                $condition .= "(" . $value['parameter_id'] . "," . $value['id'] . ")" . $coma;
+                $condition .= "(" . (int)$value['parameter_id'] . "," . (int)$value['id'] . ")" . $coma;
                 $s++;
             }
 
@@ -944,7 +986,7 @@ class Pathology extends Admin_Controller
 
     public function delete()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
             access_denied();
         }
@@ -952,22 +994,62 @@ class Pathology extends Admin_Controller
             $this->pathology_model->delete($id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
-            $array = array('status' => 'fail', 'error' => '', 'message' => 'Something went wrong');
+            $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
         }
         echo json_encode($array);
     }
 
     public function deletebill()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
             access_denied();
         }
         if (!empty($id)) {
+            // SaaS: release every linked transaction's attachment from storage quota before deletion.
+            $saas_transactions = $this->transaction_model->pathologyPayments($id);
+            if (!empty($saas_transactions)) {
+                foreach ($saas_transactions as $saas_transaction) {
+                    if (!empty($saas_transaction->attachment)) {
+                        $doc_path = $saas_transaction->attachment;
+                        $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                        $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (pathology deletebill transaction_id=' . $saas_transaction->id . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($doc_path, $dir);
+                    }
+                }
+            }
+
+            // SaaS: release every linked test-report document (uploads/pathology_report/) before deletion.
+            $saas_reports = $this->pathology_model->getReportByBillId($id);
+            if (!empty($saas_reports)) {
+                foreach ($saas_reports as $saas_report) {
+                    if (!empty($saas_report->pathology_report)) {
+                        $report_doc = $saas_report->pathology_report;
+                        $report_dir = (strpos($report_doc, '/') !== false) ? '' : 'uploads/pathology_report';
+                        $report_kb  = $this->media_storage->getUploadedFileSize($report_doc, $report_dir);
+                        if ($report_kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $report_kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (pathology deletebill report_id=' . $saas_report->id . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($report_doc, $report_dir);
+                    }
+                }
+            }
+
             $this->pathology_model->deletePathologyBill($id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
-            $array = array('status' => 'fail', 'error' => '', 'message' => 'Something went wrong');
+            $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('something_went_wrong'));
         }
         echo json_encode($array);
     }
@@ -978,7 +1060,7 @@ class Pathology extends Admin_Controller
             access_denied();
         }
 
-        $id     = $this->input->post('pathology_id');
+        $id     = $this->input->post('pathology_id', TRUE);
         $result = $this->pathology_model->getPathology($id);
         echo json_encode($result);
     }
@@ -988,7 +1070,7 @@ class Pathology extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_view')) {
             access_denied();
         }
-        $id                       = $this->input->post('id');
+        $id                       = $this->input->post('id', TRUE);
         $result                   = $this->pathology_model->getPathologyReport($id);
         $result['reporting_date'] = date($this->customlib->getHospitalDateFormat(), strtotime($result['reporting_date']));
         echo json_encode($result);
@@ -999,7 +1081,7 @@ class Pathology extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_view')) {
             access_denied();
         }
-        $id                       = $this->input->post('id');
+        $id                       = $this->input->post('id', TRUE);
         $result                   = $this->pathology_model->getPathologyparameterReport($id);
         $result['reporting_date'] = $this->customlib->YYYYMMDDTodateFormat($result['reporting_date']);
         echo json_encode($result);
@@ -1011,9 +1093,9 @@ class Pathology extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('id', $this->lang->line('id'), 'required');
-        $this->form_validation->set_rules('apply_charge', $this->lang->line('applied_charge'), 'required');
-        $this->form_validation->set_rules('pathology_report', $this->lang->line('file'), 'callback_handle_upload');
+        $this->form_validation->set_rules('id', $this->lang->line('id'), 'required|xss_clean');
+        $this->form_validation->set_rules('apply_charge', $this->lang->line('applied_charge'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_report', $this->lang->line('file'), 'callback_handle_upload|callback_validateCanUploadFile[pathology_report]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -1023,22 +1105,28 @@ class Pathology extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $reporting_date = $this->input->post("reporting_date");
+            $reporting_date = $this->input->post("reporting_date", TRUE);
 
-            $id           = $this->input->post('id');
+            $id           = $this->input->post('id', TRUE);
             $report_batch = array(
                 'id'                => $id,
-                'patient_name'      => $this->input->post('patient_name'),
-                'patient_id'        => $this->input->post('patient_id_patho'),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
+                'patient_name'      => $this->input->post('patient_name', TRUE),
+                'patient_id'        => $this->input->post('patient_id_patho', TRUE),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
                 'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($reporting_date),
-                'description'       => $this->input->post('description'),
-                'apply_charge'      => $this->input->post('apply_charge'),
+                'description'       => $this->input->post('description', TRUE),
+                'apply_charge'      => $this->input->post('apply_charge', TRUE),
             );
 
             $this->pathology_model->updateTestReport($report_batch);
 
             if (!empty($_FILES['pathology_report']['name'])) {
+                // SaaS: capture the existing report file for quota diff + cleanup.
+                $saas_existing   = $this->pathology_model->getPathologyReportByID($id);
+                $saas_old_report = (!empty($saas_existing['pathology_report'])) ? $saas_existing['pathology_report'] : '';
+                $saas_old_dir    = (strpos($saas_old_report, '/') !== false) ? '' : 'uploads/pathology_report';
+                $saas_old_kb     = (!empty($saas_old_report)) ? $this->media_storage->getUploadedFileSize($saas_old_report, $saas_old_dir) : 0;
+
                 $config['upload_path']   = 'uploads/pathology_report/';
                 $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xls|xlsx';
                 $config['file_name']     = $_FILES['pathology_report']['name'];
@@ -1048,6 +1136,21 @@ class Pathology extends Admin_Controller
                 if ($this->upload->do_upload('pathology_report')) {
                     $uploadData = $this->upload->data();
                     $picture    = $uploadData['file_name'];
+
+                    // SaaS: delete the old file (now replaced) and adjust quota by diff.
+                    if (!empty($saas_old_report) && $saas_old_report !== $picture) {
+                        $this->media_storage->filedelete($saas_old_report, $saas_old_dir);
+                    }
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('pathology_report');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pathology updateTestReport): ' . $e->getMessage());
+                    }
                 } else {
                     $picture = "";
                 }
@@ -1066,32 +1169,34 @@ class Pathology extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('id', $this->lang->line('id'), 'required');
+        $this->form_validation->set_rules('id', $this->lang->line('id'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_report', $this->lang->line('file'), 'callback_validateCanUploadFile[pathology_report]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'id' => form_error('id'),
+                'pathology_report' => form_error('pathology_report'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $id             = $this->input->post('id');
-            $reporting_date = $this->input->post("reporting_date");
+            $id             = $this->input->post('id', TRUE);
+            $reporting_date = $this->input->post("reporting_date", TRUE);
             $report_batch   = array(
                 'id'                => $id,
-                'patient_id'        => $this->input->post('patient_id_patho'),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
+                'patient_id'        => $this->input->post('patient_id_patho', TRUE),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
                 'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($reporting_date),
-                'description'       => $this->input->post('description'),
-                'apply_charge'      => $this->input->post('apply_charge'),
+                'description'       => $this->input->post('description', TRUE),
+                'apply_charge'      => $this->input->post('apply_charge', TRUE),
             );
 
-            $parameter_id    = $this->input->post('parameter_id[]');
-            $parameter_value = $this->input->post('parameter_value[]');
-            $par_id          = $this->input->post('parid[]');
-            $pathology_id    = $this->input->post('pathologyid');
-            $update_id       = $this->input->post('update_id[]');
-            $preport_id      = $this->input->post('preport_id[]');
+            $parameter_id    = $this->input->post('parameter_id[]', TRUE);
+            $parameter_value = $this->input->post('parameter_value[]', TRUE);
+            $par_id          = $this->input->post('parid[]', TRUE);
+            $pathology_id    = $this->input->post('pathologyid', TRUE);
+            $update_id       = $this->input->post('update_id[]', TRUE);
+            $preport_id      = $this->input->post('preport_id[]', TRUE);
 
             $i               = 0;
             $parameter_array = array();
@@ -1107,6 +1212,12 @@ class Pathology extends Admin_Controller
             }
 
             if (!empty($_FILES['pathology_report']['name'])) {
+                // SaaS: capture the existing report file for quota diff + cleanup.
+                $saas_existing   = $this->pathology_model->getPathologyReportByID($id);
+                $saas_old_report = (!empty($saas_existing['pathology_report'])) ? $saas_existing['pathology_report'] : '';
+                $saas_old_dir    = (strpos($saas_old_report, '/') !== false) ? '' : 'uploads/pathology_report';
+                $saas_old_kb     = (!empty($saas_old_report)) ? $this->media_storage->getUploadedFileSize($saas_old_report, $saas_old_dir) : 0;
+
                 $config['upload_path']   = 'uploads/pathology_report/';
                 $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xls|xlsx';
                 $config['file_name']     = $_FILES['pathology_report']['name'];
@@ -1115,7 +1226,22 @@ class Pathology extends Admin_Controller
 
                 $this->load->library('upload', $config);
                 $this->upload->initialize($config);
-                move_uploaded_file($_FILES["pathology_report"]["tmp_name"], "./uploads/pathology_report/" . $img_name);
+                if (move_uploaded_file($_FILES["pathology_report"]["tmp_name"], "./uploads/pathology_report/" . $img_name)) {
+                    // SaaS: delete the old file (now replaced) and adjust quota by diff.
+                    if (!empty($saas_old_report) && $saas_old_report !== $img_name) {
+                        $this->media_storage->filedelete($saas_old_report, $saas_old_dir);
+                    }
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('pathology_report');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pathology parameteraddvalue): ' . $e->getMessage());
+                    }
+                }
 
                 $data_img = array('id' => $id, 'pathology_report' => $img_name);
                 $this->pathology_model->updateTestReport($data_img);
@@ -1134,11 +1260,11 @@ class Pathology extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'required');
-        $this->form_validation->set_rules('pathology_id', $this->lang->line('pathology_id'), 'required');
-        $this->form_validation->set_rules('apply_charge', $this->lang->line('applied_charge'), 'required');
-        $this->form_validation->set_rules('pathology_report', $this->lang->line('file'), 'callback_handle_upload');
-        $this->form_validation->set_rules('reporting_date', $this->lang->line('reporting_date'), 'required');
+        $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_id', $this->lang->line('pathology_id'), 'required|xss_clean');
+        $this->form_validation->set_rules('apply_charge', $this->lang->line('applied_charge'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_report', $this->lang->line('file'), 'callback_handle_upload|callback_validateCanUploadFile[pathology_report]');
+        $this->form_validation->set_rules('reporting_date', $this->lang->line('reporting_date'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'patient_id'       => form_error('patient_id'),
@@ -1149,19 +1275,19 @@ class Pathology extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id             = $this->input->post('pathology_id');
-            $patient_id     = $this->input->post('patient_id');
-            $reporting_date = $this->input->post("reporting_date");
+            $id             = $this->input->post('pathology_id', TRUE);
+            $patient_id     = $this->input->post('patient_id', TRUE);
+            $reporting_date = $this->input->post("reporting_date", TRUE);
 
             $report_batch = array(
                 'pathology_id'      => $id,
                 'patient_id'        => $patient_id,
-                'customer_type'     => $this->input->post('customer_type'),
-                'patient_name'      => $this->input->post('patient_name'),
-                'consultant_doctor' => $this->input->post('consultant_doctor'),
+                'customer_type'     => $this->input->post('customer_type', TRUE),
+                'patient_name'      => $this->input->post('patient_name', TRUE),
+                'consultant_doctor' => $this->input->post('consultant_doctor', TRUE),
                 'reporting_date'    => $this->customlib->dateFormatToYYYYMMDD($reporting_date),
-                'description'       => $this->input->post('description'),
-                'apply_charge'      => $this->input->post('apply_charge'),
+                'description'       => $this->input->post('description', TRUE),
+                'apply_charge'      => $this->input->post('apply_charge', TRUE),
                 'generated_by'      => $this->customlib->getLoggedInUserID(),
                 'pathology_report'  => '',
             );
@@ -1171,9 +1297,17 @@ class Pathology extends Admin_Controller
             if (isset($_FILES["pathology_report"]) && !empty($_FILES['pathology_report']['name'])) {
                 $fileInfo = pathinfo($_FILES["pathology_report"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["pathology_report"]["tmp_name"], "./uploads/pathology_report/" . $img_name);
-                $data_img = array('id' => $insert_id, 'pathology_report' => $img_name);
-                $this->pathology_model->testReportBatch($data_img);
+                if (move_uploaded_file($_FILES["pathology_report"]["tmp_name"], "./uploads/pathology_report/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'pathology_report' => $img_name);
+                    $this->pathology_model->testReportBatch($data_img);
+
+                    // SaaS: add the uploaded report's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['pathology_report']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pathology testReportBatch): ' . $e->getMessage());
+                    }
+                }
             }
 
             $array = array('status' => 'success', 'id' => $insert_id, 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -1268,9 +1402,10 @@ class Pathology extends Admin_Controller
         $data["bloodgroup"]  = $this->bloodbankstatus_model->get_product(null, 1);
         $data['fields']      = $this->customfield_model->get_custom_fields('pathology', 1);
         $data['organisation']   = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'pathology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pathology/reportDetail', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getpathologybillDatatable()
@@ -1287,9 +1422,9 @@ class Pathology extends Admin_Controller
                 //====================================
 
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs view_detail' data-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs view_detail' data-bs-toggle='tooltip' title='" . $this->lang->line('view_reports') . "' ><i class='fa fa-reorder'></i></a>";
                 if ($this->rbac->hasPrivilege('pathology_partial_payment', 'can_view')) {
-                    $action .= " <a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' data-record-caseid='" . $value->case_reference_id . "' class='btn btn-default btn-xs add_payment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
+                    $action .= " <a href='javascript:void(0)'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' data-record-caseid='" . $value->case_reference_id . "' class='btn btn-default btn-xs add_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
                 }
                 if ($value->case_reference_id > 0) {
                     $case_id = $value->case_reference_id;
@@ -1300,7 +1435,7 @@ class Pathology extends Admin_Controller
                 $action .= "</div>";
 
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('pathology_billing') . $value->id . $action;
+                $row[] = $this->customlib->getSessionPrefixByType('pathology_billing') . $value->id;
                 $row[] = $case_id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
                 $row[] = $value->patient_name . " (" . $value->pid . ")";
@@ -1323,11 +1458,16 @@ class Pathology extends Admin_Controller
 				$row[]     = amountFormat($value->total);
 				$discount_amt = ( $value->total * $value->discount_percentage ) / 100 ;	
                 $row[]     = amountFormat($discount_amt) ." (". $value->discount_percentage ."%)"  ;		
-				$tax_amt = (($value->total - $discount_amt) * $value->tax_percentage ) / 100;				 		
-                $row[]     = 	$value->tax ." (".amountFormat(($value->tax * 100) / ($value->total - $discount_amt), 2)."%)";			
+				$tax_amt = (($value->total - $discount_amt) * $value->tax_percentage ) / 100;	
+
+                if(($value->total - $discount_amt)==0){
+                     $row[]     = $value->tax."(0.00%)";     
+                }else{
+                     $row[]     =   $value->tax ." (".amountFormat(($value->tax * 100) / ($value->total - $discount_amt), 2)."%)";  
+                }
 				$row[]     = amountFormat($value->net_amount, 2);
                 $row[]     = amountFormat($value->paid_amount, 2);
-                $row[]     = amountFormat($balance_amount, 2);
+                $row[]     = amountFormat($balance_amount, 2) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -1355,12 +1495,12 @@ class Pathology extends Admin_Controller
                 $action = "<div class='rowoptionview rowview-mt-19'>";
 
                 if ($this->rbac->hasPrivilege('pathology_test', 'can_view')) {
-                    $action .= "<a href='#' data-toggle='tooltip' onclick='viewDetail(" . $value->id . ")'  class='btn btn-default btn-xs' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                    $action .= "<a href='#' data-bs-toggle='tooltip' onclick='viewDetail(" . $value->id . ")'  class='btn btn-default btn-xs' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
                 }
                 $action .= "</div'>";
 
                 //==============================
-                $row[] = $value->test_name . "</a> " . $action;
+                $row[] = $value->test_name . "</a> ";
                 $row[] = $value->short_name;
                 $row[] = $value->test_type;
                 $row[] = $value->category_name;
@@ -1382,6 +1522,7 @@ class Pathology extends Admin_Controller
                 $row[]     = $value->percentage;
                 $row[]     = $value->standard_charge;
                 $row[]     = amountFormat($value->standard_charge + calculatePercent($value->standard_charge, $value->percentage));
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -1396,8 +1537,8 @@ class Pathology extends Admin_Controller
 
     public function getPatientPathologyDetails()
     {
-        $is_bill    = $this->input->post('is_bill');
-        $id         = $this->input->post('id');
+        $is_bill    = $this->input->post('is_bill', TRUE);
+        $id         = $this->input->post('id', TRUE);
         $data['id'] = $id;
         $result     = $this->pathology_model->getPathologyBillByID($id);
   
@@ -1431,14 +1572,14 @@ class Pathology extends Admin_Controller
         $actions                       = "";
 
         if (isset($is_bill)) {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_pathology_bill' data-toggle='tooltip' data-placement='bottom'  data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_pathology_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-bs-placement='bottom'  data-record-id=\"" . $id . "\"   title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
         } else {
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_parameter' data-toggle='tooltip' data-placement='bottom'  data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('print_test_report') . "'><i class='fa fa-reorder'></i></a>";
-            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill' data-toggle='tooltip' data-record-id=\"" . $id . "\"  data-placement='bottom'  data-original-title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_parameter btn btn-sm btn-light' data-bs-toggle='tooltip' data-bs-placement='bottom'  data-record-id=\"" . $id . "\"   title='" . $this->lang->line('print_test_report') . "'><i class='fa fa-reorder'></i></a>";
+            $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='print_bill btn btn-sm btn-light' data-bs-toggle='tooltip' data-record-id=\"" . $id . "\"  data-bs-placement='bottom'  title='" . $this->lang->line('print_bill') . "'><i class='fa fa-print'></i></a>";
             if ($this->rbac->hasPrivilege('pathology_bill', 'can_edit')) {
-                $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='edit_pathology' data-toggle='tooltip' data-placement='bottom' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('edit_pathology') . "'><i class='fa fa-pencil'></i></a>";
+                $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='edit_pathology btn btn-sm btn-light' data-bs-toggle='tooltip' data-bs-placement='bottom' data-record-id=\"" . $id . "\"   title='" . $this->lang->line('edit_pathology') . "'><i class='fa fa-pencil'></i></a>";
             }if ($this->rbac->hasPrivilege('pathology_bill', 'can_delete')) {
-                $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_pathology' data-toggle='tooltip' data-placement='bottom' data-record-id=\"" . $id . "\"   data-original-title='" . $this->lang->line('delete_pathology') . "'><i class='fa fa-trash'></i></a>";
+                $actions .= "<a href='javascript:void(0)' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' class='delete_pathology btn btn-sm btn-light' data-bs-toggle='tooltip' data-bs-placement='bottom' data-record-id=\"" . $id . "\"   title='" . $this->lang->line('delete_pathology') . "'><i class='fa fa-trash'></i></a>";
             }
         }
 
@@ -1449,7 +1590,7 @@ class Pathology extends Admin_Controller
     {
         $print_details         = $this->printing_model->get('', 'pathology');
         $data['print_details'] = $print_details;
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
 		$print   				= $this->input->get('print');
 		 
         $data['id']            = $id;		
@@ -1488,7 +1629,7 @@ class Pathology extends Admin_Controller
 
     public function getPathologyReportDetail()
     {
-        $id             = $this->input->post('id');
+        $id             = $this->input->post('id', TRUE);
         $data['id']     = $id;
         $staff          = $this->staff_model->getStaffbyrole(5);
         $data["staff"]  = $staff;
@@ -1500,7 +1641,7 @@ class Pathology extends Admin_Controller
 
     public function assigntestpatho()
     {
-        $id                   = $this->input->post('id');
+        $id                   = $this->input->post('id', TRUE);
         $testlist             = $this->pathology_model->getpathotestDetails();
         $data["testlist"]     = $testlist;
         $patients             = $this->patient_model->getPatientListall();
@@ -1522,7 +1663,7 @@ class Pathology extends Admin_Controller
 
     public function editpathology()
     {
-        $id                     = $this->input->post('id');
+        $id                     = $this->input->post('id', TRUE);
         $pathology_data         = $this->pathology_model->getPathologyBillByID($id);		
         $data["pathology_data"] = $pathology_data;
         $testlist                    = $this->pathology_model->getpathotestDetails();
@@ -1564,7 +1705,7 @@ class Pathology extends Admin_Controller
             $tpa_apply_status=0;
         }
 
-        echo json_encode(array('status' => 1, 'page' => $page, 'bill_prefix' => $this->customlib->getSessionPrefixByType('pathology_billing'), 'bill_no' => $bill_no, 'pathology_date' => $date, 'total_rows' => $total_rows, 'case_reference_id' => $case_reference_id, 'patient_id' => $patient_id, 'patient_name' => $patient_names[$patient_id] . " (" . $patient_id . ")",'tpa_apply_status'=>$tpa_apply_status,'ipd_prescription_basic_id'=>$ipd_prescription_basic_id));
+        echo json_encode(array('status' => 1, 'page' => $page, 'bill_prefix' => $this->customlib->getSessionPrefixByType('pathology_billing'), 'bill_no' => $bill_no, 'pathology_date' => $date, 'total_rows' => $total_rows, 'case_reference_id' => $case_reference_id, 'patient_id' => $patient_id, 'patient_name' => ($patient_names[$patient_id] ?? '') . " (" . $patient_id . ")",'tpa_apply_status'=>$tpa_apply_status,'ipd_prescription_basic_id'=>$ipd_prescription_basic_id));
     }
 
     public function getReportDetails($id, $parameter_id)
@@ -1595,6 +1736,25 @@ class Pathology extends Admin_Controller
         if (!$this->rbac->hasPrivilege('pathology_test', 'can_delete')) {
             access_denied();
         }
+        // SaaS: release the test report document's storage from the quota and remove the file
+        // before the report row is deleted. The `pathology_report` column may hold either a bare
+        // filename (testReportBatch add) or a full relative path (savetestreport edit) — the dir
+        // resolution below handles both.
+        $saas_report = $this->pathology_model->getPathologyReportByID($id);
+        if (!empty($saas_report) && !empty($saas_report['pathology_report'])) {
+            $report_doc = $saas_report['pathology_report'];
+            $report_dir = (strpos($report_doc, '/') !== false) ? '' : 'uploads/pathology_report';
+            $report_kb  = $this->media_storage->getUploadedFileSize($report_doc, $report_dir);
+            if ($report_kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $report_kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (pathology deleteTestReport id=' . $id . '): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($report_doc, $report_dir);
+        }
+
         $this->pathology_model->deleteTestReport($id);
     }
 
@@ -1618,16 +1778,17 @@ class Pathology extends Admin_Controller
         $data["pathologist"]  = $pathologist;
         $categoryName         = $this->pathology_category_model->getcategoryName();
         $data["categoryName"] = $categoryName;
-        $this->load->view('layout/header');
+        $data['module'] = 'pathology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pathology/pathologyReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
-      
+
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'search_type' => form_error('search_type'),
@@ -1635,12 +1796,12 @@ class Pathology extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'   => $this->input->post('search_type'),
-                'collect_staff' => $this->input->post('collect_staff'),
-                'date_from'     => $this->input->post('date_from'),
-                'date_to'       => $this->input->post('date_to'),
-                'test_name'     => $this->input->post('test_name'),
-                'pathology_category_id'     => $this->input->post('pathology_category_id'),
+                'search_type'           => $this->input->post('search_type', TRUE),
+                'collect_staff'         => $this->input->post('collect_staff', TRUE),
+                'date_from'             => $this->input->post('date_from', TRUE),
+                'date_to'               => $this->input->post('date_to', TRUE),
+                'test_name'             => $this->input->post('test_name', TRUE),
+                'pathology_category_id' => $this->input->post('pathology_category_id', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -1650,17 +1811,17 @@ class Pathology extends Admin_Controller
 
     public function pathologyreports()
     {
-        $search['search_type']   = $this->input->post('search_type');
-        $search['collect_staff'] = $this->input->post('collect_staff');
-        $search['date_from']     = $this->input->post('date_from');
-        $search['date_to']       = $this->input->post('date_to');
+        $search['search_type']   = $this->input->post('search_type', TRUE);
+        $search['collect_staff'] = $this->input->post('collect_staff', TRUE);
+        $search['date_from']     = $this->input->post('date_from', TRUE);
+        $search['date_to']       = $this->input->post('date_to', TRUE);
         $start_date              = '';
         $end_date                = '';
-        
+
         $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-        $condition['pathology_category_id'] = $this->input->post('pathology_category_id');
-        $condition['collect_staff'] = $this->input->post('collect_staff');
-        $condition['test_name']     = $this->input->post('test_name');
+        $condition['pathology_category_id'] = $this->input->post('pathology_category_id', TRUE);
+        $condition['collect_staff'] = $this->input->post('collect_staff', TRUE);
+        $condition['test_name']     = $this->input->post('test_name', TRUE);
         $fields = $this->customfield_model->get_custom_fields('pathology', '', '', 1);
         if ($search['search_type'] == 'period') {
 
@@ -1765,9 +1926,9 @@ class Pathology extends Admin_Controller
 
     public function getPathologyTransaction()
     {
-        $pathology_billing_id  = $this->input->post('id');
+        $pathology_billing_id  = $this->input->post('id', TRUE);
         $pathology_transaction = $this->transaction_model->pathologyPayments($pathology_billing_id);
-        $is_bill               = $this->input->post('is_bill');
+        $is_bill               = $this->input->post('is_bill', TRUE);
         if (isset($is_bill)) {
             $data['is_bill'] = true;
             $data['form_id'] = "add_pathopartial_payment";
@@ -1793,13 +1954,13 @@ class Pathology extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'required|valid_amount');
-        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required');
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload_document');
+        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required|xss_clean');
+        $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'required|valid_amount|xss_clean');
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required|xss_clean');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required|xss_clean');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_upload_document|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -1814,45 +1975,52 @@ class Pathology extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $pathology_billing_id     = $this->input->post('pathology_billing_id');
+            $pathology_billing_id     = $this->input->post('pathology_billing_id', TRUE);
             $pathology_billing_detail = $this->transaction_model->pathologyTotalPayments($pathology_billing_id);
             $net_amount               = $pathology_billing_detail->net_amount;
-            $amount_paying            = $this->input->post('amount');
+            $amount_paying            = $this->input->post('amount', TRUE);
             $total_paid               = $pathology_billing_detail->total_paid;
 
             if ($net_amount >= ($total_paid + $amount_paying)) {
                 $picture         = "";
-                $bill_date       = $this->input->post("payment_date");
+                $bill_date       = $this->input->post("payment_date", TRUE);
                 $payment_section = $this->config->item('payment_section');
                 $payment_array   = array(
-                    'amount'               => $this->input->post('amount'),
+                    'amount'               => $this->input->post('amount', TRUE),
                     'type'                 => 'payment',
-                    'patient_id'           => $this->input->post('patient_id'),
+                    'patient_id'           => $this->input->post('patient_id', TRUE),
                     'section'              => $payment_section['pathology'],
-                    'pathology_billing_id' => $this->input->post('pathology_billing_id'),
-                    'payment_mode'         => $this->input->post('payment_mode'),
-                    'note'                 => $this->input->post('note'),
+                    'pathology_billing_id' => $this->input->post('pathology_billing_id', TRUE),
+                    'payment_mode'         => $this->input->post('payment_mode', TRUE),
+                    'note'                 => $this->input->post('note', TRUE),
                     'payment_date'         => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->customlib->getHospitalTimeFormat()),
                     'received_by'          => $this->customlib->getLoggedInUserID(),
                 );
 
-                if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id');
+                if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
                 }
 
                 $attachment      = "";
                 $attachment_name = "";
 
-                $cheque_date = $this->input->post("cheque_date");
-                if ($this->input->post('payment_mode') == "Cheque") {
+                $cheque_date = $this->input->post("cheque_date", TRUE);
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
 
                     $payment_array['cheque_date'] = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                    $payment_array['cheque_no']   = $this->input->post('cheque_no');
+                    $payment_array['cheque_no']   = $this->input->post('cheque_no', TRUE);
 
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $payment_array['attachment']      = $file_name;
                         $payment_array['attachment_name'] = $_FILES["document"]["name"];
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (pathology partialbill): ' . $e->getMessage());
+                        }
                     }
                 }
 
@@ -1868,7 +2036,7 @@ class Pathology extends Admin_Controller
     public function printTransaction()
     {
         $print_details         = $this->printing_model->get('', 'paymentreceipt');
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
         $charge                = array();
         $transaction           = $this->transaction_model->pathologyPaymentByTransactionId($id);
         $data['transaction']   = $transaction;
@@ -1881,7 +2049,7 @@ class Pathology extends Admin_Controller
     {
         $print_details         = $this->printing_model->get('', 'pathology');
         $data['print_details'] = $print_details;
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
         $data['id']            = $id;
         $result                = $this->pathology_model->getPatientPathologyReportDetails($id);
         $data['result']        = $result;
@@ -1891,7 +2059,7 @@ class Pathology extends Admin_Controller
 
     public function getReportCollectionDetail()
     {
-        $id     = $this->input->post('id');
+        $id     = $this->input->post('id', TRUE);
         $charge = array();
         $pathology_center = $this->lang->line('in_house_pathology_lab');
         $report           = $this->pathology_model->getPathologyReportByID($id);
@@ -1908,10 +2076,10 @@ class Pathology extends Admin_Controller
 
     public function updatecollection()
     {
-        $this->form_validation->set_rules('pathology_report_id', $this->lang->line('report_id'), 'required');
-        $this->form_validation->set_rules('collected_by', $this->lang->line('sample_collected_person_name'), 'required');
-        $this->form_validation->set_rules('collected_date', $this->lang->line('collected_date'), 'required');
-        $this->form_validation->set_rules('pathology_center', $this->lang->line('pathology_center'), 'required');
+        $this->form_validation->set_rules('pathology_report_id', $this->lang->line('report_id'), 'required|xss_clean');
+        $this->form_validation->set_rules('collected_by', $this->lang->line('sample_collected_person_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('collected_date', $this->lang->line('collected_date'), 'required|xss_clean');
+        $this->form_validation->set_rules('pathology_center', $this->lang->line('pathology_center'), 'required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -1925,30 +2093,30 @@ class Pathology extends Admin_Controller
             $doctor_id     = "";
             $doctor_name   = "";
             $payment_array = array(
-                'id'                    => $this->input->post('pathology_report_id'),
-                'collection_specialist' => $this->input->post('collected_by'),
-                'pathology_center'      => $this->input->post('pathology_center'),
-                'collection_date'       => $this->customlib->dateFormatToYYYYMMDD($this->input->post('collected_date')),
+                'id'                    => $this->input->post('pathology_report_id', TRUE),
+                'collection_specialist' => $this->input->post('collected_by', TRUE),
+                'pathology_center'      => $this->input->post('pathology_center', TRUE),
+                'collection_date'       => $this->customlib->dateFormatToYYYYMMDD($this->input->post('collected_date', TRUE)),
             );
             $this->pathology_model->updateTestReport($payment_array);
-            $reportdetails = $this->pathology_model->getPathologyReportByID($this->input->post('pathology_report_id'));
+            $reportdetails = $this->pathology_model->getPathologyReportByID($this->input->post('pathology_report_id', TRUE));
 
-            $test_detail                  = $this->notificationsetting_model->getPathologyBillReportByID($this->input->post('pathology_bill_id'));
-            $sample_collected_person_name = $this->notificationsetting_model->getstaffDetails($this->input->post('collected_by'));
+            $test_detail                  = $this->notificationsetting_model->getPathologyBillReportByID($this->input->post('pathology_bill_id', TRUE));
+            $sample_collected_person_name = $this->notificationsetting_model->getstaffDetails($this->input->post('collected_by', TRUE));
             
             $event_data = array(
                 'patient_id'                   => $reportdetails['patient_id'],
                 'case_id'                      => $test_detail['case_reference_id'],
                 'bill_no'                      => $this->customlib->getSessionPrefixByType('pathology_billing') . $reportdetails['pathology_bill_id'],
-                'collected_date'               => $this->customlib->YYYYMMDDTodateFormat($this->input->post('collected_date')),
+                'collected_date'               => $this->customlib->YYYYMMDDTodateFormat($this->input->post('collected_date', TRUE)),
                 'test_name'                    => $test_detail['test_name'],
                 'sample_collected_person_name' => composeStaffNameByString($sample_collected_person_name['name'], $sample_collected_person_name['surname'], $sample_collected_person_name['employee_id']),
-                'pathology_center'             => $this->input->post('pathology_center'),
+                'pathology_center'             => $this->input->post('pathology_center', TRUE),
                 'expected_date'                => $this->customlib->YYYYMMDDTodateFormat($test_detail['reporting_date']),
             );
-            if ($this->input->post('collected_by') != "") {
+            if ($this->input->post('collected_by', TRUE) != "") {
 
-                $event_data['doctor_id']   = $this->input->post('collected_by');
+                $event_data['doctor_id']   = $this->input->post('collected_by', TRUE);
                 $event_data['doctor_name'] = composeStaffNameByString($sample_collected_person_name['name'], $sample_collected_person_name['surname'], $sample_collected_person_name['employee_id']);
                 $event_data['role_id']     = $sample_collected_person_name['role_id'];
             }
@@ -1962,18 +2130,18 @@ class Pathology extends Admin_Controller
 
     public function updatereportparam()
     {
-        $this->form_validation->set_rules('pathology_report_id', $this->lang->line('report_id'), 'required');
-        $this->form_validation->set_rules('approved_by', $this->lang->line('approved_by'), 'required');
-        $this->form_validation->set_rules('approve_date', $this->lang->line('approve_date'), 'required');
-        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('pathology_report_id', $this->lang->line('report_id'), 'required|xss_clean');
+        $this->form_validation->set_rules('approved_by', $this->lang->line('approved_by'), 'required|xss_clean');
+        $this->form_validation->set_rules('approve_date', $this->lang->line('approve_date'), 'required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
 
-        $rows = $this->input->post('pathology_parameterdetails');
+        $rows = $this->input->post('pathology_parameterdetails', TRUE);
         if (isset($rows) && !empty($rows)) {
             foreach ($rows as $row_key => $row_value) {
-                $input_fields              = $this->input->post('pathology_parameter_' . $row_value);
-                $pathology_reference_range = $this->input->post('pathology_reference_range_' . $row_value);
+                $input_fields              = $this->input->post('pathology_parameter_' . $row_value, TRUE);
+                $pathology_reference_range = $this->input->post('pathology_reference_range_' . $row_value, TRUE);
                 if ($input_fields == "") {
-                    $this->form_validation->set_rules('pathology_parameter', $this->lang->line('pathology_parameter'), 'required');
+                    $this->form_validation->set_rules('pathology_parameter', $this->lang->line('pathology_parameter'), 'required|xss_clean');
                 }               
             }
         }
@@ -1992,27 +2160,27 @@ class Pathology extends Admin_Controller
 
             $insert_array        = array();
             $update_array        = array();
-            $approved_by         = $this->input->post('approved_by');
-            $rows                = $this->input->post('pathology_parameterdetails');
-            $pathology_report_id = $this->input->post('pathology_report_id');
-            $test_result         = $this->input->post('test_result');
+            $approved_by         = $this->input->post('approved_by', TRUE);
+            $rows                = $this->input->post('pathology_parameterdetails', TRUE);
+            $pathology_report_id = $this->input->post('pathology_report_id', TRUE);
+            $test_result         = $this->input->post('test_result', TRUE);
 
-            $approve_date = $this->customlib->dateFormatToYYYYMMDD($this->input->post('approve_date'));
+            $approve_date = $this->customlib->dateFormatToYYYYMMDD($this->input->post('approve_date', TRUE));
             if (!empty($rows)) {
                 foreach ($rows as $row_key => $row_value) {
-                    $prev_id = $this->input->post('prev_id_' . $row_value);
+                    $prev_id = $this->input->post('prev_id_' . $row_value, TRUE);
                     if ($prev_id == 0) {
                         $insert_array[] = array(
                             'pathology_report_id'          => $pathology_report_id,
                             'pathology_parameterdetail_id' => $row_value,
-                            'pathology_report_value'       => $this->input->post('pathology_parameter_' . $row_value),
+                            'pathology_report_value'       => $this->input->post('pathology_parameter_' . $row_value, TRUE),
                         );
                     } else {
                         $update_array[] = array(
                             'id'                           => $prev_id,
                             'pathology_report_id'          => $pathology_report_id,
                             'pathology_parameterdetail_id' => $row_value,
-                            'pathology_report_value'       => $this->input->post('pathology_parameter_' . $row_value),
+                            'pathology_report_value'       => $this->input->post('pathology_parameter_' . $row_value, TRUE),
                         );
                     }
                 }
@@ -2022,27 +2190,50 @@ class Pathology extends Admin_Controller
 
             //==========
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: capture the existing report file for quota diff + cleanup.
+                $saas_existing   = $this->pathology_model->getPathologyReportByID($pathology_report_id);
+                $saas_old_report = (!empty($saas_existing['pathology_report'])) ? $saas_existing['pathology_report'] : '';
+                $saas_old_dir    = (strpos($saas_old_report, '/') !== false) ? '' : 'uploads/pathology_report';
+                $saas_old_kb     = (!empty($saas_old_report)) ? $this->media_storage->getUploadedFileSize($saas_old_report, $saas_old_dir) : 0;
+
                 $file_name = $this->media_storage->fileupload("file",'./uploads/pathology_report/');
-                $data_img = array('id' => $pathology_report_id, 'pathology_report' => 'uploads/pathology_report/' . $file_name, 'report_name' =>$_FILES["file"]['name']);
-                $this->pathology_model->updateTestReport($data_img);
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($saas_old_report)) {
+                        $this->media_storage->filedelete($saas_old_report, $saas_old_dir);
+                    }
+                    $data_img = array('id' => $pathology_report_id, 'pathology_report' => 'uploads/pathology_report/' . $file_name, 'report_name' =>$_FILES["file"]['name']);
+                    $this->pathology_model->updateTestReport($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('file');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pathology report): ' . $e->getMessage());
+                    }
+                }
             }
             //==========
 
-            $reportdetails                = $this->pathology_model->getPathologyReportByID($this->input->post('pathology_report_id'));
-            $test_detail                  = $this->notificationsetting_model->getPathologyBillReportByID($this->input->post('pathology_bill_id'));
-            $approved_by                  = $this->notificationsetting_model->getstaffDetails($this->input->post('approved_by'));            
-            $sample_collected_person_name = $this->notificationsetting_model->getstaffDetails($this->input->post('collected_id'));
+            $reportdetails                = $this->pathology_model->getPathologyReportByID($this->input->post('pathology_report_id', TRUE));
+            $test_detail                  = $this->notificationsetting_model->getPathologyBillReportByID($this->input->post('pathology_bill_id', TRUE));
+            $approved_by                  = $this->notificationsetting_model->getstaffDetails($this->input->post('approved_by', TRUE));            
+            $sample_collected_person_name = $this->notificationsetting_model->getstaffDetails($this->input->post('collected_id', TRUE));
 
             $event_data = array(
                 'patient_id'                   => $reportdetails['patient_id'],
                 'case_id'                      => $test_detail['case_reference_id'],
                 'bill_no'                      => $this->customlib->getSessionPrefixByType('pathology_billing') . $reportdetails['pathology_bill_id'],
-                'collected_date'               => $this->input->post('collected_date'),
+                'collected_date'               => $this->input->post('collected_date', TRUE),
                 'test_name'                    => $test_detail['test_name'],
-                'doctor_id'                    => $this->input->post('approved_by'),
-                'doctor_name'                  => $this->input->post('collected_by'),
-                'sample_collected_person_name' => $this->input->post('collected_by'),
-                'pathology_center'             => $this->input->post('pathalogy_center'),
+                'doctor_id'                    => $this->input->post('approved_by', TRUE),
+                'doctor_name'                  => $this->input->post('collected_by', TRUE),
+                'sample_collected_person_name' => $this->input->post('collected_by', TRUE),
+                'pathology_center'             => $this->input->post('pathalogy_center', TRUE),
                 'expected_date'                => $this->customlib->YYYYMMDDTodateFormat($test_detail['reporting_date']),
                 'approved_by'                  => composeStaffNameByString($approved_by['name'], $approved_by['surname'], $approved_by['employee_id']),
                 'approve_date'                 => $this->customlib->YYYYMMDDTodateFormat($approve_date),
@@ -2053,6 +2244,29 @@ class Pathology extends Admin_Controller
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
         echo json_encode($array);
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    /**
+     * SaaS count pre-check (form_validation callback).
+     * Param format "resource_name,quantity" (e.g. "no_of_pathology,1").
+     * Returns false (blocking the save) when adding the records would push
+     * the tenant over its allowed count. SaasValidation sets the error message.
+     */
+    public function validateCanAddNewResource($input, $resource_name)
+    {
+        list($resource_name, $quantity) = explode(',', $resource_name);
+        return $this->saasvalidation->validateCanAddNewResource($input, $resource_name, $quantity);
     }
 
     public function downloadReport($report_id)
@@ -2106,7 +2320,7 @@ class Pathology extends Admin_Controller
     {
         $print_details         = $this->printing_model->get('', 'pathology');
         $data['print_details'] = $print_details;
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
         $data['id']            = $id;
         $result                = $this->pathology_model->gettestparameterdetails($id);
         $data['head_result']   = $this->pathology_model->getPathologyBillByID($id);
@@ -2129,16 +2343,17 @@ class Pathology extends Admin_Controller
 		$data['agerange']       = $this->agerange;
 		$data['gender']         = $this->customlib->getGender_Patient();
         
-        $this->load->view('layout/header');
+        $data['module'] = 'pathology';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pathology/pathologybalancereport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkPathologyBalanceReportValidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
-      
+
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'search_type' => form_error('search_type'),
@@ -2146,14 +2361,13 @@ class Pathology extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'   => $this->input->post('search_type'),                
-                'date_from'     => $this->input->post('date_from'),
-                'date_to'       => $this->input->post('date_to'),
-                'from_age'     	=> $this->input->post('from_age'),
-                'to_age'     	=> $this->input->post('to_age'),
-                'gender'     	=> $this->input->post('gender'),
-                
-                'miscellaneous' => $this->input->post('miscellaneous'),
+                'search_type'   => $this->input->post('search_type', TRUE),
+                'date_from'     => $this->input->post('date_from', TRUE),
+                'date_to'       => $this->input->post('date_to', TRUE),
+                'from_age'      => $this->input->post('from_age', TRUE),
+                'to_age'        => $this->input->post('to_age', TRUE),
+                'gender'        => $this->input->post('gender', TRUE),
+                'miscellaneous' => $this->input->post('miscellaneous', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -2163,19 +2377,19 @@ class Pathology extends Admin_Controller
 
     public function dtpathologybalancereports()
     {
-        $search['search_type']   	= $this->input->post('search_type');         
-        $search['date_from']     	= $this->input->post('date_from');
-        $search['date_to']       	= $this->input->post('date_to'); 
-		$start_date              = '';
+        $search['search_type']   = $this->input->post('search_type', TRUE);
+        $search['date_from']     = $this->input->post('date_from', TRUE);
+        $search['date_to']       = $this->input->post('date_to', TRUE);
+        $start_date              = '';
         $end_date                = '';
-        
+
         $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
-        
-        $condition['patient_status'] 	= $this->input->post('patient_status');
-        $condition['from_age'] 			= $this->input->post('from_age');
-        $condition['to_age'] 			= $this->input->post('to_age');
-        $condition['gender'] 			= $this->input->post('gender');         
-        $condition['miscellaneous'] 	= $this->input->post('miscellaneous');         
+
+        $condition['patient_status'] = $this->input->post('patient_status', TRUE);
+        $condition['from_age']       = $this->input->post('from_age', TRUE);
+        $condition['to_age']         = $this->input->post('to_age', TRUE);
+        $condition['gender']         = $this->input->post('gender', TRUE);
+        $condition['miscellaneous']  = $this->input->post('miscellaneous', TRUE);         
 		
         $fields = $this->customfield_model->get_custom_fields('pathology', '', '', 1);
         if ($search['search_type'] == 'period') {
@@ -2269,8 +2483,8 @@ class Pathology extends Admin_Controller
 				$total_tax_amt += $tax_amt;				
 				
                 $row[]     = number_format($tax_amt, 2) .'('. $value->tax_percentage.'%)'; 				
-                $row[]     = number_format($value->net_amount, 2);
-                $row[]     = number_format($value->paid_amount, 2);
+                $row[]     = number_format((float) $value->net_amount, 2);
+                $row[]     = number_format((float) $value->paid_amount, 2);
                 $row[]     = number_format($balance_amount, 2);                 
                 
                 $dt_data[] = $row;

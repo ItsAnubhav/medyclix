@@ -18,39 +18,28 @@ class Holiday_model extends MY_model {
             $action    = "Update";
             $record_id = $data['id'];
             $this->log($message, $record_id, $action);
-            //======================Code End==============================
-
-            $this->db->trans_complete(); # Completing transaction
-            /* Optional */
-
-            if ($this->db->trans_status() === false) {
-                # Something went wrong.
-                $this->db->trans_rollback();
-                return false;
-            } else {
-                
-            }
+           
         } else {            
             $this->db->insert('annual_calendar', $data);
             $id        = $this->db->insert_id();
             $message   = INSERT_RECORD_CONSTANT . " On  holiday master  id " . $id;
             $action    = "Insert";
             $record_id = $id;
-            $this->log($message, $record_id, $action);
-            //======================Code End==============================
-
-            $this->db->trans_complete(); # Completing transaction
-            /* Optional */
-
-            if ($this->db->trans_status() === false) {
-                # Something went wrong.
-                $this->db->trans_rollback();
-                return false;
-            } else {
-                
-            }
-            return $id;
+            $this->log($message, $record_id, $action);          
         }
+		
+		 //======================Code End==============================
+
+		$this->db->trans_complete(); # Completing transaction
+		/* Optional */
+	
+		if ($this->db->trans_status() === false) {
+			# Something went wrong.
+			$this->db->trans_rollback();
+			return false;
+		} else {
+			return $record_id;
+		}
     }
 
     public function get($id = null,$holidaylist = null) 
@@ -61,7 +50,7 @@ class Holiday_model extends MY_model {
         $this->db->select("staff.name,staff.surname,staff.employee_id,annual_calendar.id,annual_calendar.holiday_type,annual_calendar.from_date,annual_calendar.to_date,annual_calendar.description,annual_calendar.is_active,annual_calendar.created_by,annual_calendar.created_at,annual_calendar.updated_at,annual_calendar.front_site,staff_roles.role_id");
         $this->db->from('annual_calendar');
         $this->db->join('staff', "staff.id = annual_calendar.created_by", "left");
-        $this->db->join('staff_roles', "staff_roles.staff_id = staff.id");
+        $this->db->join('staff_roles', "staff_roles.staff_id = staff.id", "left");
            
         if ($id != null) {
             $this->db->where("annual_calendar.id", $id);
@@ -105,7 +94,7 @@ class Holiday_model extends MY_model {
             $this->db->trans_rollback();
             return false;
         } else {
-            
+            return $record_id;
         }
     }
    

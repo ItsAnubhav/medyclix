@@ -2,27 +2,18 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList      = $this->customlib->getGender();
 ?>
-<style type="text/css">
-    #easySelectable {/*display: flex; flex-wrap: wrap;*/}
-    #easySelectable li {}
-    #easySelectable li.es-selected {background: #2196F3; color: #fff;}
-    .easySelectable {-webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;}
-</style>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('ambulance_call_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('ambulance_call_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('ambulance_call', 'can_add')) {?>
-                                <a data-toggle="modal" onclick="holdModal('callModal')" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add') . " " . $this->lang->line('ambulance_call'); ?></a>
+                                <a data-bs-toggle="modal" onclick="holdModal('callModal')" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add') . " " . $this->lang->line('ambulance_call'); ?></a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('ambulance_call_list'); ?></div>
                         <table class="table table-striped table-bordered table-hover example" cellspacing="0" width="100%">
                             <thead>
@@ -34,7 +25,7 @@ $genderList      = $this->customlib->getGender();
                                     <th><?php echo $this->lang->line('driver_name'); ?></th>
                                     <th><?php echo $this->lang->line('address'); ?></th>
                                     <th><?php echo $this->lang->line('date'); ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -52,12 +43,12 @@ $genderList      = $this->customlib->getGender();
                                                     <?php
 if ($this->rbac->hasPrivilege('ambulance_call', 'can_edit')) {
             ?>
-                                                        <a href="#" onclick="getRecord('<?php echo $data['id'] ?>')" class="btn btn-default btn-xs" data-target="#editModal" data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                        <a href="#" onclick="getRecord('<?php echo $data['id'] ?>')" class="btn btn-secondary btn-sm" data-bs-target="#editModal" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                             <i class="fa fa-pencil"></i>
                                                         </a>
                                                     <?php }?>
                                                     <?php if ($this->rbac->hasPrivilege('ambulance_call', 'can_delete')) {?>
-                                                        <a class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordById('<?php echo base_url(); ?>admin/vehicle/deletecallambulance/<?php echo $data['id'] ?>', '<?php echo $this->lang->line('delete_message') ?>')">
+                                                        <a class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordById('<?php echo base_url(); ?>admin/vehicle/deletecallambulance/<?php echo $data['id'] ?>', '<?php echo $this->lang->line('delete_message') ?>')">
                                                             <i class="fa fa-trash"></i>
                                                         </a>
                                                     <?php }?>
@@ -69,7 +60,7 @@ if ($this->rbac->hasPrivilege('ambulance_call', 'can_edit')) {
                                             <td><?php echo $data['driver']; ?></td>
                                             <td><?php echo $data['address']; ?></td>
                                             <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($data['date'])); ?></td>
-                                            <td class="text-right"><?php echo $data['amount']; ?></td>
+                                            <td class="text-end"><?php echo $data['amount']; ?></td>
                                         </tr>
                                         <?php
 $count++;
@@ -82,23 +73,21 @@ $count++;
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div class="modal fade" id="callModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"><?php echo $this->lang->line('ambulance_call'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="callModal" tabindex="-1" aria-labelledby="callModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="callModalLabel"><?php echo $this->lang->line('ambulance_call'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formcall" method="post" accept-charset="utf-8">
-                <div class="modal-body pt0 pb0">
+                <div class="modal-body">
                     <div class="row">
-                        <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
-                            <div class="box-body">
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            <div class="row g-3">
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('vehicle_model'); ?></label><small class="req"> *</small>
                                         <select name="vehicle_no" class="form-control" onchange="getVehicleDetail(this.value)">
                                             <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -111,46 +100,47 @@ $count++;
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('driver_name'); ?></label>
                                         <input name="driver" id="driver_search" type="text" class="form-control" />
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?></label><small class="req"> *</small>
                                         <input name="date" type="text" class="form-control datetime" />
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></label><small class="req"> *</small>
                                         <input name="amount" type="text" class="form-control" />
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('patient') . " " . $this->lang->line('name'); ?></label><small class="req"> *</small>
                                         <input  name="patient_name" type="text" class="form-control"/>
                                         <span class="text-danger"><?php echo form_error('patient_name'); ?></span>
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('contact') . " " . $this->lang->line('no'); ?></label>
                                         <input name="contact_no"  type="text" class="form-control"  />
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('address'); ?></label>
                                         <textarea class="form-control" name="address" row='2' placeholder=""></textarea>
                                     </div>
                                 </div>
                             </div>
-                        </div>    
+                        </div>
                             <div class="modal-footer">
-                                <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="formcallbtn" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                                <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="formcallbtn" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
                             </div>
                 </form>
                 </div>
@@ -158,20 +148,21 @@ $count++;
         </div>
     </div>
 </div>
-<div class="modal fade" id="editModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="box-title"><?php echo $this->lang->line('ambulance_call'); ?></h4>
+
+<div class="modal fade sh-modal sh-modal-accent" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel"><?php echo $this->lang->line('ambulance_call'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formedit" method="post" accept-charset="utf-8">
-            <div class="modal-body pt0 pb0">
+            <div class="modal-body">
                 <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12 paddlr">
-                            <div class="box-body">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                            <div class="row g-3">
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('vehicle_no'); ?></label><small class="req"> *</small>
                                         <select name="vehicle_no" id="vehicle_no" class="form-control" onchange="getVehicleDetail(this.value, 'vehicle_model', 'driver_name')">
                                             <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -185,25 +176,25 @@ $count++;
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('driver_name'); ?></label>
                                         <input name="driver_name" id="driver_name" type="text" class="form-control" value="<?php echo set_value('vehicle_model'); ?>"/>
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?></label><small class="req"> *</small>
                                         <input name="date" id="edit_date" type="text" class="form-control datetime" value="<?php echo set_value('amount'); ?>"/>
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?> <small class="req"> *</small></label>
                                         <input name="amount" id="amount" type="text" class="form-control" value="<?php echo set_value('amount'); ?>"/>
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <input name="id" id="id" type="hidden" class="form-control" value="<?php echo set_value('id'); ?>" />
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('patient') . " " . $this->lang->line('name'); ?></label><small class="req"> *</small>
                                         <input name="patient_name" id="patient_name" type="text" class="form-control" value="<?php echo set_value('patient_name'); ?>"/>
@@ -211,21 +202,22 @@ $count++;
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('contact') . " " . $this->lang->line('no'); ?></label>
                                         <input name="contact_no" id="contact_no" type="text" class="form-control" value="<?php echo set_value('contact_no'); ?>" />
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('address'); ?></label>
                                         <textarea class="form-control" name="address" id="address" row='2'><?php echo set_value('address'); ?></textarea>
                                     </div>
                                 </div>
                             </div>
-                        </div>    
+                        </div>
                             <div class="modal-footer">
-                                <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="formeditbtn" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                                <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="formeditbtn" class="btn btn-info"><?php echo $this->lang->line('save'); ?></button>
                             </div>
                         </form>
                 </div>
@@ -316,7 +308,7 @@ $count++;
 
             $(document).ready(function (e) {
                 $("#formcall").on('submit', (function (e) {
-                    $("#formcallbtn").button('loading');
+                    $("#formcallbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/vehicle/addCallAmbulance',
@@ -337,7 +329,7 @@ $count++;
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formcallbtn").button('reset');
+                            $("#formcallbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -345,7 +337,7 @@ $count++;
                 }));
             });
             function getRecord(id) {
-                $('#editModal').modal('show');
+                shModal('editModal').show();
                 $.ajax({
                     url: '<?php echo base_url(); ?>admin/vehicle/editCall',
                     type: "POST",
@@ -381,7 +373,7 @@ $count++;
 
             $(document).ready(function (e) {
                 $("#formedit").on('submit', (function (e) {
-                    $("#formeditbtn").button('loading');
+                    $("#formeditbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/vehicle/updatecallambulance',
@@ -402,7 +394,7 @@ $count++;
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formeditbtn").button('reset');
+                            $("#formeditbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -412,11 +404,7 @@ $count++;
 
             function holdModal(modalId) {
 
-                $('#' + modalId).modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                    show: true
-                });
+                (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
             }
 
 </script>

@@ -6,11 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Mailsms extends Admin_Controller
 {
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->load->library('smsgateway');
+        $this->load->library('mailgateway');
         $this->load->library('mailsmsconf');
         $this->load->library('datatables');
         $this->config->load("payroll");
@@ -52,9 +56,10 @@ class Mailsms extends Admin_Controller
         $data["searchlist"]  = $this->search_type;
         $data["search_type"] = $search_type;
 
-        $this->load->view('layout/header');
+        $data['module'] = 'reports';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/mailsms/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
@@ -194,9 +199,10 @@ class Mailsms extends Admin_Controller
             }
         }
         $data['roles'] = $this->role_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'messaging';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/mailsms/compose', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function composemail()
@@ -217,9 +223,10 @@ class Mailsms extends Admin_Controller
         }
 
         $data['roles'] = $this->role_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'messaging';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/mailsms/composeemail', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function edit($id)
@@ -233,9 +240,10 @@ class Mailsms extends Admin_Controller
         $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'messaging';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/mailsms/edit', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $manufacture_year = $this->input->post('manufacture_year');
             $data             = array(
@@ -262,11 +270,11 @@ class Mailsms extends Admin_Controller
     }
 
     public function send_individual_mail()
-    {      
-        $this->form_validation->set_rules('individual_title', $this->lang->line('title'), 'required');
-        $this->form_validation->set_rules('individual_message', $this->lang->line('message'), 'required');
-        $this->form_validation->set_rules('user_list', $this->lang->line('recipient'), 'required');
-        $this->form_validation->set_rules('individual_send_by', $this->lang->line('send_through'), 'required');
+    {
+        $this->form_validation->set_rules('individual_title', $this->lang->line('title'), 'required|xss_clean');
+        $this->form_validation->set_rules('individual_message', $this->lang->line('message'), 'required|xss_clean');
+        $this->form_validation->set_rules('user_list', $this->lang->line('recipient'), 'required|xss_clean');
+        $this->form_validation->set_rules('individual_send_by', $this->lang->line('send_through'), 'required|xss_clean');
         if ($this->form_validation->run()) {
             $userlisting = json_decode($this->input->post('user_list'));
             $user_array  = array();
@@ -282,7 +290,7 @@ class Mailsms extends Admin_Controller
                 $user_array[] = $array;
             }
 
-            $sms_mail = $this->input->post('individual_send_by');
+            $sms_mail = $this->input->post('individual_send_by', TRUE);
             if ($sms_mail == "sms") {
                 $send_sms  = 1;
                 $send_mail = 0;
@@ -291,8 +299,8 @@ class Mailsms extends Admin_Controller
                 $send_mail = 1;
             }
 
-            $message       = $this->input->post('individual_message');
-            $message_title = $this->input->post('individual_title');
+            $message       = $this->input->post('individual_message', TRUE);
+            $message_title = $this->input->post('individual_title', TRUE);
             $data          = array(
                 'is_individual' => 1,
                 'title'         => $message_title,
@@ -310,7 +318,7 @@ class Mailsms extends Admin_Controller
                     if (!empty($this->mail_config)) {
                         foreach ($user_array as $user_mail_key => $user_mail_value) {
                             if ($user_mail_value['email'] != "") {
-                                $this->mailer->send_mail($user_mail_value['email'], $message_title, $message, $_FILES);
+                                $this->mailgateway->sentMail('compose_mail', $user_mail_value['email'], $message_title, $message, 0, $_FILES);
                             }
                         }
                     }
@@ -319,7 +327,7 @@ class Mailsms extends Admin_Controller
                 if ($send_sms) {
                     foreach ($user_array as $user_mail_key => $user_mail_value) {
                         if ($user_mail_value['mobileno'] != "") {
-                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message));
+                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), '', 'compose_sms');
                         }
                     }
                 }
@@ -340,12 +348,12 @@ class Mailsms extends Admin_Controller
     }
 
     public function send_individual_sms()
-    {      
-        $this->form_validation->set_rules('individual_title', $this->lang->line('title'), 'required');
-        $this->form_validation->set_rules('individual_message', $this->lang->line('message'), 'required');
-        $this->form_validation->set_rules('user_list', $this->lang->line('recipient'), 'required');
-        $this->form_validation->set_rules('individual_send_by[]', $this->lang->line('send_through'), 'required');
-        $template_id = $this->input->post('individual_template_id');
+    {
+        $this->form_validation->set_rules('individual_title', $this->lang->line('title'), 'required|xss_clean');
+        $this->form_validation->set_rules('individual_message', $this->lang->line('message'), 'required|xss_clean');
+        $this->form_validation->set_rules('user_list', $this->lang->line('recipient'), 'required|xss_clean');
+        $this->form_validation->set_rules('individual_send_by[]', $this->lang->line('send_through'), 'required|xss_clean');
+        $template_id = $this->input->post('individual_template_id', TRUE);
         if ($this->form_validation->run()) {
             $userlisting = json_decode($this->input->post('user_list'));
 
@@ -361,12 +369,12 @@ class Mailsms extends Admin_Controller
                 $user_array[] = $array;
             }
 
-            $sms_mail       = $this->input->post('individual_send_by[]');
+            $sms_mail       = $this->input->post('individual_send_by[]', TRUE);
             $send_mail      = in_array('mail', $sms_mail) ? 1 : 0;
             $send_sms       = in_array('sms', $sms_mail) ? 1 : 0;
             $send_mobileapp = in_array('push', $sms_mail) ? 1 : 0;
-            $message        = $this->input->post('individual_message');
-            $message_title  = $this->input->post('individual_title');
+            $message        = $this->input->post('individual_message', TRUE);
+            $message_title  = $this->input->post('individual_title', TRUE);
             $data           = array(
                 'is_individual' => 1,
                 'title'         => $message_title,
@@ -384,7 +392,7 @@ class Mailsms extends Admin_Controller
                     if (!empty($this->mail_config)) {
                         foreach ($user_array as $user_mail_key => $user_mail_value) {
                             if ($user_mail_value['email'] != "") {
-                                $this->mailer->send_mail($user_mail_value['email'], $message_title, $message);
+                                $this->mailgateway->sentMail('compose_mail', $user_mail_value['email'], $message_title, $message);
                             }
                         }
                     }
@@ -396,7 +404,7 @@ class Mailsms extends Admin_Controller
 
                         if ($user_mail_value['mobileno'] != "") {
 
-                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), $template_id);
+                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), $template_id, 'compose_sms');
                         }
                     }
                 }
@@ -428,19 +436,19 @@ class Mailsms extends Admin_Controller
 
     public function send_group_sms()
     {
-        $this->form_validation->set_rules('group_title', $this->lang->line('title'), 'required');
-        $this->form_validation->set_rules('group_message', $this->lang->line('message'), 'required');
-        $this->form_validation->set_rules('user[]', $this->lang->line('message_to'), 'required');
-        $this->form_validation->set_rules('group_send_by[]', $this->lang->line('send_through'), 'required');
+        $this->form_validation->set_rules('group_title', $this->lang->line('title'), 'required|xss_clean');
+        $this->form_validation->set_rules('group_message', $this->lang->line('message'), 'required|xss_clean');
+        $this->form_validation->set_rules('user[]', $this->lang->line('message_to'), 'required|xss_clean');
+        $this->form_validation->set_rules('group_send_by[]', $this->lang->line('send_through'), 'required|xss_clean');
         if ($this->form_validation->run()) {
             $user_array     = array();
-            $template_id    = $this->input->post('group_template_id');
-            $sms_mail       = $this->input->post('group_send_by[]');
+            $template_id    = $this->input->post('group_template_id', TRUE);
+            $sms_mail       = $this->input->post('group_send_by[]', TRUE);
             $send_mail      = in_array('mail', $sms_mail) ? 1 : 0;
             $send_sms       = in_array('sms', $sms_mail) ? 1 : 0;
             $send_mobileapp = in_array('push', $sms_mail) ? 1 : 0;
-            $message        = $this->input->post('group_message');
-            $message_title  = $this->input->post('group_title');
+            $message        = $this->input->post('group_message', TRUE);
+            $message_title  = $this->input->post('group_title', TRUE);
             $data           = array(
                 'is_group'    => 1,
                 'title'       => $message_title,
@@ -452,7 +460,7 @@ class Mailsms extends Admin_Controller
             );
 
             $this->messages_model->add($data);
-            $userlisting = $this->input->post('user[]');
+            $userlisting = $this->input->post('user[]', TRUE);
 
             foreach ($userlisting as $users_key => $users_value) {
                 if ($users_value == "patient") {
@@ -492,7 +500,7 @@ class Mailsms extends Admin_Controller
                     if (!empty($this->mail_config)) {
                         foreach ($user_array as $user_mail_key => $user_mail_value) {
                             if ($user_mail_value['email'] != "") {
-                                $this->mailer->send_mail($user_mail_value['email'], $message_title, $message);
+                                $this->mailgateway->sentMail('compose_mail', $user_mail_value['email'], $message_title, $message);
                             }
                         }
                     }
@@ -501,7 +509,7 @@ class Mailsms extends Admin_Controller
                 if ($send_sms) {
                     foreach ($user_array as $user_mail_key => $user_mail_value) {
                         if ($user_mail_value['mobileno'] != "") {
-                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), $template_id);
+                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), $template_id, 'compose_sms');
                         }
                     }
                 }
@@ -535,12 +543,12 @@ class Mailsms extends Admin_Controller
 
     public function send_group_mail()
     {
-        $this->form_validation->set_rules('group_title', $this->lang->line('title'), 'required');
-        $this->form_validation->set_rules('group_message', $this->lang->line('message'), 'required');
-        $this->form_validation->set_rules('user[]', $this->lang->line('message_to'), 'required');
+        $this->form_validation->set_rules('group_title', $this->lang->line('title'), 'required|xss_clean');
+        $this->form_validation->set_rules('group_message', $this->lang->line('message'), 'required|xss_clean');
+        $this->form_validation->set_rules('user[]', $this->lang->line('message_to'), 'required|xss_clean');
         if ($this->form_validation->run()) {
             $user_array = array();
-            $sms_mail   = $this->input->post('group_send_by');
+            $sms_mail   = $this->input->post('group_send_by', TRUE);
             if ($sms_mail == "sms") {
                 $send_sms  = 1;
                 $send_mail = 0;
@@ -548,8 +556,8 @@ class Mailsms extends Admin_Controller
                 $send_sms  = 0;
                 $send_mail = 1;
             }
-            $message       = $this->input->post('group_message');
-            $message_title = $this->input->post('group_title');
+            $message       = $this->input->post('group_message', TRUE);
+            $message_title = $this->input->post('group_title', TRUE);
             $data          = array(
                 'is_group'   => 1,
                 'title'      => $message_title,
@@ -561,7 +569,7 @@ class Mailsms extends Admin_Controller
             );
 
             $this->messages_model->add($data);
-            $userlisting = $this->input->post('user[]');
+            $userlisting = $this->input->post('user[]', TRUE);
             foreach ($userlisting as $users_key => $users_value) {
                 if ($users_value == "patient") {
                     $patient_array = $this->patient_model->getPatientEmail();
@@ -600,7 +608,7 @@ class Mailsms extends Admin_Controller
                     if (!empty($this->mail_config)) {
                         foreach ($user_array as $user_mail_key => $user_mail_value) {
                             if ($user_mail_value['email'] != "") {
-                                $this->mailer->send_mail($user_mail_value['email'], $message_title, $message, $_FILES);
+                                $this->mailgateway->sentMail('compose_mail', $user_mail_value['email'], $message_title, $message, 0, $_FILES);
                             }
                         }
                     }
@@ -609,7 +617,7 @@ class Mailsms extends Admin_Controller
                 if ($send_sms) {
                     foreach ($user_array as $user_mail_key => $user_mail_value) {
                         if ($user_mail_value['mobileno'] != "") {
-                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message));
+                            $this->smsgateway->sendSMS($user_mail_value['mobileno'], strip_tags($message), '', 'compose_sms');
                         }
                     }
                 }
@@ -627,6 +635,13 @@ class Mailsms extends Admin_Controller
 
             echo json_encode(array('status' => 1, 'msg' => $data));
         }
+    }
+
+    public function deleteall()
+    {
+        $this->report_model->deleteMailSMSLog();
+        $return = array('status' => 1, 'msg' => $this->lang->line('data_deleted_successfully'));
+        echo json_encode($return);
     }
 
 }

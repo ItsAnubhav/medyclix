@@ -22,6 +22,7 @@ class Language extends Admin_Controller
         $json_languages        = json_decode($selected_lang[0]['languages']);
         $data['selected_lang'] = $json_languages;
         $data['languagelist']  = $language_result;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/language/languageList', $data);
         $this->load->view('layout/footer', $data);
@@ -32,6 +33,7 @@ class Language extends Admin_Controller
         $data['title']    = $this->lang->line('language_list');
         $language         = $this->language_model->get($id);
         $data['language'] = $language;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/language/sectionShow', $data);
         $this->load->view('layout/footer', $data);
@@ -39,10 +41,10 @@ class Language extends Admin_Controller
 
     public function editlanguage()
     {
-        $recordid      = $this->input->post('recordid');
-        $key_id        = $this->input->post('key_id');
-        $languageid    = $this->input->post('langid');
-        $pharses_value = $this->input->post('value');
+        $recordid      = $this->input->post('recordid', TRUE);
+        $key_id        = $this->input->post('key_id', TRUE);
+        $languageid    = $this->input->post('langid', TRUE);
+        $pharses_value = $this->input->post('value', TRUE);
         if ($recordid == 0 && $pharses_value == "") {
 
         } else if ($recordid > 0) {
@@ -120,7 +122,7 @@ class Language extends Admin_Controller
         $data['title'] = 'Add Language';
         $this->form_validation->set_rules(
             'language', $this->lang->line('language'), array(
-                'required',
+                'required', 'xss_clean',
                 array('check_exists', array($this->language_model, 'valid_check_exists')),
             )
         );
@@ -131,16 +133,16 @@ class Language extends Admin_Controller
             $msg        = array('language' => form_error('language'), 'short_code' => form_error('short_code'), 'country_code' => form_error('country_code'));
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $directory = APPPATH . '/language/' . $this->input->post('language');
+            $directory = APPPATH . '/language/' . $this->input->post('language', TRUE);
             if (!is_dir($directory)) {
                 mkdir($directory, 0777);
                 $fromDir = APPPATH . '/language/English';
                 $this->copydirr($fromDir, $directory, $chmod = 0757, $verbose = false);
             }
             $data = array(
-                'language'     => $this->input->post('language'),
-                'short_code'   => $this->input->post('short_code'),
-                'country_code' => $this->input->post('country_code'),
+                'language'     => $this->input->post('language', TRUE),
+                'short_code'   => $this->input->post('short_code', TRUE),
+                'country_code' => $this->input->post('country_code', TRUE),
             );
             $this->language_model->add($data);
             $json_array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -157,11 +159,11 @@ class Language extends Admin_Controller
         $data['language_pharses'] = $language_pharses;
         $data['id']               = $id;
         if ($this->input->server('REQUEST_METHOD') == 'POST') {
-            $ar = $this->input->post('i[]');
+            $ar = $this->input->post('i[]', TRUE);
             foreach ($ar as $key => $a) {
-                $pharsesid     = $this->input->post('pharsesid' . $a);
-                $pharses_value = $this->input->post('pharses' . $a);
-                $languageid    = $this->input->post('languageid');
+                $pharsesid     = $this->input->post('pharsesid' . $a, TRUE);
+                $pharses_value = $this->input->post('pharses' . $a, TRUE);
+                $languageid    = $this->input->post('languageid', TRUE);
                 if ($pharsesid == 0 && $pharses_value == "") {
 
                 } else if ($pharsesid > 0) {
@@ -174,6 +176,7 @@ class Language extends Admin_Controller
             }
             redirect('admin/language/addPharses/' . $languageid);
         } else {
+            $data['module'] = 'setup';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/language/addPharse', $data);
             $this->load->view('layout/footer', $data);
@@ -188,13 +191,14 @@ class Language extends Admin_Controller
         $data['section'] = $section;
         $this->form_validation->set_rules('section', $this->lang->line('language'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'setup';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/language/sectionEdit', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
                 'id'      => $id,
-                'section' => $this->input->post('section'),
+                'section' => $this->input->post('section', TRUE),
             );
             $this->language_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-center">' . $this->lang->line('update_message') . '</div>');
@@ -554,24 +558,29 @@ class Language extends Admin_Controller
 
     public function user_language($lang_id)
     {
-        $session                                              = $this->session->userdata('hospitaladmin');        
-        $id                                                   = $session['id'];
-        $data['lang_id']                                      = $lang_id;
-        $language_result                                      = $this->language_model->set_userlang($id, $data);
-        $id                                                   = $session['id'];        
-        $lang_data                                            = $this->language_model->get($lang_id);		
-        $this->session->userdata['hospitaladmin']['language'] = array('lang_id' => $lang_id, 'language' => $lang_data['language']);         
-        $this->session->userdata['hospitaladmin']['is_rtl']     = $lang_data['is_rtl'];      
-        
-        set_language($lang_id);
+        $session   = $this->session->userdata('hospitaladmin');
+        $id        = $session['id'];
+        $lang_data = $this->language_model->get($lang_id);
+
+        // Save preference to DB
+        $this->language_model->set_userlang($id, array('lang_id' => $lang_id));
+
+        // Persist language + RTL flag into session correctly (CI3 requires set_userdata)
+        $session['language'] = array('lang_id' => $lang_id, 'language' => $lang_data['language']);
+        $session['is_rtl']   = $lang_data['is_rtl'];
+        $this->session->set_userdata('hospitaladmin', $session);
+
+        // Return user to the page they came from, or fall back to dashboard
+        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : base_url('admin/admin/dashboard');
+        redirect($referer);
     }
 
     public function rtl()
     {
         $session= $this->session->userdata('hospitaladmin');      
-        $id     = $this->input->post('id');
-        $status = $this->input->post('status');
-        
+        $id     = $this->input->post('id', TRUE);
+        $status = $this->input->post('status', TRUE);
+
         if ($id != '') {
             $data['id']     = $id;
             

@@ -1,87 +1,56 @@
-<div class="content-wrapper">
-
-
-    <section class="content">
-        <div class="row">
-
-
-            <div class="col-md-12">
-                <!-- Custom Tabs (Pulled to the right) -->
-                <div class="nav-tabs-custom">
-                    <ul class="nav nav-tabs">
-
-                        <li class="active"><a href="#" ><?php echo $this->lang->line('change_password'); ?></a></li>
-                        <li ><a href="<?php echo site_url('user/user/changeusername') ?>" ><?php echo $this->lang->line('change_username'); ?></a></li>
-
-
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="tab_1-1">
-                            <form action="<?php echo site_url('user/user/changepass') ?>"  id="passwordform" name="passwordform" method="post" data-parsley-validate="" class="form-horizontal form-label-left" novalidate="">
-                                <?php if ($this->session->flashdata('success_msg')) { ?>
-                                    <?php echo $this->session->flashdata('success_msg')  ?>
-                                <?php } ?>                       
-                                <?php
-                                if ($this->session->flashdata('error_msg')) {
-                                    echo $this->session->flashdata('error_msg');
-                                }
-                                ?>
-                                <?php echo $this->customlib->getCSRF(); ?>
-                                <div class="form-group <?php
-                                if (form_error('current_pass')) {
-                                    echo 'has-error';
-                                }
-                                ?>">
-                                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="first-name"><?php echo $this->lang->line('current_password') . "<font style='color:#fc2d42'> *</font>"; ?>
-                                    </label>
-                                    <div class="col-md-6 col-sm-6 col-xs-12">
-                                        <input  name="current_pass" required="required" class="form-control col-md-7 col-xs-12" type="password"  value="<?php echo set_value('current_password'); ?>">
-
-                                    </div>
-                                </div>
-                                <div class="form-group <?php
-                                if (form_error('new_pass')) {
-                                    echo 'has-error';
-                                }
-                                ?>">
-                                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="first-name"><?php echo $this->lang->line('new_password') . "<font style='color:#fc2d42'> *</font>"; ?>
-                                    </label>
-                                    <div class="col-md-6 col-sm-6 col-xs-12">
-                                        <input   required="required" class="form-control col-md-7 col-xs-12" name="new_pass" placeholder="" type="password"  value="<?php echo set_value('new_password'); ?>">
-
-                                    </div>
-                                </div>
-                                <div class="form-group <?php
-                                if (form_error('confirm_pass')) {
-                                    echo 'has-error';
-                                }
-                                ?>">
-                                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="first-name"><?php echo $this->lang->line('confirm_password') . "<font style='color:#fc2d42'> *</font>"; ?>
-                                    </label>
-                                    <div class="col-md-6 col-sm-6 col-xs-12">
-                                        <input id="confirm_pass" name="confirm_pass" placeholder="" type="password"  value="<?php echo set_value('confirm_password'); ?>" class="form-control col-md-7 col-xs-12" >
-
-                                    </div>
-                                </div>
-                                <div class="box-footer">
-                                    <div class="form-group">
-                                        <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
-
-                                            <button type="submit" class="btn btn-info"><?php echo $this->lang->line('change_password'); ?></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <!-- /.tab-pane -->
-
-                    </div>
-                    <!-- /.tab-content -->
-                </div>
-                <!-- nav-tabs-custom -->
+<div class="row">
+    <div class="col-md-8 col-lg-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title titlefix"><?php echo $this->lang->line('change_password'); ?></h3>
             </div>
-            <!-- /.col -->
-        </div>
+            <ul class="nav nav-tabs px-3 pt-2 border-bottom-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="<?php echo site_url('user/user/changepass'); ?>"><?php echo $this->lang->line('change_password'); ?></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo site_url('user/user/changeusername'); ?>"><?php echo $this->lang->line('change_username'); ?></a>
+                </li>
+            </ul>
+            <div class="card-body">
+                <?php if ($this->session->flashdata('success_msg')) { ?>
+                    <div class="alert alert-success"><?php echo $this->session->flashdata('success_msg'); ?></div>
+                <?php } ?>
+                <?php if ($this->session->flashdata('error_msg')) { ?>
+                    <div class="alert alert-danger"><?php echo $this->session->flashdata('error_msg'); ?></div>
+                <?php } ?>
 
-    </section>
+                <form action="<?php echo site_url('user/user/changepass'); ?>" id="passwordform" name="passwordform" method="post" novalidate>
+                    <?php echo $this->customlib->getCSRF(); ?>
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><i class="fa fa-lock me-1 opacity-75"></i><?php echo $this->lang->line('details'); ?></span>
+                        </div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="mb-3 col-12">
+                                    <label class="form-label" for="current_pass"><?php echo $this->lang->line('current_password'); ?></label><small class="req"> *</small>
+                                    <input id="current_pass" name="current_pass" type="password" required class="form-control" value="<?php echo set_value('current_password'); ?>">
+                                    <span class="text-danger small"><?php echo form_error('current_pass'); ?></span>
+                                </div>
+                                <div class="mb-3 col-12">
+                                    <label class="form-label" for="new_pass"><?php echo $this->lang->line('new_password'); ?></label><small class="req"> *</small>
+                                    <input id="new_pass" name="new_pass" type="password" required class="form-control" value="<?php echo set_value('new_password'); ?>">
+                                    <span class="text-danger small"><?php echo form_error('new_pass'); ?></span>
+                                </div>
+                                <div class="mb-3 col-12">
+                                    <label class="form-label" for="confirm_pass"><?php echo $this->lang->line('confirm_password'); ?></label><small class="req"> *</small>
+                                    <input id="confirm_pass" name="confirm_pass" type="password" class="form-control" value="<?php echo set_value('confirm_password'); ?>">
+                                    <span class="text-danger small"><?php echo form_error('confirm_pass'); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('change_password'); ?></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>

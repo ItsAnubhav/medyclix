@@ -14,13 +14,16 @@ class Paymentgateway {
     }
 
     function sentRegisterMail($id, $send_to) {
-
-
         if (!empty($this->_CI->mail_config) && $send_to != "") {
             $subject = "New Registration";
-            $msg = $this->getStudentRegistrationContent($id);
+            $msg = $this->getRegistrationContent($id);
             $this->_CI->mailer->send_mail($send_to, $subject, $msg);
         }
+    }
+
+    private function getRegistrationContent($id)
+    {
+        return '';
     }
 
 }

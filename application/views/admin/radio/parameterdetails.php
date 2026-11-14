@@ -1,10 +1,10 @@
 <table class="table table-striped table-bordered table-hover" id="tableID">
     <thead>
-        <tr style="font-size: 13px">           
-            <th><?php echo $this->lang->line('test') . " " .$this->lang->line('parameter') . " " . $this->lang->line('name'); ?><small class="req" style="color:red;"> *</small></th>
-            <th><?php echo $this->lang->line('refference') . " " . $this->lang->line('range'); ?></th>
+        <tr class="sh-fs-13">           
+            <th><?php echo $this->lang->line('test') . " " .$this->lang->line('parameter') . " " . $this->lang->line('name'); ?><small class="req sh-text-red"> *</small></th>
+            <th><?php echo $this->lang->line('reference') . " " . $this->lang->line('range'); ?></th>
             <th><?php echo $this->lang->line('value'); ?></th>
-            <th><?php echo $this->lang->line('unit') ; ?><small class="req" style="color:red;"> *</small></th>
+            <th><?php echo $this->lang->line('unit') ; ?><small class="req sh-text-red"> *</small></th>
         </tr>
     </thead>
 		<?php   foreach ($detail as $value) {   ?>

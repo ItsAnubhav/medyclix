@@ -23,14 +23,14 @@ class Designation extends Admin_Controller
         $data["title"]       = $this->lang->line('add_designation');
         $data["designation"] = $designation;
         $this->form_validation->set_rules(
-            'type', $this->lang->line('designation_name'), array('required',
+            'type', $this->lang->line('designation_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->designation_model, 'valid_designation')),
             )
         );
         if ($this->form_validation->run()) {
-            $type          = $this->input->post("type");
-            $designationid = $this->input->post("designationid");
-            $status        = $this->input->post("status");
+            $type          = $this->input->post("type", TRUE);
+            $designationid = $this->input->post("designationid", TRUE);
+            $status        = $this->input->post("status", TRUE);
             if (empty($designationid)) {
                 if (!$this->rbac->hasPrivilege('designation', 'can_add')) {
                     access_denied();
@@ -68,15 +68,15 @@ class Designation extends Admin_Controller
                 //====================================
                 if ($this->rbac->hasPrivilege('designation', 'can_edit')) {
 
-                    $action = "<a href='#' data-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action = "<a href='#' data-bs-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('designation', 'can_delete')) {
 
-                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
                 //==============================
                 $row[]     = $value->designation;
-                $row[]     = $action;
+                $row[]     = "<div class='rowoptionview mt-mius0'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -92,7 +92,7 @@ class Designation extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('name'), array('required',
+            'type', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->designation_model, 'valid_designation')),
             )
         );
@@ -103,7 +103,7 @@ class Designation extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $type      = $this->input->post("type");
+            $type      = $this->input->post("type", TRUE);
             $data      = array('designation' => $type, 'is_active' => 'yes');
             $insert_id = $this->designation_model->addDesignation($data);
             $array     = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -114,7 +114,7 @@ class Designation extends Admin_Controller
     public function edit()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('name'), array('required',
+            'type', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->designation_model, 'valid_designation')),
             )
         );
@@ -124,8 +124,8 @@ class Designation extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id   = $this->input->post('designationid');
-            $type = $this->input->post("type");
+            $id   = $this->input->post('designationid', TRUE);
+            $type = $this->input->post("type", TRUE);
             $data = array('designation' => $type, 'is_active' => 'yes', 'id' => $id);
             $this->designation_model->addDesignation($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -135,6 +135,10 @@ class Designation extends Admin_Controller
 
     public function designationdelete($id)
     {
+		if (!$this->rbac->hasPrivilege('designation', 'can_delete')) {
+                    access_denied();
+        }
+				
         $this->designation_model->deleteDesignation($id);
         echo json_encode(array('status' => 1, 'msg' => $this->lang->line('delete_message')));
     }

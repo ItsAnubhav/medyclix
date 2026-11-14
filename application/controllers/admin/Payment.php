@@ -6,6 +6,13 @@ if (!defined('BASEPATH')) {
 
 class Payment extends Admin_Controller
 {
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $opd_prefix;
+	public $payment_mode;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -17,6 +24,7 @@ class Payment extends Admin_Controller
         $this->blood_group    = $this->config->item('bloodgroup');
         $this->load->library('mailsmsconf');
         $this->load->library('system_notification');
+        $this->load->library('SaasValidation');
         $this->charge_type   = $this->customlib->getChargeMaster();
         $data["charge_type"] = $this->charge_type;
         $this->load->model("transaction_model");
@@ -36,7 +44,7 @@ class Payment extends Admin_Controller
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'callback_validate_cheque_no');
         $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'callback_validate_cheque_date');
-        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -51,23 +59,27 @@ class Payment extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $patient_id = $this->input->post("patient_id");
-            $ipd_id     = $this->input->post("ipdid");
+            $patient_id = $this->input->post("patient_id", TRUE);
+            $ipd_id     = $this->input->post("ipdid", TRUE);
 
-            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date"), $this->time_format);
-            $cheque_date     = $this->input->post("cheque_date");
-            $amount          = $this->input->post('amount');
+            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date", TRUE), $this->time_format);
+            $cheque_date     = $this->input->post("cheque_date", TRUE);
+            $amount          = $this->input->post('amount', TRUE);
             $payment_section = $this->config->item('payment_section');
 
+            $payment_type = $this->input->post('payment_type', TRUE);
+            $amount_type  = ($payment_type === 'advance') ? 'advance' : null;
+
             $data = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
+                'case_reference_id' => $this->input->post('case_reference_id', TRUE),
                 'section'           => $payment_section['ipd'],
-                'patient_id'        => $this->input->post('patient_id'),
+                'patient_id'        => $patient_id,
                 'amount'            => $amount,
                 'type'              => 'payment',
-                'ipd_id'            => $this->input->post('ipdid'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'amount_type'       => $amount_type,
+                'ipd_id'            => $ipd_id,
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $payment_date,
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
@@ -79,20 +91,34 @@ class Payment extends Admin_Controller
           
             if (isset($_FILES["document"]) && !empty($_FILES["document"]['name'])) {
                 $img_name = $this->media_storage->fileupload("document", "./uploads/payment_document/");
+
+                // SaaS: add the uploaded document's size to the storage quota usage.
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                    if (is_string($saas_quota_result)) {
+                        $saas_quota_decoded = json_decode($saas_quota_result);
+                        if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (payment create): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (payment create): ' . $e->getMessage());
+                }
             }
-            
-            if ($this->input->post('payment_mode') == "Cheque") {
+
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
 
                 $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $data['attachment']      = $img_name;
                 $data['attachment_name'] = $img_name;
             }
 
             $insert_id = $this->transaction_model->add($data);
 
-            $doctor_list       = $this->patient_model->getDoctorsipd($this->input->post('ipdid'));
-            $consultant_doctor = $this->patient_model->get_patientidbyIpdId($this->input->post('ipdid'));
+            $doctor_list       = $this->patient_model->getDoctorsipd($ipd_id);
+            $consultant_doctor = $this->patient_model->get_patientidbyIpdId($ipd_id);
 
             $consultant_doctorarray[] = array('consult_doctor' => $consultant_doctor['cons_doctor'], 'name' => $consultant_doctor['doctor_name'] . " " . $consultant_doctor['doctor_surname'] . "(" . $consultant_doctor['doctor_employee_id'] . ")");
             foreach ($doctor_list as $key => $value) {
@@ -100,17 +126,28 @@ class Payment extends Admin_Controller
             }
 
             $event_data = array(
-                'patient_id'     => $this->input->post('patient_id'),
-                'ipd_no'         => $this->customlib->getSessionPrefixByType('ipd_no') . $this->input->post('ipdid'),
+                'patient_id'     => $patient_id,
+                'ipd_no'         => $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id,
                 'date'           => $this->customlib->YYYYMMDDHisTodateFormat($payment_date, $this->time_format),
                 'amount'         => number_format((float) $amount, 2, '.', ''),
-                'payment_mode'   => $this->lang->line(strtolower($this->input->post('payment_mode'))),
+                'payment_mode'   => $this->lang->line(strtolower($this->input->post('payment_mode', TRUE))),
                 'transaction_id' => $this->customlib->getSessionPrefixByType('transaction_id') . $insert_id,
             );
             $this->system_notification->send_system_notification('add_ipd_payment', $event_data, $consultant_doctorarray);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('record_saved_successfully'));
         }
         echo json_encode($array);
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     /**
@@ -187,7 +224,7 @@ class Payment extends Admin_Controller
         if ($_POST['payment_mode'] == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line("document"), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -203,50 +240,65 @@ class Payment extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date"), $this->time_format);
-            $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date"));
-            $amount          = $this->input->post('amount');
+            $payment_date    = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("payment_date", TRUE), $this->time_format);
+            $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("cheque_date", TRUE));
+            $amount          = $this->input->post('amount', TRUE);
             $payment_section = $this->config->item('payment_section');
             $data            = array(
-                'case_reference_id' => $this->input->post('case_reference_id'),
-                'patient_id'        => $this->input->post('patient_id'),
+                'case_reference_id' => $this->input->post('case_reference_id', TRUE),
+                'patient_id'        => $this->input->post('patient_id', TRUE),
                 'section'           => $payment_section['opd'],
                 'amount'            => $amount,
                 'type'              => 'payment',
-                'opd_id'            => $this->input->post('opd_id'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'opd_id'            => $this->input->post('opd_id', TRUE),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $payment_date,
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            $cheque_date = $this->input->post("cheque_date");
+            $cheque_date = $this->input->post("cheque_date", TRUE);
 
             $insert_id       = $this->transaction_model->add($data);
             $attachment      = "";
             $attachment_name = "";
-            
+            $img_name        = "";
+
             if (isset($_FILES["document"]) && !empty($_FILES["document"]['name'])) {
                 $img_name = $this->media_storage->fileupload("document", "./uploads/payment_document/");
+
+                // SaaS: add the uploaded document's size to the storage quota usage.
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                    if (is_string($saas_quota_result)) {
+                        $saas_quota_decoded = json_decode($saas_quota_result);
+                        if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (payment addOPDPayment): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (payment addOPDPayment): ' . $e->getMessage());
+                }
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['id']              = $insert_id;
                 $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 $data['attachment']      = $img_name;
                 $data['attachment_name'] = $img_name;
                 $this->transaction_model->add($data);
             }
 
-            $consultant_doctor = $this->patient_model->get_patientidbyopdid($this->input->post('opd_id'));
+            $consultant_doctor = $this->patient_model->get_patientidbyopdid($this->input->post('opd_id', TRUE));
 
             $event_data = array(
-                'patient_id'     => $this->input->post('patient_id'),
-                'opd_no'         => $this->customlib->getSessionPrefixByType('opd_no') . $this->input->post('opd_id'),
+                'patient_id'     => $this->input->post('patient_id', TRUE),
+                'opd_no'         => $this->customlib->getSessionPrefixByType('opd_no') . $this->input->post('opd_id', TRUE),
                 'date'           => $this->customlib->YYYYMMDDHisTodateFormat($payment_date, $this->time_format),
                 'amount'         => number_format((float) $amount, 2, '.', ''),
-                'payment_mode'   => $this->lang->line(strtolower($this->input->post('payment_mode'))),
+                'payment_mode'   => $this->lang->line(strtolower($this->input->post('payment_mode', TRUE))),
                 'doctor_id'      => $consultant_doctor['doctor_id'],
                 'transaction_id' => $this->customlib->getSessionPrefixByType('transaction_id') . $insert_id,
             );
@@ -261,10 +313,12 @@ class Payment extends Admin_Controller
     {
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'amount'       => form_error('amount'),
                 'payment_date' => form_error('payment_date'),
+                'document'     => form_error('document'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
@@ -306,9 +360,24 @@ class Payment extends Admin_Controller
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $fileInfo = pathinfo($_FILES["document"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name);
-                $data_img = array('id' => $insert_id, 'document' => $img_name);
-                $this->payment_model->addOPDPayment($data_img);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'document' => $img_name);
+                    $this->payment_model->addOPDPayment($data_img);
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (payment addambulancePayment): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (payment addambulancePayment): ' . $e->getMessage());
+                    }
+                }
             }
            
             $array = array('status' => 'success', 'id' => $insert_id, 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -321,11 +390,13 @@ class Payment extends Admin_Controller
     {
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'amount'       => form_error('amount'),
                 'payment_date' => form_error('payment_date'),
+                'document'     => form_error('document'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
@@ -368,9 +439,24 @@ class Payment extends Admin_Controller
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $fileInfo = pathinfo($_FILES["document"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name);
-                $data_img = array('id' => $insert_id, 'document' => $img_name);
-                $this->payment_model->addOPDPayment($data_img);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'document' => $img_name);
+                    $this->payment_model->addOPDPayment($data_img);
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (payment addbloodissuePayment): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (payment addbloodissuePayment): ' . $e->getMessage());
+                    }
+                }
             }
 
             $array = array('status' => 'success', 'id' => $insert_id, 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -383,11 +469,13 @@ class Payment extends Admin_Controller
     {
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('payment_date', $this->lang->line('payment_date'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_validateCanUploadFile[document]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'amount'       => form_error('amount'),
                 'payment_date' => form_error('payment_date'),
+                'document'     => form_error('document'),
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
@@ -429,9 +517,24 @@ class Payment extends Admin_Controller
             if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                 $fileInfo = pathinfo($_FILES["document"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name);
-                $data_img = array('id' => $insert_id, 'document' => $img_name);
-                $this->payment_model->addOPDPayment($data_img);
+                if (move_uploaded_file($_FILES["document"]["tmp_name"], "./uploads/payment_document/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'document' => $img_name);
+                    $this->payment_model->addOPDPayment($data_img);
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                        if (is_string($saas_quota_result)) {
+                            $saas_quota_decoded = json_decode($saas_quota_result);
+                            if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                log_message('error', 'SaaS storage quota update returned failure (payment addotPayment): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (payment addotPayment): ' . $e->getMessage());
+                    }
+                }
             }
 
             $array = array('status' => 'success', 'id' => $insert_id, 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -565,27 +668,28 @@ class Payment extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $patient_id = $this->input->post('patient_id');
+            $patient_id = $this->input->post('patient_id', TRUE);
             $patient    = $this->patient_model->patientDetails($patient_id);
+            $opd_id     = $this->input->post('opd_id', TRUE);
             $data       = array(
-                'opd_details_id' => $this->input->post('opd_id'),
-                'discount'       => $this->input->post('discount'),
-                'other_charge'   => $this->input->post('other_charge'),
-                'total_amount'   => $this->input->post('total_amount'),
-                'gross_total'    => $this->input->post('gross_total'),
-                'tax'            => $this->input->post('tax'),
-                'net_amount'     => $this->input->post('net_amount'),
+                'opd_details_id' => $opd_id,
+                'discount'       => $this->input->post('discount', TRUE),
+                'other_charge'   => $this->input->post('other_charge', TRUE),
+                'total_amount'   => $this->input->post('total_amount', TRUE),
+                'gross_total'    => $this->input->post('gross_total', TRUE),
+                'tax'            => $this->input->post('tax', TRUE),
+                'net_amount'     => $this->input->post('net_amount', TRUE),
                 'date'           => date("Y-m-d"),
                 'generated_by'   => $this->customlib->getLoggedInUserID(),
                 'status'         => 'paid',
-                'paymode'        => $this->input->post('bill_paymode'),
+                'paymode'        => $this->input->post('bill_paymode', TRUE),
             );
-            $opd_data = array('patient_id' => $this->input->post('patient_id'),
-                'id'                           => $this->input->post('opd_id'),
+            $opd_data = array('patient_id' => $patient_id,
+                'id'                           => $opd_id,
                 'discharged'                   => 'yes',
             );
 
-            $sender_details = array('patient_id' => $patient_id, 'opd_id' => $this->input->post('opd_id'), 'contact_no' => $patient['mobileno'], 'email' => $patient['email']);
+            $sender_details = array('patient_id' => $patient_id, 'opd_id' => $opd_id, 'contact_no' => $patient['mobileno'], 'email' => $patient['email']);
             $this->payment_model->add_opdbill($data);
             $this->patient_model->add_opd($opd_data);
             $this->mailsmsconf->mailsms('opd_patient_discharged', $sender_details);

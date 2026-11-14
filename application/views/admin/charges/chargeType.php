@@ -1,23 +1,21 @@
-<div class="content-wrapper" style="min-height: 946px;">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<!-- Main content -->
+    <div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <?php $this->load->view("admin/charges/sidebar");?>
                 </div>
             </div>
             <div class="col-md-10">
-                <div class="box box-primary" id="tachelist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('charge_type_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="tachelist">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('charge_type_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('charge_type', 'can_add')) {?>
-                                <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm charge_type"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_charge_type'); ?></a>
+                                <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm charge_type"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_charge_type'); ?></a>
                             <?php }?>
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">
                         </div>
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
@@ -27,9 +25,9 @@
                                     <tr>
                                         <th><?php echo $this->lang->line('charge_type'); ?></th>
                                         <?php foreach ($charge_type_modules as $module_shortcode => $module_name) {?>
-                                            <th><?=$module_name;?></th>
+                                            <th class="sh-th-60 text-center text-wrap text-break sh-fs-11"><?=$module_name;?></th>
                                         <?php }?>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport sh-th-90"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -40,22 +38,22 @@
                                          <tr>
                                             <td><?php  echo $chargetype['charge_type']; ?></td>                                            
                                             <?php foreach ($charge_type_modules as $module_shortcode => $module_name) {   ?>
-                                            <td><input type="checkbox" <?php echo "onclick=updateChargeTypeModule(" . $chargetype['id'] . ",'" . $module_shortcode . "') ";  
+                                            <td class="text-center align-middle"><input type="checkbox" <?php echo "onclick=updateChargeTypeModule(" . $chargetype['id'] . ",'" . $module_shortcode . "') ";
         if (in_array($chargetype['id'], $module_data[$module_shortcode])) {
             echo "checked ";
         }
         ?> /></td>
                                             <?php }?>                                            
-                                            <td class="text-right">
+                                            <td class="text-end">
 										<?php if ($this->rbac->hasPrivilege('charge_type', 'can_edit')) {?>
-                                                <a  class="btn btn-default btn-xs editcharge" data-record-id='<?php echo $chargetype['id'] ?>' data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ;>
+                                                <a  class="btn btn-secondary btn-sm editcharge" data-record-id='<?php echo $chargetype['id'] ?>' data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>" ;>
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
 										<?php } ?>
                                                 <?php
 if ($chargetype['is_default'] != 'yes') {
         if ($this->rbac->hasPrivilege('charge_type', 'can_delete')) {?>
-                                                    <a  class="btn btn-default btn-xs" data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="deleteChargeType('<?php echo $chargetype['id'] ?>')";>
+                                                    <a  class="btn btn-secondary btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="deleteChargeType('<?php echo $chargetype['id'] ?>')";>
                                                         <i class="fa fa-trash"></i>
                                                     </a>
                                                 <?php }}?>
@@ -76,56 +74,63 @@ $count++;
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_charge_type'); ?></h4>
-            </div>            
-            <form id="formadd" class="ptt10" action="<?php echo site_url('admin/chargetype/add') ?>" id="employeeform" name="employeeform" method="post" accept-charset="utf-8">
-                <div class="modal-body pt0 pb0">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('charge_type'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="type"  name="charge_type"  type="text" class="form-control" value="<?php
-if (isset($result)) {
-    echo $result["name"];
-}
-?>" />
-                            <span class="text-danger"><?php echo form_error('name'); ?></span>
-                        </div>
-                        <hr>
-                        <label><?= $this->lang->line("module"); ?></label><small class="req"> *</small>
-                        <div class="form-group">
-                            <?php foreach ($charge_type_modules as $module_shortcode => $module_name) {?>
-                               <label class="checkbox-inline">
-                                <input type="checkbox" name="charge_module[]" value="<?=$module_shortcode;?>" value=""><?php echo $module_name; ?>
-                               </label>
-                               <br>
-                            <?php }?>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_charge_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formadd" action="<?php echo site_url('admin/chargetype/add') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('charge_type'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('charge_type'); ?></label><small class="req"> *</small>
+                                        <input autofocus="" id="type" name="charge_type" type="text" class="form-control" value="<?php if (isset($result)) { echo $result["name"]; } ?>" />
+                                        <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('module'); ?></label><small class="req"> *</small>
+                                        <div class="mt-1">
+                                            <?php foreach ($charge_type_modules as $module_shortcode => $module_name) { ?>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="charge_module[]" value="<?= $module_shortcode; ?>" id="module_<?= $module_shortcode; ?>">
+                                                <label class="form-check-label" for="module_<?= $module_shortcode; ?>"><?php echo $module_name; ?></label>
+                                            </div>
+                                            <?php } ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                        <div class="modal-footer">
-                            <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle" ></i> <?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_charge_category'); ?></h4>
-            </div>            
-            <form id="editformadd" action="<?php echo site_url('admin/chargecategory/add') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data" class="ptt10">
-                <div class="modal-body pt0 pb0">
-                        <div class="form-group">
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editmyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editmyModalLabel"><?php echo $this->lang->line('edit_charge_category'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editformadd" action="<?php echo site_url('admin/chargecategory/add') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data">
+                <div class="modal-body">
+                        <div class="mb-3">
                             <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
                             <input  id="type1"  name="name"  type="text" class="form-control" value="<?php
 if (isset($result)) {
@@ -134,7 +139,7 @@ if (isset($result)) {
 ?>" />
                             <span class="text-danger"><?php echo form_error('name'); ?></span>
                         </div>
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label><?php echo $this->lang->line('description'); ?></label>
                             <small class="req"> *</small>
                             <textarea name="description" id="description1" class="form-control"><?php
@@ -144,7 +149,7 @@ if (isset($result)) {
 ?></textarea>
                             <span class="text-danger"><?php echo form_error('description'); ?></span>
                         </div>
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label for="pwd"><?php echo $this->lang->line('charge_type'); ?></label>
                             <small class="req"> *</small>
                             <select name="charge_type" id="charge_type1" class="form-control">
@@ -161,43 +166,53 @@ if (isset($result)) {
                         </div>
                     </div>   
                         <div class="modal-footer">
-                            <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="editformaddbtn" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i>  <?php echo $this->lang->line('save'); ?></button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                            <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="editformaddbtn" class="btn btn-info float-end"><i class="fa fa-check-circle"></i>  <?php echo $this->lang->line('save'); ?></button>
                         </div>
                 </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="editchargeModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_charge_category'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="editchargeModal" tabindex="-1" aria-labelledby="editchargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editchargeModalLabel"><?php echo $this->lang->line('edit_charge_type'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
-            <form id="editform" action="<?php echo site_url('admin/chargetype/edit') ?>" name="employeeform" method="post" accept-charset="utf-8"  enctype="multipart/form-data" class="ptt10">
-                <div class="modal-body pt0 pb0">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
-                            <input  id="editchargetype"  name="editchargetype"  type="text" class="form-control" value="" />
-                             <input  id="editchargeid"  name="editchargeid"  type="hidden" class="form-control" value="" />
-                            <span class="text-danger"><?php echo form_error('name'); ?></span>
+            <form id="editform" action="<?php echo site_url('admin/chargetype/edit') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input type="hidden" id="editchargeid" name="editchargeid" value="">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('charge_type'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-0 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
+                                        <input id="editchargetype" name="editchargetype" type="text" class="form-control" value="">
+                                        <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                       
-                        
-                    </div>   
-                        <div class="modal-footer">
-                            <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="editformbtn" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="editformbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 <script>
     $(document).ready(function (e) {
         $('#formadd').on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -218,7 +233,7 @@ if (isset($result)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -257,7 +272,7 @@ if (isset($result)) {
     $(document).ready(function (e) {
         $('#editformadd').on('submit', (function (e) {
             e.preventDefault();
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             $.ajax({
                 url: $(this).attr('action'),
                 type: "POST",
@@ -277,7 +292,7 @@ if (isset($result)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('reset');
+                    $("#editformaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -305,11 +320,7 @@ if (isset($result)) {
     }
 
     $(document).ready(function (e) {
-        $('#myModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal');
     });
 </script>
 <script>
@@ -324,23 +335,23 @@ if (isset($result)) {
                 data: {'id':recordId},
                 dataType: 'json',
                  beforeSend: function() {
-                    $this.button('loading');
+                    $this.btnLoading();
                     
                 },
                 success: function(res) {   
                     
-                        $('#editchargeModal').modal();
+                        shModal('editchargeModal').show();
                         $("#editchargetype").val(res.result.charge_type);
                         $("#editchargeid").val(res.result.id);
                   
-                  $this.button('reset');
+                  $this.btnReset();
                 },
                    error: function(xhr) { // if error occured
                    alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
                  
             },
             complete: function() {
-                  $this.button('reset');
+                  $this.btnReset();
             
             }
             });
@@ -350,7 +361,7 @@ if (isset($result)) {
 <script>
     $(document).ready(function (e) {
         $('#editform').on('submit', (function (e) {
-            $("#editformbtn").button('loading');
+            $("#editformbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -371,7 +382,7 @@ if (isset($result)) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformbtn").button('reset');
+                    $("#editformbtn").btnReset();
                 },
                 error: function () {
 

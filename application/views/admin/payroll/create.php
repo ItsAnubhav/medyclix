@@ -1,228 +1,250 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <h3 class="box-title"><?php echo $this->lang->line('generate_payroll_for'); ?> : <?php echo $this->lang->line(strtolower($month)); ?></h3>
-                            </div>  
-                            <div class="col-md-8">
-                                <div class="btn-group pull-right">
-                                    <a href="<?php echo base_url() ?>admin/payroll" type="button" class="btn btn-primary btn-xs">
-                                        <i class="fa fa-arrow-left"></i></a>
-                                </div>
-                            </div>
-                        </div>  
-                    </div><!--./box-header-->    
-                    <div class="box-body pt-0">
-                        <div class="row">
-                            <div class="col-md-8 col-sm-12">
-                                <div class="sfborder">  
-                                    <div class="col-lg-2 col-md-3 col-sm-12">
-                                        <div class="row">
-                                            <?php
-                                            $image = $result['image'];
-                                            if (!empty($image)) {
-                                                $file = $result['image'];
-                                            } else {
-                                                $file = "no_image.png";
-                                            }
-                                            ?>
-                                            <img width="115" height="115" class="round5" src="<?php echo $this->media_storage->getImageURL("uploads/staff_images/" . $file); ?>" alt="No Image">
-                                        </div>
-                                    </div> 
-                                    <div class="col-lg-10 col-md-9 col-sm-12">
-                                        <div class="row">
-                                            <table class="table mb0 font13">
-                                                <tbody>
-                                                    <tr>
-                                                        <th class="bozero"><?php echo $this->lang->line("staff_name"); ?></th>
-                                                        <td class="bozero"><?php echo $result["name"] . " " . $result["surname"] ?></td>
-                                                        <th class="bozero"><?php echo $this->lang->line('staff_id'); ?></th>
-                                                        <td class="bozero"><?php echo $result["employee_id"] ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('staff_phone'); ?></th>
-                                                        <td><?php echo $result["contact_no"] ?></td>
-                                                        <th><?php echo $this->lang->line('staff_email'); ?></th>
-                                                        <td><?php echo $result["email"] ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('staff_epf_no'); ?></th>
-                                                        <td><?php echo $result["epf_no"] ?></td>
-                                                        <th><?php echo $this->lang->line('staff_role'); ?></th>
-                                                        <td><?php echo $result["user_type"] ?></td>                                  
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('staff_department'); ?></th>
-                                                        <td><?php echo $result["department"] ?></td>
-                                                        <th><?php echo $this->lang->line('staff_designation'); ?></th>
-                                                        <td><?php echo $result["designation"] ?></td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div></div><!--./col-md-8-->
-                            <div class="col-md-4 col-sm-12">
-                                <div class="sfborder relative overvisible"> 
-                                    <div class="letest">
-                                        <div class="rotatetest"><?php echo $this->lang->line("attendance") ?></div>
-                                    </div> 
-                                    <div class="padd-en-rtl33"> 
-                                        <table class="table mb0 font13">
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+
+            <!-- Card Header -->
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0 fw-semibold sh-fs-95">
+                    <?php echo $this->lang->line('generate_payroll_for'); ?> :
+                    <span style="color:var(--link)"><?php echo $this->lang->line(strtolower($month)); ?></span>
+                </h5>
+                <a href="<?php echo base_url() ?>admin/payroll" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-arrow-left"></i>
+                </a>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <!-- Staff Profile -->
+                    <div class="col-md-8">
+                        <div class="h-100 border rounded p-3 sh-border-color" >
+                            <div class="d-flex gap-3 align-items-start">
+                                <?php
+                                $image        = $result['image'];
+                                $pr_has_image = !empty($image) && strpos($image, 'no_image') === false;
+                                $file         = $pr_has_image ? $image : "no_image.png";
+                                if (!$pr_has_image) {
+                                    $pr_full  = trim(($result['name'] ?? '') . ' ' . ($result['surname'] ?? ''));
+                                    $pr_parts = preg_split('/\s+/', $pr_full, -1, PREG_SPLIT_NO_EMPTY);
+                                    $pr_inits = count($pr_parts) === 0 ? '?' : (count($pr_parts) === 1
+                                        ? mb_strtoupper(mb_substr($pr_parts[0], 0, 1))
+                                        : mb_strtoupper(mb_substr($pr_parts[0], 0, 1) . mb_substr($pr_parts[count($pr_parts) - 1], 0, 1)));
+                                }
+                                ?>
+                                <?php if ($pr_has_image): ?>
+                                <img class="payroll-staff-img"
+                                     src="<?php echo $this->media_storage->getImageURL("uploads/staff_images/" . $file); ?>"
+                                     alt="<?php echo html_escape($result['name']); ?>">
+                                <?php else: ?>
+                                <div class="payroll-staff-initials"><?php echo html_escape($pr_inits); ?></div>
+                                <?php endif; ?>
+                                <div class="flex-grow-1">
+                                    <table class="payroll-info-table">
+                                        <tbody>
                                             <tr>
-                                                <th  class="bozero"><?php echo $this->lang->line('month'); ?></th>
-                                                <?php  
-                                                foreach ($attendanceType as $key => $value) {
-                                                    $lang = strtolower($value["type"]);
-                                                    ?>
-                                                    <th class="bozero"><span data-toggle="tooltip" title="<?php echo $this->lang->line($lang); ?>"><?php echo strip_tags($value["key_value"]); ?></span></th>  
-                                                <?php }
-                                                ?>
-                                                <th class="bozero"><span data-toggle="tooltip" title="<?php echo $this->lang->line('approved_leave'); ?>">V</span></th>
+                                                <th><?php echo $this->lang->line("staff_name"); ?></th>
+                                                <td><?php echo html_escape($result["name"] . " " . $result["surname"]); ?></td>
+                                                <th><?php echo $this->lang->line('staff_id'); ?></th>
+                                                <td><?php echo html_escape($result["employee_id"]); ?></td>
                                             </tr>
-                                            <?php
-                                            foreach ($monthAttendance as $attendence_key => $attendence_value) {
-                                                ?><tr>
-                                                    <td><?php echo $this->lang->line(strtolower(date("F", strtotime($attendence_key)))); ?></td>
-                                                    <td><?php echo $attendence_value['present'] ?></td>
-                                                    <td><?php echo $attendence_value['late']; ?></td> 
-                                                    <td><?php echo $attendence_value['absent']; ?></td> 
-                                                    <td><?php echo $attendence_value['half_day']; ?></td> 
-                                                    <td><?php echo $attendence_value['holiday']; ?></td>
-                                                    <td><?php echo $monthLeaves[date("m", strtotime($attendence_key))]; ?></td>                                   
-                                                </tr>
-                                                <?php
-                                            }
-                                            ?>
                                             <tr>
+                                                <th><?php echo $this->lang->line('staff_phone'); ?></th>
+                                                <td><?php echo html_escape($result["contact_no"]); ?></td>
+                                                <th><?php echo $this->lang->line('staff_email'); ?></th>
+                                                <td><?php echo html_escape($result["email"]); ?></td>
                                             </tr>
-                                        </table>
-                                    </div>
+                                            <tr>
+                                                <th><?php echo $this->lang->line('staff_epf_no'); ?></th>
+                                                <td><?php echo html_escape($result["epf_no"]); ?></td>
+                                                <th><?php echo $this->lang->line('staff_role'); ?></th>
+                                                <td><?php echo html_escape($result["user_type"]); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th><?php echo $this->lang->line('staff_department'); ?></th>
+                                                <td><?php echo html_escape($result["department"]); ?></td>
+                                                <th><?php echo $this->lang->line('staff_designation'); ?></th>
+                                                <td><?php echo html_escape($result["designation"]); ?></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div><!--./col-md-8-->   
-                            <div class="col-md-12">
-                                <div class="tadivdier"></div>
                             </div>
                         </div>
                     </div>
-                    <!-- /.box-body -->
-                    <form class="form-horizontal" action="<?php echo site_url('admin/payroll/payslip') ?>" method="post"  id="employeeform">
-                        <input type="hidden" name="role" value="<?php echo $result["user_type"] ?>">
-                        <div class="box-header">
-                            <div class="row display-flex">
-                                <div class="col-md-4 col-sm-4">
-                                    <h3 class="box-title"><?php echo $this->lang->line('earning'); ?></h3>
-                                    <button type="button" onclick="add_more()" class="plusign"><i class="fa fa-plus"></i></button>
-                                    <div class="sameheight overflow-x-auto">
-                                        <div class="feebox">
-                                            <table class="table3" id="tableID">
-                                                <tr id="row0">
-                                                    <td><input type="text" class="form-control" id="allowance_type" name="allowance_type[]" placeholder="<?php echo $this->lang->line('type'); ?>"></td>
-                                                    <td><input type="text" id="allowance_amount" name="allowance_amount[]" class="form-control" value="0"></td>
-<td><button type="button" onclick="delete_row(0)" class="closebtn" autocomplete="off"><i class="fa fa-remove"></i></button></td>
-                                                </tr>
-                                            </table>
-                                        </div>  
-                                    </div>
-                                </div><!--./col-md-4-->
-                                <div class="col-md-4 col-sm-4">
-                                    <h3 class="box-title"><?php echo $this->lang->line('deduction'); ?></h3>
-                                    <button type="button" onclick="add_more_deduction()" class="plusign"><i class="fa fa-plus"></i></button>
-                                    <div class="sameheight overflow-x-auto">
-                                        <div class="feebox">
-                                            <table class="table3" id="tableID2">
-                                                <tr id="deduction_row0">
-                                                    <td><input type="text" id="deduction_type" name="deduction_type[]" class="form-control" placeholder="<?php echo $this->lang->line('type'); ?>"></td>
-                                                    <td><input type="text" id="deduction_amount" name="deduction_amount[]" class="form-control" value="0"></td>
-<td><button type="button" onclick="delete_deduction_row(0)" class="closebtn" autocomplete="off"><i class="fa fa-remove"></i></button></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                    </div>  
-                                </div><!--./col-md-4--> 
-                                <div class="col-md-4 col-sm-4">
-                                    <h3 class="box-title"><?php echo $this->lang->line('payroll_summary'); ?>(<?php echo $currency_symbol ?>)</h3>
-                                    <button type="button" onclick="add_allowance()" class="plusign"><i class="fa fa-calculator"></i> <?php echo $this->lang->line('calculate'); ?></button>
-                                    <div class="sameheight">
-                                        <div class="payrollbox feebox">
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('basic_salary'); ?></label>
-                                                <div class="col-sm-8">
-                                                    <input class="form-control" name="basic" value="<?php
-                                                    if (!empty($result["basic_salary"])) {
-                                                        echo $result["basic_salary"];
-                                                    } else {
-                                                        echo "0";
-                                                    }
-                                                    ?>" id="basic"  type="text" />
-                                                </div>
-                                                 <span class="text-danger" id="err"><?php echo form_error('basic'); ?></span>
-                                            </div><!--./form-group-->
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('earning'); ?></label>
-                                                <div class="col-sm-8">
-                                                    <input class="form-control" name="total_allowance" id="total_allowance"  type="text" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('deduction'); ?></label>
-                                                <div class="col-sm-8 deductiondred">
-                                                    <input class="form-control" name="total_deduction" id="total_deduction" type="text" style="color:#f50000" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('gross_salary'); ?></label>
-                                                <div class="col-sm-8">
-                                                    <input class="form-control" name="gross_salary" id="gross_salary" value="0" type="text" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('tax') . "(%)"; ?></label>
-                                                <div class="col-sm-8 deductiondred">
-                                                    <input class="form-control" name="tax_percent" id="tax_percent" value="0" type="text" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('tax'); ?></label>
-                                                <div class="col-sm-8 deductiondred">
-                                                    <input class="form-control" name="tax" id="tax" value="0" type="text" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                            <hr/>
-                                            <div class="form-group">
-                                                <label class="col-sm-4 control-label"><?php echo $this->lang->line('net_salary'); ?></label>
-                                                <div class="col-sm-8 net_green">
-                                                    <input class="form-control greentest"  name="net_salary" id="net_salary" type="text" />
-                                                    <span class="text-danger" id="err"><?php echo form_error('net_salary'); ?></span>
-                                                    <input class="form-control" name="staff_id" value="<?php echo $result["id"]; ?>" type="hidden" />
-                                                    <input class="form-control" name="month" value="<?php echo $month; ?>" type="hidden" />
-                                                    <input class="form-control" name="year" value="<?php echo $year; ?>"  type="hidden" />
-                                                    <input class="form-control" name="status" value="generated"  type="hidden" />
-                                                </div>
-                                            </div><!--./form-group-->
-                                        </div>
-                                    </div> 
-                                </div><!--./col-md-4--> 
-                                <div class="col-md-12 col-sm-12">
-                                    <button type="submit" id="contact_submit" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                                </div><!--./col-md-12--> 
-                                </form>
-                            </div><!--./row-->  
-                        </div><!--./box-header-->  
+
+                    <!-- Attendance -->
+                    <div class="col-md-4">
+                        <div class="h-100 border rounded overflow-hidden sh-border-color" >
+                            <div class="px-3 py-2 border-bottom" style="background:var(--surface-2);border-color:var(--border)!important">
+                                <span class="fw-semibold" style="color:var(--ink);font-size:.875rem">
+                                    <?php echo $this->lang->line("attendance"); ?>
+                                </span>
+                            </div>
+                            <div class="p-2">
+                                <table class="table table-sm table-bordered mb-0 attend-table">
+                                    <thead>
+                                        <tr>
+                                            <th><?php echo $this->lang->line('month'); ?></th>
+                                            <?php foreach ($attendanceType as $key => $value) {
+                                                $lang = strtolower($value["type"]); ?>
+                                                <th><span data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line($lang); ?>"><?php echo strip_tags($value["key_value"]); ?></span></th>
+                                            <?php } ?>
+                                            <th><span data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('approved_leave'); ?>">V</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($monthAttendance as $attendence_key => $attendence_value) { ?>
+                                            <tr>
+                                                <td><?php echo $this->lang->line(strtolower(date("F", strtotime($attendence_key)))); ?></td>
+                                                <td><?php echo $attendence_value['present']; ?></td>
+                                                <td><?php echo $attendence_value['late']; ?></td>
+                                                <td><?php echo $attendence_value['absent']; ?></td>
+                                                <td><?php echo $attendence_value['half_day']; ?></td>
+                                                <td><?php echo $attendence_value['holiday']; ?></td>
+                                                <td><?php echo $monthLeaves[date("m", strtotime($attendence_key))]; ?></td>
+                                            </tr>
+                                        <?php } ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
-            <!--/.col (left) -->
-        </div>
-    </section>
+            </div><!-- /.card-body -->
+
+            <!-- Earning / Deduction / Summary -->
+            <form class="form-horizontal" action="<?php echo site_url('admin/payroll/payslip') ?>" method="post" id="employeeform">
+                <input type="hidden" name="role" value="<?php echo $result["user_type"] ?>">
+
+                <div class="card-body pt-0">
+                    <div class="row g-3">
+
+                        <!-- Earning -->
+                        <div class="col-md-4">
+                            <div class="border rounded sh-border-color" >
+                                <div class="payroll-section-hdr">
+                                    <h6><?php echo $this->lang->line('earning'); ?></h6>
+                                    <button type="button" onclick="add_more()" class="btn-row-add" title="<?php echo $this->lang->line('add'); ?>">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="p-2 sh-scroll-230">
+                                    <table class="w-100" id="tableID">
+                                        <tr id="row0">
+                                            <td><input type="text" class="form-control" id="allowance_type" name="allowance_type[]" placeholder="<?php echo $this->lang->line('type'); ?>"></td>
+                                            <td><input type="text" id="allowance_amount" name="allowance_amount[]" class="form-control" value="0"></td>
+                                            <td class="sh-col-32"><button type="button" onclick="delete_row(0)" class="closebtn" autocomplete="off"><i class="fa fa-remove"></i></button></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deduction -->
+                        <div class="col-md-4">
+                            <div class="border rounded sh-border-color" >
+                                <div class="payroll-section-hdr">
+                                    <h6><?php echo $this->lang->line('deduction'); ?></h6>
+                                    <button type="button" onclick="add_more_deduction()" class="btn-row-add" title="<?php echo $this->lang->line('add'); ?>">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="p-2 sh-scroll-230">
+                                    <table class="w-100" id="tableID2">
+                                        <tr id="deduction_row0">
+                                            <td><input type="text" id="deduction_type" name="deduction_type[]" class="form-control" placeholder="<?php echo $this->lang->line('type'); ?>"></td>
+                                            <td><input type="text" id="deduction_amount" name="deduction_amount[]" class="form-control" value="0"></td>
+                                            <td class="sh-col-32"><button type="button" onclick="delete_deduction_row(0)" class="closebtn" autocomplete="off"><i class="fa fa-remove"></i></button></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payroll Summary -->
+                        <div class="col-md-4">
+                            <div class="border rounded sh-border-color" >
+                                <div class="payroll-section-hdr">
+                                    <h6><?php echo $this->lang->line('payroll_summary'); ?> (<?php echo $currency_symbol ?>)</h6>
+                                    <button type="button" onclick="add_allowance()" class="btn btn-sm btn-outline-primary ms-auto sh-btn-calc">
+                                        <i class="fa fa-calculator me-1"></i><?php echo $this->lang->line('calculate'); ?>
+                                    </button>
+                                </div>
+                                <div>
+                                    <div class="summary-row">
+                                        <span class="summary-label"><?php echo $this->lang->line('basic_salary'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="basic" id="basic" type="text"
+                                                   value="<?php echo !empty($result["basic_salary"]) ? $result["basic_salary"] : '0'; ?>">
+                                            <span class="text-danger" id="err"><?php echo form_error('basic'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span class="summary-label"><?php echo $this->lang->line('earning'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="total_allowance" id="total_allowance" type="text">
+                                        </div>
+                                    </div>
+                                    <div class="summary-row is-deduct">
+                                        <span class="summary-label"><?php echo $this->lang->line('deduction'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="total_deduction" id="total_deduction" type="text">
+                                        </div>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span class="summary-label"><?php echo $this->lang->line('gross_salary'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="gross_salary" id="gross_salary" value="0" type="text">
+                                        </div>
+                                    </div>
+                                    <div class="summary-row is-deduct">
+                                        <span class="summary-label"><?php echo $this->lang->line('tax') . "(%)"; ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="tax_percent" id="tax_percent" value="0" type="text">
+                                        </div>
+                                    </div>
+                                    <div class="summary-row is-deduct">
+                                        <span class="summary-label"><?php echo $this->lang->line('tax'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control" name="tax" id="tax" value="0" type="text">
+                                        </div>
+                                    </div>
+                                    <hr class="summary-divider">
+                                    <div class="summary-row is-net">
+                                        <span class="summary-label"><?php echo $this->lang->line('net_salary'); ?></span>
+                                        <div class="summary-value">
+                                            <input class="form-control greentest" name="net_salary" id="net_salary" type="text">
+                                            <span class="text-danger"><?php echo form_error('net_salary'); ?></span>
+                                            <input name="staff_id" value="<?php echo $result["id"]; ?>" type="hidden">
+                                            <input name="month"    value="<?php echo $month; ?>"         type="hidden">
+                                            <input name="year"     value="<?php echo $year; ?>"          type="hidden">
+                                            <input name="status"   value="generated"                     type="hidden">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save -->
+                        <div class="col-12 text-end">
+                            <button type="submit" id="contact_submit" class="btn btn-primary">
+                                <i class="fa fa-check-circle me-1"></i><?php echo $this->lang->line('save'); ?>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+
+        </div><!-- /.card -->
+    </div>
 </div>
 
 <script type="text/javascript">
@@ -278,7 +300,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         var table = document.getElementById("tableID");
         var table_len = (table.rows.length);
         var id = parseInt(table_len);
-        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "'><td><input type='text' class='form-control' id='allowance_type' name='allowance_type[]' placeholder='<?php echo $this->lang->line("type"); ?>'></td><td><input type='text' class='form-control' id='allowance_amount' name='allowance_amount[]'  value='0'></td><td><button type='button' onclick='delete_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
+        var row = table.insertRow(table_len).outerHTML = "<tr id='row" + id + "'><td><input type='text' class='form-control' id='allowance_type' name='allowance_type[]' placeholder='<?php echo $this->lang->line("type"); ?>'></td><td><input type='text' class='form-control' id='allowance_amount' name='allowance_amount[]'  value='0'></td><td class='sh-col-32'><button type='button' onclick='delete_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
     }
 
     function delete_row(id) {
@@ -291,12 +313,17 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         var table = document.getElementById("tableID2");
         var table_len = (table.rows.length);
         var id = parseInt(table_len);
-        var row = table.insertRow(table_len).outerHTML = "<tr id='deduction_row" + id + "'><td><input type='text' class='form-control' id='deduction_type' name='deduction_type[]' placeholder='<?php echo $this->lang->line("type"); ?>'></td><td><input type='text' id='deduction_amount' name='deduction_amount[]' class='form-control' value='0'></td><td><button type='button' onclick='delete_deduction_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
-    } 
+        var row = table.insertRow(table_len).outerHTML = "<tr id='deduction_row" + id + "'><td><input type='text' class='form-control' id='deduction_type' name='deduction_type[]' placeholder='<?php echo $this->lang->line("type"); ?>'></td><td><input type='text' id='deduction_amount' name='deduction_amount[]' class='form-control' value='0'></td><td class='sh-col-32'><button type='button' onclick='delete_deduction_row(" + id + ")' class='closebtn'><i class='fa fa-remove'></i></button></td></tr>";
+    }
 
     function delete_deduction_row(id) {
         var table = document.getElementById("tableID2");
         var rowCount = table.rows.length;
         $("#deduction_row" + id).html("");
     }
+
+    // Init tooltips
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+        new bootstrap.Tooltip(el);
+    });
 </script>

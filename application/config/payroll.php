@@ -67,8 +67,10 @@ $config['payment_mode'] = array(
     'Cheque'                   => lang('cheque'),
     'transfer_to_bank_account' => lang('transfer_to_bank_account'),
     'UPI'                      => lang('upi'),
-    'Online'                    => lang('online'),
-    'Other'                    => lang('other'),    
+    'Online'                   => lang('online'),
+    'Credit'                   => lang('credit'),
+    'Insurance'                => lang('insurance'),
+    'Other'                    => lang('other'),
 );
 
 $config['yesno_condition'] = array(

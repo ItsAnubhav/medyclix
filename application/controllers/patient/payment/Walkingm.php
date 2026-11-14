@@ -6,6 +6,13 @@ if (!defined('BASEPATH')) {
 
 class Walkingm extends Patient_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $patient_data;
+	public $payment_method;
+	public $payment_mode;
+	public $setting;
+
     public $pay_method = "";
     public $amount     = 0;
 

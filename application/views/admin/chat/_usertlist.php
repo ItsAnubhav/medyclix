@@ -3,8 +3,8 @@ if (!empty($staff)) {
     foreach ($staff as $value) {
         if ($value['id'] != $sender_id) {
             ?>
-            <div class="row reply" style="corsor:pointer" >
-                <div class="col-sm-5 col-xs-5 reply-emojis">
+            <div class="row reply">
+                <div class="col-sm-5 col-5 reply-emojis">
                     <a href="#" onclick="start_chat('<?php echo $value['id'] ?>', '<?php echo $sender_id; ?>', '1')" >
                         <?php echo $value['name'] . " (" . $this->lang->line(strtolower($value['role'])) . ")"; ?></a>
                 </div>
@@ -20,7 +20,7 @@ if (!empty($parent)) {
         if ($value['parent_id'] != $sender_id) {
             ?>
             <div class="row reply"  >
-                <div class="col-sm-5 col-xs-5 reply-emojis">
+                <div class="col-sm-5 col-5 reply-emojis">
                     <a onclick="start_chat('<?php echo $value['parent_id'] ?>', '<?php echo $sender_id; ?>', '3')" ><?php echo $value['father_name'] . " (" . $this->lang->line(strtolower($value['role'])) . ")"; ?></a>
 
                 </div>
@@ -35,7 +35,7 @@ if (!empty($student)) {
         if ($value['id'] != $sender_id) {
             ?>
             <div class="row reply"  >
-                <div class="col-sm-5 col-xs-5 reply-emojis">
+                <div class="col-sm-5 col-5 reply-emojis">
                     <a onclick="start_chat('<?php echo $value['id'] ?>', '<?php echo $sender_id; ?>', '2')" ><?php echo $value['firstname'] . " " . $value['lastname'] . " (" . $this->lang->line(strtolower($value['role'])) . ")"; ?></a>
 
                 </div>
@@ -68,7 +68,7 @@ if (!empty($student)) {
                 if (data == 0) {
 
                 } else {
-                    $('#message_model').modal('hide');
+                    shModal('message_model').hide();
                     $('#message').val('');
                     load_page(sender_id, receiver_id, type);
                 }

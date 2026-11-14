@@ -41,10 +41,10 @@ class Emailconfig extends Admin_Controller
         $data['smtp_encryption'] = $smtp_encryption;
         $data['smtp_auth']       = $smtp_auth;
         $data['emaillist']       = $emaillist;
-        $this->form_validation->set_rules('email_type', $this->lang->line('email') . " " . $this->lang->line('type'), 'required');
-        if ($this->input->post('email_type') == "smtp") {
-            $this->form_validation->set_rules('smtp_username', $this->lang->line('smtp_username'), 'required');
-            $this->form_validation->set_rules('smtp_password', $this->lang->line('smtp_password'), 'required');
+        $this->form_validation->set_rules('email_type', $this->lang->line('email') . " " . $this->lang->line('type'), 'required|xss_clean');
+        if ($this->input->post('email_type', TRUE) == "smtp") {
+            $this->form_validation->set_rules('smtp_username', $this->lang->line('smtp_username'), 'required|xss_clean');
+            $this->form_validation->set_rules('smtp_password', $this->lang->line('smtp_password'), 'required|xss_clean');
         }
 
         if ($this->form_validation->run() === false) {
@@ -55,13 +55,13 @@ class Emailconfig extends Admin_Controller
         } else {
             $data['title'] = 'Email Config List';
             $data_insert   = array(
-                'email_type'    => $this->input->post('email_type'),
-                'smtp_username' => $this->input->post('smtp_username'),
-                'smtp_password' => $this->input->post('smtp_password'),
-                'smtp_server'   => $this->input->post('smtp_server'),
-                'smtp_port'     => $this->input->post('smtp_port'),
-                'ssl_tls'       => $this->input->post('smtp_security'),
-                'smtp_auth'     => $this->input->post('smtp_auth'),
+                'email_type'    => $this->input->post('email_type', TRUE),
+                'smtp_username' => $this->input->post('smtp_username', TRUE),
+                'smtp_password' => $this->input->post('smtp_password', TRUE),
+                'smtp_server'   => $this->input->post('smtp_server', TRUE),
+                'smtp_port'     => $this->input->post('smtp_port', TRUE),
+                'ssl_tls'       => $this->input->post('smtp_security', TRUE),
+                'smtp_auth'     => $this->input->post('smtp_auth', TRUE),
                 'is_active'     => 'yes',
             );
             $this->emailconfig_model->add($data_insert);

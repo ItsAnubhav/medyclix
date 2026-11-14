@@ -6,6 +6,14 @@ if (!defined('BASEPATH')) {
 
 class Vehicle extends Admin_Controller
 {
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $patient_login_prefix;
+	public $payment_mode;
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -21,6 +29,7 @@ class Vehicle extends Admin_Controller
         $this->blood_group    = $this->config->item('bloodgroup');
         $this->charge_type    = $this->customlib->getChargeMaster();
         $this->load->model("transaction_model");
+        $this->load->library('SaasValidation');
         $this->config->load("image_valid");
         $data["charge_type"]        = $this->charge_type;
         $this->patient_login_prefix = "pat";
@@ -36,9 +45,10 @@ class Vehicle extends Admin_Controller
         $this->session->set_userdata('top_menu', 'Transport');
         $this->session->set_userdata('sub_menu', 'vehicle/index');
         $data['title'] = $this->lang->line('add_vehicle');
-        $this->load->view('layout/header');
+        $data['module'] = 'ambulance';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/vehicle/search', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function add()
@@ -46,9 +56,9 @@ class Vehicle extends Admin_Controller
         if (!$this->rbac->hasPrivilege('ambulance', 'can_add')) {
             access_denied();
         }
-        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required');
-        $this->form_validation->set_rules('vehicle_model', $this->lang->line('vehicle_model'), 'required');
-        $this->form_validation->set_rules('vehicle_type', $this->lang->line('vehicle_type'), 'required');
+        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_model', $this->lang->line('vehicle_model'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_type', $this->lang->line('vehicle_type'), 'required|xss_clean');
 
         if ($this->form_validation->run() == false) {
 
@@ -60,15 +70,15 @@ class Vehicle extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $manufacture_year = $this->input->post('manufacture_year');
+            $manufacture_year = $this->input->post('manufacture_year', TRUE);
             $data             = array(
-                'vehicle_no'     => $this->input->post('vehicle_no'),
-                'vehicle_model'  => $this->input->post('vehicle_model'),
-                'driver_name'    => $this->input->post('driver_name'),
-                'driver_licence' => $this->input->post('driver_licence'),
-                'driver_contact' => $this->input->post('driver_contact'),
-                'vehicle_type'   => $this->input->post('vehicle_type'),
-                'note'           => $this->input->post('note'),
+                'vehicle_no'     => $this->input->post('vehicle_no', TRUE),
+                'vehicle_model'  => $this->input->post('vehicle_model', TRUE),
+                'driver_name'    => $this->input->post('driver_name', TRUE),
+                'driver_licence' => $this->input->post('driver_licence', TRUE),
+                'driver_contact' => $this->input->post('driver_contact', TRUE),
+                'vehicle_type'   => $this->input->post('vehicle_type', TRUE),
+                'note'           => $this->input->post('note', TRUE),
             );
             ($manufacture_year != "") ? $data['manufacture_year'] = $manufacture_year : '';
             $this->vehicle_model->add($data);
@@ -82,7 +92,7 @@ class Vehicle extends Admin_Controller
         if (!$this->rbac->hasPrivilege('ambulance', 'can_view')) {
             access_denied();
         }
-        $id          = $this->input->post("id");
+        $id          = $this->input->post("id", TRUE);
         $listVehicle = $this->vehicle_model->getDetails($id);
         echo json_encode($listVehicle);
     }
@@ -93,9 +103,9 @@ class Vehicle extends Admin_Controller
             access_denied();
         }
 
-        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required');
-        $this->form_validation->set_rules('vehicle_model', $this->lang->line('vehicle_model'), 'required');
-        $this->form_validation->set_rules('vehicle_type', $this->lang->line('vehicle_type'), 'required');
+        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_model', $this->lang->line('vehicle_model'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_type', $this->lang->line('vehicle_type'), 'required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'vehicle_no'    => form_error('vehicle_no'),
@@ -105,18 +115,18 @@ class Vehicle extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $id               = $this->input->post('id');
-            $manufacture_year = $this->input->post('manufacture_year');
+            $id               = $this->input->post('id', TRUE);
+            $manufacture_year = $this->input->post('manufacture_year', TRUE);
 
             $data = array(
                 'id'             => $id,
-                'vehicle_no'     => $this->input->post('vehicle_no'),
-                'vehicle_model'  => $this->input->post('vehicle_model'),
-                'driver_name'    => $this->input->post('driver_name'),
-                'driver_licence' => $this->input->post('driver_licence'),
-                'driver_contact' => $this->input->post('driver_contact'),
-                'vehicle_type'   => $this->input->post('vehicle_type'),
-                'note'           => $this->input->post('note'),
+                'vehicle_no'     => $this->input->post('vehicle_no', TRUE),
+                'vehicle_model'  => $this->input->post('vehicle_model', TRUE),
+                'driver_name'    => $this->input->post('driver_name', TRUE),
+                'driver_licence' => $this->input->post('driver_licence', TRUE),
+                'driver_contact' => $this->input->post('driver_contact', TRUE),
+                'vehicle_type'   => $this->input->post('vehicle_type', TRUE),
+                'note'           => $this->input->post('note', TRUE),
             );
 
             ($manufacture_year != "") ? $data['manufacture_year'] = $manufacture_year : '';
@@ -138,6 +148,45 @@ class Vehicle extends Admin_Controller
         echo json_encode($array);
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    public function validateCanAddNewResource($input, $resource_name)
+    {
+        list($resource_name, $quantity) = explode(',', $resource_name);
+        return $this->saasvalidation->validateCanAddNewResource($input, $resource_name, $quantity);
+    }
+
+    /**
+     * SaaS: release a cheque-document attachment from the storage quota and
+     * remove the physical file (attachments live in the transactions table;
+     * dir is uploads/payment_document/).
+     */
+    private function releaseAmbulanceAttachment($attachment)
+    {
+        if (empty($attachment)) {
+            return;
+        }
+        $dir = $this->media_storage->resolveAttachmentDir($attachment);
+        $kb  = $this->media_storage->getUploadedFileSize($attachment, $dir);
+        if ($kb > 0) {
+            try {
+                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+            } catch (Exception $e) {
+                log_message('error', 'SaaS storage quota release failed (ambulance): ' . $e->getMessage());
+            }
+        }
+        $this->media_storage->filedelete($attachment, $dir);
+    }
+
     public function addCallAmbulance()
     {
         if (!$this->rbac->hasPrivilege('ambulance_call', 'can_add')) {
@@ -149,17 +198,17 @@ class Vehicle extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[ambulance_call][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[ambulance_call][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
 
-        $this->form_validation->set_rules('patient_id', $this->lang->line('patient_name'), 'required');
-        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_model'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('charge_category_id', $this->lang->line("charge_category"), 'trim|required');
-        $this->form_validation->set_rules('code', $this->lang->line("charge_name"), 'trim|required');
-        $this->form_validation->set_rules('standard_charge', $this->lang->line('standard_charge'), 'trim|required');
-        $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required');
+        $this->form_validation->set_rules('patient_id', $this->lang->line('patient_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_model'), 'required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required|xss_clean');
+        $this->form_validation->set_rules('charge_category_id', $this->lang->line("charge_category"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('code', $this->lang->line("charge_name"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('standard_charge', $this->lang->line('standard_charge'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules(
             'payment_amount',
             $this->lang->line('payment_amount'),
@@ -169,15 +218,18 @@ class Vehicle extends Admin_Controller
             )
         );
 
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required|xss_clean');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
+        // SaaS: block a NEW ambulance call once the tenant hits its no_of_ambulance limit (create-only).
+        $this->form_validation->set_rules('validate_resource', $this->lang->line('ambulance'), 'callback_validateCanAddNewResource[no_of_ambulance,1]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'vehicle_no'         => form_error('vehicle_no'),
+                'validate_resource'  => form_error('validate_resource'),
                 'date'               => form_error('date'),
                 'payment_amount'     => form_error('payment_amount'),
                 'patient_id'         => form_error('patient_id'),
@@ -206,62 +258,81 @@ class Vehicle extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
 
-            $date              = $this->input->post("date");
-            $patient_id        = $this->input->post('patient_id');
-            $case_reference_id = $this->input->post('case_reference_id_add');
+            $date              = $this->input->post("date", TRUE);
+            $patient_id        = $this->input->post('patient_id', TRUE);
+            $case_reference_id = $this->input->post('case_reference_id_add', TRUE);
             $data              = array(
-                'patient_id'        => $patient_id,
-                'vehicle_id'        => $this->input->post('vehicle_no'),
-                'driver'            => $this->input->post('driver'),
-                'amount'            => $this->input->post('total'),
-                'net_amount'        => $this->input->post('net_amount'),
-                'charge_id'         => $this->input->post('code'),
-                'standard_charge'   => $this->input->post("standard_charge"),
-                'tax_percentage'    => $this->input->post("tax_percentage"),
-                'note'              => $this->input->post('note'),
-                'discount_percentage'  => $this->input->post("discount_percent"),
-                'discount'          => $this->input->post("discount"),
-                'generated_by'      => $this->customlib->getLoggedInUserID(),
-                'date'              => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
+                'patient_id'          => $patient_id,
+                'vehicle_id'          => $this->input->post('vehicle_no', TRUE),
+                'driver'              => $this->input->post('driver', TRUE),
+                'amount'              => $this->input->post('total', TRUE),
+                'net_amount'          => $this->input->post('net_amount', TRUE),
+                'charge_id'           => $this->input->post('code', TRUE),
+                'standard_charge'     => $this->input->post("standard_charge", TRUE),
+                'tax_percentage'      => $this->input->post("tax_percentage", TRUE),
+                'note'                => $this->input->post('note', TRUE),
+                'discount_percentage' => $this->input->post("discount_percent", TRUE),
+                'discount'            => $this->input->post("discount", TRUE),
+                'generated_by'        => $this->customlib->getLoggedInUserID(),
+                'date'                => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
             );
             if ($case_reference_id != '') {
                 $data['case_reference_id'] = $case_reference_id;
             } else {
                 $data['case_reference_id'] = null;
             }
-            $chequedate      = $this->input->post('cheque_date');
+            $chequedate      = $this->input->post('cheque_date', TRUE);
             $cheque_date     = $this->customlib->dateFormatToYYYYMMDD($chequedate);
             $payment_section = $this->config->item('payment_section');
 
             $transaction_data = array(
                 'patient_id'        => $patient_id,
                 'section'           => $payment_section['ambulance'],
-                'amount'            => $this->input->post('payment_amount'),
+                'amount'            => $this->input->post('payment_amount', TRUE),
                 'type'              => 'payment',
                 'case_reference_id' => $data['case_reference_id'],
-                'payment_mode'      => $this->input->post('payment_mode'),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
                 'payment_date'      => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
                 'received_by'       => $this->customlib->getLoggedInUserID(),
             );
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $cheque_date;
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
 
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
+
+                    // SaaS: add uploaded cheque document size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (ambulance add): ' . $e->getMessage());
+                    }
                 }
             }
 
             $insert_id = $this->vehicle_model->addCallAmbulance($data, $transaction_data);
-            $custom_field_post  = $this->input->post("custom_fields[ambulance_call]");
+
+            // SaaS: a NEW ambulance call was created — increment no_of_ambulance by 1.
+            // Monthly-reset usage counter: add-only (+1), NO edit/delete decrement by design.
+            // Own try/catch so a quota-API hiccup never aborts the already-saved call.
+            if ($insert_id) {
+                try {
+                    $this->saasvalidation->updateResouceQuota('no_of_ambulance', 1);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS no_of_ambulance count increment failed (vehicle addCallAmbulance): ' . $e->getMessage());
+                }
+            }
+
+            $custom_field_post  = $this->input->post("custom_fields[ambulance_call]", TRUE);
             $custom_value_array = array();
 
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ambulance_call][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ambulance_call][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -277,18 +348,18 @@ class Vehicle extends Admin_Controller
             }
             $array = array('status' => 'success', 'id' => $insert_id, 'error' => '', 'message' => $this->lang->line('success_message'));
 
-            $charge_details  = $this->notificationsetting_model->getchargeDetails($this->input->post('code'));
-            $vehicle_details = $this->Notificationsetting_model->getvehiclemodelnoDetails($this->input->post('vehicle_no'));
+            $charge_details  = $this->notificationsetting_model->getchargeDetails($this->input->post('code', TRUE));
+            $vehicle_details = $this->Notificationsetting_model->getvehiclemodelnoDetails($this->input->post('vehicle_no', TRUE));
 
             $event_data = array(
                 'patient_id'    => $patient_id,
                 'vehicle_model' => $vehicle_details['vehicle_model'],
-                'driver_name'   => $this->input->post('driver'),
+                'driver_name'   => $this->input->post('driver', TRUE),
                 'date'          => $date,
                 'charge_name'   => $charge_details['name'],
-                'tax'           => $this->input->post('tax'),
-                'net_amount'    => $this->input->post('net_amount'),
-                'paid_amount'   => $this->input->post('payment_amount'),
+                'tax'           => $this->input->post('tax', TRUE),
+                'net_amount'    => $this->input->post('net_amount', TRUE),
+                'paid_amount'   => $this->input->post('payment_amount', TRUE),
             );
 
             $this->system_notification->send_system_notification('create_ambulance_call', $event_data);
@@ -298,6 +369,9 @@ class Vehicle extends Admin_Controller
 
     public function getBillDetails($id)
     {
+        if (!$this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
+            access_denied();
+        }
         $data['id'] = $id;
         if (isset($_GET['print'])) {
             $data["print"] = 'yes';
@@ -311,6 +385,18 @@ class Vehicle extends Admin_Controller
         $data['fields']        = $this->customfield_model->get_custom_fields('ambulance_call');
         $data['print_fields']  = $this->customfield_model->get_custom_fields('ambulance_call', '', 1);
         $this->load->view('admin/vehicle/printBill', $data);
+    }
+
+    public function getAmbulanceBillView()
+    {
+        if (!$this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
+            access_denied();
+        }
+        $id             = $this->input->post('id', TRUE);
+        $data['result'] = $this->vehicle_model->getBillDetails($id);
+        $data['fields'] = $this->customfield_model->get_custom_fields('ambulance_call');
+        $page           = $this->load->view('admin/vehicle/_viewBillDetails', $data, true);
+        echo json_encode(['status' => 1, 'page' => $page]);
     }
 
     public function getcallambulance()
@@ -333,13 +419,17 @@ class Vehicle extends Admin_Controller
         $categoryName            = $this->pathology_category_model->getcategoryName();
         $data["categoryName"]    = $categoryName;
 		$data['organisation']    = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'ambulance';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/vehicle/ambulance_call', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getambulancecallDatatable()
     {
+        if (!$this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
+            access_denied();
+        }
         $dt_response = $this->vehicle_model->getAllambulancecallRecord();		
         $fields      = $this->customfield_model->get_custom_fields('ambulance_call', 1);
         $dt_response = json_decode($dt_response);
@@ -352,16 +442,16 @@ class Vehicle extends Admin_Controller
                 //====================================
                 $action = "<div class='rowoptionview rowview-btn-top'>";
 
-                if ($this->rbac->hasPrivilege('ambulance_partial_payment', 'can_add') || $this->rbac->hasPrivilege('ambulance_partial_payment', 'can_view') || $this->rbac->hasPrivilege('ambulance_partial_payment', 'can_delete')) {
-                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='ambulance'  data-record-id='" . $value->id . "' data-case-id='" . $value->case_reference_id . "' data-patient-id='" . $value->patient_id . "' data-balance-amount='" . $balance . "'class='btn btn-default btn-xs add_payment' data-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
+                if ($this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
+                    $action .= "<a href='#'  onclick='viewDetailBill(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
                 }
 
-                if ($this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
-                    $action .= "<a href='#'  onclick='viewDetailBill(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip'  title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                if ($this->rbac->hasPrivilege('ambulance_partial_payment', 'can_add') || $this->rbac->hasPrivilege('ambulance_partial_payment', 'can_view') || $this->rbac->hasPrivilege('ambulance_partial_payment', 'can_delete')) {
+                    $action .= "<a href='javascript:void(0)'  data-caseid='' data-module='ambulance'  data-record-id='" . $value->id . "' data-case-id='" . $value->case_reference_id . "' data-patient-id='" . $value->patient_id . "' data-balance-amount='" . $balance . "'class='btn btn-default btn-xs add_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_payment') . "' ><i class='fa fa-plus'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('ambulance_call', 'can_delete')) {
-                    $action .= "<a href='#' onclick='delete_bill(" . $value->id . ")' class='btn btn-default btn-xs'  data-toggle='tooltip'  title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='delete_bill(" . $value->id . ")' class='btn btn-default btn-xs'  data-bs-toggle='tooltip'  title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div'>";
@@ -369,7 +459,7 @@ class Vehicle extends Admin_Controller
                 //==============================
                 $row[] = $this->customlib->getSessionPrefixByType('ambulance_call_billing') . $value->id;
                 $row[] = $value->case_reference_id;
-                $row[] = $value->patient . " (" . $value->patient_id . ")" . $action;
+                $row[] = $value->patient . " (" . $value->patient_id . ")";
                 $row[] = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
                 $row[] = $value->vehicle_no;
                 $row[] = $value->vehicle_model;
@@ -385,6 +475,8 @@ class Vehicle extends Admin_Controller
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
                             $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
@@ -404,7 +496,7 @@ class Vehicle extends Admin_Controller
                 $row[]     = amountFormat($tax_amt)." (".$value->tax_percentage." %)";
                 $row[]     = $value->net_amount;
                 $row[]     = $value->paid_amount;
-                $row[]     = amountFormat($balance);
+                $row[]     = amountFormat($balance) . $action;
                 $dt_data[] = $row;
             }
         }
@@ -420,6 +512,9 @@ class Vehicle extends Admin_Controller
 
     public function getvehicleDatatable()
     {
+        if (!$this->rbac->hasPrivilege('ambulance', 'can_view')) {
+            access_denied();
+        }
         $dt_response = $this->vehicle_model->getAllvehicleRecord();
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
@@ -433,18 +528,18 @@ class Vehicle extends Admin_Controller
                 $action = "<div class='rowoptionview rowview-btn-top'>";
 
                 if ($this->rbac->hasPrivilege('ambulance', 'can_edit')) {
-                    $action .= "<span class='medium-tooltip'><a href='#' onclick='getRecord(" . $value->id . "),refreshmodal()' class='btn btn-default btn-xs'  data-toggle='tooltip' data-placement='top' title='" . $this->lang->line('edit_ambulance') . "'><i class='fa fa-pencil'></i></a></span>";
+                    $action .= "<span class='medium-tooltip'><a href='#' onclick='getRecord(" . $value->id . "),refreshmodal()' class='btn btn-default btn-xs'  data-bs-toggle='tooltip' data-placement='top' title='" . $this->lang->line('edit_ambulance') . "'><i class='fa fa-pencil'></i></a></span>";
                 }
                 if ($this->rbac->hasPrivilege('ambulance', 'can_delete')) {
                     $action .= "<a href='#' onclick='delete_bill(" . $value->id . ")'
-                   class='btn btn-default btn-xs' data-placement='top' data-toggle='tooltip'  title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                   class='btn btn-default btn-xs' data-placement='top' data-bs-toggle='tooltip'  title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div>";
 
-                $first_action = "<a href='#' class='detail_popover'  data-toggle='popover' title=''>";
+                $first_action = "<a href='#' class='detail_popover'  data-bs-toggle='popover' title=''>";
                 $firstaction  = "<div class='fee_detail_popover' style='display:none'>";
-                if ($value->note = "") {
+                if ($value->note == "") {
                     $firstaction = "<p href='#'  class='text text-danger'   title=''>" . $this->lang->line('no_description') . "</p>";
                 } else {
                     $firstaction = "<p href='#'  class='text text-danger'   title=''>" . $this->lang->line('note') . "</p>";
@@ -453,13 +548,14 @@ class Vehicle extends Admin_Controller
                 // =============================
 
                 $row[]     = $first_action . $value->vehicle_no . "</a>" . $firstaction;
-                $row[]     = $value->vehicle_model . $action;
+                $row[]     = $value->vehicle_model;
                 $row[]     = $value->manufacture_year;
                 $row[]     = $value->driver_name;
                 $row[]     = $value->driver_licence;
                 $row[]     = $value->driver_contact;
                 $row[]     = $note_value;
                 $row[]     = $value->vehicle_type;
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -478,7 +574,7 @@ class Vehicle extends Admin_Controller
             access_denied();
         }
 
-        $id                              = $this->input->get("id");
+        $id                              = $this->input->get("id", TRUE);
         $listCall                        = $this->vehicle_model->getCallDetails($id);
         $date                            = $this->customlib->YYYYMMDDHisTodateFormat($listCall['date'], $this->time_format);
         $listCall["date"]                = $date;
@@ -497,22 +593,22 @@ class Vehicle extends Admin_Controller
                 if ($custom_fields_value['validation']) {
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
-                    $this->form_validation->set_rules("custom_fields[ambulance_call][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[ambulance_call][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
                 }
             }
         }
-        $this->form_validation->set_rules('patient_id', $this->lang->line('patient_name'), 'required');
-        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required');
-        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required');
-        $this->form_validation->set_rules('charge_category_id', $this->lang->line("charge_category"), 'trim|required');
-        $this->form_validation->set_rules('code', $this->lang->line("charge_name"), 'trim|required');
-        $this->form_validation->set_rules('standard_charge', $this->lang->line('standard_charge'), 'trim|required');
-        $this->form_validation->set_rules('payment_amount', $this->lang->line('payment_amount'), 'trim|valid_amount');
-        $this->form_validation->set_rules('total', $this->lang->line('total'), 'trim|required');
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
-            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+        $this->form_validation->set_rules('patient_id', $this->lang->line('patient_name'), 'required|xss_clean');
+        $this->form_validation->set_rules('vehicle_no', $this->lang->line('vehicle_number'), 'required|xss_clean');
+        $this->form_validation->set_rules('date', $this->lang->line('date'), 'required|xss_clean');
+        $this->form_validation->set_rules('charge_category_id', $this->lang->line("charge_category"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('code', $this->lang->line("charge_name"), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('standard_charge', $this->lang->line('standard_charge'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('payment_amount', $this->lang->line('payment_amount'), 'trim|valid_amount|xss_clean');
+        $this->form_validation->set_rules('total', $this->lang->line('total'), 'trim|required|xss_clean');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required|xss_clean');
+            $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required|xss_clean');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -548,69 +644,86 @@ class Vehicle extends Admin_Controller
 			
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $id                = $this->input->post('id');
-            $date              = $this->input->post('date');
-            $patient_id        = $this->input->post("patient_id");
-            $custom_field_post = $this->input->post("custom_fields[ambulance_call]");
+            $id                = $this->input->post('id', TRUE);
+            $date              = $this->input->post('date', TRUE);
+            $patient_id        = $this->input->post("patient_id", TRUE);
+            $custom_field_post = $this->input->post("custom_fields[ambulance_call]", TRUE);
             $data              = array(
-                'id'                 => $id,
-                'patient_id'         => $patient_id,
-                'address'            => $this->input->post('address'),
-                'driver'             => $this->input->post('driver_name'),
-                'amount'             => $this->input->post('total'),
-                'charge_category_id' => $this->input->post("charge_category_id"),
-                'charge_id'          => $this->input->post('code'),
-                'net_amount'         => $this->input->post('net_amount'),
-                'note'               => $this->input->post('note'),
-                'standard_charge'    => $this->input->post("standard_charge"),
-                'tax_percentage'     => $this->input->post("tax_percentage"),
-                'discount_percentage'     => $this->input->post("discount_percent_edit"),
-                'discount'     => $this->input->post("discount_edit"),
-                'date'               => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
+                'id'                  => $id,
+                'patient_id'          => $patient_id,
+                'address'             => $this->input->post('address', TRUE),
+                'driver'              => $this->input->post('driver_name', TRUE),
+                'amount'              => $this->input->post('total', TRUE),
+                'charge_category_id'  => $this->input->post("charge_category_id", TRUE),
+                'charge_id'           => $this->input->post('code', TRUE),
+                'net_amount'          => $this->input->post('net_amount', TRUE),
+                'note'                => $this->input->post('note', TRUE),
+                'standard_charge'     => $this->input->post("standard_charge", TRUE),
+                'tax_percentage'      => $this->input->post("tax_percentage", TRUE),
+                'discount_percentage' => $this->input->post("discount_percent_edit", TRUE),
+                'discount'            => $this->input->post("discount_edit", TRUE),
+                'date'                => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
             );
 
-            if ($this->input->post("case_reference_id") != "") {
-                $data['case_reference_id'] = $this->input->post("case_reference_id");
-                $transaction_data          = array('case_reference_id' => $this->input->post("case_reference_id"));
+            if ($this->input->post("case_reference_id", TRUE) != "") {
+                $data['case_reference_id'] = $this->input->post("case_reference_id", TRUE);
+                $transaction_data          = array('case_reference_id' => $this->input->post("case_reference_id", TRUE));
             }
 
-            $chequedate       = $this->input->post('cheque_date');
+            $chequedate       = $this->input->post('cheque_date', TRUE);
             $cheque_date      = $this->customlib->dateFormatToYYYYMMDD($chequedate);
             $payment_section  = $this->config->item('payment_section');
             $transaction_data = array(
-                
                 'patient_id'   => $patient_id,
                 'section'      => $payment_section['ambulance'],
-                'amount'       => $this->input->post('payment_amount'),
+                'amount'       => $this->input->post('payment_amount', TRUE),
                 'type'         => 'payment',
-                'payment_mode' => $this->input->post('payment_mode'),
+                'payment_mode' => $this->input->post('payment_mode', TRUE),
                 'payment_date' => $this->customlib->dateFormatToYYYYMMDDHis($date, $this->time_format),
                 'received_by'  => $this->customlib->getLoggedInUserID(),
             );
-			
-            if ($this->input->post("case_reference_id") != "") {
-                $transaction_data['case_reference_id'] = $this->input->post("case_reference_id");
+
+            if ($this->input->post("case_reference_id", TRUE) != "") {
+                $transaction_data['case_reference_id'] = $this->input->post("case_reference_id", TRUE);
             }
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $transaction_data['cheque_date']     = $cheque_date;
-                $transaction_data['cheque_no']       = $this->input->post('cheque_no');
+                $transaction_data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $transaction_data['attachment']      = $file_name;
                     $transaction_data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+
+                    // SaaS: release the replaced cheque document (if any) + add the new one's size.
+                    $saas_old_attachment = '';
+                    $saas_existing_txns  = $this->transaction_model->ambulanceCallPayments($id);
+                    if (!empty($saas_existing_txns)) {
+                        foreach ($saas_existing_txns as $saas_txn) {
+                            if ((string)$saas_txn->patient_id === (string)$patient_id && !empty($saas_txn->attachment)) {
+                                $saas_old_attachment = $saas_txn->attachment;
+                                break;
+                            }
+                        }
+                    }
+                    $this->releaseAmbulanceAttachment($saas_old_attachment);
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (ambulance update): ' . $e->getMessage());
+                    }
+                }
             }
 
             $this->vehicle_model->addCallAmbulance($data, $transaction_data);
-            $custom_field_post = $this->input->post("custom_fields[ambulance_call]");
+            $custom_field_post = $this->input->post("custom_fields[ambulance_call]", TRUE);
 
             if (!empty($custom_field_post)) {
                 $custom_value_array = [];
-                $custom_value_array = array();
+              
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[ambulance_call][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[ambulance_call][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => $id,
@@ -632,13 +745,26 @@ class Vehicle extends Admin_Controller
         if (!$this->rbac->hasPrivilege('ambulance_call', 'can_delete')) {
             access_denied();
         }
+
+        // SaaS: release + remove the cheque document files of this call's transactions
+        // (model->delete cascades the transaction rows but leaves the files on disk).
+        $saas_txns = $this->transaction_model->ambulanceCallPayments($id);
+        if (!empty($saas_txns)) {
+            foreach ($saas_txns as $saas_txn) {
+                $this->releaseAmbulanceAttachment(isset($saas_txn->attachment) ? $saas_txn->attachment : '');
+            }
+        }
+
         $this->vehicle_model->delete($id);
         redirect('admin/Vehicle/getcallambulance');
     }
 
     public function getVehicleDetail()
     {
-        $id     = $this->input->post('id');
+        if (!$this->rbac->hasPrivilege('ambulance', 'can_view')) {
+            access_denied();
+        }
+        $id     = $this->input->post('id', TRUE);
         $result = $this->vehicle_model->getDetails($id);
         echo json_encode($result);
     }
@@ -658,14 +784,18 @@ class Vehicle extends Admin_Controller
         $data["searchlist"]  = $this->search_type;
         $data["fields"]      = $custom_fields;
         $data['vehiclelist'] = $this->vehicle_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'reports';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/vehicle/ambulancereport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        if (!$this->rbac->hasPrivilege('ambulance_call', 'can_view')) {
+            access_denied();
+        }
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -674,11 +804,11 @@ class Vehicle extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'    => $this->input->post('search_type'),
-                'collect_staff'  => $this->input->post('collect_staff'),
-                'vehicle_number' => $this->input->post('vehicle_number'),
-                'date_from'      => $this->input->post('date_from'),
-                'date_to'        => $this->input->post('date_to'),
+                'search_type'    => $this->input->post('search_type', TRUE),
+                'collect_staff'  => $this->input->post('collect_staff', TRUE),
+                'vehicle_number' => $this->input->post('vehicle_number', TRUE),
+                'date_from'      => $this->input->post('date_from', TRUE),
+                'date_to'        => $this->input->post('date_to', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -688,15 +818,15 @@ class Vehicle extends Admin_Controller
 
     public function ambulancereports()
     {
-        $search['search_type']   = $this->input->post('search_type');
-        $search['collect_staff'] = $this->input->post('collect_staff');
-        $search['date_from']     = $this->input->post('date_from');
-        $search['date_to']       = $this->input->post('date_to');
+        $search['search_type']   = $this->input->post('search_type', TRUE);
+        $search['collect_staff'] = $this->input->post('collect_staff', TRUE);
+        $search['date_from']     = $this->input->post('date_from', TRUE);
+        $search['date_to']       = $this->input->post('date_to', TRUE);
         $start_date              = '';
         $end_date                = '';
         $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
-        $condition['vehicle_number'] = $this->input->post('vehicle_number');
+        $condition['vehicle_number'] = $this->input->post('vehicle_number', TRUE);
         $fields                      = $this->customfield_model->get_custom_fields('ambulance_call', '', '', 1);
         if ($search['search_type'] == 'period') {
 
@@ -715,7 +845,7 @@ class Vehicle extends Admin_Controller
             $condition['end_date']   = $dates['to_date'];
         }
 
-        $condition['generated_staff'] = $this->input->post('collect_staff');
+        $condition['generated_staff'] = $this->input->post('collect_staff', TRUE);
 
         $reportdata   = $this->transaction_model->ambulancecallRecordReport($condition);
         $reportdata   = json_decode($reportdata);
@@ -756,6 +886,8 @@ class Vehicle extends Admin_Controller
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
                             $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
@@ -812,10 +944,10 @@ class Vehicle extends Admin_Controller
 
     public function getAmbulanceCallTransaction()
     {
-        $billing_id                     = $this->input->post('id');
-        $data['balance_amount']         = $this->input->post('balance_amount');
-        $data['case_id']                = $this->input->post('case_id');
-        $data['patient_id']             = $this->input->post('patient_id');
+        $billing_id                     = $this->input->post('id', TRUE);
+        $data['balance_amount']         = $this->input->post('balance_amount', TRUE);
+        $data['case_id']                = $this->input->post('case_id', TRUE);
+        $data['patient_id']             = $this->input->post('patient_id', TRUE);
         $data['ambullance_call_detail'] = $this->vehicle_model->getBillDetailsAmbulance($billing_id);
         $transaction                    = $this->transaction_model->ambulanceCallPayments($billing_id);
         $data["billing_id"]             = $billing_id;
@@ -827,24 +959,24 @@ class Vehicle extends Admin_Controller
 
     public function partialbill()
     {
-        if (!$this->rbac->hasPrivilege('medicine', 'can_add')) {
+        if (!$this->rbac->hasPrivilege('ambulance_billing_payment', 'can_add')) {
             access_denied();
         }
 
-        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required|xss_clean');
         $this->form_validation->set_rules(
             'payment_amount',
             $this->lang->line('payment_amount'),'required|xss_clean|valid_amount|callback_check_amount_exceed',
         );
 
-        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required');
-        if ($_POST['payment_mode'] == "Cheque") {
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required|xss_clean');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
-        $case_id=$this->input->post('patient_referance_case_id');
+        $case_id=$this->input->post('patient_referance_case_id', TRUE);
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -858,17 +990,16 @@ class Vehicle extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $picture       = "";
-            $bill_date     = $this->input->post("payment_date");
+            $bill_date     = $this->input->post("payment_date", TRUE);
             $payment_array = array(
-                'amount'            => $this->input->post('payment_amount'),
+                'amount'            => $this->input->post('payment_amount', TRUE),
                 'type'              => 'payment',
-                'patient_id'        => $this->input->post('patient_id'),
-                'ambulance_call_id' => $this->input->post('billing_id'),
-                'payment_mode'      => $this->input->post('payment_mode'),
-                'note'              => $this->input->post('note'),
+                'patient_id'        => $this->input->post('patient_id', TRUE),
+                'ambulance_call_id' => $this->input->post('billing_id', TRUE),
+                'payment_mode'      => $this->input->post('payment_mode', TRUE),
+                'note'              => $this->input->post('note', TRUE),
                 'payment_date'      => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->customlib->getHospitalTimeFormat()),
                 'received_by'       => $this->customlib->getLoggedInUserID(),
-                'payment_mode'      => $this->input->post('payment_mode'),
             );
 
             if($case_id != "") {
@@ -877,17 +1008,24 @@ class Vehicle extends Admin_Controller
 
             $insert_id = $this->transaction_model->add($payment_array);
 
-            $cheque_date = $this->input->post("cheque_date");
-            if ($this->input->post('payment_mode') == "Cheque") {
+            $cheque_date = $this->input->post("cheque_date", TRUE);
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['id']              = $insert_id;
                 $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $data['cheque_no']       = $this->input->post('cheque_no');
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
                 
                 if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                     $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                     $data['attachment']      = $file_name;
                     $data['attachment_name'] = $_FILES["document"]["name"];
-                }   
+
+                    // SaaS: add uploaded cheque document size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (ambulance partialbill): ' . $e->getMessage());
+                    }
+                }
                 $this->transaction_model->add($data);
             }
 
@@ -897,10 +1035,10 @@ class Vehicle extends Admin_Controller
     }
 
     public function check_amount_exceed(){
-        $billing_id=$this->input->post('billing_id');
+        $billing_id=$this->input->post('billing_id', TRUE);
         $ambullance_call_detail = $this->vehicle_model->getBillDetailsAmbulance($billing_id);
-       
-        if($this->input->post('payment_amount') !="" && $ambullance_call_detail['net_amount'] < ($ambullance_call_detail['paid_amount']+$this->input->post('payment_amount')))
+
+        if($this->input->post('payment_amount', TRUE) !="" && (float)$ambullance_call_detail['net_amount'] < ((float)$ambullance_call_detail['paid_amount'] + (float)$this->input->post('payment_amount', TRUE)))
         {
             $this->form_validation->set_message('check_amount_exceed', $this->lang->line('amount_should_not_be_greater_than_balance') . ' ' . ($ambullance_call_detail['net_amount']-$ambullance_call_detail['paid_amount']));
             return FALSE;
@@ -911,8 +1049,11 @@ class Vehicle extends Admin_Controller
 
     public function printTransaction()
     {
+        if (!$this->rbac->hasPrivilege('ambulance_billing_payment', 'can_view')) {
+            access_denied();
+        }
         $print_details         = $this->printing_model->get('', 'paymentreceipt');
-        $id                    = $this->input->post('id');
+        $id                    = $this->input->post('id', TRUE);
         $charge                = array();
         $transaction           = $this->transaction_model->ambulanceCallPaymentByTransactionId($id);
         $data['print_details'] = $print_details;

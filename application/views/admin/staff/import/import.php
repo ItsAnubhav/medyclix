@@ -1,27 +1,25 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-info">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('import_staff'); ?></h3>
-                        <div class="pull-right box-tools">                            
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('import_staff'); ?></h3>
+                        <div class="float-end ms-auto d-flex gap-1">                            
                             <a href="<?php echo site_url('admin/staff/exportformat') ?>">
                                 <button class="btn btn-primary btn-sm"><i class="fa fa-download"></i> <?php echo $this->lang->line('download_sample_import_file'); ?></button>
                             </a>
                         </div>
                     </div>
-                    <div class="box-body">      
+                    <div class="card-body">      
                         <?php  if ($this->session->flashdata('msg')) { ?> <div>  <?php echo $this->session->flashdata('msg') ?> </div> <?php $this->session->unset_userdata('msg'); }   ?>
                         <br/>           
                         1. <?php echo $this->lang->line('import_staff_step1'); ?><br/>
                         2. <?php echo $this->lang->line('import_staff_step2'); ?><br/>
 
                         <hr/></div>
-                    <div class="box-body table-responsive" style="overflow-x:auto;">
+                    <div class="card-body table-responsive" style="overflow-x:auto;">
                         <table class="table table-striped table-bordered table-hover" id="sampledata">
                             <thead>
                                 <tr>
@@ -53,11 +51,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </div>
                     <hr/>
                     <form action="<?php echo site_url('admin/staff/import') ?>" id="employeeform" name="employeeform" method="post" enctype="multipart/form-data">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">                                     
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('role'); ?></label><small class="req"> *</small>
                                         <select  id="role" name="role" class="form-control" >
                                             <option value=""   ><?php echo $this->lang->line('select'); ?></option>
@@ -72,7 +70,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('designation'); ?></label>
                                         <select id="designation" name="designation" placeholder="" type="text" class="form-control">
                                             <option value="select"><?php echo $this->lang->line('select') ?></option>
@@ -86,7 +84,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputEmail1"><?php echo $this->lang->line('department'); ?></label>
                                         <select id="department" name="department" placeholder="" type="text" class="form-control">
                                             <option value="select"><?php echo $this->lang->line('select') ?></option>
@@ -102,13 +100,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="exampleInputFile"><?php echo $this->lang->line('select_csv_file'); ?></label><small class="req"> *</small>
                                         <div><input class="filestyle form-control" type='file' name='file' id="file" size='20' />
                                             <span class="text-danger"><?php echo form_error('file'); ?></span></div>
                                     </div></div>
                                 <div class="col-md-6 pt20">
-                                    <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('import_staff'); ?></button>
+                                    <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('import_staff'); ?></button>
                                 </div>
 							</div>
                         </div>
@@ -116,5 +114,3 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     <div>
                     </div>
                 </div>
-                </section>
-            </div>

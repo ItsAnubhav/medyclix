@@ -1,4 +1,4 @@
-<div class="box border0">
+<div class="card border0">
     <ul class="tablists">        
         
         <?php if ($this->rbac->hasPrivilege('print_appointment_header_footer', 'can_view')) { ?>

@@ -1,20 +1,18 @@
-<div class="content-wrapper">
-    <?php $call_type = $this->customlib->getCalltype();?> 
-    <section class="content">
-        <div class="row">
+<?php $call_type = $this->customlib->getCalltype();?>
+    <div class="row">
             <!-- left column -->
             <div class="col-md-12"> 
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('phone_call_log_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('phone_call_log_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('phone_call_log', 'can_add')) {?>
-                                <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm call_log"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_call_log'); ?> </a>
+                                <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm call_log"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_call_log'); ?> </a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('phone_call_log'); ?></div>
                         <div class="table-responsive mailbox-messages">
                             <table class="table table-hover table-striped table-bordered ajaxlist" data-export-title="<?php echo $this->lang->line('phone_call_log'); ?>">
@@ -25,218 +23,184 @@
                                         <th><?php echo $this->lang->line('date'); ?></th>
                                         <th><?php echo $this->lang->line('next_follow_up_date'); ?></th>
                                         <th><?php echo $this->lang->line('call_type'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <!-- right column -->
         </div> 
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 
 <!-- new END -->
-<div id="calldetails" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content mx-2">
+<div class="modal fade sh-modal sh-modal-accent" id="calldetails" tabindex="-1" aria-labelledby="calldetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('details'); ?></h4>
+                <h5 class="modal-title" id="calldetailsLabel"><?php echo $this->lang->line('details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="getdetails">
+            <div class="pup-scroll-area">
+                <div class="modal-body" id="getdetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="editmyModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">×</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_call_log'); ?> </h4>
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editmyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editmyModalLabel"><?php echo $this->lang->line('edit_call_log'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="editformadd" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="scroll-area">
-                    <div class="modal-body pt0 pb0">
-                        <div class="ptt10">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('name'); ?></label>  <small class="req"> *</small> 
-                                        <input type="text" id="ename" class="form-control" value="<?php echo set_value('name'); ?>" name="name">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('edit_call_log'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?> <small class="req">*</small></label>
+                                        <input type="text" id="ename" class="form-control form-control-sm" value="<?php echo set_value('name'); ?>" name="name">
                                         <span class="text-danger"><?php echo form_error('name'); ?></span>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('phone'); ?></label>
-                                        <input type="text" class="form-control" id="econtact" value="<?php echo set_value('contact'); ?>" name="contact">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('phone'); ?></label>
+                                        <input type="text" class="form-control form-control-sm" id="econtact" value="<?php echo set_value('contact'); ?>" name="contact">
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('date'); ?></label> <small class="req"> *</small>
-                                        <input id="edate" name="date" placeholder="" type="text" class="form-control"  value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly" />
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('date'); ?> <small class="req">*</small></label>
+                                        <input id="edate" name="date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly">
                                         <span class="text-danger"><?php echo form_error('date'); ?></span>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="email"><?php echo $this->lang->line('description'); ?></label>
-                                        <textarea class="form-control" id="edescription" name="description"  rows="3"><?php echo set_value('description'); ?></textarea>
-
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('next_follow_up_date'); ?></label>
+                                        <input id="efollow_up_date" name="follow_up_date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('follow_up_date'); ?>" readonly="readonly">
+                                        <span class="text-danger"><?php echo form_error('follow_up_date'); ?></span>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <div class="form-group">
-                                            <label for="pwd"><?php echo $this->lang->line('next_follow_up_date'); ?></label><input id="efollow_up_date" name="follow_up_date" placeholder="" type="text" class="form-control"  value="<?php echo set_value('follow_up_date'); ?>" readonly="readonly" />
-                                            <span class="text-danger"><?php echo form_error('follow_up_date'); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('call_duration'); ?></label>
-                                        <input id="ecall_dureation" type="text" class="form-control" value="<?php echo set_value('call_dureation'); ?>" name="call_dureation">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('call_duration'); ?></label>
+                                        <input id="ecall_dureation" type="text" class="form-control form-control-sm" value="<?php echo set_value('call_dureation'); ?>" name="call_dureation">
                                         <span class="text-danger"><?php echo form_error('call_dureation'); ?></span>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('note'); ?></label>
-                                        <textarea class="form-control" id="enote" name="note" rows="3"><?php echo set_value('note'); ?></textarea>
-                                        <input type="hidden" name="id" id="generalcall_id" >
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('call_type'); ?> <small class="req">*</small></label>
+                                        <div class="d-flex flex-wrap gap-3 mt-1">
+                                            <?php $n = 1; foreach ($call_type as $key => $value) { $rid = $n++; ?>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" id="<?php echo $rid; ?>" name="call_type" value="<?php echo $key; ?>" <?php if (set_value('call_type') == $key) { ?> checked=""<?php } ?>>
+                                                    <label class="form-check-label" for="<?php echo $rid; ?>"><?php echo $value; ?></label>
+                                                </div>
+                                            <?php } ?>
+                                        </div>
+                                        <span class="text-danger"><?php echo form_error('call_type'); ?></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="edescription" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('note'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="enote" name="note" rows="3"><?php echo set_value('note'); ?></textarea>
+                                        <input type="hidden" name="id" id="generalcall_id">
                                         <span class="text-danger"><?php echo form_error('note'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('call_type'); ?></label>
-
-                                        <small class="req"> *</small>
-                                        <?php
-                                        $n = 1;
-                                        foreach ($call_type as $key => $value) {
-                                            ?>
-                                            <label class="radio-inline"><input type="radio" id="<?php echo $n++; ?>" name="call_type" value="<?php echo $key; ?>" <?php if (set_value('call_type') == $key) {?> checked=""<?php }?>> <?php echo $value; ?></label>
-
-                                        <?php }?>
-
-                                        <span class="text-danger"><?php echo form_error('call_type'); ?></span>
-                                    </div>
-                                </div>
                             </div>
-                        </div><!-- /.box-body -->
-                    </div>    
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" id="editformaddbtn" data-loading-text="<?php echo $this->lang->line('processing') ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="editformaddbtn" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div id="myModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">×</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_call_log'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_call_log'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formadd" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="scroll-area">
-                    <div class="modal-body pt0 pb0">
-                        <div class="ptt10">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('name'); ?></label>  <small class="req"> *</small>
-                                        <input type="text" class="form-control" value="<?php echo set_value('name'); ?>" name="name">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('add_call_log'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?> <small class="req">*</small></label>
+                                        <input type="text" class="form-control form-control-sm" value="<?php echo set_value('name'); ?>" name="name">
                                         <span class="text-danger"><?php echo form_error('name'); ?></span>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('phone'); ?></label>
-                                        <input type="text" class="form-control" value="<?php echo set_value('contact'); ?>" name="contact">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('phone'); ?></label>
+                                        <input type="text" class="form-control form-control-sm" value="<?php echo set_value('contact'); ?>" name="contact">
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('date'); ?></label> <small class="req"> *</small>
-                                        <input id="date" name="date" placeholder="" type="text" class="form-control"  value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly" />
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('date'); ?> <small class="req">*</small></label>
+                                        <input id="date" name="date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly">
                                         <span class="text-danger"><?php echo form_error('date'); ?></span>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="email"><?php echo $this->lang->line('description'); ?></label>
-                                        <textarea class="form-control" id="description" name="description"  rows="3"><?php echo set_value('description'); ?></textarea>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('next_follow_up_date'); ?></label>
+                                        <input id="follow_up_date" name="follow_up_date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('follow_up_date'); ?>" readonly="readonly">
+                                        <span class="text-danger"><?php echo form_error('follow_up_date'); ?></span>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <div class="form-group">
-                                            <label for="pwd"><?php echo $this->lang->line('next_follow_up_date'); ?></label>     <input id="follow_up_date" name="follow_up_date" placeholder="" type="text" class="form-control"  value="<?php echo set_value('follow_up_date'); ?>" readonly="readonly" />
-                                            <span class="text-danger"><?php echo form_error('follow_up_date'); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('call_duration'); ?></label>
-                                        <input type="text" class="form-control" value="<?php echo set_value('call_dureation'); ?>" name="call_dureation">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('call_duration'); ?></label>
+                                        <input type="text" class="form-control form-control-sm" value="<?php echo set_value('call_dureation'); ?>" name="call_dureation">
                                         <span class="text-danger"><?php echo form_error('call_dureation'); ?></span>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('note'); ?></label>
-                                        <textarea class="form-control" id="description" name="note" name="note" rows="3"><?php echo set_value('note'); ?></textarea>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('call_type'); ?> <small class="req">*</small></label>
+                                        <div class="d-flex flex-wrap gap-3 mt-1">
+                                            <?php $n = 1; foreach ($call_type as $key => $value) { $rid = 'add_ct_' . $n++; ?>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" id="<?php echo $rid; ?>" name="call_type" value="<?php echo $key; ?>" <?php if (set_value('call_type') == $key) { ?> checked=""<?php } ?>>
+                                                    <label class="form-check-label" for="<?php echo $rid; ?>"><?php echo $value; ?></label>
+                                                </div>
+                                            <?php } ?>
+                                        </div>
+                                        <span class="text-danger"><?php echo form_error('call_type'); ?></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="description" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?php echo $this->lang->line('note'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="note" name="note" rows="3"><?php echo set_value('note'); ?></textarea>
                                         <span class="text-danger"><?php echo form_error('note'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="pwd"><?php echo $this->lang->line('call_type'); ?></label>
-                                        <small class="req"> *</small>
-                                        <?php foreach ($call_type as $key => $value) {?>
-                                            <label class="radio-inline"><input type="radio" name="call_type" value="<?php echo $key; ?>" <?php if (set_value('call_type') == $key) {?> checked=""<?php }?>> <?php echo $value; ?></label>
-
-                                        <?php }?>
-
-                                        <span class="text-danger"><?php echo form_error('call_type'); ?></span>
-                                    </div>
-                                </div>
                             </div>
-
                         </div>
-                    </div><!-- /.box-body -->
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing') ?>" id="formaddbtn" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>" id="formaddbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
@@ -245,30 +209,18 @@
 <script type="text/javascript">
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('#date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
-        $('#edate').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* date init removed - .date class triggers TD 6 via event delegation */
+        /* edate init removed - .date class triggers TD 6 via event delegation */
     });
 
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('#follow_up_date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
-        $('#efollow_up_date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* follow_up_date init removed - .date class triggers TD 6 via event delegation */
+        /* efollow_up_date init removed - .date class triggers TD 6 via event delegation */
     });
 
     function getRecord(id) {
-        $('#calldetails').modal('show');
+        shModal('calldetails').show();
         $.ajax({
             url: '<?php echo base_url(); ?>admin/generalcall/details/' + id,
             success: function (result) {
@@ -283,13 +235,13 @@
             url: '<?php echo base_url(); ?>admin/generalcall/delete/' + id,
             success: function (result) {
                 successMsg(result.msg);
-                table.ajax.reload();
+                $('.ajaxlist').DataTable().ajax.reload(null, false);
             }
         });
      }
      } 
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'json',
             url: '<?php echo base_url(); ?>admin/generalcall/get_calls/' + id,
@@ -316,7 +268,7 @@
 
     $(document).ready(function (e) {
         $("#formadd").on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/generalcall/add',
@@ -338,7 +290,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -350,7 +302,7 @@
 
     $(document).ready(function (e) {
         $("#editformadd").on('submit', (function (e) {
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/generalcall/edit',
@@ -371,7 +323,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('reset');
+                    $("#editformaddbtn").btnReset();
 
                 },
                 error: function () {
@@ -387,11 +339,7 @@ $(".call_log").click(function(){
 });
 
     $(document).ready(function (e) {
-        $('#myModal,#editmyModal,#calldetails').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal', 'editmyModal', 'calldetails');
     });
 </script>
 

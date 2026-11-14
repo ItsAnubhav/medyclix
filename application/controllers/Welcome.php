@@ -4,6 +4,15 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Welcome extends Front_Controller
 {
+	public $banner_content;
+	public $hospital_details;
+	public $notification;
+	public $notificationurl;
+	public $patient_notificationurl;
+	public $perPage;
+	public $sch_setting_detail;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -61,6 +70,90 @@ class Welcome extends Front_Controller
             $this->data['banner_images'] = $this->cms_program_model->front_cms_program_photos($result[0]['id']);
         }
 
+        // Data for new themes (atrium/organic) home sections
+        $theme = $this->front_setting->theme ?? '';
+        if (strpos($theme, '_old') === false) {
+            $this->load->model(array('Department_model', 'Staff_model'));
+            $hs = $this->data['home_sections'] ?? array();
+            $dept_count   = isset($hs['departments']['count']) ? (int)$hs['departments']['count'] : 12;
+            $doctor_count = isset($hs['doctors']['count'])     ? (int)$hs['doctors']['count']     : 4;
+
+            $this->db->select('id, department_name');
+            $this->db->from('department');
+            $this->db->where('is_active', 'yes');
+            $this->db->order_by('department_name', 'ASC');
+            $this->db->limit($dept_count);
+            $this->data['home_departments'] = $this->db->get()->result_array();
+
+            $this->db->select('staff.department_id, COUNT(DISTINCT staff.id) AS cnt', false);
+            $this->db->from('staff');
+            $this->db->join('staff_roles', 'staff_roles.staff_id = staff.id', 'inner');
+            $this->db->join('roles', 'roles.id = staff_roles.role_id', 'inner');
+            $this->db->where('roles.name', 'Doctor');
+            $this->db->where('staff.is_active', 1);
+            $this->db->where('staff.department_id IS NOT NULL', null, false);
+            $this->db->group_by('staff.department_id');
+            $count_rows = $this->db->get()->result_array();
+            $dept_count_map = array_column($count_rows, 'cnt', 'department_id');
+            foreach ($this->data['home_departments'] as &$d) {
+                $d['doctor_count'] = (int)($dept_count_map[$d['id']] ?? 0);
+            }
+            unset($d);
+
+            $this->db->select('id, specialist_name');
+            $this->db->from('specialist');
+            $this->db->where('is_active', 'yes');
+            $this->db->order_by('specialist_name', 'ASC');
+            $this->db->limit($dept_count);
+            $this->data['home_specialists'] = $this->db->get()->result_array();
+
+            $this->db->select('staff.specialist AS specialist_id, COUNT(DISTINCT staff.id) AS cnt', false);
+            $this->db->from('staff');
+            $this->db->join('staff_roles', 'staff_roles.staff_id = staff.id', 'inner');
+            $this->db->join('roles', 'roles.id = staff_roles.role_id', 'inner');
+            $this->db->where('roles.name', 'Doctor');
+            $this->db->where('staff.is_active', 1);
+            $this->db->where('staff.specialist IS NOT NULL', null, false);
+            $this->db->group_by('staff.specialist');
+            $sp_count_rows = $this->db->get()->result_array();
+            $sp_count_map = array_column($sp_count_rows, 'cnt', 'specialist_id');
+            foreach ($this->data['home_specialists'] as &$s) {
+                $s['doctor_count'] = (int)($sp_count_map[$s['id']] ?? 0);
+            }
+            unset($s);
+
+            $this->db->select('staff.id, staff.name, staff.surname, staff.image, staff.qualification, staff.specialization, staff.work_exp, department.department_name, staff_designation.designation');
+            $this->db->from('staff');
+            $this->db->join('staff_roles', 'staff_roles.staff_id = staff.id', 'inner');
+            $this->db->join('roles', 'roles.id = staff_roles.role_id', 'inner');
+            $this->db->join('department', 'department.id = staff.department_id', 'left');
+            $this->db->join('staff_designation', 'staff_designation.id = staff.staff_designation_id', 'left');
+            $this->db->where('roles.name', 'Doctor');
+            $this->db->where('staff.is_active', 1);
+            $this->db->order_by('staff.id', 'ASC');
+            $this->db->limit($doctor_count);
+            $this->data['home_doctors'] = $this->db->get()->result_array();
+
+            if (!empty($this->data['home_doctors'])) {
+                $doc_ids = array_column($this->data['home_doctors'], 'id');
+                $this->db->select('cc.doctor, cc.standard_charge', false);
+                $this->db->from('consult_charges cc');
+                $this->db->join(
+                    '(SELECT doctor, MAX(date) AS max_date FROM consult_charges WHERE status = "active" GROUP BY doctor) latest',
+                    'latest.doctor = cc.doctor AND latest.max_date = cc.date',
+                    'inner'
+                );
+                $this->db->where_in('cc.doctor', $doc_ids);
+                $this->db->where('cc.status', 'active');
+                $fee_rows = $this->db->get()->result_array();
+                $fee_map  = array_column($fee_rows, 'standard_charge', 'doctor');
+                foreach ($this->data['home_doctors'] as &$dd) {
+                    $dd['consult_fee'] = isset($fee_map[$dd['id']]) ? $fee_map[$dd['id']] : null;
+                }
+                unset($dd);
+            }
+        }
+
         $this->load_theme('home');
     }   
 
@@ -84,7 +177,8 @@ class Welcome extends Front_Controller
             $content_array = $this->data['page']['category_content'];
             reset($content_array);
             $first_key            = key($content_array);
-            $totalRec             = count($this->cms_program_model->getByCategory($content_array[$first_key]));
+            $category_records     = $this->cms_program_model->getByCategory($content_array[$first_key]);
+            $totalRec             = is_array($category_records) ? count($category_records) : 0;
             $config['target']     = '#postList';
             $config['base_url']   = base_url() . 'welcome/ajaxPaginationData';
             $config['total_rows'] = $totalRec;
@@ -121,25 +215,25 @@ class Welcome extends Front_Controller
 
                     if ($record['form_name'] == 'contact_us') {
                         $cont_data = array(
-                            'name'    => $this->input->post('name'),
+                            'name'    => $this->input->post('name', TRUE),
                             'source'  => 'Online',
-                            'email'   => $this->input->post('email'),
-                            'purpose' => $this->input->post('subject'),
+                            'email'   => $this->input->post('email', TRUE),
+                            'purpose' => $this->input->post('subject', TRUE),
                             'date'    => date('Y-m-d'),
-                            'note'    => $this->input->post('description'),
+                            'note'    => $this->input->post('description', TRUE),
                         );
                         $visitor_id = $this->visitors_model->add($cont_data);
                     }
 
                     if ($record['form_name'] == 'complain') {
-                        $complaint_data = array(                           
+                        $complaint_data = array(
                             'complaint_type_id' => 1,
                             'source'         => 'Online',
-                            'name'           => $this->input->post('name'),
-                            'email'          => $this->input->post('email'),
-                            'contact'        => $this->input->post('contact'),
+                            'name'           => $this->input->post('name', TRUE),
+                            'email'          => $this->input->post('email', TRUE),
+                            'contact'        => $this->input->post('contact', TRUE),
                             'date'           => date('Y-m-d'),
-                            'description'    => $this->input->post('description'),
+                            'description'    => $this->input->post('description', TRUE),
                         );
 
                         $complaint_id = $this->complaint_model->add($complaint_data);
@@ -228,7 +322,7 @@ class Welcome extends Front_Controller
         $this->form_validation->set_rules('username', $this->lang->line('username'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('password', $this->lang->line('password'), 'trim|required|xss_clean');
         if ($this->captchalib->is_captcha('appointment')) {
-            $this->form_validation->set_rules('captcha_login', 'Captcha', 'trim|required|callback_check_captcha');
+            $this->form_validation->set_rules('captcha_login', $this->lang->line('captcha'), 'trim|required|callback_check_captcha');
         }
         if ($this->form_validation->run() == false) {
             $jsons = array(
@@ -354,18 +448,18 @@ class Welcome extends Front_Controller
 
     public function getShiftById(){
         $shift_id = $this->input->post("id");
-        $date = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date"));
+        $date     = $this->customlib->dateFormatToYYYYMMDD($this->input->post("date"));
         $this->load->model('onlineappointment_model');
         $shift = $this->onlineappointment_model->getShiftById($shift_id);
-        
-        $end_time = $date." ".$shift['end_time'];
-        $end_time = date("Y-m-d H:i:s" ,strtotime($end_time));
-        $current_time = date("Y-m-d H:i:s");
-        if($current_time>$end_time){
-            echo json_encode(array("status" => 1));
-        }else{
+        if (empty($shift)) {
             echo json_encode(array("status" => 0));
+            return;
         }
+        echo json_encode(array(
+            "status"   => 0,
+            "end_time" => $shift['end_time'],
+            "date"     => $date
+        ));
     }
 
     public function show_404()
@@ -388,7 +482,7 @@ class Welcome extends Front_Controller
             if ($custom_fields_value['validation']) {               
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];      
-                $this->form_validation->set_rules("custom_fields[appointment][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[appointment][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }       
         
@@ -440,6 +534,14 @@ class Welcome extends Front_Controller
 
 	public function appointment()
     {
+        // Guard: if "Online Appointment" is disabled in admin/frontcms,
+        // 404 any direct hit to /form/appointment (the front-side buttons are already
+        // hidden via is_active_online_appointment checks in the theme views).
+        $setting = $this->frontcms_setting_model->get();
+        if (empty($setting->is_active_online_appointment)) {
+            return $this->show_404();
+        }
+
         $this->load->model("onlineappointment_model");
         $patientpanel               = $this->customlib->patientpanel();
         $this->data['patientpanel'] = $patientpanel;
@@ -453,14 +555,15 @@ class Welcome extends Front_Controller
         $this->data['gender']        = $this->customlib->getGender();
         $this->data['page']          = array('title' => $this->lang->line("appointment"), 'meta_title' => '', 'meta_keyword' => '', 'meta_description' => '');        
         $specialist                  = $this->staff_model->getSpecialist();
-        $this->data["specialist"]    = $specialist;        
-        $params                      = $this->input->post("doctor") . ',' . $this->input->post("shift") . ',' . $this->customlib->dateFormatToYYYYMMDD($this->input->post("date")) . ',' . $this->input->post("global_shift");
+        $this->data["specialist"]    = $specialist;
+        $this->data['prefill_specialist'] = (int)$this->input->get('specialist');
+        $params                      = $this->input->post("doctor", TRUE) . ',' . $this->input->post("shift", TRUE) . ',' . $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE)) . ',' . $this->input->post("global_shift", TRUE);
         $custom_fields               = $this->customfield_model->getByBelongPatientPanel('appointment');
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[appointment][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[appointment][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $this->form_validation->set_rules('doctor', $this->lang->line("doctor"), "trim|required|xss_clean");
@@ -468,8 +571,8 @@ class Welcome extends Front_Controller
         $this->form_validation->set_rules('date', $this->lang->line("date"), "trim|required|xss_clean");
         $this->form_validation->set_rules('shift', $this->lang->line("slot"), "trim|required|xss_clean");
         $this->form_validation->set_rules('global_shift', $this->lang->line("shift"), "trim|required|xss_clean");
-        $this->form_validation->set_rules('slot', $this->lang->line("available_slot"), 'trim|required|callback_check_slot[' . $params . ']');
-        $this->form_validation->set_rules('message', $this->lang->line("message"), 'trim|required');
+        $this->form_validation->set_rules('slot', $this->lang->line("available_slots"), 'trim|required|xss_clean|callback_check_slot[' . $params . ']');
+        $this->form_validation->set_rules('message', $this->lang->line("message"), 'trim|required|xss_clean');
      
 
         if ($this->form_validation->run() == false) {
@@ -508,11 +611,13 @@ class Welcome extends Front_Controller
             $shift        = $this->input->post("shift");
             $slots        = $this->customlib->getSlotByDoctorShift($doctor, $shift);
             $slot         = $slots[$this->input->post("slot")];
-            $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($this->input->post("doctor"), $this->input->post("global_shift"), date("l", strtotime($this->input->post('date'))));
             $date         = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date'));
+            $weekday      = date("l", strtotime($date));
+            $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor, $this->input->post("global_shift"), $weekday);
+            $shiftTimeId  = !empty($getDoctorShiftTimeId->id) ? $getDoctorShiftTimeId->id : $shift;
             $current_time = date('Y-m-d H:i');
 
-            $appointments   = $this->onlineappointment_model->checkAppointmentsSlotBooked($this->input->post("doctor"), $getDoctorShiftTimeId->id,  $date." ".date("H:i:s", strtotime($slot)), $current_time,0);
+            $appointments   = $this->onlineappointment_model->checkAppointmentsSlotBooked($doctor, $shiftTimeId,  $date." ".date("H:i:s", strtotime($slot)), $current_time,0);
 
             if (!empty($appointments)) {
                 $json_array = array('status' => '0', 'error' => array
@@ -520,28 +625,29 @@ class Welcome extends Front_Controller
                 echo json_encode($json_array);
           
             }else{
-                if ($this->input->post("patient_type") == "new patient") {
+                if ($this->input->post("patient_type", TRUE) == "new patient") {
                     $this->register();
-                    $date         = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date'));
-                    $shift        = $this->input->post("shift");
-                    $doctor       = $this->input->post("doctor");
-                    $global_shift = $this->input->post("global_shift");
+                    $date         = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE));
+                    $shift        = $this->input->post("shift", TRUE);
+                    $doctor       = $this->input->post("doctor", TRUE);
+                    $global_shift = $this->input->post("global_shift", TRUE);
                     $slots        = $this->customlib->getSlotByDoctorShift($doctor, $shift);
-                    $slot         = $slots[$this->input->post("slot")];
-                    $live_consult = $this->input->post('live_consult');                
-                    $day          = date("l", strtotime($this->input->post('date')));    
+                    $slot         = $slots[$this->input->post("slot", TRUE)];
+                    $live_consult = $this->input->post('live_consult', TRUE) ?? '';
+                    $day          = date("l", strtotime($date));
                     $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor, $global_shift, $day);
-                
+                    $shiftTimeId  = !empty($getDoctorShiftTimeId->id) ? $getDoctorShiftTimeId->id : $shift;
+
                     $date_create=date("Y-m-d H:i:s");
                     $appointment  = array(
                         "patient_id"         => $this->session->userdata("patient")["patient_id"],
-                        "specialist"         => $this->input->post("specialist"),
-                        "doctor"             => $this->input->post('doctor'),
-                        'doctor_shift_time_id'           => $getDoctorShiftTimeId->id,
+                        "specialist"         => $this->input->post("specialist", TRUE),
+                        "doctor"             => $this->input->post('doctor', TRUE),
+                        'doctor_shift_time_id'           => $shiftTimeId,
                         "live_consult"       => $live_consult,
                         "is_queue"           => 0,
                         "date"               => $date." ".date("H:i:s", strtotime($slot)),
-                        "message"            => $this->input->post('message'),                    
+                        "message"            => $this->input->post('message', TRUE),
                         "appointment_status" => "pending",
                         "Source"             => "Online",
                         "priority"           => 1,
@@ -552,6 +658,7 @@ class Welcome extends Front_Controller
                     );
                     $date_create=date("Y-m-d H:i:s");
                     
+                    $appointment = array_map(function($v) { return $v === null ? '' : $v; }, $appointment);
                     $appointment = $this->security->xss_clean($appointment);
                     $insert_id   = $this->onlineappointment_model->addAppointment($appointment);                    
                     /* insert custom field start */
@@ -577,8 +684,8 @@ class Welcome extends Front_Controller
                     /* insert custom field end*/
                     $patient_name = $this->session->userdata("patient")["name"];
                     $mobileno     = $this->session->userdata("patient")["mobileno"];
-                    $email        = $this->session->userdata("patient")["email"];                
-                    $doctor       = $this->input->post('doctor');
+                    $email        = $this->session->userdata("patient")["email"];
+                    $doctor       = $this->input->post('doctor', TRUE);
                     $time         = date("H:i:s", strtotime($slot));
                     $patient_id   = $this->session->userdata("patient")["patient_id"];
                     
@@ -588,8 +695,8 @@ class Welcome extends Front_Controller
                     echo json_encode($json_array);
                 } else {
                     if(empty($this->session->userdata("patient"))) {
-                    $username=$this->input->post('username');
-                    $password=$this->input->post('password');
+                    $username=$this->input->post('username', TRUE);
+                    $password=$this->input->post('password', TRUE);
                     
                     if(isset($username) && isset($password)){
                         $login_post = array(
@@ -620,35 +727,36 @@ class Welcome extends Front_Controller
                     if ($user_using_authenticate==false || is_active_2fa()==false) {      
                     //2FA is disable, then session will be set    
                         $this->userlogin();                           
-                    }else if(is_active_2fa()==true && $this->input->post("gauth_code")=="" && $this->input->post("credential_status")==0){
-                    //2FA is enabled and secret code is empty 
+                    }else if(is_active_2fa()==true && $this->input->post("gauth_code", TRUE)=="" && $this->input->post("credential_status", TRUE)==0){
+                    //2FA is enabled and secret code is empty
                         $this->check_patient_details();
-                    }else if(is_active_2fa()==true &&  $this->input->post("credential_status")==1){
+                    }else if(is_active_2fa()==true &&  $this->input->post("credential_status", TRUE)==1){
                         //2FA is enabled and secret code entered by the user
                         $this->check_verification_code();
                     }
                 }
 				
                     $session_data = $this->session->userdata("patient");
-                    $date         = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date'));
-                    $shift        = $this->input->post("shift");
-                    $doctor       = $this->input->post("doctor");
-                    $global_shift = $this->input->post("global_shift");
+                    $date         = $this->customlib->dateFormatToYYYYMMDD($this->input->post('date', TRUE));
+                    $shift        = $this->input->post("shift", TRUE);
+                    $doctor       = $this->input->post("doctor", TRUE);
+                    $global_shift = $this->input->post("global_shift", TRUE);
                     $slots        = $this->customlib->getSlotByDoctorShift($doctor, $shift);
-                    $live_consult = $this->input->post('live_consult');
-                    $slot         = $slots[$this->input->post("slot")];
-                    $time         = date("H:i:s", strtotime($slot));                
-                    $day          = date("l", strtotime($this->input->post('date')));           
-                    $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor, $global_shift, $day);             
-                
+                    $live_consult = $this->input->post('live_consult', TRUE) ?? '';
+                    $slot         = $slots[$this->input->post("slot", TRUE)];
+                    $time         = date("H:i:s", strtotime($slot));
+                    $day          = date("l", strtotime($date));
+                    $getDoctorShiftTimeId = $this->onlineappointment_model->getDoctorShiftTimeId($doctor, $global_shift, $day);
+                    $shiftTimeId  = !empty($getDoctorShiftTimeId->id) ? $getDoctorShiftTimeId->id : $shift;
+
                     $appointment  = array(
                         "patient_id"         => $this->session->userdata("patient")["patient_id"],
-                        "specialist"         => $this->input->post('specialist'),
-                        "doctor"             => $this->input->post('doctor'),
-                       'doctor_shift_time_id'  => $getDoctorShiftTimeId->id,
+                        "specialist"         => $this->input->post('specialist', TRUE),
+                        "doctor"             => $this->input->post('doctor', TRUE),
+                       'doctor_shift_time_id'  => $shiftTimeId,
                         "date"               => $date." ".$time,
                         "live_consult"       => $live_consult,
-                        "message"            => $this->input->post('message'),
+                        "message"            => $this->input->post('message', TRUE),
                         "is_queue"           => 0,                   
                         "appointment_status" => "pending",
                         "source"             => "Online",
@@ -658,7 +766,8 @@ class Welcome extends Front_Controller
                     $mobileno     = $this->session->userdata("patient")["mobileno"];
                     $email        = $this->session->userdata("patient")["email"];
                     
-                    $doctor       = $this->input->post('doctor');
+                    $doctor       = $this->input->post('doctor', TRUE);
+                    $appointment = array_map(function($v) { return $v === null ? '' : $v; }, $appointment);
                     $appointment = $this->security->xss_clean($appointment);
                     $insert_id   = $this->onlineappointment_model->addAppointment($appointment);
     
@@ -685,13 +794,13 @@ class Welcome extends Front_Controller
                     /* insert custom field end*/
                     $patient_id = $this->session->userdata("patient")["patient_id"];                
                     $date_appoint = $this->customlib->dateFormatToYYYYMMDDHis($date." ".$time, $this->customlib->getHospitalTimeFormat());
-                    $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('doctor'));
+                    $doctor_details = $this->notificationsetting_model->getstaffDetails($this->input->post('doctor', TRUE));
                     $event_data     = array(
                         'appointment_date' => $this->customlib->YYYYMMDDHisTodateFormat($date." ".$time, $this->customlib->getHospitalTimeFormat()),
                         'patient_id'       => $this->session->userdata("patient")["patient_id"],
-                        'doctor_id'        => $this->input->post('doctor'),
+                        'doctor_id'        => $this->input->post('doctor', TRUE),
                         'doctor_name'      => composeStaffNameByString($doctor_details['name'], $doctor_details['surname'], $doctor_details['employee_id']),
-                        'message'          => $this->input->post('message'),
+                        'message'          => $this->input->post('message', TRUE),
                     );
     
                     $this->system_notification->send_system_notification('notification_appointment_created', $event_data);                
@@ -725,8 +834,8 @@ class Welcome extends Front_Controller
             die;
         } else {
             $login_post = array(
-                'username' => $this->input->post('username'),
-                'password' => $this->input->post('password'),
+                'username' => $this->input->post('username', TRUE),
+                'password' => $this->input->post('password', TRUE),
             );
             register_login:
             $login_details  = $this->user_model->checkLogin($login_post);
@@ -769,7 +878,7 @@ class Welcome extends Front_Controller
                                 echo json_encode($json_array);
                                 die;
                             } else {
-                                $verify_code = $this->google_authenticator->verifyQR($gauth->secret_code, $this->input->post('gauth_code'));
+                                $verify_code = $this->google_authenticator->verifyQR($gauth->secret_code, $this->input->post('gauth_code', TRUE));
                                 
                                 if(!$verify_code) { 
                                     $jsons = array(
@@ -842,7 +951,7 @@ class Welcome extends Front_Controller
         $this->form_validation->set_rules('password', $this->lang->line('password'), 'trim|required|xss_clean');
 
         if ($this->captchalib->is_captcha('appointment')) {
-            $this->form_validation->set_rules('captcha_login', 'Captcha', 'trim|required|callback_check_captcha');
+            $this->form_validation->set_rules('captcha_login', $this->lang->line('captcha'), 'trim|required|callback_check_captcha');
         }
         if ($this->form_validation->run() == false) {
             $jsons = array(
@@ -932,7 +1041,7 @@ class Welcome extends Front_Controller
         $this->form_validation->set_rules('gender', $this->lang->line('gender'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('phone', $this->lang->line('phone'), 'trim|required|numeric|xss_clean');
         if ($this->captchalib->is_captcha('appointment')) {
-            $this->form_validation->set_rules('captcha_register', 'Captcha', 'trim|required|callback_check_captcha');
+            $this->form_validation->set_rules('captcha_register', $this->lang->line('captcha'), 'trim|required|callback_check_captcha');
         }
 
         if ($this->form_validation->run() == false) {
@@ -949,37 +1058,14 @@ class Welcome extends Front_Controller
             echo json_encode($json_array);
             die;
         } else {
-            $dobdate = $this->input->post('dob');
+            $dobdate = $this->input->post('dob', TRUE);
             if ($dobdate == "") {
                 $dob = "";
             } else {
                 $dob = $this->customlib->dateFormatToYYYYMMDD($dobdate);
             }
-            $email    = $this->input->post('email');
-            $mobileno = $this->input->post('phone');
+            $email = $this->input->post('email', TRUE);
 
-            if (($mobileno != "") && ($email != "")) {
-                $result = $this->patient_model->checkmobileemail($mobileno, $email);
-                if ($result == 1) {
-                    $jsons = array(
-                        'phone_email_exist' => $this->lang->line('mobile_email_already_exist'),
-                    );
-                    $json_array = array('status' => '0', 'error' => $jsons);
-                    echo json_encode($json_array);
-                    die;
-                }
-            }
-            if ($mobileno != "") {
-                $result = $this->patient_model->checkmobilenumber($mobileno);
-                if ($result == 1) {
-                    $jsons = array(
-                        'mobile_exist' => $this->lang->line('mobile_already_exist'),
-                    );
-                    $json_array = array('status' => '0', 'error' => $jsons);
-                    echo json_encode($json_array);
-                    die;
-                }
-            }
             if ($email != "") {
                 $result = $this->patient_model->checkemail($email);
                 if ($result == 1) {
@@ -992,10 +1078,10 @@ class Welcome extends Front_Controller
                 }
             }
             $patient_data = array(
-                'patient_name' => $this->input->post('patient_name'),
-                'mobileno'     => $this->input->post('phone'),
-                'email'        => $this->input->post('email'),
-                'gender'       => $this->input->post('gender'),
+                'patient_name' => $this->input->post('patient_name', TRUE),
+                'mobileno'     => $this->input->post('phone', TRUE),
+                'email'        => $this->input->post('email', TRUE),
+                'gender'       => $this->input->post('gender', TRUE),
                 'is_active'    => 'yes',
             );
             $patient_data       = $this->security->xss_clean($patient_data);
@@ -1014,11 +1100,124 @@ class Welcome extends Front_Controller
             $data_patient_login = $this->security->xss_clean($data_patient_login);
             $this->user_model->add($data_patient_login);
             $array          = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'), 'id' => $insert_id);
-            $sender_details = array('id' => $insert_id, 'credential_for' => 'patient', 'username' => $username, 'password' => $user_password, 'contact_no' => $this->input->post('phone'), 'email' => $this->input->post('email'));
+            $sender_details = array('id' => $insert_id, 'credential_for' => 'patient', 'username' => $username, 'password' => $user_password, 'contact_no' => $this->input->post('phone', TRUE), 'email' => $this->input->post('email', TRUE));
 
             $this->mailsmsconf->mailsms('login_credential', $sender_details);
             $this->userlogin($username, $user_password);
         }
+    }
+
+    /**
+     * Returns the primary accent color for the currently active front-end theme.
+     * Colors are taken from each theme's CSS nav-active rule (the source of truth).
+     */
+    private function _getThemeColor()
+    {
+        // Colors taken from each theme's .calender-wrap h4 background —
+        // the single source of truth for card/panel header colors per theme.
+        $map = [
+            'material_pink'  => '#bd0745',
+            'turquoise_blue' => '#016a8a',
+            'sky_blue'       => '#3399ff',
+            'white_gray'     => '#444444',
+        ];
+        $theme = $this->front_setting->theme ?? 'turquoise_blue';
+        return $map[$theme] ?? '#3c8dbc';
+    }
+
+    public function survey_forms()
+    {
+        $this->load->model('Survey_model');
+        $this->lang->load('app_files/survey');
+        $title = $this->lang->line('survey_forms');
+        $this->data['page'] = [
+            'title'            => $title,
+            'meta_title'       => $title,
+            'meta_keyword'     => '',
+            'meta_description' => '',
+        ];
+        $this->data['patientpanel']  = $this->customlib->patientpanel();
+        $this->data['forms']         = $this->Survey_model->getPublicForms();
+        $this->data['theme_color']   = $this->_getThemeColor();
+        $this->data['active_menu']   = 'surveys';
+        $this->data['page_side_bar'] = false;
+        $this->load_theme('pages/survey_forms');
+    }
+
+    // ─── Themed fill form (renders inside front theme) ────────────────────────
+
+    public function form_fill($token = null)
+    {
+        if (!$token) show_404();
+
+        $this->load->model('Survey_model');
+        $this->load->library('Survey_captcha');
+        $this->lang->load('app_files/survey');
+
+        $form  = $this->Survey_model->getFormByToken($token);
+        $error = null;
+        $today = date('Y-m-d');
+
+        if (!$form || $form['status'] !== 'published') {
+            $error = $this->lang->line('form_not_found');
+        } elseif ($form['start_date'] && $form['start_date'] > $today) {
+            $error = $this->lang->line('form_not_started');
+        } elseif ($form['end_date'] && $form['end_date'] < $today) {
+            $error = $this->lang->line('form_ended');
+        }
+
+        $title = $form ? html_escape($form['title']) : $this->lang->line('survey_forms');
+
+        $this->data['form']         = $form;
+        $this->data['fields']       = (!$error && $form) ? $this->Survey_model->getFieldsWithOptions($form['id']) : [];
+        $this->data['captcha_html'] = (!$error && $form && !empty($form['enable_captcha'])) ? $this->survey_captcha->generate('public') : '';
+        $this->data['error']        = $error;
+        $this->data['flash_error']  = $this->session->flashdata('cf_error') ?: '';
+        $this->data['flash_errors'] = $this->session->flashdata('cf_errors') ?: [];
+        $this->data['old_input']    = $this->session->flashdata('cf_old_input') ?: [];
+        $this->data['token']        = $token;
+        $this->data['theme_color']  = $this->_getThemeColor();
+        $this->data['page'] = [
+            'title'            => $title,
+            'meta_title'       => $title,
+            'meta_keyword'     => '',
+            'meta_description' => '',
+        ];
+        $this->data['patientpanel']  = $this->customlib->patientpanel();
+        $this->data['page_side_bar'] = false;
+        $this->data['active_menu']   = 'surveys';
+        $this->load_theme('pages/form_fill');
+    }
+
+    // ─── Themed success page (renders inside front theme) ─────────────────────
+
+    public function form_success($form_id = null)
+    {
+        $this->load->model('Survey_model');
+        $this->lang->load('app_files/survey');
+
+        $form = null;
+        if ($form_id) {
+            $this->db->select('id, title, thank_you_message');
+            $this->db->from('survey_forms');
+            $this->db->where('id', (int)$form_id);
+            $form = $this->db->get()->row_array();
+        }
+
+        $title = $this->lang->line('submission_saved');
+
+        $this->data['form']          = $form;
+        $this->data['theme_color']   = $this->_getThemeColor();
+        $this->data['page'] = [
+            'title'            => $title,
+            'meta_title'       => $title,
+            'meta_keyword'     => '',
+            'meta_description' => '',
+        ];
+        $this->data['patientpanel']  = $this->customlib->patientpanel();
+        $this->data['page_side_bar'] = false;
+        $this->data['active_menu']   = 'surveys';
+        $this->load_theme('pages/form_success');
     }
 
 

@@ -24,9 +24,9 @@ class Notification_model extends MY_Model
     {
         $userdata = $this->customlib->getUserData();
         $role_id  = $userdata["role_id"];
-        $sql      = "SELECT * from send_notification  JOIN (SELECT send_notification_id, GROUP_CONCAT(role_id) as roles  FROM notification_roles  group by send_notification_id) as notification_roles on notification_roles.send_notification_id = send_notification.id ";
+        $sql      = "SELECT * from send_notification  LEFT JOIN (SELECT send_notification_id, GROUP_CONCAT(role_id) as roles  FROM notification_roles  group by send_notification_id) as notification_roles on notification_roles.send_notification_id = send_notification.id ";
         if ($id != null) {
-            $sql .= "where send_notification.id =" . $id;
+            $sql .= "where send_notification.id =" . (int)$id;
         }
 
         $query = $this->db->query($sql);
@@ -56,10 +56,27 @@ class Notification_model extends MY_Model
      * @param $id
      */
     public function deleteByUser($receiver_id)
-    { 
+    {
         if($receiver_id){
            $this->db->where('receiver_id', $receiver_id)->delete('system_notification');
         }
+    }
+
+    public function deleteSystemNotificationForUser($id, $receiver_id)
+    {
+        $this->db->trans_start();
+        $this->db->trans_strict(false);
+        $this->db->where('id', (int)$id);
+        $this->db->where('receiver_id', $receiver_id);
+        $this->db->delete('system_notification');
+        $message = DELETE_RECORD_CONSTANT . " On System Notification id " . (int)$id;
+        $this->log($message, (int)$id, "Delete");
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            return false;
+        }
+        return true;
     }
 
     public function remove($id)
@@ -280,9 +297,31 @@ class Notification_model extends MY_Model
         $userdata = $this->customlib->getUserData();
         $userid   = $userdata["id"];
         $role_id  = $userdata["role_id"];
+        $role_id = (int)$role_id;
+        $userid  = (int)$userid;
         $sql = "SELECT count(*) as count FROM `system_notification` LEFT JOIN read_systemnotification on read_systemnotification.notification_id=system_notification.id WHERE system_notification.role_id = ".$role_id." AND system_notification.receiver_id = ".$userid." AND `system_notification`.`is_active` = 'yes' And read_systemnotification.id IS NULL";
         $query        = $this->db->query($sql);
         return $query->row();
+    }
+
+    public function getNewNotificationsSince($since_datetime)
+    {
+        $userdata = $this->customlib->getUserData();
+        $userid   = $userdata["id"];
+        $role_id  = $userdata["role_id"];
+
+        $this->db->select('sn.id, sn.notification_title, sn.notification_desc, sn.notification_type, sn.date');
+        $this->db->from('system_notification sn');
+        $this->db->join('read_systemnotification rsn', 'rsn.notification_id = sn.id', 'left');
+        $this->db->where('sn.role_id',     $role_id);
+        $this->db->where('sn.receiver_id', $userid);
+        $this->db->where('sn.is_active',   'yes');
+        $this->db->where('rsn.id IS NULL', null, false);
+        $this->db->where('sn.date >', $since_datetime);
+        // Safety: never return notifications older than 2 hours regardless of cursor
+        $this->db->where('sn.date >', date('Y-m-d H:i:s', strtotime('-2 hours')));
+        $this->db->order_by('sn.id', 'ASC');
+        return $this->db->get()->result_array();
     }
 
     public function getUnreadNotification()
@@ -343,6 +382,24 @@ class Notification_model extends MY_Model
         }
         $data = $result;
         return $data;
+    }
+
+    public function getNewPatientNotificationsSince($since_datetime)
+    {
+        $patient_data = $this->session->userdata('patient');
+        $userid       = $patient_data["patient_id"];
+
+        $this->db->select('sn.id, sn.notification_title, sn.notification_desc, sn.notification_type, sn.date');
+        $this->db->from('system_notification sn');
+        $this->db->join('read_systemnotification rsn', 'rsn.notification_id = sn.id', 'left');
+        $this->db->where('sn.role_id IS NULL', null, false);
+        $this->db->where('sn.receiver_id', $userid);
+        $this->db->where('sn.is_active',   'yes');
+        $this->db->where('rsn.id IS NULL', null, false);
+        $this->db->where('sn.date >', $since_datetime);
+        $this->db->where('sn.date >', date('Y-m-d H:i:s', strtotime('-2 hours')));
+        $this->db->order_by('sn.id', 'ASC');
+        return $this->db->get()->result_array();
     }
 
     public function updateReadNotification($data)

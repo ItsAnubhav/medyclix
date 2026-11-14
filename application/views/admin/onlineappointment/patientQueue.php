@@ -1,17 +1,14 @@
-<style>tr { cursor: all-scroll;}</style>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix text-center"><?php echo $this->lang->line('patient_queue'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix text-center"><?php echo $this->lang->line('patient_queue'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <form action="<?php echo site_url("admin/onlineappointment/patientqueue"); ?>" method="post" accept-charset="utf-8">
                         <div class="row">
                             <div class="col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('doctor') ?></label>
                                     <span class="req"> *</span>
                                     <select name="doctor" onchange="getDoctorShift()" id="doctor" class="form-control select2">
@@ -24,7 +21,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('shift'); ?></label><span class="req"> *</span>
                                     <select name="global_shift" id="global_shift" class="form-control select2">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -33,16 +30,16 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="date"><?php echo $this->lang->line('date'); ?></label><span class="req"> *</span>                                    
                                     <div class='input-group'>
-                                        <input type='text' id="datetimepicker" value="<?php echo set_value('date'); ?>" class="form-control date" name="date" /><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                        <input type='text' id="datetimepicker" value="<?php echo set_value('date'); ?>" class="form-control date" name="date" /><span class="input-group-text"><i class="fa fa-calendar"></i></span>
                                     </div>
                                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="slot"><?php echo $this->lang->line('slot'); ?></label>                                   
                                     <select name="slot" id="slot" class="form-control">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -51,7 +48,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="pull-right">
+                        <div class="float-end">
                         <?php if ($this->rbac->hasPrivilege('patient_queue', 'can_edit')) { ?>
                             <button type="submit" name="submit" value="regenerate" class="btn btn-primary btn-sm"><?php echo $this->lang->line('reorder_queue'); ?></button>
                         <?php } ?>    
@@ -61,14 +58,15 @@
                     </div>
 
                     <?php if (isset($resultlist)) {?>
-                    <div class="box-body">
-                        <div class="pull-right">
-                            <button type="button"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line("export_to_excel"); ?>" onclick="fnExcelReport();" class="btn btn-default dt-button buttons-excel buttons-html5"><i class="fa fa-file-excel-o"></i></button>
-                            <button type="button"  data-toggle="tooltip" data-original-title="<?php echo $this->lang->line("print"); ?>" onclick="print_table('myTable');" class="btn btn-default dt-button buttons-print"><i class="fa fa-print"></i></button>
-                        </div>
+                    <div class="card-body">
+                        
                         <div class="table-responsive mailbox-messages" id="myTable">
                         <h3 id="table-heading"></h3>
                          <table id="headerTable" class="table table-hover table-striped table-bordered">
+                            <div class="float-end mb-2">
+                            <button type="button"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line("export_to_excel"); ?>" onclick="fnExcelReport();" class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-excel-o"></i></button>
+                            <button type="button"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line("print"); ?>" onclick="print_table('myTable');" class="btn btn-sm btn-outline-secondary"><i class="fa fa-print"></i></button>
+                        </div>
                                 <thead>
                                     <tr>                                         
                                         <th><?php echo $this->lang->line("appointment_s_no"); ?></th>
@@ -90,7 +88,7 @@
                                         <td><?php echo $result_value["email"]; ?></td>
                                         <td><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result_value["date"])); ?></td>
                                         <td><?php echo $result_value["date"]?date("h:i A", strtotime($result_value["date"])):""; ?></td>
-                                        <td <?php echo $result_value["source"] == "Online" ? "style='color:red'" : ""; ?>><?php echo $this->lang->line(strtolower($result_value["source"])); ?></td>
+                                        <td <?php echo $result_value["source"] == "Online" ? "class='sh-text-red'" : ""; ?>><?php echo $this->lang->line(strtolower($result_value["source"])); ?></td>
                                     </tr>
                                 <?php }?>
                                 </tbody>
@@ -109,8 +107,6 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <script>
     $(document).ready(function(){
@@ -216,14 +212,19 @@
 </script>
 <script type="text/javascript">
     function print_table(divID) {
-        var oldPage = document.body.innerHTML;
-        $("#table-heading").html("<center><?= $this->lang->line("patient_queue"); ?></center>");
-        var divElements = document.getElementById(divID).innerHTML;
-        document.body.innerHTML =
-          "<html><head><title></title></head><body>" +
-          divElements + "</body>";
-        window.print();
-        document.body.innerHTML = oldPage;
+        var doctor      = $("#doctor").val();
+        var date        = $("#datetimepicker").val();
+        var shift       = <?php echo isset($shift) ? (int)$shift : 0; ?>;
+        var doctor_name = $("#doctor option:selected").text();
+        if (!doctor || !date) { return; }
+        $.ajax({
+            url: '<?php echo base_url(); ?>admin/onlineappointment/patientqueue_print',
+            type: 'POST',
+            data: { doctor: doctor, date: date, shift: shift, doctor_name: doctor_name },
+            success: function(result) {
+                popup(result);
+            }
+        });
     }
 
     function fnExcelReport()

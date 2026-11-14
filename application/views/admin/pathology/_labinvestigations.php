@@ -1,3 +1,7 @@
+<div class="row sh-form-card h-100">
+                        <div class="sh-card-header">
+                             <span class="sh-card-header-title"><?php echo $this->lang->line('patient_details'); ?></span>
+                         </div>
 <table class="table table-striped table-bordered noborder"> 
     <tbody>
         <tr>   
@@ -33,13 +37,18 @@
         <tr>           
          <?php if($result->pathology_report != ""){ ?>
             <td>
-               <a href="<?php echo site_url('admin/pathology/downloadReport/'.$result->id) ?>" class='btn btn-default btn-xs' data-toggle='tooltip' title='<?php echo $this->lang->line('download'); ?>'><i class="fa fa-download"></i></a>
+               <a href="<?php echo site_url('admin/pathology/downloadReport/'.$result->id) ?>" class='btn btn-secondary btn-sm' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('download'); ?>'><i class="fa fa-download"></i></a>
            </td>
         <?php } ?>
         </tr>
     </tbody>
 </table>
-<div class="row">
+  </div>
+
+<div class="row sh-form-card mt-3">
+    <div class="sh-card-header">
+        <span class="sh-card-header-title"><?php echo $this->lang->line('lab_investigation'); ?></span>
+    </div>
     <div class="col-md-12">   
         <h4 class="text-center"><strong><?php echo $result->test_name; ?></strong>
         <br/>
@@ -49,9 +58,9 @@
             <thead>
                 <tr class="line">
                     <th>#</th>
-                    <th class="text-left"><?php echo $this->lang->line('test_parameter_name'); ?></th>
+                    <th class="text-start"><?php echo $this->lang->line('test_parameter_name'); ?></th>
                     <th class="text-center"><?php echo $this->lang->line('report_value'); ?></th>                  
-                    <th class="text-right"><?php echo $this->lang->line('reference_range'); ?></th>
+                    <th class="text-end"><?php echo $this->lang->line('reference_range'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -62,9 +71,9 @@
                 ?>                        
                 <tr>
                     <td><?php echo $row_counter; ?></td>
-                    <td class="text-left"><?php echo $parameter_value->parameter_name; ?><div class="bill_item_footer text-muted"><label><?php if($parameter_value->description !=''){ echo $this->lang->line('description').': ';} ?></label> <?php echo $parameter_value->description; ?></div></td>                     
+                    <td class="text-start"><?php echo $parameter_value->parameter_name; ?><div class="bill_item_footer text-muted"><label><?php if($parameter_value->description !=''){ echo $this->lang->line('description').': ';} ?></label> <?php echo $parameter_value->description; ?></div></td>                     
                     <td class="text-center"><?php echo $parameter_value->pathology_report_value." ".$parameter_value->unit_name;?></td>  
-                    <td class="text-right"><?php echo $parameter_value->reference_range." ".$parameter_value->unit_name; ?></td>                    
+                    <td class="text-end"><?php echo $parameter_value->reference_range." ".$parameter_value->unit_name; ?></td>                    
                 </tr>
                 <?php
                     $row_counter++;
@@ -79,4 +88,6 @@
             </tbody>
         </table>
     </div>
+</div>
+</div>
 </div>

@@ -5,12 +5,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
     <div class="fixed-print-header">
         <?php if (!empty($print_details[0]['print_header'])) { ?>
                         <div>
@@ -18,7 +13,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>
         </div>   
@@ -40,9 +35,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                    
                     <table width="100%" class="printablea4">
                         <tr>
-                            <td class="text-left"><?php echo $this->lang->line('bill') . " "; ?><?php echo $this->customlib->getSessionPrefixByType('operation_theater_billing').$result["id"] ?>
+                            <td class="text-start"><?php echo $this->lang->line('bill') . " "; ?><?php echo $this->customlib->getSessionPrefixByType('operation_theater_billing').$result["id"] ?>
                             </td>
-                            <td class="text-right"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['date'])) ?>
+                            <td class="text-end"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['date'])) ?>
                             </td>
                         </tr>
                     </table>
@@ -58,7 +53,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <th width="20%"><?php echo $this->lang->line('operation') . " " . $this->lang->line('type'); ?></th>
                             <td width="25%"><?php echo $result["operation_type"]; ?></td>
                             <th width="25%"><?php echo $this->lang->line('doctor'); ?></th>
-                            <td width="30%" class="text-left"><?php echo $result['doctorname']." ".$result['doctorsurname']; ?></td> 
+                            <td width="30%" class="text-start"><?php echo $result['doctorname']." ".$result['doctorsurname']; ?></td> 
                         </tr> 
                     </table>
                     <div class="divider mb-10 mt-10"></div>
@@ -80,7 +75,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     </table> 
                     <div class="divider mb-10 mt-10"></div>
 
-                    <table class="printablea4" style="width: 30%; float: right;">
+                    <table class="printablea4 sh-print-right-30" >
                         <?php if (!empty($result["total"])) { ?>
                             <tr>
                                 <th><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
@@ -122,7 +117,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         <?php if (($print) != 'yes') { ?>
                             <tr id="generated_by">
                                 <th><?php echo $this->lang->line('collected_by'); ?></th>
-                                <td class="text-right"><?php echo $result["generated_byname"]; ?></td>
+                                <td class="text-end"><?php echo $result["generated_byname"]; ?></td>
                             </tr>
                         <?php } ?>
                     </table>

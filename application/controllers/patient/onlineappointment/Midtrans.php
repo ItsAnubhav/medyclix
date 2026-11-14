@@ -5,6 +5,8 @@ if (!defined('BASEPATH'))
 
 class Midtrans extends Patient_Controller
 {
+	public $setting;
+
 
     public $pay_method = "";
     public $amount = 0;

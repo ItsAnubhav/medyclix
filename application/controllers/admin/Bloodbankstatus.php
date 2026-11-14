@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Bloodbankstatus extends Admin_Controller
 {
+	public $payment_mode;
+
     public function __construct()
     {
         parent::__construct();
@@ -17,11 +19,11 @@ class Bloodbankstatus extends Admin_Controller
     
     public function getBloodBankChargeById()
     {
-        $id     = $this->input->post('charge_id');      
-        $patient_id=$this->input->post('patient_id');
+        $id     = $this->input->post('charge_id', TRUE);
+        $patient_id=$this->input->post('patient_id', TRUE);
         $is_tpa_valid=true;
         $display_tpa_charge=false;
-        if($this->input->post('is_tpa') == 1 && $patient_id != ""){          
+        if($this->input->post('is_tpa', TRUE) == 1 && $patient_id != ""){          
             $result = $this->bloodissue_model->bloodBankChargeById($id, $patient_id);            
             if($result && !IsNullOrEmptyString($result['insurance_validity'])){
                 if(strtotime($result['insurance_validity']) < strtotime(date('Y-m-d'))){                 
@@ -66,9 +68,10 @@ class Bloodbankstatus extends Admin_Controller
         $data['unit_type']    = $this->unittype_model->get();
         $data["bloodGroup"]   = $bloodstack;
 		
-        $this->load->view("layout/header");
+        $data['module'] = 'blood_bank';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/bloodbank/bloodbankstatus", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     } 
 
     public function status()
@@ -78,16 +81,16 @@ class Bloodbankstatus extends Admin_Controller
         }
         $this->session->set_userdata('top_menu', 'blood_bank');
         $this->session->set_userdata('sub_menu', 'admin/bloodbankstatus/status');
-        $bloodgroupid       = $this->input->post("bloodgroupid");
+        $bloodgroupid       = $this->input->post("bloodgroupid", TRUE);
         $bloodGroup         = $this->bloodbankstatus_model->getBloodGroup();
         $data["bloodGroup"] = $bloodGroup;
-        $this->form_validation->set_rules('blood_group', $this->lang->line('blood_group'), 'required');
-        $this->form_validation->set_rules('status', $this->lang->line('status'), 'required');
+        $this->form_validation->set_rules('blood_group', $this->lang->line('blood_group'), 'required|xss_clean');
+        $this->form_validation->set_rules('status', $this->lang->line('status'), 'required|xss_clean');
         $data["title"] = "Edit Blood Bank Status";
         if ($this->form_validation->run()) {
-            $bloodGroup   = $this->input->post("blood_group");
-            $bloodgroupid = $this->input->post("id");
-            $status       = $this->input->post("status");
+            $bloodGroup   = $this->input->post("blood_group", TRUE);
+            $bloodgroupid = $this->input->post("id", TRUE);
+            $status       = $this->input->post("status", TRUE);
             if (empty($bloodgroupid)) {
                 if (!$this->rbac->hasPrivilege('blood_bank_product', 'can_add')) {
                     access_denied();
@@ -130,7 +133,7 @@ class Bloodbankstatus extends Admin_Controller
 
     public function getAvailabelBloodByGroup()
     {
-        $bloodgroup     = $this->input->post('bloodgroup');
+        $bloodgroup     = $this->input->post('bloodgroup', TRUE);
         $data['result'] = $this->blood_donorcycle_model->getBatchByBloodGroup($bloodgroup);
         $page           = $this->load->view('admin/bloodbank/_getAvailabelBloodByGroup', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));

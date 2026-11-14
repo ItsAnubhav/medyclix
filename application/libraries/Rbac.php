@@ -8,6 +8,7 @@ class Rbac
     private $userRoles = array();
     protected $permissions;
     public $perm_category;
+    public $CI;
 
     public function __construct()
     {

@@ -24,17 +24,18 @@ class Appointpriority extends Admin_Controller
         $this->session->set_userdata('sub_sidebar_menu', 'admin/appointpriority/index');
         $this->session->set_userdata('sub_menu', 'admin/onlineappointment');
         
-        $this->form_validation->set_rules('appoint_priority', $this->lang->line('appointment_priority'), 'required');
+        $this->form_validation->set_rules('appoint_priority', $this->lang->line('appointment_priority'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data['appoint_priority_list'] = $this->appoint_priority_model->appoint_priority_list();
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/appointpriorityview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $appoint_priority = array(
-                'appoint_priority' => $this->input->post('appoint_priority'),
-                'description'      => $this->input->post('description'),
+                'appoint_priority' => $this->input->post('appoint_priority', TRUE),
+                'description'      => $this->input->post('description', TRUE),
             );
             $this->appoint_priority_model->add($appoint_priority);
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('appointment_priority_added_successfully') . '</div>');
@@ -50,7 +51,7 @@ class Appointpriority extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('appoint_priority_'.$row_value, $this->lang->line('priority'), 'trim|required');        
+                $this->form_validation->set_rules('appoint_priority_'.$row_value, $this->lang->line('priority'), 'trim|required|xss_clean');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -66,7 +67,7 @@ class Appointpriority extends Admin_Controller
             // save the multiple data 
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                 
-                $data  = array('appoint_priority' => $this->input->post('appoint_priority_'.$row_values));
+                $data  = array('appoint_priority' => $this->input->post('appoint_priority_'.$row_values, TRUE));
                 $this->appoint_priority_model->add($data);
             }
             // save the multiple data 
@@ -85,8 +86,8 @@ class Appointpriority extends Admin_Controller
 
     public function edit()
     {
-        $this->form_validation->set_rules('appoint_priority', $this->lang->line('priority'), 'required');
-        $id = $this->input->post('id');
+        $this->form_validation->set_rules('appoint_priority', $this->lang->line('priority'), 'trim|required|xss_clean');
+        $id = $this->input->post('id', TRUE);
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -97,7 +98,7 @@ class Appointpriority extends Admin_Controller
         } else {
 
             $appoint_priority = array(
-                'appoint_priority' => $this->input->post('appoint_priority'),
+                'appoint_priority' => $this->input->post('appoint_priority', TRUE),
             );
 
             $this->appoint_priority_model->update($id, $appoint_priority);
@@ -112,17 +113,18 @@ class Appointpriority extends Admin_Controller
         if (!$this->rbac->hasPrivilege('appointment_priority', 'can_edit')) {
             access_denied();
         }
-        $this->form_validation->set_rules('appoint_priority', $this->lang->line('appointment_priority'), 'required');
+        $this->form_validation->set_rules('appoint_priority', $this->lang->line('appointment_priority'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $data['appoint_priority_list'] = $this->appoint_priority_model->appoint_priority_list();
             $data['appoint_priority_data'] = $this->appoint_priority_model->appoint_priority_list($appoint_priority_id);
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/appointpriorityview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $appoint_priority = array(
-                'appoint_priority' => $this->input->post('appoint_priority'),
+                'appoint_priority' => $this->input->post('appoint_priority', TRUE),
             );
             $this->appoint_priority_model->update($appoint_priority_id, $appoint_priority);
             $this->session->set_flashdata('msg', '<div class="alert alert-success"> ' . $this->lang->line('appointment_priority_updated_successfully') . '</div>');

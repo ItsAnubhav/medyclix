@@ -1,25 +1,22 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList = $this->customlib->getGender();
-?>  
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+?>
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('radiology_bill'); ?></h3>
-                         <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"> <?php echo $this->lang->line('radiology_bill'); ?></h3>
+                         <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('radiology_bill', 'can_add')) { ?>
 								<button type="button" class="btn btn-primary btn-sm assigntest" id="load1" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-plus"></i> <?php echo $this->lang->line('generate_bill'); ?></button>
                             <?php } if ($this->rbac->hasPrivilege('radiology_test', 'can_view')) { ?>   
-                                <a data-toggle=""href="<?php echo base_url(); ?>admin/radio/search"  class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('radiology_test'); ?></a> 
+                                <a data-bs-toggle=""href="<?php echo base_url(); ?>admin/radio/search"  class="btn btn-primary btn-sm"><i class="fa fa-reorder"></i> <?php echo $this->lang->line('radiology_test'); ?></a> 
                             <?php } ?>
                            
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('radiology_test_reports'); ?></div>
                 <div class="table-responsive">        
                     <table class="table table-striped table-bordered table-hover ajaxlist" id="testreport" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('radiology_test_reports'); ?>">
@@ -31,8 +28,7 @@ $genderList = $this->customlib->getGender();
                                 <th><?php echo $this->lang->line('patient_name'); ?></th>
                                 <th><?php echo $this->lang->line('generated_by'); ?></th>
                                 <th><?php echo $this->lang->line('reference_doctor'); ?></th>
-                                <th><?php echo $this->lang->line('note'); ?></th>
-                                <?php 
+                                <?php
                                 if (!empty($fields)) {
                                         foreach ($fields as $fields_key => $fields_value) {
                                             ?>
@@ -41,12 +37,12 @@ $genderList = $this->customlib->getGender();
                                         } 
                                     }
                                 ?> 
-                                <th><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
-                                <th><?php echo $this->lang->line('discount') . ' (' . $currency_symbol . ')'; ?></th>
-                                <th><?php echo $this->lang->line('tax') . ' (' . $currency_symbol . ')'; ?></th>
-                                <th><?php echo $this->lang->line('net_amount') . ' (' . $currency_symbol . ')'; ?></th>
-                                <th><?php echo $this->lang->line('paid_amount'). ' (' . $currency_symbol . ')'; ?></th>
-                                <th class="text-right"><?php echo $this->lang->line('balance_amount'). ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('amount') . ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('discount') . ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('tax') . ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('net_amount') . ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('paid_amount'). ' (' . $currency_symbol . ')'; ?></th>
+                                <th class="noExport text-end"><?php echo $this->lang->line('balance_amount'). ' (' . $currency_symbol . ')'; ?></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -56,206 +52,168 @@ $genderList = $this->customlib->getGender();
                     </div>
                 </div>                                                    
             </div>
-        </div>  
-    </section>
-</div>
+        </div>
 
-<div class="modal fade" id="assigntestModal" aria-hidden="true" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
+<div class="modal fade sh-modal sh-modal-nospace" id="assigntestModal" tabindex="-1" aria-labelledby="assigntestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
             <form id="bill" accept-charset="utf-8" method="post">
-            <div class="modal-header modal-media-header">
-                 <button type="button" class="close pupclose" data-dismiss="modal">&times;</button>
-                <div class="row">
-                    <div class="col-lg-5 col-md-5 col-sm-11">
-                        <div class="row">
-                            <div class="col-lg-9 col-md-7 col-sm-8 col-xs-8">
-                                <div class="p-2 select2-full-width">
-                                    <select name="patientid" class="form-control patient_list_ajax" id="addpatient_id" name='' onchange="get_PatientDetails(this.value)">
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-md-5 col-sm-4 col-xs-2">
-                                <div class="p-2">        
-                                    <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) {?>
-                                        <a data-toggle="modal" id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient w-lg-100"><i class="fa fa-plus"></i> <span><?php echo $this->lang->line('new_patient'); ?></span></a>
-                                    <?php }?>
-                                </div>
-                            </div>            
-                        </div>
+                <input type="hidden" name="doctor_id" id="doctorid">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assigntestModalLabel"><?php echo $this->lang->line('radiology_bill'); ?></h5>
+                    <select class="form-control patient_list_ajax sh-bill-patient-pick" id="addpatient_id" name="patientid" onchange="get_PatientDetails(this.value)"></select>
+                    <?php if ($this->rbac->hasPrivilege('patient', 'can_add')) { ?>
+                    <a id="add" onclick="holdModal('myModalpa')" class="modalbtnpatient btn btn-light btn-sm text-nowrap"><i class="fa fa-plus"></i> <?php echo $this->lang->line('new_patient'); ?></a>
+                    <?php } ?>
+                    <div class="input-group sh-bill-rx-search">
+                        <input type="hidden" name="is_prescription_no_exist" id="is_prescription_no_exist">
+                        <input type="text" class="form-control" id="prescription_no" placeholder="<?php echo $this->lang->line('prescription_no'); ?>" name="prescription_no">
+                        <button class="btn btn-secondary" type="button" id="search_prescription" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('search'); ?>"><i class="fa fa-search"></i></button>
                     </div>
-                    <div class="col-lg-5 col-md-5 col-sm-11">
-                        <div class="row pt-sm-2"> 
-                            <div class="col-lg-9 col-md-8 col-sm-8 col-xs-8">
-                                <div class="p-2">
-                                    <div class="input-group">
-                                        <input type="hidden" id="is_prescription_no_exist" name="is_prescription_no_exist">
-                                        <input type="text" class="form-control border-0" id="prescription_no" placeholder="<?php echo $this->lang->line('prescription_no'); ?>" name="prescription_no">
-                                        <div class="input-group-btn">
-                                            <button class="btn btn-default btn-group-custom" type="button" id="search_prescription"><i class="fa fa-search"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> 
-                            <div class="col-lg-3 col-md-4 col-sm-4 col-xs-4">
-                                <div class="form-check pt5">
-                                    <input class="form-check-input" type="checkbox" value="1" id="is_tpa" name="is_tpa">
-                                    <label class="form-check-label text-white" for="is_tpa">
-                                        <?php echo $this->lang->line('apply_tpa'); ?>
-                                    </label>
-                                </div> 
-                            </div>
-                        </div>
-                    </div>         
-                </div><!--./d-flex-->
-            </div><!--./modal-header-->
+                    <div class="d-flex align-items-center gap-2">
+                        <input class="form-check-input apply_tpa mt-0" type="checkbox" value="1" id="is_tpa" name="is_tpa">
+                        <label class="form-check-label text-white mb-0" for="is_tpa"><?php echo $this->lang->line('apply_tpa'); ?></label>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div><!--./modal-header-->
                 <div class="pup-scroll-area">
-                    <div class="tabinsetbottom pt5">
+                    <div class="tabinsetbottom sh-modal-info-strip pt5">
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-lg-2 col-md-3 col-sm-4">
-                                    <label><?php echo $this->lang->line('bill_no'); ?><input readonly name="bill_no" id="billno" type="text" class="transparentbg-border"/>
-                                    <span class="text-danger"><?php echo form_error('bill_no'); ?></span></label>
+                                    <label class="d-flex align-items-center gap-1 mb-0 text-nowrap"><?php echo $this->lang->line('bill_no'); ?> <input readonly name="bill_no" id="billno" type="text" class="transparentbg-border atm-readonly-input"></label>
                                 </div>
                                 <div class="col-lg-3 col-md-4 col-sm-4">
-                                    <label><?php echo $this->lang->line('case_id'); ?>
-                                        <input readonly name="case_reference_id" id="case_reference_id" type="text" class="transparentbg-border"/>
-                                        <span class="text-danger"><?php echo form_error('case_reference_id'); ?></span>
-                                    </label>
+                                    <label class="d-flex align-items-center gap-1 mb-0 text-nowrap"><?php echo $this->lang->line('case_id'); ?> <input readonly name="case_reference_id" id="case_reference_id" type="text" class="transparentbg-border atm-readonly-input"></label>
                                 </div>
-                                <div class="col-lg-7 col-md-5 col-sm-4 text-right text-md-left">
-                                     <label><?php echo $this->lang->line('date'); ?>
-										<input name="date" type="text"  id="txtDate10" class="transparentbg-border"/>
-                                     </label>
+                                <div class="col-lg-7 col-md-5 col-sm-4 text-end">
+                                    <label class="d-flex align-items-center justify-content-end gap-1 mb-0 text-nowrap datetime"><?php echo $this->lang->line('date'); ?> <input name="date" type="text" id="txtDate10" value="<?php echo date($this->customlib->getHospitalDateFormat(true, true)); ?>" class="transparentbg-border atm-readonly-input datetime"></label>
                                 </div>
                             </div>
                         </div>
                     </div>            
-                    <div class="modal-body pb0">                        
-                    </div><!--./row-->
+                    <div class="modal-body sh-modal-canvas pb5"></div>
                 </div>
-                <div class="modal-footer sticky-footer">
-                    <div class="pull-right">                        
-                        <p id="demo"></p>
-                        <input type="hidden" id="radiology_billing_id" name="radiology_billing_id" >
-                        <input type="hidden" id="organisation_id" name="organisation_id" />
-                        <input type="hidden" id="insurance_id" name="insurance_id" />
-                        <input type="hidden" id="insurance_validity" name="insurance_validity" />
-                        <button type="submit" name="save_print" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info printsavebtn"><i class="fa fa-print"></i> <?php echo $this->lang->line('save_print'); ?>
-                        </button>
-                        <button type="submit" name="save" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="billsave" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                <div class="modal-footer">
+                    <p id="demo"></p>
+                    <input type="hidden" id="radiology_billing_id" name="radiology_billing_id">
+                    <input type="hidden" id="organisation_id" name="organisation_id">
+                    <input type="hidden" id="insurance_id" name="insurance_id">
+                    <input type="hidden" id="insurance_validity" name="insurance_validity">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" name="save_print" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info printsavebtn"><i class="fa fa-print"></i> <?php echo $this->lang->line('save_print'); ?></button>
+                    <button type="submit" name="save" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="billsave" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div><!--./modal-body-->
     </div>
 </div>
 
-<div class="modal fade" id="viewDetailReportModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100 overflow-y-auto" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='action_detail_report_modal'>
-
-                   </div>
+<div class="modal fade sh-modal sh-modal-accent" id="viewDetailReportModal" tabindex="-1" aria-labelledby="viewDetailReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDetailReportModalLabel"><?php echo $this->lang->line('bill_details'); ?></h5>
+                <div class="d-flex align-items-center gap-2">
+                    <div id='action_detail_report_modal' class="d-flex align-items-center gap-2"></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('bill_details'); ?></h4> 
-            </div>
-            <div class="modal-body pt0 pb0">
-                <div id="reportbilldata"></div>
-            </div>
-        </div>
-    </div>    
-</div>
-
-<div class="modal fade" id="collectionModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content modal-media-content mx-2">
-        <form action="" method="POST" id="form-sample-collected">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('close'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='collection_modal_header'>
-
-                   </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('sample_collection'); ?></h4> 
-            </div>
-        <div class="modal-body">
-          <input type="hidden" name="radiology_report_id" value="0">  
-          <input type="hidden" name="radiology_bill_id" value="0">  
-          <div class="form-group">
-                <label><?php echo $this->lang->line('sample_collected_person_name'); ?></label><small class="req"> *</small>
-                <select class="form-control" name="collected_by" id="collected_by">
-                     <option value=""><?php echo $this->lang->line('select') ?></option>
-                            <?php foreach ($radiologist as $dkey => $dvalue) {  ?>
-                            <option value="<?php echo $dvalue["id"]; ?>" <?php
-                                    if ((isset($radiologist_select)) && ($radiologist_select == $dvalue["id"])) {
-                                        echo "selected";
-                                     }
-                                ?>><?php echo $dvalue["name"] . " " . $dvalue["surname"]." (".$dvalue["employee_id"].")" ?>
-                            </option>   
-                        <?php } ?>
-                </select>          
-            </div>
-              <div class="form-group">
-                <label><?php echo $this->lang->line('collected_date'); ?></label><small class="req"> *</small>
-                <input type="text" class="form-control" name="collected_date" id="collected_date">
-              </div>
-               <div class="form-group">
-                <label><?php echo $this->lang->line('radiology_center'); ?></label><small class="req"> *</small>
-                <input type="text" class="form-control" name="radiology_center" id="radiology_center">
-              </div>
-              </div>
-            <div class="modal-footer">
-                 <?php if ($this->rbac->hasPrivilege('radiology_add_edit_collection_person', 'can_edit')) { ?>   
-              <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right" ><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-          <?php } ?>
-      </div>
-      </form>
-        </div>
-    </div>    
-</div>
-    
-<div class="modal fade" id="addReportModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-              <form action="" method="POST" id="form-report_param">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='collection_modal_header'>
-                   </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_edit_report'); ?></h4> 
-            </div>
-            <div class="scroll-area">
-                <div class="modal-body">         
-                </div>
-            </div>
-            <div class="modal-footer">
-                 <?php if ($this->rbac->hasPrivilege('radiology_add_edit_report', 'can_edit')) { ?>   
-                <button type="submit"  data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-            <?php } ?>
-      </div>
-      </form>
-        </div>
-    </div>    
-</div>
-
-<div class="modal fade" id="addPaymentModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-toggle="tooltip" title="<?php echo $this->lang->line('clase'); ?>" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('payments'); ?></h4>
             </div>
             <div class="pup-scroll-area">
-                <div class="modal-body pb0 min-h-3">
+                <div class="modal-body">
+                    <div id="reportbilldata"></div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-accent" id="collectionModal" tabindex="-1" aria-labelledby="collectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="" method="POST" id="form-sample-collected">
+            <div class="modal-header">
+                <h5 class="modal-title" id="collectionModalLabel"><?php echo $this->lang->line('sample_collection'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <input type="hidden" name="radiology_report_id" value="0">
+                    <input type="hidden" name="radiology_bill_id" value="0">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><i class="fa fa-eyedropper"></i> <?php echo $this->lang->line('sample_collection'); ?></span>
+                        </div>
+                        <div class="px-3 py-3">
+                            <div class="mb-3">
+                                <label class="form-label"><?php echo $this->lang->line('sample_collected_person_name'); ?></label><small class="req"> *</small>
+                                <select class="form-control" name="collected_by" id="collected_by">
+                                    <option value=""><?php echo $this->lang->line('select') ?></option>
+                                    <?php foreach ($radiologist as $dkey => $dvalue) { ?>
+                                        <option value="<?php echo $dvalue["id"]; ?>" <?php if ((isset($radiologist_select)) && ($radiologist_select == $dvalue["id"])) echo "selected"; ?>><?php echo $dvalue["name"] . " " . $dvalue["surname"] . " (" . $dvalue["employee_id"] . ")"; ?></option>
+                                    <?php } ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"><?php echo $this->lang->line('collected_date'); ?></label><small class="req"> *</small>
+                                <input type="text" class="form-control date" name="collected_date" id="collected_date">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label"><?php echo $this->lang->line('radiology_center'); ?></label><small class="req"> *</small>
+                                <input type="text" class="form-control" name="radiology_center" id="radiology_center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <?php if ($this->rbac->hasPrivilege('radiology_add_edit_collection_person', 'can_edit')) { ?>
+                <button type="submit" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                <?php } ?>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+    
+<div class="modal fade sh-modal sh-modal-accent" id="addReportModal" tabindex="-1" aria-labelledby="addReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form action="" method="POST" id="form-report_param">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReportModalLabel"><?php echo $this->lang->line('add_edit_report'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <?php if ($this->rbac->hasPrivilege('radiology_add_edit_report', 'can_edit')) { ?>
+                <button type="submit" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                <?php } ?>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-accent" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentModalLabel"><?php echo $this->lang->line('payments'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
@@ -293,19 +251,35 @@ foreach ($testlist as $dkey => $testlist_value) {
     var datetime_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(true, true), ['d' => 'DD', 'm' => 'MM', 'M' => 'MMM', 'Y' => 'YYYY', 'H' => 'hh', 'i' => 'mm']) ?>';
 
     $(document).ready(function(){
-         $('input[name="collected_date"]').datepicker({
-			format: date_format_new,
-			autoclose: true,
-			todayHighlight: true
+         /* input[name="..."] datepicker init removed - add .date class to HTML for auto-init */
+    });
+
+    $('#assigntestModal').on('shown.bs.modal', function () {
+        var $sel = $('.patient_list_ajax');
+        if ($sel.hasClass('select2-hidden-accessible')) {
+            $sel.select2('destroy');
+        }
+        $sel.select2({
+            ajax: {
+                url: '<?php echo base_url(); ?>admin/patient/getPatientListAjax',
+                type: 'post',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { searchTerm: params.term };
+                },
+                processResults: function (response) {
+                    return { results: response };
+                },
+                cache: true
+            },
+            placeholder: '<?php echo $this->lang->line('select_patient'); ?>',
+            dropdownParent: $('#assigntestModal')
         });
     });
 
     function holdModal(modalId) {
-        $('#' + modalId).modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: true
-        });
+        (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
     }
    
     $('.patient_list_ajax').on('select2:select', function (e) {
@@ -325,16 +299,14 @@ foreach ($testlist as $dkey => $testlist_value) {
 		$('#radiology_billing_id').val('');
 			
 		var datetime_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(true, true), ['d' => 'DD', 'm' => 'MM', 'M' => 'MMM', 'Y' => 'YYYY', 'H' => 'H', 'i' => 'mm','h'=>'hh']) ?>';		
-		$('#txtDate10').datetimepicker({
-			format: datetime_format,
-		});
+		/* datetimepicker init removed - auto-init via .datetime class */
 	  
         $.ajax({
                 url: '<?php echo base_url(); ?>admin/radio/assigntestradio',
                 type: "POST",
                 dataType: 'json',
                  beforeSend: function() {
-                      (__this_obj === null)? "": __this_obj.button('loading');
+                      (__this_obj === null)? "": __this_obj.btnLoading();
                       createModal.addClass('modal_loading');
                 },
                 success: function(res) {     
@@ -344,16 +316,16 @@ foreach ($testlist as $dkey => $testlist_value) {
                     $(".test_name").select2();
                     $(".consultant_doctor").select2();
                     updateDate();
-                    $('#assigntestModal').modal('show');
+                    shModal('assigntestModal').show();
                     createModal.removeClass('modal_loading');
                 },
                    error: function(xhr) { // if error occured
                 alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                     (__this_obj === null) ? "": __this_obj.button('reset');
+                     (__this_obj === null) ? "": __this_obj.btnReset();
                       createModal.removeClass('modal_loading');
             },
             complete: function() {
-                    (__this_obj === null)? "": __this_obj.button('reset');
+                    (__this_obj === null)? "": __this_obj.btnReset();
                      createModal.removeClass('modal_loading');
             }
             });
@@ -363,14 +335,14 @@ foreach ($testlist as $dkey => $testlist_value) {
             var createModal=$('#assigntestModal');
             var $this = $(this);
             var recordId=$this.data('recordId');
-             $this.button('loading');
+             $this.btnLoading();
             $.ajax({
                 url: base_url+'admin/radio/editradiology',
                 type: "POST",
                 data: {'id':recordId},
                 dataType: 'json',
                  beforeSend: function() {
-                    $this.button('loading');
+                    $this.btnLoading();
                       createModal.addClass('modal_loading');
                 },
                 success: function(res) { 
@@ -390,10 +362,10 @@ foreach ($testlist as $dkey => $testlist_value) {
                   
                     $('#assigntestModal .modal-body').find('.test_name').select2();
                     $('#assigntestModal .filestyle').dropify();
-                    $('#txtDate10').data("DateTimePicker").date(new Date(res.radiology_date));
+                    SHPicker.setDate('#txtDate10', new Date(res.radiology_date));
                     updateDate();
-                    $('#viewDetailReportModal').modal('hide');
-                    $('#assigntestModal').modal('show');
+                    shModal('viewDetailReportModal').hide();
+                    shModal('assigntestModal').show();
                     if(res.tpa_apply_status==1){
                         $("#is_tpa").prop('checked',true) ;
                     }else if(res.tpa_apply_status==0){
@@ -404,11 +376,11 @@ foreach ($testlist as $dkey => $testlist_value) {
                 },
                    error: function(xhr) { // if error occured
                    alert("<?php echo $this->lang->line('error_occurred_please_try_again') ?>");
-                   $this.button('reset');               
+                   $this.btnReset();               
                    createModal.removeClass('modal_loading');
             },
             complete: function() {
-                  $this.button('reset');
+                  $this.btnReset();
                      createModal.removeClass('modal_loading');
             }
             });
@@ -418,32 +390,32 @@ foreach ($testlist as $dkey => $testlist_value) {
        if (confirm('<?php echo $this->lang->line("delete_confirm") ?>')) {             
             var $this = $(this);
             var recordId=$this.data('recordId');
-            $this.button('loading');
+            $this.btnLoading();
             $.ajax({
                 url: base_url+'admin/radio/deleteRadiologyBill',
                 type: "POST",
                 data: {'id':recordId},
                 dataType: 'json',
                  beforeSend: function() {
-                    $this.button('loading');                    
+                    $this.btnLoading();                    
                 },
                 success: function(res) {   
                     if (res.status == "fail") {                        
                         errorMsg(res.message);
                     } else {
                         successMsg(res.message);
-                        $('#viewDetailReportModal').modal('hide');
+                        shModal('viewDetailReportModal').hide();
                          table.ajax.reload();
                     }
-                  $this.button('reset');
+                  $this.btnReset();
                 },
                    error: function(xhr) { // if error occured
                    alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                   $this.button('reset');
+                   $this.btnReset();
                     createModal.removeClass('modal_loading');
             },
             complete: function() {
-                  $this.button('reset');            
+                  $this.btnReset();            
             }
             });
         }
@@ -487,22 +459,33 @@ foreach ($testlist as $dkey => $testlist_value) {
                     }
                 }
             });
-        }       
-       
-        function getdate(day,datepicker_obj) {      
-            var report_day =  parseInt(day, 10);
-            var selected_date=$("#txtDate10").data('DateTimePicker').date().toDate(); 
+        } 
+
+        function getdate(day, datepicker_obj) {
+            var report_day = parseInt(day, 10);
+            var selected_date = SHPicker.getDate("#txtDate10");
             var newdate = new Date(selected_date);
-            newdate.setDate(newdate.getDate() + report_day);             
-            datepicker_obj.datepicker("update", newdate); 
-        }
+            newdate.setDate(newdate.getDate() + report_day);
+            if (!datepicker_obj.hasClass("hasDatepicker")) {
+                /* datepicker_obj.datepicker() init removed - .date class auto-init */
+            }
+            datepicker_obj.each(function() { SHPicker.setDate(this, newdate); });
+        }      
+       
+        // function getdate(day,datepicker_obj) {      
+        //     var report_day =  parseInt(day, 10);
+        //     var selected_date=SHPicker.getDate("#txtDate10"); 
+        //     var newdate = new Date(selected_date);
+        //     newdate.setDate(newdate.getDate() + report_day);             
+        //     datepicker_obj.each(function() { SHPicker.setDate(this, newdate); }); 
+        // }
       
     $(document).on('click','.add-record',function(){		
         var table = document.getElementById("tableID"); 
         total_rows=total_rows+1;
         var template=$("#testradio-template").html();
-        var div = "<td><input type='hidden' id='total_rows' name='total_rows[]' value='" + total_rows + "'><input type='hidden' name='inserted_id_" + total_rows + "' value='0'><select class='form-control test_name select2' style='width:100%'  name='test_name_" + total_rows + "' ><option value='<?php echo set_value('test_name_id'); ?>'><?php echo $this->lang->line('select') ?></option>"+template+"</select></td><td><input type='text' name='reportday_" + total_rows + "' id='reportday_" + total_rows + "'  class='form-control text-right days' readonly></td><td><input type='text' name='reportdate_" + total_rows + "' id='reportdate_" + total_rows + "'  class='form-control text-right report_date'></td><td><div class='input-group'><input type='text' name='taxpercent_" + total_rows + "' id='taxpercent_" + total_rows + "'  class='form-control text-right right-border-none taxpercent' autocomplete='off' readonly><span class='input-group-addon'> %</span></div></td><td><input type='text' name='amount_" + total_rows + "' id='amount_" + total_rows + "'  class='form-control text-right amount' readonly><input type='hidden' name='taxamount_" + total_rows + "' id='taxamount_" + total_rows + "'  class='form-control text-right taxamount' readonly></td>";
-        var row =  "<tr id='row" + total_rows + "'>" + div + "<td><button type='button' data-row-id='"+total_rows+"' class='closebtn delete_row'><i class='fa fa-remove'></i></button></td></tr>";
+        var div = "<td><input type='hidden' id='total_rows' name='total_rows[]' value='" + total_rows + "'><input type='hidden' name='inserted_id_" + total_rows + "' value='0'><select class='form-control form-control-sm test_name select2' name='test_name_" + total_rows + "' ><option value='<?php echo set_value('test_name_id'); ?>'><?php echo $this->lang->line('select') ?></option>"+template+"</select></td><td><input type='text' name='reportday_" + total_rows + "' id='reportday_" + total_rows + "'  class='form-control form-control-sm text-end days' readonly></td><td><input type='text' name='reportdate_" + total_rows + "' id='reportdate_" + total_rows + "'  class='form-control form-control-sm text-end report_date'></td><td><div class='input-group input-group-sm'><input type='text' name='taxpercent_" + total_rows + "' id='taxpercent_" + total_rows + "'  class='form-control form-control-sm text-end taxpercent' autocomplete='off' readonly><span class='input-group-text'>%</span></div><input type='hidden' name='taxamount_" + total_rows + "' id='taxamount_" + total_rows + "'  class='taxamount'></td><td class='text-end'><input type='text' name='amount_" + total_rows + "' id='amount_" + total_rows + "'  class='form-control form-control-sm text-end amount' readonly></td>";
+        var row =  "<tr id='row" + total_rows + "'>" + div + "<td class='text-center align-middle'><button type='button' data-row-id='"+total_rows+"' class='btn btn-sm btn-outline-danger delete_row'><i class='fa fa-remove'></i></button></td></tr>";
         $('#tableID').append(row);
         updateDate();
         $('.test_name').select2();
@@ -558,14 +541,10 @@ foreach ($testlist as $dkey => $testlist_value) {
 					if(_row_day !=""){
 						//==============
 						var report_day =  parseInt(_row_day, 10);
-						var selected_date=$("#txtDate10").data('DateTimePicker').date().toDate() ;
+						var selected_date=SHPicker.getDate("#txtDate10") ;
 						var newdate = new Date(selected_date);
 						newdate.setDate(newdate.getDate() + report_day);
-						$tblrow.find(".report_date").datepicker({
-							format: date_format_new,
-							autoclose: true,
-							todayHighlight: true
-						}).datepicker("update", newdate);                    
+						$tblrow.find(".report_date").each(function() { SHPicker.setDate(this, newdate); });                    
 					}   
 				}         
             });
@@ -592,7 +571,7 @@ foreach ($testlist as $dkey => $testlist_value) {
                 cache: false,
                 processData: false,
                  beforeSend: function() {
-                    submit_button.button('loading');
+                    submit_button.btnLoading();
                 },
                 success: function (data) {
                     if (data.status == "fail") {
@@ -604,21 +583,21 @@ foreach ($testlist as $dkey => $testlist_value) {
                     } else {
                         successMsg(data.message);
                         table.ajax.reload();
-                        $('#assigntestModal').modal('hide');
+                        shModal('assigntestModal').hide();
                         console.log(submit_button_name);
                         if(submit_button_name == "save_print"){
                           printData(data.insert_id);  
                         }
                     }
                 
-                submit_button.button('reset');
+                submit_button.btnReset();
                 },
                  error: function(xhr) { // if error occured
                   alert("Error occured.please try again");
-                  submit_button.button('reset');
+                  submit_button.btnReset();
                 },
                 complete: function() {
-                  submit_button.button('reset');
+                  submit_button.btnReset();
                 }
             });
 		});
@@ -628,11 +607,9 @@ foreach ($testlist as $dkey => $testlist_value) {
 	   
 	    var datetime_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(true, true), ['d' => 'DD', 'm' => 'MM', 'M' => 'MMM', 'Y' => 'YYYY', 'H' => 'H', 'i' => 'mm','h'=>'hh']) ?>';
 		
-		$('#txtDate10').datetimepicker({
-			format: datetime_format,
-		});		
+		/* datetimepicker init removed - auto-init via .datetime class */		
 		
-		$('#txtDate10').data("DateTimePicker").date(new Date());
+		SHPicker.setDate('#txtDate10', new Date());
 		$('#txtDate10').on('dp.change', dateChanged);
 
     });
@@ -660,7 +637,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {id: id},
             success: function (data) {
                 $('#reportdatareport').html(data);
-                $('#edit_deletereport').html("<?php if ($this->rbac->hasPrivilege('add_radio_patient_test_reprt', 'can_view')) { ?><a href='#' data-toggle='tooltip' onclick='printData(" + id + ")'   data-original-title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a><?php } ?>");
+                $('#edit_deletereport').html("<?php if ($this->rbac->hasPrivilege('add_radio_patient_test_reprt', 'can_view')) { ?><a href='#' data-bs-toggle='tooltip' onclick='printData(" + id + ")'   title='<?php echo $this->lang->line('print'); ?>'><i class='fa fa-print'></i></a><?php } ?>");
                 holdModal('viewModalReport');
             },
         });
@@ -698,17 +675,17 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {'id': id},
             dataType: 'json',
             beforeSend: function() {
-				$this.button('loading');
+				$this.btnLoading();
             },
             success: function (data) {       
 				popup(data.page);
 			},
             error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-				$this.button('reset');               
+				$this.btnReset();               
 			},
 			complete: function() {
-				$this.button('reset');     
+				$this.btnReset();     
 			}
         });
     });
@@ -726,7 +703,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             dataType:"JSON",
             beforeSend: function(){
 				$('#reportdatabill,#edit_deletebill').html("");
-				$('#viewModalbill').modal('show');
+				shModal('viewModalbill').show();
 				view_modal.addClass('modal_loading');
 			},
 			complete: function(){
@@ -771,7 +748,7 @@ foreach ($testlist as $dkey => $testlist_value) {
                 $('select[id="edit_consultant_doctor"] option[value="' + data.consultant_doctor + '"]').attr("selected", "selected");
                 $("#edit_description").val(data.description);
                 $(".select2").select2().select2('val', data.patient_id);
-                $("#viewModal").modal('hide');
+                shModal('viewModal').hide();
                 holdModal('editTestReportModal');
             },
         })
@@ -779,7 +756,7 @@ foreach ($testlist as $dkey => $testlist_value) {
 
     $(document).ready(function (e) {
         $("#updatetest").on('submit', (function (e) {
-            $("#updatetestbtn").button('loading');
+            $("#updatetestbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/radio/updateTestReport',
@@ -800,7 +777,7 @@ foreach ($testlist as $dkey => $testlist_value) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#updatetestbtn").button('reset');
+                    $("#updatetestbtn").btnReset();
                 },
                 error: function () {
                 }
@@ -820,7 +797,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: form.serialize(), 
             dataType: 'json',
             beforeSend: function() {
-                clicked_btn.button('loading');
+                clicked_btn.btnLoading();
             },
             success: function (data) {
                 if (data.status == "fail") {
@@ -831,17 +808,17 @@ foreach ($testlist as $dkey => $testlist_value) {
                     errorMsg(message);
                 } else {
                     successMsg(data.message);
-                    clicked_btn.button('reset');
-                    $('#collectionModal').modal('hide');
+                    clicked_btn.btnReset();
+                    shModal('collectionModal').hide();
                     PatientRadiologyDetails(radiology_bill_id,clicked_btn);
                 }
             },
             error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-				clicked_btn.button('reset');
+				clicked_btn.btnReset();
 			},
 			complete: function() {
-				clicked_btn.button('reset');
+				clicked_btn.btnReset();
 			}
         });
     }); 
@@ -860,7 +837,7 @@ foreach ($testlist as $dkey => $testlist_value) {
 				processData: false,
 				contentType: false,
                   beforeSend: function() {
-                  clicked_btn.button('loading');
+                  clicked_btn.btnLoading();
                 },
                 success: function (data) {
                     if (data.status == "fail") {
@@ -871,27 +848,23 @@ foreach ($testlist as $dkey => $testlist_value) {
                         errorMsg(message);
                     } else {
                         successMsg(data.message);
-                        $('#addReportModal').modal('hide');
+                        shModal('addReportModal').hide();
                         PatientRadiologyDetails(radiology_bill_id,clicked_btn);
                     }
-                   clicked_btn.button('reset');
+                   clicked_btn.btnReset();
                 },
                 error: function(xhr) { // if error occured
                   alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  clicked_btn.button('reset');
+                  clicked_btn.btnReset();
                },
                complete: function() {
-                 clicked_btn.button('reset');
+                 clicked_btn.btnReset();
                }
             });
       }); 
 
 	function updateDate(){
-		$('#tableID').find('.report_date').datepicker({
-			format: date_format_new,
-			autoclose: true,
-			todayHighlight: true
-		});
+		/* .report_date datepicker init removed - .date class on inputs handles it */
 	}
 </script>
 
@@ -982,7 +955,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             var $add_btn= $(this);  
             var payment_modal=$('#addPaymentModal');
             payment_modal.addClass('modal_loading'); 
-            payment_modal.modal('show'); 
+            shModal(payment_modal[0]).show(); 
             getPayments(record_id);
     });
 
@@ -996,9 +969,12 @@ foreach ($testlist as $dkey => $testlist_value) {
             beforeSend: function(){
             },          
             success: function (data) {
-         
+
            $('.modal-body',payment_modal).html(data.page);
-            payment_modal.removeClass('modal_loading');  
+            $('[data-bs-toggle="tooltip"]', payment_modal).each(function () {
+                bootstrap.Tooltip.getOrCreateInstance(this);
+            });
+            payment_modal.removeClass('modal_loading');
             },
              error: function () {
              payment_modal.removeClass('modal_loading'); 
@@ -1014,7 +990,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             var radiology_billing_id=$("input[name='radiology_billing_id']",'#add_partial_payment').val();
             var form = $(this);    
             var btn = clicked_btn;
-            btn.button('loading');
+            btn.btnLoading();
             $.ajax({
                 url: form.attr('action'),
                 type: "POST",
@@ -1035,13 +1011,13 @@ foreach ($testlist as $dkey => $testlist_value) {
                         getPayments(radiology_billing_id);
                         table.ajax.reload();
                         }
-                     btn.button('reset');
+                     btn.btnReset();
                 },
                 error: function () {
 
                 },
                 complete: function(){
-                 btn.button('reset');
+                 btn.btnReset();
 			}
             });
         });
@@ -1053,7 +1029,7 @@ foreach ($testlist as $dkey => $testlist_value) {
              var conf = confirm("<?php echo $this->lang->line('delete_confirm')?>");
     if(conf == true){
             var btn = $(this);       
-            btn.button('loading');
+            btn.btnLoading();
     
             $.ajax({
                 url: base_url+'admin/transaction/deleteByID',
@@ -1063,14 +1039,14 @@ foreach ($testlist as $dkey => $testlist_value) {
                 success: function (data) {
                     successMsg(data.message);
                     getPayments(radiology_billing_id);
-                    btn.button('reset');
+                    btn.btnReset();
                        table.ajax.reload();
                 },
                 error: function () {
-                    btn.button('reset');
+                    btn.btnReset();
                 },
                 complete: function(){
-                 btn.button('reset');
+                 btn.btnReset();
    }
             }); 
 }
@@ -1079,24 +1055,24 @@ foreach ($testlist as $dkey => $testlist_value) {
          $(document).on('click','.print_receipt',function(){
       var $this = $(this);
          var record_id=$this.data('recordId')
-       $this.button('loading');
+       $this.btnLoading();
       $.ajax({
           url: '<?php echo base_url(); ?>admin/radio/printTransaction',
           type: "POST",
           data:{'id':record_id},
           dataType: 'json',
            beforeSend: function() {
-                 $this.button('loading');      
+                 $this.btnLoading();      
           },
           success: function(res) {
            popup(res.page);
           },
              error: function(xhr) { // if error occured
           alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  $this.button('reset');              
+                  $this.btnReset();              
          },
               complete: function() {
-                   $this.button('reset');                 
+                   $this.btnReset();                 
              }
       });
   });
@@ -1115,23 +1091,23 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {'id': id},
             dataType: 'json',
             beforeSend: function() {
-                $this.button('loading');
                 modal_view.addClass('modal_loading');
                },
-            success: function (data) {                      
-                 $('#viewDetailReportModal .modal-body').html(data.page);  
-                 $('#viewDetailReportModal #action_detail_report_modal').html(data.actions);  
-                 $('#viewDetailReportModal').modal('show');
+            success: function (data) {
+                 $('#viewDetailReportModal .modal-body').html(data.page);
+                 $('#viewDetailReportModal #action_detail_report_modal').html(data.actions);
+                 $('#viewDetailReportModal [data-bs-toggle="tooltip"]').each(function () {
+                     bootstrap.Tooltip.getOrCreateInstance(this);
+                 });
+                 shModal('viewDetailReportModal').show();
                   modal_view.removeClass('modal_loading');
             },
             error: function(xhr) { // if error occured
              alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
                 modal_view.removeClass('modal_loading');
            },
             complete: function() {
-            $this.button('reset');
-                modal_view.removeClass('modal_loading');          
+                modal_view.removeClass('modal_loading');
            }
         });  
     }
@@ -1146,21 +1122,21 @@ foreach ($testlist as $dkey => $testlist_value) {
                 data: {'id': id},
                 dataType: 'json',
                    beforeSend: function() {
-                  $this.button('loading');
+                  $this.btnLoading();
                    },
                 success: function (data) {       
                 $('#addReportModal .modal-body').html(data.page);
                 $('#addReportModal .filestyle').dropify();
-                $('#addReportModal').modal('show');
+                shModal('addReportModal').show();
                 },
 
                  error: function(xhr) { // if error occured
                  alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                 $this.button('reset');
+                 $this.btnReset();
                    
           },
           complete: function() {
-                $this.button('reset');         
+                $this.btnReset();         
           }
             });
     });
@@ -1175,7 +1151,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {'id': id},
             dataType: 'json',
                beforeSend: function() {
-              $this.button('loading');
+              $this.btnLoading();
                },
             success: function (data) {       
           popup(data.page);
@@ -1183,11 +1159,11 @@ foreach ($testlist as $dkey => $testlist_value) {
 
              error: function(xhr) { // if error occured
              alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
+             $this.btnReset();
                
       },
       complete: function() {
-            $this.button('reset');     
+            $this.btnReset();     
       }
         });
     });
@@ -1203,7 +1179,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {'id': id},
             dataType: 'json',
                beforeSend: function() {
-              $this.button('loading');
+              $this.btnLoading();
                },
 
             success: function (data) {            
@@ -1211,17 +1187,19 @@ foreach ($testlist as $dkey => $testlist_value) {
 				$("#collectionModal .modal-body").find('input[name="radiology_report_id"]').val(data.report.id);
 				$("#collectionModal .modal-body").find('input[name="radiology_bill_id"]').val(data.report.radiology_bill_id);
 				$("#collectionModal .modal-body").find('input[name="radiology_center"]').val(data.report.radiology_center);
-				$("#collectionModal .modal-body").find('input[name="collected_date"]').datepicker("update", new Date(data.report.collection_date));
-				$('#collectionModal').modal('show');
+				// document.querySelectorAll('#collectionModal .modal-body input[name="collected_date"]').forEach(function(el) { SHPicker.setDate(el, new Date(data.report.collection_date)); });
+                document.querySelectorAll('#collectionModal .modal-body input[name="collected_date"]').forEach(function(el) { SHPicker.setDate(el, new Date(data.report.collection_date)); });
+
+				shModal('collectionModal').show();
             },
 
             error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-				$this.button('reset');
+				$this.btnReset();
                
 			},
         complete: function() {
-            $this.button('reset');
+            $this.btnReset();
           }
         });
     });
@@ -1230,9 +1208,9 @@ foreach ($testlist as $dkey => $testlist_value) {
       var mode=$(this).val();
       if(mode == "Cheque"){
         $('.filestyle','#addPaymentModal').dropify();
-        $('.cheque_div').css("display", "block");
+        $('.cheque_div').removeClass('d-none');
       }else{
-        $('.cheque_div').css("display", "none");
+        $('.cheque_div').addClass('d-none');
       }
     });     
 
@@ -1241,7 +1219,7 @@ foreach ($testlist as $dkey => $testlist_value) {
 		$('#addpatient_id').select2("val", "");
 		$('#billno,#prescription_no,#case_reference_id',assigntestModal).val("");
 		$("input:checkbox[name=is_tpa]").prop('checked',false);
-		$("#assigntestModal").find('input[name="date"]').data("DateTimePicker").date(new Date());;
+		SHPicker.setDate('#assigntestModal input[name="date"]', new Date());
 		$("#organisation_id").val('');
 		$("#insurance_id").val('');
 		$("#insurance_validity").val('');   
@@ -1255,13 +1233,24 @@ foreach ($testlist as $dkey => $testlist_value) {
 ( function ( $ ) {
     'use strict';
     $(document).ready(function () {
-        initDatatable('ajaxlist','admin/radio/getradiologybillDatatable',[],[],100,
+        window.table = initDatatable('ajaxlist','admin/radio/getradiologybillDatatable',[],[],100,
             [
-        {  "sWidth": "105px", "aTargets": [ -2,-3,-4 ] ,'sClass': 'dt-body-right'},
-        {  "sWidth": "105px", "bSortable": false, "aTargets": [ -1 ] ,'sClass': 'dt-body-right'},
-               {  "sWidth": "30px", "aTargets": [ 2 ] ,'sClass': 'dt-body-left'},
-               {  "sWidth": "100px", "aTargets": [ 0 ] ,'sClass': 'dt-body-left'},
+            { "bSortable": false, "sWidth": "80px", "aTargets": [ -1 ] ,'sClass': 'dt-body-right'},
+            { "sWidth": "80px", "aTargets": [ -2,-3 ] ,'sClass': 'dt-body-right'},
+            { "aTargets": [ -4,-5,-6 ] ,'sClass': 'dt-body-right'},
+            { "aTargets": [ 1 ] ,'sClass': 'dt-body-center'}
             ]);
+        window.table.on('draw.dt', function () {
+            var lastCol = document.querySelector('#testreport colgroup col:last-child');
+            if (lastCol) lastCol.style.setProperty('width', '80px', 'important');
+            ['nth-last-child(1)','nth-last-child(2)','nth-last-child(3)'].forEach(function(sel) {
+                $('#testreport th:' + sel + ', #testreport td:' + sel).each(function () {
+                    this.style.setProperty('width',     '80px', 'important');
+                    this.style.setProperty('min-width', '80px', 'important');
+                    this.style.setProperty('max-width', '80px', 'important');
+                });
+            });
+        });
     });
 } ( jQuery ) )
 </script>
@@ -1271,22 +1260,12 @@ foreach ($testlist as $dkey => $testlist_value) {
 <script type="text/javascript">
     
      $(document).ready(function(){
-            $('#assigntestModal,#collectionModal,#addReportModal').modal({
-              backdrop: 'static',
-              keyboard: true, 
-              show: false
-            });
-            $('.datetime').datetimepicker({
-                 format: datetime_format,
-            });           
+            modal_click_disabled('assigntestModal', 'collectionModal', 'addReportModal');
+            /* datetimepicker init removed - auto-init via .datetime class */           
        });
     
     $(document).ready(function (e) {
-        $('#viewDetailReportModal,#addPaymentModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('viewDetailReportModal', 'addPaymentModal');
     });
 </script>
 
@@ -1300,7 +1279,7 @@ foreach ($testlist as $dkey => $testlist_value) {
             data: {'id': id},
             dataType: 'json',
                beforeSend: function() {
-              $this.button('loading');
+              $this.btnLoading();
                },
             success: function (data) {       
           popup(data.page);
@@ -1308,11 +1287,11 @@ foreach ($testlist as $dkey => $testlist_value) {
 
              error: function(xhr) { // if error occured
              alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
+             $this.btnReset();
                
       },
       complete: function() {
-            $this.button('reset');     
+            $this.btnReset();     
       }
         });
     });    
@@ -1323,7 +1302,7 @@ foreach ($testlist as $dkey => $testlist_value) {
 			var discount_amount=(discount_amount != "") ?discount_amount: 0;
 			var total=$('#total').val();			 
 			var discount_percent=0;			    
-			discount_percent=((parseInt(discount_amount)/parseInt(total))*100);
+			discount_percent=((parseFloat(discount_amount)/parseFloat(total))*100);
 			$('#discount_percent').val(discount_percent.toFixed(2));		 
 			update_amount_by_discount($(e.target).closest('div.modal'));
     });
@@ -1382,8 +1361,18 @@ foreach ($testlist as $dkey => $testlist_value) {
     }
 
     $(document).on("click", "#is_tpa", function(){
+    // Preserve the bill id across the TPA reload. .assigntest reloads a fresh form and
+    // getInsertModalForm() clears #radiology_billing_id — which otherwise turned an EDIT
+    // into a new-record INSERT after toggling TPA. Restore it so the save still UPDATEs
+    // the existing bill (old tests are cleaned up server-side in Radio_model::addBill).
+    var current_billing_id = $('#radiology_billing_id').val();
     $(".assigntest").trigger("click");
+    $('#radiology_billing_id').val(current_billing_id);
     var addpatient_id=$("#addpatient_id").val();
     get_PatientDetails(addpatient_id);
     });
 </script>
+
+<?php if ($this->input->get('action') === 'add'): ?>
+<script>$(function(){ $('.assigntest').trigger('click'); shCleanUrlParam('action'); });</script>
+<?php endif; ?>

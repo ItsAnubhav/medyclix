@@ -4,6 +4,8 @@
 
 class Skrill extends Patient_Controller
 {
+	public $setting;
+
     public $pay_method     = array();
 
     public function __construct()

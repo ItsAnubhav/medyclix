@@ -303,30 +303,98 @@ class Report_model extends CI_Model
 
     public function expmedicinereportsRecords($start_date, $end_date, $condition = null)
     {
-        $query = "";
+        $query       = "";
+        $filter_type = isset($condition['filter_type']) ? $condition['filter_type'] : 'near_expiry';
 
-        if ($condition['supplier'] != "") {
-            $query .= " and medicine_supplier.id ='" . $condition['supplier'] . "' ";
+        if (!empty($condition['supplier'])) {
+            $query .= " AND medicine_supplier.id = " . $this->db->escape($condition['supplier']) . " ";
         }
-        if ($condition['medicine_category'] != "") {
-            $query .= " and medicine_category_id ='" . $condition['medicine_category'] . "' ";
+        if (!empty($condition['medicine_category'])) {
+            $query .= " AND pharmacy.medicine_category_id = " . $this->db->escape($condition['medicine_category']) . " ";
         }
 
-        $sql = "select medicine_batch_details.*,`medicine_group`.`group_name` ,`pharmacy_company`.`company_name`,pharmacy.medicine_name,pharmacy.medicine_company,pharmacy.medicine_group,medicine_category.medicine_category,supplier_bill_basic.supplier_id,medicine_supplier.supplier from medicine_batch_details 
-            JOIN pharmacy ON medicine_batch_details.pharmacy_id = pharmacy.id 
-            JOIN medicine_category ON pharmacy.medicine_category_id = medicine_category.id 
-            JOIN supplier_bill_basic ON medicine_batch_details.supplier_bill_basic_id = supplier_bill_basic.id 
-            inner JOIN  medicine_supplier  on medicine_supplier.id=supplier_bill_basic.supplier_id
-            left join pharmacy_company on pharmacy_company.id=pharmacy.medicine_company
-            left join medicine_group on medicine_group.id=pharmacy.medicine_group
-            where 0=0 " . $query . " and date_format(medicine_batch_details.expiry,'%Y-%m-%d') >='" . $start_date . "' and date_format(medicine_batch_details.expiry,'%Y-%m-%d') <= '" . $end_date . "'";
-        
+        if ($filter_type === 'expired_medicines') {
+            $query .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') < CURDATE() ";
+            $query .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= " . $this->db->escape($start_date) . " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') <= " . $this->db->escape($end_date) . " ";
+        } else {
+            $query .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= CURDATE() ";
+            $query .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= " . $this->db->escape($start_date) . " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') <= " . $this->db->escape($end_date) . " ";
+        }
+
+        $sql = "SELECT
+                    pharmacy.medicine_name,
+                    medicine_batch_details.batch_no,
+                    IFNULL(pharmacy_company.company_name, '') AS company_name,
+                    medicine_category.medicine_category,
+                    IFNULL(medicine_group.group_name, '') AS group_name,
+                    medicine_supplier.supplier,
+                    medicine_batch_details.inward_date,
+                    supplier_bill_basic.id AS purchase_no,
+                    medicine_batch_details.expiry,
+                    DATEDIFF(medicine_batch_details.expiry, CURDATE()) AS remaining_days,
+                    medicine_batch_details.available_quantity,
+                    medicine_batch_details.quantity,
+                    IFNULL(medicine_batch_details.purchase_price, medicine_batch_details.purchase_rate_packing) AS purchase_rate,
+                    medicine_batch_details.amount
+                FROM medicine_batch_details
+                JOIN pharmacy ON medicine_batch_details.pharmacy_id = pharmacy.id
+                JOIN medicine_category ON pharmacy.medicine_category_id = medicine_category.id
+                JOIN supplier_bill_basic ON medicine_batch_details.supplier_bill_basic_id = supplier_bill_basic.id
+                INNER JOIN medicine_supplier ON medicine_supplier.id = supplier_bill_basic.supplier_id
+                LEFT JOIN pharmacy_company ON pharmacy_company.id = pharmacy.medicine_company
+                LEFT JOIN medicine_group ON medicine_group.id = pharmacy.medicine_group
+                WHERE 0=0 " . $query;
+
         $this->datatables->query($sql)
-            ->searchable('pharmacy.medicine_name,medicine_batch_details.batch_no,pharmacy.medicine_company,medicine_category.medicine_category,medicine_group,supplier,medicine_batch_details.expiry')
-            ->orderable('pharmacy.medicine_name,medicine_batch_details.batch_no,pharmacy.medicine_company,medicine_category.medicine_category,medicine_group,supplier,medicine_batch_details.expiry')
+            ->searchable('pharmacy.medicine_name, medicine_batch_details.batch_no, pharmacy_company.company_name, medicine_category.medicine_category, medicine_group.group_name, medicine_supplier.supplier, supplier_bill_basic.id, medicine_batch_details.expiry')
+            ->orderable('pharmacy.medicine_name, medicine_category.medicine_category, medicine_group.group_name, pharmacy_company.company_name, medicine_supplier.supplier, supplier_bill_basic.id, medicine_batch_details.batch_no, medicine_batch_details.inward_date, medicine_batch_details.expiry, remaining_days, medicine_batch_details.quantity, medicine_batch_details.available_quantity, purchase_rate, medicine_batch_details.available_quantity, medicine_batch_details.amount')
             ->sort('medicine_batch_details.expiry', 'desc')
             ->query_where_enable(TRUE);
         return $this->datatables->generate('json');
+    }
+
+    public function expmedicinereportsTotalAmount($start_date, $end_date, $condition = null)
+    {
+        $where       = "";
+        $filter_type = isset($condition['filter_type']) ? $condition['filter_type'] : 'near_expiry';
+
+        if (!empty($condition['supplier'])) {
+            $where .= " AND medicine_supplier.id = " . $this->db->escape($condition['supplier']);
+        }
+        if (!empty($condition['medicine_category'])) {
+            $where .= " AND pharmacy.medicine_category_id = " . $this->db->escape($condition['medicine_category']);
+        }
+        if ($filter_type === 'expired_medicines') {
+            $where .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') < CURDATE()";
+            $where .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= " . $this->db->escape($start_date) . " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') <= " . $this->db->escape($end_date);
+        } else {
+            $where .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= CURDATE()";
+            $where .= " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') >= " . $this->db->escape($start_date) . " AND DATE_FORMAT(medicine_batch_details.expiry, '%Y-%m-%d') <= " . $this->db->escape($end_date);
+        }
+
+        $sql = "SELECT
+                    SUM(medicine_batch_details.available_quantity) AS total_available_qty,
+                    SUM(medicine_batch_details.quantity) AS total_packing_qty,
+                    SUM(IFNULL(medicine_batch_details.purchase_price, medicine_batch_details.purchase_rate_packing)) AS total_purchase_rate,
+                    SUM(medicine_batch_details.amount) AS total_amount,
+                    SUM(medicine_batch_details.available_quantity * IFNULL(medicine_batch_details.purchase_price, medicine_batch_details.purchase_rate_packing)) AS total_stock_value
+                FROM medicine_batch_details
+                JOIN pharmacy ON medicine_batch_details.pharmacy_id = pharmacy.id
+                JOIN medicine_category ON pharmacy.medicine_category_id = medicine_category.id
+                JOIN supplier_bill_basic ON medicine_batch_details.supplier_bill_basic_id = supplier_bill_basic.id
+                INNER JOIN medicine_supplier ON medicine_supplier.id = supplier_bill_basic.supplier_id
+                LEFT JOIN pharmacy_company ON pharmacy_company.id = pharmacy.medicine_company
+                LEFT JOIN medicine_group ON medicine_group.id = pharmacy.medicine_group
+                WHERE 0=0 " . $where;
+
+        $result = $this->db->query($sql)->row_array();
+        return array(
+            'total_available_qty' => isset($result['total_available_qty']) ? (int)$result['total_available_qty']     : 0,
+            'total_packing_qty'   => isset($result['total_packing_qty'])   ? (int)$result['total_packing_qty']       : 0,
+            'total_purchase_rate' => isset($result['total_purchase_rate']) ? (float)$result['total_purchase_rate']   : 0,
+            'total_amount'        => isset($result['total_amount'])        ? (float)$result['total_amount']          : 0,
+            'total_stock_value'   => isset($result['total_stock_value'])   ? (float)$result['total_stock_value']     : 0,
+        );
     }
 
     public function tpareportsRecords($search_array)
@@ -452,10 +520,12 @@ class Report_model extends CI_Model
     {
         $condition="";
         if($module_type!=null && $module_type!='all'){
-            $condition.=" and tt.type ='$module_type'";
+            $condition .= " and tt.type =" . $this->db->escape($module_type);
+        } else {
+            $condition .= " and tt.type != 'blood_bank' and tt.type != 'blood_component'";
         }
         if($patient_id!=null){
-            $condition.=" and tt.patient_id ='$patient_id'";
+            $condition .= " and tt.patient_id =" . $this->db->escape($patient_id);
         }
 
         $query = "select * from  (
@@ -618,24 +688,25 @@ class Report_model extends CI_Model
         patients.patient_name,
         opd_details.case_reference_id  as case_id,opd_details.id as bill_no , 
         staff.name,staff.surname,staff.employee_id,
-        CONCAT(doc.name,' ',doc.surname,' (',doc.employee_id,')') as doctor_name,
-        (select sum(apply_charge) as amount_charged  from patient_charges 
+        (select CONCAT(doc.name,' ',doc.surname,' (',doc.employee_id,')') from visit_details
+        left join staff as doc on doc.id=visit_details.cons_doctor
+        WHERE visit_details.opd_details_id=opd_details.id
+        ORDER BY visit_details.id DESC LIMIT 1) as doctor_name,
+        (select sum(apply_charge) as amount_charged  from patient_charges
         WHERE  patient_charges.opd_id=opd_details.id) as total,
-        (select sum(((apply_charge*discount_percentage)/100))  from patient_charges 
+        (select sum(((apply_charge*discount_percentage)/100))  from patient_charges
         WHERE  patient_charges.opd_id=opd_details.id ) as discount,
-        (select sum((((apply_charge-(apply_charge*discount_percentage)/100)*tax/100))) 
-        from patient_charges 
+        (select sum((((apply_charge-(apply_charge*discount_percentage)/100)*tax/100)))
+        from patient_charges
         WHERE  patient_charges.opd_id=opd_details.id ) as tax,
-        (select sum(amount) as amount_charged  from patient_charges 
+        (select sum(amount) as amount_charged  from patient_charges
         WHERE  patient_charges.opd_id=opd_details.id ) as net_amount,
-        (select sum(amount) as amount_paid  from transactions 
+        (select sum(amount) as amount_paid  from transactions
         WHERE  transactions.opd_id=opd_details.id ) as paid_amount,
         0 as refund_amount
         from opd_details
         left join patients on patients.id=opd_details.patient_id
-        left join visit_details on visit_details.opd_details_id=opd_details.id
-        left join staff as doc on doc.id=visit_details.cons_doctor
-        left join staff on staff.id=opd_details.generated_by   
+        left join staff on staff.id=opd_details.generated_by
     
         UNION ALL
     
@@ -666,6 +737,244 @@ class Report_model extends CI_Model
        
         $res = $this->db->query($query);
         return $res->result_array();
+    }
+
+    public function medicinePurchaseReportRecords($start_date, $end_date, $condition = null)
+    {
+        $query = "";
+        if (!empty($condition['supplier'])) {
+            $query .= " AND medicine_supplier.id = '" . $this->db->escape_str($condition['supplier']) . "' ";
+        }
+        $sql = "SELECT supplier_bill_basic.id, supplier_bill_basic.invoice_no, supplier_bill_basic.date,
+                       supplier_bill_basic.total, supplier_bill_basic.discount, supplier_bill_basic.tax,
+                       supplier_bill_basic.net_amount, supplier_bill_basic.payment_mode,
+                       medicine_supplier.supplier
+                FROM supplier_bill_basic
+                INNER JOIN medicine_supplier ON medicine_supplier.id = supplier_bill_basic.supplier_id
+                WHERE date_format(supplier_bill_basic.date, '%Y-%m-%d') >= '" . $start_date . "'
+                  AND date_format(supplier_bill_basic.date, '%Y-%m-%d') <= '" . $end_date . "'
+                " . $query;
+
+        $this->datatables->query($sql)
+            ->searchable('supplier_bill_basic.invoice_no, medicine_supplier.supplier, supplier_bill_basic.payment_mode')
+            ->orderable("supplier_bill_basic.date, supplier_bill_basic.invoice_no, medicine_supplier.supplier, supplier_bill_basic.total, supplier_bill_basic.net_amount,'','',''")
+            ->sort('supplier_bill_basic.date', 'desc')
+            ->query_where_enable(TRUE);
+        return $this->datatables->generate('json');
+    }
+
+    public function medicinePurchaseReturnReportRecords($start_date, $end_date, $condition = null)
+    {
+        $query = "";
+        if (!empty($condition['supplier'])) {
+            $query .= " AND medicine_supplier.id = '" . $this->db->escape_str($condition['supplier']) . "' ";
+        }
+        if (!empty($condition['reason'])) {
+            $query .= " AND purchase_return_basic.reason = '" . $this->db->escape_str($condition['reason']) . "' ";
+        }
+        $sql = "SELECT purchase_return_basic.id, purchase_return_basic.return_date,
+                       purchase_return_basic.total_amount, purchase_return_basic.reason,
+                       purchase_return_basic.note,
+                       supplier_bill_basic.invoice_no,
+                       medicine_supplier.supplier,
+                       CONCAT(staff.name, ' ', staff.surname) AS returned_by_name
+                FROM purchase_return_basic
+                INNER JOIN supplier_bill_basic  ON supplier_bill_basic.id  = purchase_return_basic.supplier_bill_basic_id
+                INNER JOIN medicine_supplier    ON medicine_supplier.id    = purchase_return_basic.supplier_id
+                LEFT  JOIN staff                ON staff.id                = purchase_return_basic.returned_by
+                WHERE date_format(purchase_return_basic.return_date, '%Y-%m-%d') >= '" . $start_date . "'
+                  AND date_format(purchase_return_basic.return_date, '%Y-%m-%d') <= '" . $end_date . "'
+                " . $query;
+
+        $this->datatables->query($sql)
+            ->searchable('medicine_supplier.supplier, supplier_bill_basic.invoice_no, purchase_return_basic.reason')
+            ->orderable("purchase_return_basic.return_date, medicine_supplier.supplier, purchase_return_basic.total_amount, purchase_return_basic.reason,'','','',''")
+            ->sort("purchase_return_basic.return_date,'','','',''", 'desc')
+            ->query_where_enable(TRUE);
+        return $this->datatables->generate('json');
+    }
+
+    public function getIncomeExpenseBalanceReport($start_date = null, $end_date = null)
+    {
+        $dt_cond = "";
+        $in_cond = "";
+        $ex_cond = "";
+        $rp_cond = "";
+        $ps_cond = "";
+
+        if ($start_date != null && $end_date != null) {
+            $s = $this->db->escape_str($start_date);
+            $e = $this->db->escape_str($end_date);
+            $dt_cond = " AND DATE(t.payment_date) >= '$s' AND DATE(t.payment_date) <= '$e'";
+            $in_cond = " AND i.date >= '$s' AND i.date <= '$e'";
+            $ex_cond = " AND e.date >= '$s' AND e.date <= '$e'";
+            $rp_cond = " AND DATE(rp.date) >= '$s' AND DATE(rp.date) <= '$e'";
+            $ps_cond = " AND DATE(ss.payment_date) >= '$s' AND DATE(ss.payment_date) <= '$e'";
+        }
+
+        $sql = "SELECT record_date, inc_exp_head, SUM(income_in) AS income_in, SUM(expense_out) AS expense_out
+        FROM (
+            SELECT
+                DATE(t.payment_date) AS record_date,
+                t.section AS inc_exp_head,
+                t.amount AS income_in,
+                0 AS expense_out
+            FROM transactions t
+            WHERE t.type = 'payment' {$dt_cond}
+
+            UNION ALL
+
+            SELECT
+                i.date AS record_date,
+                'Income' AS inc_exp_head,
+                i.amount AS income_in,
+                0 AS expense_out
+            FROM income i
+            WHERE i.is_deleted != '1' {$in_cond}
+
+            UNION ALL
+
+            SELECT
+                e.date AS record_date,
+                'Expense' AS inc_exp_head,
+                0 AS income_in,
+                e.amount AS expense_out
+            FROM expenses e
+            WHERE e.is_deleted != '1' {$ex_cond}
+
+            UNION ALL
+
+            SELECT
+                DATE(rp.date) AS record_date,
+                'Referral' AS inc_exp_head,
+                0 AS income_in,
+                rp.amount AS expense_out
+            FROM referral_payment rp
+            WHERE 1=1 {$rp_cond}
+
+            UNION ALL
+
+            SELECT
+                DATE(ss.payment_date) AS record_date,
+                'Payroll' AS inc_exp_head,
+                0 AS income_in,
+                ss.net_salary AS expense_out
+            FROM staff_payslip ss
+            WHERE ss.status = 'paid' {$ps_cond}
+        ) AS combined
+        GROUP BY record_date, inc_exp_head
+        ORDER BY record_date ASC, inc_exp_head ASC";
+
+        $result = $this->db->query($sql);
+        return $result->result_array();
+    }
+
+    public function getSaleReturnReport($start_date = null, $end_date = null, $bill_no = '', $return_no = '', $patient_name = '', $mysql_format = '%d/%m/%Y')
+    {
+        $condition = '';
+
+        if (!empty($start_date) && !empty($end_date)) {
+            $condition .= " AND date_format(pharmacy_return_basic.date,'%Y-%m-%d') >= '" . $this->db->escape_str($start_date) . "'";
+            $condition .= " AND date_format(pharmacy_return_basic.date,'%Y-%m-%d') <= '" . $this->db->escape_str($end_date) . "'";
+        }
+
+        if (!empty($bill_no)) {
+            $condition .= " AND pharmacy_return_basic.pharmacy_bill_basic_id LIKE '%" . $this->db->escape_str($bill_no) . "%'";
+        }
+
+        if (!empty($return_no)) {
+            $condition .= " AND pharmacy_return_basic.return_no LIKE '%" . $this->db->escape_str($return_no) . "%'";
+        }
+
+        if (!empty($patient_name)) {
+            $condition .= " AND IFNULL(patients.patient_name, pharmacy_return_basic.customer_name) LIKE '%" . $this->db->escape_str($patient_name) . "%'";
+        }
+
+        $sql = "SELECT pharmacy_return_basic.id, pharmacy_return_basic.return_no, pharmacy_return_basic.pharmacy_bill_basic_id,
+                DATE_FORMAT(pharmacy_return_basic.date, '" . $mysql_format . "') as date, pharmacy_return_basic.total, pharmacy_return_basic.discount,
+                pharmacy_return_basic.tax, pharmacy_return_basic.net_amount, pharmacy_return_basic.patient_id,
+                pharmacy_return_basic.returned_by as returned_by_id,
+                IFNULL(patients.patient_name, pharmacy_return_basic.customer_name) as patient_name,
+                CONCAT(staff.name, ' ', staff.surname) as returned_by_name,
+                staff.employee_id as returned_by_employee_id
+                FROM pharmacy_return_basic
+                LEFT JOIN patients ON patients.id = pharmacy_return_basic.patient_id
+                LEFT JOIN staff ON staff.id = pharmacy_return_basic.returned_by
+                WHERE 1=1 " . $condition;
+
+        $this->datatables->query($sql)
+            ->searchable('pharmacy_return_basic.return_no, pharmacy_return_basic.pharmacy_bill_basic_id, patients.patient_name, pharmacy_return_basic.customer_name, staff.name, pharmacy_return_basic.date')
+            ->orderable('pharmacy_return_basic.return_no, pharmacy_return_basic.pharmacy_bill_basic_id, pharmacy_return_basic.date, patients.patient_name, staff.name, pharmacy_return_basic.total, pharmacy_return_basic.discount, pharmacy_return_basic.tax, pharmacy_return_basic.net_amount')
+            ->sort('pharmacy_return_basic.id', 'desc')
+            ->query_where_enable(TRUE);
+        return $this->datatables->generate('json');
+    }
+
+    public function medicineSaleReportRecords($start_date, $end_date, $condition = null)
+    {
+        $query = "";
+        if (!empty($condition['medicine_category'])) {
+            $query .= " AND pharmacy.medicine_category_id = '" . $this->db->escape_str($condition['medicine_category']) . "' ";
+        }
+        if (!empty($condition['medicine_name'])) {
+            $query .= " AND pharmacy.medicine_name LIKE '%" . $this->db->escape_like_str($condition['medicine_name']) . "%' ";
+        }
+        $sql = "SELECT pharmacy_bill_basic.id AS bill_id, pharmacy_bill_basic.date,
+                       pharmacy.medicine_name, medicine_category.medicine_category,
+                       medicine_batch_details.batch_no,
+                       pharmacy_bill_detail.quantity, pharmacy_bill_detail.sale_price,
+                       (pharmacy_bill_detail.quantity * pharmacy_bill_detail.sale_price) AS total,
+                       IFNULL(patients.patient_name, '') AS patient_name
+                FROM pharmacy_bill_detail
+                INNER JOIN medicine_batch_details ON medicine_batch_details.id = pharmacy_bill_detail.medicine_batch_detail_id
+                INNER JOIN pharmacy ON pharmacy.id = medicine_batch_details.pharmacy_id
+                INNER JOIN pharmacy_bill_basic ON pharmacy_bill_basic.id = pharmacy_bill_detail.pharmacy_bill_basic_id
+                LEFT  JOIN medicine_category ON medicine_category.id = pharmacy.medicine_category_id
+                LEFT  JOIN patients ON patients.id = pharmacy_bill_basic.patient_id
+                WHERE date_format(pharmacy_bill_basic.date, '%Y-%m-%d') >= '" . $start_date . "'
+                  AND date_format(pharmacy_bill_basic.date, '%Y-%m-%d') <= '" . $end_date . "'
+                " . $query;
+
+        $this->datatables->query($sql)
+            ->searchable('pharmacy.medicine_name, medicine_category.medicine_category, patients.patient_name, medicine_batch_details.batch_no')
+            ->orderable('pharmacy_bill_basic.date, pharmacy.medicine_name, medicine_category.medicine_category, medicine_batch_details.batch_no, pharmacy_bill_detail.quantity, pharmacy_bill_detail.sale_price,null,null,null')
+            ->sort('pharmacy_bill_basic.date', 'desc')
+            ->query_where_enable(TRUE);
+        return $this->datatables->generate('json');
+    }
+
+    public function medicineProfitLossReportRecords($start_date, $end_date, $condition = null)
+    {
+        $query = "";
+        if (!empty($condition['medicine_category'])) {
+            $query .= " AND pharmacy.medicine_category_id = '" . $this->db->escape_str($condition['medicine_category']) . "' ";
+        }
+        $sql = "SELECT pharmacy.id, pharmacy.medicine_name,
+                       medicine_category.medicine_category,
+                       IFNULL(SUM(medicine_batch_details.packing_qty), 0) AS total_purchased,
+                       IFNULL(AVG(medicine_batch_details.purchase_price), 0) AS avg_purchase_price,
+                       IFNULL(SUM(pbd.quantity), 0) AS total_sold,
+                       IFNULL(AVG(pbd.sale_price), 0) AS avg_sale_price,
+                       IFNULL(SUM(pbd.quantity * pbd.sale_price), 0) AS revenue,
+                       IFNULL(SUM(pbd.quantity * medicine_batch_details.purchase_price), 0) AS total_cost,
+                       (IFNULL(SUM(pbd.quantity * pbd.sale_price), 0) - IFNULL(SUM(pbd.quantity * medicine_batch_details.purchase_price), 0)) AS net_pl
+                FROM pharmacy
+                LEFT JOIN medicine_category ON medicine_category.id = pharmacy.medicine_category_id
+                LEFT JOIN medicine_batch_details ON medicine_batch_details.pharmacy_id = pharmacy.id
+                LEFT JOIN pharmacy_bill_detail pbd ON pbd.medicine_batch_detail_id = medicine_batch_details.id
+                LEFT JOIN pharmacy_bill_basic ON pharmacy_bill_basic.id = pbd.pharmacy_bill_basic_id
+                    AND date_format(pharmacy_bill_basic.date, '%Y-%m-%d') >= '" . $start_date . "'
+                    AND date_format(pharmacy_bill_basic.date, '%Y-%m-%d') <= '" . $end_date . "'
+                WHERE 1=1
+                " . $query . "
+                GROUP BY pharmacy.id";
+
+        $this->datatables->query($sql)
+            ->searchable('pharmacy.medicine_name, medicine_category.medicine_category')
+            ->orderable('pharmacy.medicine_name, medicine_category.medicine_category, total_purchased, total_sold, revenue, total_cost, net_pl,null,null,null,null')
+            ->sort('pharmacy.medicine_name', 'asc')
+            ->query_where_enable(TRUE);
+        return $this->datatables->generate('json');
     }
 
 }

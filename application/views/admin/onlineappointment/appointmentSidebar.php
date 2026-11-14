@@ -1,4 +1,4 @@
-<div class="box border0">
+<div class="card border0">
 	<ul class="tablists">
 		<?php if ($this->rbac->hasPrivilege('online_appointment_slot', 'can_view')) { ?>
 			<li><a href="<?php echo site_url('admin/onlineappointment'); ?>" class="<?php echo set_sidebar_Submenu('admin/onlineappointment'); ?>"><?php echo $this->lang->line("slots"); ?></a></li>

@@ -28,3 +28,15 @@ $route['page/annual_calendar']     = 'welcome/annual_calendar';
 $route['page/(:any)'] = 'welcome/page/$1';
 $route['read/(:any)'] = 'welcome/read/$1';
 $route['frontend']    = 'welcome';
+
+//======= Survey Forms — Public listing page ==========
+$route['surveys'] = 'welcome/survey_forms';
+
+//======= Survey Forms — Themed fill & success (renders inside front theme) ==========
+$route['surveys/fill/(:any)']    = 'welcome/form_fill/$1';
+$route['surveys/success/(:num)'] = 'welcome/form_success/$1';
+
+//======= Survey Form — Public (no auth) ==========
+$route['surveyform/fill/(:any)']    = 'surveyform/fill/$1';
+$route['surveyform/submit']         = 'surveyform/submit';
+$route['surveyform/success/(:num)'] = 'surveyform/success/$1';

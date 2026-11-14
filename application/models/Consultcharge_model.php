@@ -49,7 +49,6 @@ class Consultcharge_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
         return $insert_id;
     }
@@ -216,7 +215,6 @@ class Consultcharge_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
         return $insert_id;
     }

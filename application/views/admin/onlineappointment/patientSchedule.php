@@ -1,16 +1,14 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('doctor_wise_appointment'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('doctor_wise_appointment'); ?></h3>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <form action="<?php echo site_url("admin/onlineappointment/patientschedule"); ?>" method="post" accept-charset="utf-8">
                         <div class="row">
                             <div class="col-md-4 col-sm-6 col-lg-4">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="pwd"><?php echo $this->lang->line('doctor') ?></label>
                                     <span class="req"> *</span>
                                     <select name="doctor" id="doctor" class="form-control select2">
@@ -23,21 +21,26 @@
                                 </div>
                             </div>
                             <div class="col-md-4 col-sm-6 col-lg-4">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="date"><?php echo $this->lang->line('date') . " " ?></label>
                                     <div class='input-group' >
-                                        <input type='text' value="<?php echo set_value('date'); ?>" class="form-control date" name="date" /><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                        <input type='text' value="<?php echo set_value('date'); ?>" class="form-control date" name="date" /><span class="input-group-text"><i class="fa fa-calendar"></i></span>
                                     </div>
                                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                                 </div>
                             </div>
+                            <div class="col-md-4 col-sm-6 col-lg-4">
+                                <div class="mb-3">
+                                    <label class="d-block">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary"><?php echo $this->lang->line('search'); ?></button>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm pull-right"><?php echo $this->lang->line('search'); ?></button>
                         </form>
                     </div>
                    
                 <?php if (isset($doctor_id)) {   ?>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('doctor_wise_appointment'); ?></div>
                         <div class="table-responsive mailbox-messages">
                          <table class="table table-hover table-striped table-bordered dt-list" data-export-title="<?php echo $this->lang->line('doctor_wise_appointment');?>">
@@ -48,7 +51,7 @@
                                         <th><?php echo $this->lang->line('email'); ?></th>
                                         <th><?php echo $this->lang->line('date'); ?></th>
                                         <th><?php echo $this->lang->line('time'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line("source"); ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line("source"); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -61,8 +64,6 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
 <!-- //========datatable start===== -->
 <script type="text/javascript">

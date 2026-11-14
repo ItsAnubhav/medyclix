@@ -24,7 +24,7 @@ class Medicinedosage extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicinedosage');
-        $medicinecategoryid = $this->input->post("medicinecategoryid");
+        $medicinecategoryid = $this->input->post("medicinecategoryid", TRUE);
         $data["title"]      = $this->lang->line('add_medicine_dosage');
         $medicineDosage     = $this->medicine_dosage_model->getMedicineDosage();
         $data['unitname']   = $this->pharmacy_model->getpharmacyunit();
@@ -39,13 +39,13 @@ class Medicinedosage extends Admin_Controller
         $this->form_validation->set_rules('medicine_category', $this->lang->line('medicine_category'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('dosage', $this->lang->line('dosage_name'), 'trim|required|xss_clean');
         if ($this->form_validation->run()) {
-            $medicineName     = $this->input->post("medicine_category");
-            $medicinedosageid = $this->input->post("id");
+            $medicineName     = $this->input->post("medicine_category", TRUE);
+            $medicinedosageid = $this->input->post("id", TRUE);
 
             if (!empty($medicinedosageid)) {
-                $data = array('medicine_category_id' => $medicineName, 'dosage' => $this->input->post('dosage'), 'id' => $medicinedosageid);
+                $data = array('medicine_category_id' => $medicineName, 'dosage' => $this->input->post('dosage', TRUE), 'id' => $medicinedosageid);
             } else {
-                $data = array('medicine_category_id' => $medicineName, 'dosage' => $this->input->post('dosage'));
+                $data = array('medicine_category_id' => $medicineName, 'dosage' => $this->input->post('dosage', TRUE));
             }
 
             $insert_id = $this->medicine_dosage_model->addMedicineDosage($data);
@@ -53,9 +53,10 @@ class Medicinedosage extends Admin_Controller
             redirect("admin/medicinedosage/");
         } else {
 
-            $this->load->view("layout/header");
+            $data['module'] = 'pharmacy';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/pharmacy/medicine_dosage", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -67,9 +68,10 @@ class Medicinedosage extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicinedosage/interval');
-        $this->load->view("layout/header");
-        $this->load->view("admin/pharmacy/dose_interval");
-        $this->load->view("layout/footer");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/pharmacy/dose_interval", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function duration()
@@ -80,9 +82,10 @@ class Medicinedosage extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicinedosage/duration');
-        $this->load->view("layout/header");
-        $this->load->view("admin/pharmacy/dose_duration");
-        $this->load->view("layout/footer");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/pharmacy/dose_duration", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function add_interval()
@@ -92,14 +95,14 @@ class Medicinedosage extends Admin_Controller
         }
         $this->form_validation->set_rules('name', $this->lang->line('interval'), 'trim|required|xss_clean');
 
-        $interval_id = $this->input->post('id');
+        $interval_id = $this->input->post('id', TRUE);
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('name'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $data = array('id' => $interval_id, 'name' => $this->input->post('name'));
+            $data = array('id' => $interval_id, 'name' => $this->input->post('name', TRUE));
             $this->medicine_dosage_model->add_interval($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -109,29 +112,29 @@ class Medicinedosage extends Admin_Controller
 
     /* Function is used to add multiple interval name */
     public function add_multiple_interval() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('interval'), 'trim|required');        
-                
-                if ($this->form_validation->run() == false) {           
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('interval'), 'trim|required|xss_clean');
+
+                if ($this->form_validation->run() == false) {
                     $msg = array(
                         'name' => form_error('name_'.$row_value),
                     );
-                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');  
+                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
                     echo json_encode($json_array);
-                    return false;          
+                    return false;
                 }
-            } 
+            }
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
-            foreach ($total_rows as $row_key => $row_values) {                   
-                $id   =  $this->input->post('id_' . $row_values) ;     
-                $data = array('id' => $id, 'name' => $this->input->post('name_' . $row_values));
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            foreach ($total_rows as $row_key => $row_values) {
+                $id   =  $this->input->post('id_' . $row_values, TRUE);
+                $data = array('id' => $id, 'name' => $this->input->post('name_' . $row_values, TRUE));
                 $this->medicine_dosage_model->add_interval($data);
             }
             // save the multiple data 
@@ -149,29 +152,29 @@ class Medicinedosage extends Admin_Controller
 
  /* Function is used to add duration name */
     public function add_multiple_duration() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('duration'), 'trim|required');        
-                
-                if ($this->form_validation->run() == false) {           
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('duration'), 'trim|required|xss_clean');
+
+                if ($this->form_validation->run() == false) {
                     $msg = array(
                         'name' => form_error('name_'.$row_value),
                     );
-                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');  
+                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
                     echo json_encode($json_array);
-                    return false;          
+                    return false;
                 }
-            } 
+            }
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
-            foreach ($total_rows as $row_key => $row_values) {                   
-                $id   =  $this->input->post('id_' . $row_values) ;     
-                $data = array('id' => $id, 'name' => $this->input->post('name_' . $row_values));
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);
+            foreach ($total_rows as $row_key => $row_values) {
+                $id   =  $this->input->post('id_' . $row_values, TRUE);
+                $data = array('id' => $id, 'name' => $this->input->post('name_' . $row_values, TRUE));
                 $this->medicine_dosage_model->add_duration($data);
             }
             // save the multiple data 
@@ -194,14 +197,14 @@ class Medicinedosage extends Admin_Controller
         }
         $this->form_validation->set_rules('name', $this->lang->line('duration'), 'trim|required|xss_clean');
 
-        $duration_id = $this->input->post('id');
+        $duration_id = $this->input->post('id', TRUE);
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('name'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $data = array('id' => $duration_id, 'name' => $this->input->post('name'));
+            $data = array('id' => $duration_id, 'name' => $this->input->post('name', TRUE));
             $this->medicine_dosage_model->add_duration($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -222,12 +225,13 @@ class Medicinedosage extends Admin_Controller
 
     public function add()
     {
-        $dosage = $this->input->post('dosage');
-        if (isset($dosage) && !empty($dosage)) {  
-        $dosageid = $this->input->post("dosageid");
-        foreach ($_POST['dosage'] as $key => $value) {
-            $dose = $_POST['dosage'][$key];
-            $unit = $_POST['unit'][$key];
+        $dosage = $this->input->post('dosage', TRUE);
+        if (isset($dosage) && !empty($dosage)) {
+        $dosageid = $this->input->post("dosageid", TRUE);
+        foreach ($dosage as $key => $value) {
+            $dose = $dosage[$key];
+            $unit_post = $this->input->post('unit', TRUE);
+            $unit = isset($unit_post[$key]) ? $unit_post[$key] : '';
 
             if ($dose == "") {
                 $this->form_validation->set_rules('dosage', $this->lang->line('dose'), 'trim|required|xss_clean');
@@ -247,11 +251,13 @@ class Medicinedosage extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            foreach ($_POST['dosage'] as $key => $value) {
+            $medicine_category = $this->input->post('medicine_category', TRUE);
+            $unit_list         = $this->input->post('unit', TRUE);
+            foreach ($dosage as $key => $value) {
                 $data = array(
-                    'medicine_category_id' => $_POST['medicine_category'],
-                    'dosage'               => $_POST['dosage'][$key],
-                    'units_id'             => $_POST['unit'][$key],
+                    'medicine_category_id' => $medicine_category,
+                    'dosage'               => $dosage[$key],
+                    'units_id'             => isset($unit_list[$key]) ? $unit_list[$key] : '',
                 );
 
                 if (!empty($dosageid) && $dosageid != 0) {
@@ -290,9 +296,10 @@ class Medicinedosage extends Admin_Controller
         $data["title"]            = $this->lang->line('edit_category');
         $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
         $data["medicineCategory"] = $medicineCategory;
-        $this->load->view("layout/header");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/pharmacy/medicine_dosage", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function delete($id)
@@ -315,7 +322,7 @@ class Medicinedosage extends Admin_Controller
 
     public function getMedicineDosage()
     {
-        $medicine = $this->input->post('medicine_id');
+        $medicine = $this->input->post('medicine_id', TRUE);
         $result   = $this->medicine_dosage_model->getDosageByMedicine($medicine);
         echo json_encode($result);
     }
@@ -330,18 +337,17 @@ class Medicinedosage extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $action = "<div class=''>";
+                $action = "<div class='rowoptionview mt-mius0'>";
                 if ($this->rbac->hasPrivilege('dosage_interval', 'can_edit')) {
-                    $action .= "<a  class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='get(" . $value->id . ")' data-original-title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='javascript:void(0)' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "' onclick='get(" . (int)$value->id . ")'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('dosage_interval', 'can_delete')) {
-                    $action .= "<a  class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_intervalById(" . $value->id . ")' data-original-title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='javascript:void(0)' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_intervalById(" . (int)$value->id . ")'><i class='fa fa-trash'></i></a>";
                 }
-
                 $action .= "</div>";
                 //==============================
-                $row[]     = $value->name;
-                $row[]     = $action;
+                $row[] = html_escape($value->name);
+                $row[] = $action;
                 $dt_data[] = $row;
             }
         }
@@ -364,18 +370,18 @@ class Medicinedosage extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $action = "<div class=''>";
+                $action = "<div class='rowoptionview mt-mius0'>";
                 if ($this->rbac->hasPrivilege('dosage_duration', 'can_edit')) {
-                    $action .= "<a  class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='get(" . $value->id . ")' data-original-title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action .= "<a href='javascript:void(0)' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "' onclick='get(" . (int)$value->id . ")'><i class='fa fa-pencil'></i></a>";
                 }
                 if ($this->rbac->hasPrivilege('dosage_duration', 'can_delete')) {
-                    $action .= "<a  class='btn btn-default btn-xs' data-toggle='tooltip' title='' onclick='delete_durationById(" . $value->id . ")' data-original-title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='javascript:void(0)' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "' onclick='delete_durationById(" . (int)$value->id . ")'><i class='fa fa-trash'></i></a>";
                 }
 
                 $action .= "</div>";
                 //==============================
-                $row[]     = $value->name;
-                $row[]     = $action;
+                $row[] = html_escape($value->name);
+                $row[] = $action;
                 $dt_data[] = $row;
             }
         }

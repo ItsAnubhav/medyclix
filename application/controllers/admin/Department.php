@@ -21,16 +21,16 @@ class Department extends Admin_Controller
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'hr/index');
         $this->form_validation->set_rules(
-            'type', $this->lang->line('department_name'), array('required',
+            'type', $this->lang->line('department_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->department_model, 'valid_department')),
             )
         );
 
         $data["title"] = $this->lang->line('add_department');
         if ($this->form_validation->run()) {
-            $type             = $this->input->post("type");
-            $departmenttypeid = $this->input->post("departmenttypeid");
-            $status           = $this->input->post("status");
+            $type             = $this->input->post("type", TRUE);
+            $departmenttypeid = $this->input->post("departmenttypeid", TRUE);
+            $status           = $this->input->post("status", TRUE);
             if (empty($departmenttypeid)) {
                 if (!$this->rbac->hasPrivilege('department', 'can_add')) {
                     access_denied();
@@ -58,7 +58,7 @@ class Department extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('department_name'), array('required',
+            'type', $this->lang->line('department_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->department_model, 'valid_department')),
             )
         );
@@ -69,7 +69,7 @@ class Department extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $type      = $this->input->post("type");
+            $type      = $this->input->post("type", TRUE);
             $data      = array('department_name' => $type, 'is_active' => 'yes');
             $insert_id = $this->department_model->addDepartmentType($data);
             $array     = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -97,17 +97,17 @@ class Department extends Admin_Controller
                 $action = '';
                 if ($this->rbac->hasPrivilege('department', 'can_edit')) {
 
-                    $action = "<a href='#' data-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                    $action = "<a href='#' data-bs-toggle='tooltip' onclick='get(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='#editmyModal' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('department', 'can_delete')) {
 
-                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
+                    $action .= "<a href='#' onclick='deleterecord(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                 }
 
                 //==============================
                 $row[]     = $value->department_name;
-                $row[]     = $action;
+                $row[]     = "<div class='rowoptionview mt-mius0'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -129,7 +129,7 @@ class Department extends Admin_Controller
     public function edit()
     {
         $this->form_validation->set_rules(
-            'type', $this->lang->line('department_name'), array('required',
+            'type', $this->lang->line('department_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->department_model, 'valid_department')),
             )
         );
@@ -140,8 +140,8 @@ class Department extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $departmenttypeid = $this->input->post("departmenttypeid");
-            $type             = $this->input->post("type");
+            $departmenttypeid = $this->input->post("departmenttypeid", TRUE);
+            $type             = $this->input->post("type", TRUE);
             $data             = array('department_name' => $type, 'is_active' => 'yes', 'id' => $departmenttypeid);
             $this->department_model->addDepartmentType($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -151,6 +151,11 @@ class Department extends Admin_Controller
 
     public function departmentdelete($id)
     {
+		
+		if (!$this->rbac->hasPrivilege('department', 'can_delete')) {
+                    access_denied();
+        }
+		
         $this->department_model->deleteDepartment($id);
         echo json_encode(array('status' => 1, 'msg' => $this->lang->line('delete_message')));
     }

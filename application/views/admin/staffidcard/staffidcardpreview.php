@@ -1,51 +1,13 @@
-<style type="text/css">
-            { margin:0; padding: 0;}
-            .tc-container{width: 100%;position: relative; text-align: center;}
-            .tcmybg {
-                background: top center;
-                background-size: contain;
-                position: absolute;
-                left: 0;
-                bottom: 10px;
-                width: 200px;
-                height: 200px;
-                margin-left: auto;
-                margin-right: auto;
-                right: 0;
-            }
-            .patienttop img{width:30px;vertical-align: initial;}
-            .patienttop{background: <?php echo $idcard->header_color; ?>;padding:2px;color: #fff;overflow: hidden;
-                        position: relative;z-index: 1;}
-            .sttext1{font-size: 24px;font-weight: bold;line-height: 30px;}
-            .stgray{background: #efefef;padding-top: 5px; padding-bottom: 10px;}
-            .staddress{margin-bottom: 0; padding-top: 2px;}
-            .stdivider{border-bottom: 2px solid #000;margin-top: 5px; margin-bottom: 5px;}
-            .stlist{padding: 0; margin:0; list-style: none;}
-            .stlist li{text-align: left;display: inline-block;width: 100%;padding: 0px 5px;}
-            .stlist li span{width:65%;float: right;}
-            .stimg{width: 80px;height: auto;}
-            .stimg img{width: 100%;height: auto;border-radius: 2px;display: block;}
-            .staround{padding:3px 10px 3px 0;position: relative;overflow: hidden;}
-            .staround2{position: relative; z-index: 9;}
-            .stbottom{background: #453278;height: 20px;width: 100%;clear: both;margin-bottom: 5px;}
-            .principal{margin-top: -40px;margin-right:10px; float:right;}
-            .stred{color: #000;}
-            .spanlr{padding-left: 5px; padding-right: 5px;}
-            .cardleft{width: 20%;float: left;}
-            .cardright{width: 77%;float: right; }
-            .barcodeimg{ width: 80px; height: auto; }
-            .barcodeimg img{width: 100%;height: auto;border-radius: 2px;display: block;margin-top:2px;}
-</style>
 
-        <?php $dummy_date = "2020-01-01"; ?>
+<?php $dummy_date = "2020-01-01"; ?>
         <table cellpadding="0" cellspacing="0" width="100%">
             <tr> 
-                <td valign="top" width="32%" style="padding: 3px;">
-                    <table cellpadding="0" cellspacing="0" width="100%" class="tc-container" style="background: #f0f8fd;">
+                <td valign="top" width="32%" class="sh-idcard-outer-td">
+                    <table cellpadding="0" cellspacing="0" width="100%" class="tc-container sh-idcard-card-bg sh-idcard-print" style="--idcard-header: <?php echo htmlspecialchars($idcard->header_color); ?>">
                         <tr>
                             <td valign="top">
                                 <?php if($idcard->background != ''){ ?>
-                                <img src="<?php echo $this->media_storage->getImageURL('uploads/staff_id_card/background/'.$idcard->background) ?>" class="tcmybg" style="opacity: .1"/>
+                                <img src="<?php echo $this->media_storage->getImageURL('uploads/staff_id_card/background/'.$idcard->background) ?>" class="tcmybg" />
                                 <?php } ?>
                             </td>
                         </tr>
@@ -61,19 +23,19 @@
                             </td>
                         </tr>
                         <tr>
-                            <td valign="top" class="text-center" style="padding: 1px 0;">
+                            <td valign="top" class="text-center sh-idcard-addr-td">
                                 <p><?php echo $idcard->hospital_address; ?></p>
                             </td>
                         </tr>
                         <tr>
-                            <td valign="top" style="color: #fff;font-size: 16px; padding: 2px 0 0; position: relative; z-index: 1;background: <?php echo $idcard->header_color; ?>;text-transform: uppercase;"><?php echo $idcard->title; ?></td>
+                            <td valign="top" class="sh-idcard-title-td"><?php echo $idcard->title; ?></td>
                         </tr>
                         <tr>
                             <td valign="top">
                                 <div class="staround">
                                     <div class="cardleft">
                                         <div class="stimg">
-                                            <img src="<?php echo $this->media_storage->getImageURL('uploads/patient_images/no_image.png') ?>" class="img-responsive" />
+                                            <img src="<?php echo $this->media_storage->getImageURL('uploads/patient_images/no_image.png') ?>" class="img-fluid" />
                                         </div>
                                          <?php
                                     if ($idcard->enable_staff_barcode) {
@@ -150,7 +112,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td valign="top" class="principal text-right">
+                            <td valign="top" class="principal text-end">
                             <?php if($idcard->sign_image != ''){ ?>
                             <img src="<?php echo $this->media_storage->getImageURL('uploads/staff_id_card/signature/'.$idcard->sign_image) ?>" width="66" height="40" />
                             <?php } ?>

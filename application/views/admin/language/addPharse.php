@@ -1,28 +1,26 @@
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
                             <?php echo $this->lang->line('edit_pharses_for'); ?> <?php echo $lang1; ?>
                         </h3>
-                    </div><!-- /.box-header --> 
-                    <div class="box-body">
+                    </div><!-- /.card-header --> 
+                    <div class="card-body">
                         <?php echo validation_errors(); ?>
                         <?php
                         foreach ($language_pharses as $key => $pharses) {
                             ?>
                             <div class="col-md-4">
-                                <div class="form-group form-loading">
+                                <div class="mb-3 form-loading">
                                     <label for="exampleInputEmail1"><?php echo $pharses['key'] ?></label>
                                     <div class="input-group">
                                         <input name="key_id" type="hidden" class="key_id" value="<?php echo $pharses['id']; ?>" />
                                         <input name="pharsesid" type="hidden" class="recordid" value="<?php echo $pharses['pharsesid']; ?>" />
-                                        <input autofocus="" type="text" placeholder="Enter phrase for key" name="pharses<?php echo $pharses['id']; ?>" class="form-control" value="<?php echo set_value('language', $pharses['pharses']); ?>">
+                                        <input autofocus="" type="text" placeholder="<?= $this->lang->line('enter_phrase_for_key') ?>" name="pharses<?php echo $pharses['id']; ?>" class="form-control" value="<?php echo set_value('language', $pharses['pharses']); ?>">
                                         <span class="input-group-btn">
-                                            <button class="btn btn-default pharses_edit" type="button" data-id="<?php echo $pharses['id']; ?>" data-langid="<?php echo $id; ?>"><i class="fa fa-pencil"></i></button>
+                                            <button class="btn btn-secondary pharses_edit" type="button" data-id="<?php echo $pharses['id']; ?>" data-langid="<?php echo $id; ?>"><i class="fa fa-pencil"></i></button>
                                         </span>
                                     </div><!--./input-group-->
                                     <div class="loading">
@@ -33,15 +31,15 @@
                             <?php
                         }
                         ?>
-                    </div><!-- /.box-body -->
-                    <div class="box-footer">
+                    </div><!-- /.card-body -->
+                    <div class="card-footer">
                     </div>
                 </div>
                 <!-- general form elements disabled -->
             </div><!--/.col (right) -->
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 <script type="text/javascript">
     $(document).on('click', '.pharses_edit', function () {
         var id = $(this).data('id');

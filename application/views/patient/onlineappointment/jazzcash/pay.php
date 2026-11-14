@@ -13,11 +13,11 @@
                                                 document.jsform.submit();
                                             }
                                         </script>
-                                        <script src="https://sandbox.jazzcash.com.pk/Sandbox/Scripts/hmac-sha256.js"></script>
+                                        <script src="https://payments.jazzcash.com.pk/CustomerPortal/Scripts/hmac-sha256.js"></script>
 
-                                        <h3>Loading.............</h3>
+                                        <h3><?= $this->lang->line('loading') ?></h3>
                                         <div class="jsformWrapper">
-                                            <form name="jsform" method="post" action="https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/">
+                                            <form name="jsform" method="post" action="https://payments.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/">
                                                 <?php 
                                                 foreach ($payment_data as $key => $value) {
                                                    ?>
@@ -29,7 +29,7 @@
 
                                             </form>
 
-                                            <label id="salt" style="display:none;"></label>
+                                            <label id="salt" class="d-none"></label>
                                             <br><br>
                                             <div class="formFielWrapper" style="margin-bottom: 2rem;">
                                                 <label class="active"></label>

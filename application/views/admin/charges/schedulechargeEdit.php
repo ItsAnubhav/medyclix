@@ -2,7 +2,7 @@
     <label><?php echo $this->lang->line('fee_schedule_based_charges'); ?></label>
     <button type="button" class="plusign" onclick="same_to_all()"><?php echo $this->lang->line('apply_to_all'); ?></button>
     <div class="chargesborbg">
-        <div class="form-group">
+        <div class="mb-3">
             <table class="printablea4">
                 <?php foreach ($allCharge as $category) {
     ?>
@@ -16,7 +16,7 @@ if (!empty($category['id'])) {
     }
     ?>">
                     <input type="hidden" id="schedule_charge_id[]" name="schedule_charge_id[]" value="<?php echo $category['org_id']; ?>">
-                    <td class="col-sm-8" style="vertical-align: bottom; text-align: right; padding-right: 20px;"><?php echo $category['organisation_name']; ?></td>
+                    <td class="col-sm-8 align-bottom text-end sh-pe-20"><?php echo $category['organisation_name']; ?></td>
                     <td class="col-sm-4"><input type="text"  class="edit_standard" name="schedule_charge[]"
                                                 value="<?php
 if (!empty($category['org_charge'])) {

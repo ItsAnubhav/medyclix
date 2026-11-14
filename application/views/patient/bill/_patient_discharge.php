@@ -94,7 +94,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 
                                          </tr> 
                                     <tr>
-                                        <th><?php echo $this->lang->line('Referral_Date'); ?></th>
+                                        <th><?php echo $this->lang->line('referral_date'); ?></th>
                                         <td>
                                             <?php if((!empty($discharge_card)) && $discharge_card['refer_date']!=''){ echo $this->customlib->YYYYMMDDHisTodateFormat($discharge_card['refer_date']); }   ?>
                                         </td>

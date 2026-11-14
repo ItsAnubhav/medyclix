@@ -6,6 +6,12 @@ if (!defined('BASEPATH')) {
 
 class Antenatal extends Admin_Controller
 {
+	public $blood_group;
+	public $marital_status;
+	public $opd_prefix;
+	public $payment_mode;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -28,9 +34,9 @@ class Antenatal extends Admin_Controller
 
     public function addobstetric()
     {
-        $data['patient_id']       = $this->input->post('patient_id');
+        $data['patient_id']       = $this->input->post('patient_id', TRUE);
         $data["genderlist"]       = $this->customlib->getGender_Patient();
-        $page                     = $this->load->view('admin/patient/_addobstretichistory', $data, true); 
+        $page                     = $this->load->view('admin/patient/_addobstretichistory', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
     }
 
@@ -38,71 +44,71 @@ class Antenatal extends Admin_Controller
     {   
         //this function called from two pages 1 ipd obstrical history 2 opd obstrical history 
         //be careful while making change
-        $this->form_validation->set_rules('place_of_delivery',$this->lang->line('place_of_delivery'),'required');
+        $this->form_validation->set_rules('place_of_delivery',$this->lang->line('place_of_delivery'),'trim|xss_clean|required');
 
      if($this->form_validation->run()==false){
-         
+
         $error = array('place_of_delivery' => form_error('place_of_delivery'));
         $array = array('status'=>0,'message'=>'', 'error'=>$error);
 
      }else{
-         
-        $patient_id = $this->input->post('patient_id');
+
+        $patient_id = $this->input->post('patient_id', TRUE);
         $medicine=0;
         $insert_obstetric         = array();
         $update_obstetric         = array();
-        $obstetric_id = $this->input->post("obstetric_id");
+        $obstetric_id = $this->input->post("obstetric_id", TRUE);
         if (isset($obstetric_id)) {
-         
+
             $update_obstetric        = array(
                 'id'                        => $obstetric_id,
                 'patient_id'                => $patient_id,
-                'place_of_delivery'         => $this->input->post("place_of_delivery"),
-                'pregnancy_duration'        => $this->input->post("pragnancy_duration"),
-                'pregnancy_complications'   => $this->input->post("pragnancy_complications"),
-                'birth_weight'              => $this->input->post("birth_weight"),
-                'gender'                    => $this->input->post("gender"),
-                'infant_feeding'            => $this->input->post("feeding"),
-                'alive_dead'                => $this->input->post("alive_or_dead"),               
-                'previous_medical_history'  => $this->input->post("previous_history"),
-                'special_instruction'       => $this->input->post("special_instruction"),
-                'date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date")),
+                'place_of_delivery'         => $this->input->post("place_of_delivery", TRUE),
+                'pregnancy_duration'        => $this->input->post("pragnancy_duration", TRUE),
+                'pregnancy_complications'   => $this->input->post("pragnancy_complications", TRUE),
+                'birth_weight'              => $this->input->post("birth_weight", TRUE),
+                'gender'                    => $this->input->post("gender", TRUE),
+                'infant_feeding'            => $this->input->post("feeding", TRUE),
+                'alive_dead'                => $this->input->post("alive_or_dead", TRUE),
+                'previous_medical_history'  => $this->input->post("previous_history", TRUE),
+                'special_instruction'       => $this->input->post("special_instruction", TRUE),
+                'date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE)),
             );
 
-            if($this->input->post("alive_or_dead")=='dead'){                
-                $update_obstetric['death_cause'] = $this->input->post("cause");
-            }else{               
+            if($this->input->post("alive_or_dead", TRUE)=='dead'){
+                $update_obstetric['death_cause'] = $this->input->post("cause", TRUE);
+            }else{
                 $update_obstetric['death_cause'] = "";
             }
 
         } else {
-            $insert_obstetric = array(               
+            $insert_obstetric = array(
                 'patient_id'                => $patient_id,
-                'place_of_delivery'         => $this->input->post("place_of_delivery"),
-                'pregnancy_duration'        => $this->input->post("pragnancy_duration"),
-                'pregnancy_complications'   => $this->input->post("pragnancy_complications"),
-                'birth_weight'              => $this->input->post("birth_weight"),
-                'gender'                    => $this->input->post("gender"),
-                'infant_feeding'            => $this->input->post("feeding"),
-                'alive_dead'                => $this->input->post("alive_or_dead"),
-                'previous_medical_history'  => $this->input->post("previous_history"),
-                'special_instruction'       => $this->input->post("special_instruction"),
-                'date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date")),
+                'place_of_delivery'         => $this->input->post("place_of_delivery", TRUE),
+                'pregnancy_duration'        => $this->input->post("pragnancy_duration", TRUE),
+                'pregnancy_complications'   => $this->input->post("pragnancy_complications", TRUE),
+                'birth_weight'              => $this->input->post("birth_weight", TRUE),
+                'gender'                    => $this->input->post("gender", TRUE),
+                'infant_feeding'            => $this->input->post("feeding", TRUE),
+                'alive_dead'                => $this->input->post("alive_or_dead", TRUE),
+                'previous_medical_history'  => $this->input->post("previous_history", TRUE),
+                'special_instruction'       => $this->input->post("special_instruction", TRUE),
+                'date' => $this->customlib->dateFormatToYYYYMMDD($this->input->post("date", TRUE)),
             );
 
-            if($this->input->post("alive_or_dead")=='dead'){                
-                $insert_obstetric['death_cause'] = $this->input->post("cause");
-            }else{                
+            if($this->input->post("alive_or_dead", TRUE)=='dead'){
+                $insert_obstetric['death_cause'] = $this->input->post("cause", TRUE);
+            }else{
                 $insert_obstetric['death_cause'] = "";
             }
-        } 
+        }
 
         $this->antenatal_model->add_obstetrichistory($insert_obstetric, $update_obstetric);
         if (isset($obstetric_id)==false) {
-            //notification will send on insertion 
+            //notification will send on insertion
             //send system notification for obstetric
-            $obstetric_ipdid = $this->input->post('obstetric_ipdid'); 
-            $obstetric_opdid = $this->input->post('obstetric_opdid');
+            $obstetric_ipdid = $this->input->post('obstetric_ipdid', TRUE);
+            $obstetric_opdid = $this->input->post('obstetric_opdid', TRUE);
             $date=date('Y-m-d_H-i');
         
             //FOR IPA PATIENT SYSTEM NOTIFICATION
@@ -131,7 +137,7 @@ class Antenatal extends Admin_Controller
 
     public function editobstetrichistory()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $data["genderlist"]       = $this->customlib->getGender_Patient();
         $data['obstetric_history_value'] = $this->antenatal_model->getobstetrichistorybyid($id);
         $page = $this->load->view('admin/patient/_editobstetrichistory', $data, true);
@@ -142,9 +148,9 @@ class Antenatal extends Admin_Controller
     { 
         $data = array();
 
-        $data['visit_detail_id']       = $_REQUEST['visit_detail_id'];
-        $data['ipdid']                 = $_REQUEST['ipdid'];
-        $data['patient_id']            = $_REQUEST['patient_id'];
+        $data['visit_detail_id']       = $this->input->post('visit_detail_id', TRUE);
+        $data['ipdid']                 = $this->input->post('ipdid', TRUE);
+        $data['patient_id']            = $this->input->post('patient_id', TRUE);
 
         $page                     = $this->load->view('admin/patient/_addantenatalfinding', $data, true); 
         echo json_encode(array('status' => 1, 'page' => $page));
@@ -152,15 +158,15 @@ class Antenatal extends Admin_Controller
 
     public function add_antenatalprescription(){ 
 
-        $this->form_validation->set_rules('antenatal_date',$this->lang->line('date'), 'required');
+        $this->form_validation->set_rules('antenatal_date',$this->lang->line('date'), 'trim|xss_clean|required');
         $custom_fields = $this->customfield_model->getByBelong('antenatal');
-        $edit_antenatal_id = $this->input->post('edit_antenatal_id');
+        $edit_antenatal_id = $this->input->post('edit_antenatal_id', TRUE);
 
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[antenatal][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[antenatal][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
 
@@ -190,65 +196,65 @@ class Antenatal extends Admin_Controller
 
        }else{
 
-            $antenatal_id = $this->input->post('antenatal_id');
-            $anteexam_id = $this->input->post('anteexam_id');
+            $antenatal_id = $this->input->post('antenatal_id', TRUE);
+            $anteexam_id = $this->input->post('anteexam_id', TRUE);
                 $data = array(
                     'id'               => $antenatal_id,
-                    'ipdid'            => $this->input->post('ipdid'),
-                    'visit_details_id' => $this->input->post('visit_detail_id'),
-                    'bleeding'         => $this->input->post("bleeding"),
-                    'headache'         => $this->input->post("headache"),
-                    'pain'             => $this->input->post("pain"),
-                    'constipation'     => $this->input->post("constipation"),
-                    'urinary_symptoms' => $this->input->post("urinary_symptoms"),
-                    'vomiting'         => $this->input->post("vomiting"),
-                    'cough'            => $this->input->post("cough"),
-                    'vaginal'          => $this->input->post("vaginal"),
-                    'oedema'           => $this->input->post("oedema"),
-                    'discharge'        => $this->input->post("discharge"),
-                    'haemoroids'       => $this->input->post("haemoroids"),
-                    'weight'           => $this->input->post("weight"),
-                    'height'           => $this->input->post("height"),
-                    'general_condition'   => $this->input->post("condition"),
-                    'finding_remark'      => $this->input->post("special_finding_remarks"),
-                    'pelvic_examination'  => $this->input->post("pelvic_examination"),
-                    'sp'                  => $this->input->post("sp"),
+                    'ipdid'            => $this->input->post('ipdid', TRUE),
+                    'visit_details_id' => $this->input->post('visit_detail_id', TRUE),
+                    'bleeding'         => $this->input->post("bleeding", TRUE),
+                    'headache'         => $this->input->post("headache", TRUE),
+                    'pain'             => $this->input->post("pain", TRUE),
+                    'constipation'     => $this->input->post("constipation", TRUE),
+                    'urinary_symptoms' => $this->input->post("urinary_symptoms", TRUE),
+                    'vomiting'         => $this->input->post("vomiting", TRUE),
+                    'cough'            => $this->input->post("cough", TRUE),
+                    'vaginal'          => $this->input->post("vaginal", TRUE),
+                    'oedema'           => $this->input->post("oedema", TRUE),
+                    'discharge'        => $this->input->post("discharge", TRUE),
+                    'haemoroids'       => $this->input->post("haemoroids", TRUE),
+                    'weight'           => $this->input->post("weight", TRUE),
+                    'height'           => $this->input->post("height", TRUE),
+                    'general_condition'   => $this->input->post("condition", TRUE),
+                    'finding_remark'      => $this->input->post("special_finding_remarks", TRUE),
+                    'pelvic_examination'  => $this->input->post("pelvic_examination", TRUE),
+                    'sp'                  => $this->input->post("sp", TRUE),
                 );
-                
-            if($this->input->post("antenatal_date")!=""){
-                $data['date'] = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("antenatal_date"), $this->time_format);               
+
+            if($this->input->post("antenatal_date", TRUE)!=""){
+                $data['date'] = $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("antenatal_date", TRUE), $this->time_format);               
             }
 
             $primary_examine_id = $this->antenatal_model->addantenatalprescription($data);
 
             $antenatal_data = array(
-                'id'                  => $anteexam_id ,
+                'id'                  => $anteexam_id,
                 'primary_examine_id'  => $primary_examine_id,
-                'visit_details_id'    => $this->input->post('visit_detail_id'),
-                 'ipdid'              => $this->input->post('ipdid'),
-                'uter_size'           => $this->input->post("uter_size"),
-                'uterus_size'         => $this->input->post("uterus_size"),
-                'presentation_position' => $this->input->post("presentation_position"),
-                'brim_presentation'   => $this->input->post("presentation_brim"),
-                'foeta_heart'         => $this->input->post("foeta_heart"),
-                'blood_pressure'      => $this->input->post("blood_pressure"),
-                'antenatal_Oedema'    => $this->input->post("antenatal_oedema"),
-                'antenatal_weight'    => $this->input->post("antenatal_weight"),
-                'urine_sugar'         => $this->input->post("urine"),
-                'urine'               => $this->input->post("urine_aaibumen"),
-                'remark'              => $this->input->post("remark"),
-                'next_visit'          => $this->input->post("next_visit"),
+                'visit_details_id'    => $this->input->post('visit_detail_id', TRUE),
+                 'ipdid'              => $this->input->post('ipdid', TRUE),
+                'uter_size'           => $this->input->post("uter_size", TRUE),
+                'uterus_size'         => $this->input->post("uterus_size", TRUE),
+                'presentation_position' => $this->input->post("presentation_position", TRUE),
+                'brim_presentation'   => $this->input->post("presentation_brim", TRUE),
+                'foeta_heart'         => $this->input->post("foeta_heart", TRUE),
+                'blood_pressure'      => $this->input->post("blood_pressure", TRUE),
+                'antenatal_Oedema'    => $this->input->post("antenatal_oedema", TRUE),
+                'antenatal_weight'    => $this->input->post("antenatal_weight", TRUE),
+                'urine_sugar'         => $this->input->post("urine", TRUE),
+                'urine'               => $this->input->post("urine_aaibumen", TRUE),
+                'remark'              => $this->input->post("remark", TRUE),
+                'next_visit'          => $this->input->post("next_visit", TRUE),
             );       
 
             $examine_id = $this->antenatal_model->addantenatalexamine($antenatal_data);
 
-            $custom_field_post  = $this->input->post("custom_fields[antenatal]");
+            $custom_field_post  = $this->input->post("custom_fields[antenatal]", TRUE);
             $custom_value_array = array();
 
             if (!empty($custom_field_post) ) {
                 
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[antenatal][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[antenatal][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
 					
 					if($edit_antenatal_id>0 ){						 
@@ -278,11 +284,11 @@ class Antenatal extends Admin_Controller
             if($edit_antenatal_id=="" || $edit_antenatal_id==0){
                 //send system notification for antenatal
                 $date=date('Y-m-d');
-                $opdid=$this->input->post('id');                
+                $opdid=$this->input->post('id', TRUE);
                 $event_data = array(
-                    'patient_id'  => $this->input->post('patient_id'),   
+                    'patient_id'  => $this->input->post('patient_id', TRUE),
                     'opd_no'      => $this->customlib->getSessionPrefixByType('opd_no') . $opdid,
-                    'case_id'     => $this->input->post('case_reference_id'),
+                    'case_id'     => $this->input->post('case_reference_id', TRUE),
                     'date'        => $this->customlib->YYYYMMDDTodateFormat($date, $this->customlib->getHospitalTimeFormat()),
                 );
 
@@ -339,7 +345,7 @@ class Antenatal extends Admin_Controller
 
     public function editantenatalprescription()
     {        
-        $antenatal_id = $this->input->post('antenatal_id');
+        $antenatal_id = $this->input->post('antenatal_id', TRUE);
         $result                  = $this->antenatal_model->getprescriptionbyid($antenatal_id);		
         $data['fields_prescription']   =  $this->customfield_model->get_custom_fields('antenatal', '','');         
         $data["result"]          = $result;        
@@ -350,7 +356,7 @@ class Antenatal extends Admin_Controller
 
     public function getobstetrichistory()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $data['result'] = $this->antenatal_model->getobstetrichistorybyid($id);
         $page = $this->load->view('admin/patient/_viewobstetrichistory', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
@@ -358,7 +364,7 @@ class Antenatal extends Admin_Controller
 
     public function printobstetrichistory()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         $data['result'] = $this->antenatal_model->getobstetrichistorybyid($id);       
         $data['print_details']   = $this->printing_model->get('', 'obstetric_history');
         $page           = $this->load->view('admin/patient/_printobstetrichistory', $data, true);
@@ -374,8 +380,8 @@ class Antenatal extends Admin_Controller
 
     public function add_postnatal()
     {
-        $this->form_validation->set_rules('labor_time', $this->lang->line('labor_time'),'required');
-        $this->form_validation->set_rules('delivery_time', $this->lang->line('delivery_time'),'required');
+        $this->form_validation->set_rules('labor_time', $this->lang->line('labor_time'),'trim|xss_clean|required');
+        $this->form_validation->set_rules('delivery_time', $this->lang->line('delivery_time'),'trim|xss_clean|required');
 
         if($this->form_validation->run() == false ){
             $error = array(
@@ -383,31 +389,31 @@ class Antenatal extends Admin_Controller
                 'delivery_time' => form_error('delivery_time'));
              $array = array('status' => 0, 'error' => $error, 'message' => '', 'visitid' => '');
         }else{
-            $patient_id = $this->input->post('patient_id');
-     
-            $data        = array(               
+            $patient_id = $this->input->post('patient_id', TRUE);
+
+            $data        = array(
                 'patient_id'            => $patient_id,
-                'labor_time'            => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("labor_time"), $this->time_format),               
-                'delivery_time'         => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("delivery_time"), $this->time_format),                
-                'routine_question'      => $this->input->post("routine_question"),
-                'general_remark'        => $this->input->post("general_remark"),                
+                'labor_time'            => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("labor_time", TRUE), $this->time_format),
+                'delivery_time'         => $this->customlib->dateFormatToYYYYMMDDHis($this->input->post("delivery_time", TRUE), $this->time_format),
+                'routine_question'      => $this->input->post("routine_question", TRUE),
+                'general_remark'        => $this->input->post("general_remark", TRUE),
             );
-            if($this->input->post('postnatal_id')!=""){
-                $data['id'] = $this->input->post('postnatal_id');
+            if($this->input->post('postnatal_id', TRUE)!=""){
+                $data['id'] = $this->input->post('postnatal_id', TRUE);
             }
-          
+
             $this->antenatal_model->addpostnatal($data);
 
-            $postnatal_id=$this->input->post('postnatal_id');
+            $postnatal_id=$this->input->post('postnatal_id', TRUE);
             if($postnatal_id==""){
                  //send system notification for postnatal
-                $ipd_id=$this->input->post('postnatal_ipd_id');
-                $patient_detail    = $this->patient_model->get_patientidbyIpdId($ipd_id);            
+                $ipd_id=$this->input->post('postnatal_ipd_id', TRUE);
+                $patient_detail    = $this->patient_model->get_patientidbyIpdId($ipd_id);
                 $date=date('Y-m-d');
                 $event_data = array(
                     'patient_id'            => $patient_id,
-                    'delivery_time'         => $this->input->post("delivery_time"), 
-                    'labor_time'            => $this->input->post("labor_time"), 
+                    'delivery_time'         => $this->input->post("delivery_time", TRUE),
+                    'labor_time'            => $this->input->post("labor_time", TRUE),
                     'date'                  => $this->customlib->YYYYMMDDHisTodateFormat($date, $this->customlib->getHospitalTimeFormat()),
                     'ipd_no'                => $this->customlib->getSessionPrefixByType('ipd_no') . $ipd_id,
                     'case_id'               => $patient_detail['case_reference_id'],
@@ -456,7 +462,7 @@ class Antenatal extends Admin_Controller
 
     public function editipdantenatalprescription()
     {        
-        $antenatal_id = $this->input->post('antenatal_id');
+        $antenatal_id = $this->input->post('antenatal_id', TRUE);
         $result       = $this->antenatal_model->getipdprescription($antenatal_id);        
         $result->antenatal_date             = $this->customlib->YYYYMMDDHisTodateFormat($result->antenatal_date, $this->time_format);
 		
@@ -476,14 +482,14 @@ class Antenatal extends Admin_Controller
 
     public function add_ipdantenatalprescription(){ 
 		 
-        $this->form_validation->set_rules('antenatal_date',$this->lang->line('date'), 'required' );        
+        $this->form_validation->set_rules('antenatal_date',$this->lang->line('date'), 'trim|xss_clean|required');
         $custom_fields = $this->customfield_model->getByBelong('antenatal');
         
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[antenatal][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[antenatal][" . $custom_fields_id . "]", $custom_fields_name, 'trim|xss_clean|required');
             }
         }
         
@@ -513,73 +519,72 @@ class Antenatal extends Admin_Controller
 
        }else{
 
-            $antenatal_id = $this->input->post('antenatal_id');
-            $anteexam_id = $this->input->post('anteexam_id');
-			
+            $antenatal_id = $this->input->post('antenatal_id', TRUE);
+            $anteexam_id = $this->input->post('anteexam_id', TRUE);
+
                 $data = array(
                     'id'               => $antenatal_id,
-                    'ipdid'            => $this->input->post('ipdid'),
+                    'ipdid'            => $this->input->post('ipdid', TRUE),
                     'visit_details_id' => null,
-                    'bleeding'         => $this->input->post("bleeding"),
-                    'headache'         => $this->input->post("headache"),
-                    'pain'             => $this->input->post("pain"),
-                    'constipation'     => $this->input->post("constipation"),
-                    'urinary_symptoms' => $this->input->post("urinary_symptoms"),
-                    'vomiting'         => $this->input->post("vomiting"),
-                    'cough'            => $this->input->post("cough"),
-                    'vaginal'          => $this->input->post("vaginal"),
-                    'oedema'           => $this->input->post("Oedema"),
-                    'discharge'        => $this->input->post("discharge"),
-                    'haemoroids'       => $this->input->post("haemoroids"),
-                    'weight'           => $this->input->post("weight"),
-                    'height'           => $this->input->post("height" ),
-                    'general_condition'   => $this->input->post("condition"),
-                    'finding_remark'      => $this->input->post("special_finding_remarks"),
-                    'pelvic_examination'  => $this->input->post("pelvic_examination"),
-                    'sp'                  => $this->input->post("sp"),
+                    'bleeding'         => $this->input->post("bleeding", TRUE),
+                    'headache'         => $this->input->post("headache", TRUE),
+                    'pain'             => $this->input->post("pain", TRUE),
+                    'constipation'     => $this->input->post("constipation", TRUE),
+                    'urinary_symptoms' => $this->input->post("urinary_symptoms", TRUE),
+                    'vomiting'         => $this->input->post("vomiting", TRUE),
+                    'cough'            => $this->input->post("cough", TRUE),
+                    'vaginal'          => $this->input->post("vaginal", TRUE),
+                    'oedema'           => $this->input->post("Oedema", TRUE),
+                    'discharge'        => $this->input->post("discharge", TRUE),
+                    'haemoroids'       => $this->input->post("haemoroids", TRUE),
+                    'weight'           => $this->input->post("weight", TRUE),
+                    'height'           => $this->input->post("height", TRUE),
+                    'general_condition'   => $this->input->post("condition", TRUE),
+                    'finding_remark'      => $this->input->post("special_finding_remarks", TRUE),
+                    'pelvic_examination'  => $this->input->post("pelvic_examination", TRUE),
+                    'sp'                  => $this->input->post("sp", TRUE),
                 );
-				
-				$antenatal_date = $this->input->post('antenatal_date');
-                if($antenatal_date !=""){			
-					$data['date'] = $this->customlib->dateFormatToYYYYMMDDHis($antenatal_date, $this->time_format);				
-				}
- 
-            $primary_examine_id = $this->antenatal_model->addipdantenatalprescription($data);          
+
+                $antenatal_date = $this->input->post('antenatal_date', TRUE);
+                if($antenatal_date !=""){
+                    $data['date'] = $this->customlib->dateFormatToYYYYMMDDHis($antenatal_date, $this->time_format);
+                }
+
+            $primary_examine_id = $this->antenatal_model->addipdantenatalprescription($data);
 
             $antenatal_data = array(
-                'id'                  => $anteexam_id ,
-                'primary_examine_id' =>  $primary_examine_id,
-                'visit_details_id'    => $this->input->post('visit_detail_id'),
-                 'ipdid'              => $this->input->post('ipdid'),
-                'uter_size'           => $this->input->post("uter_size"),
-                'uterus_size'         => $this->input->post("uterus_size"),
-                'presentation_position' => $this->input->post("presentation_position"),
-                'brim_presentation'   => $this->input->post("presentation_brim"),
-                'foeta_heart'         => $this->input->post("foeta_heart"),
-                'blood_pressure'      => $this->input->post("blood_pressure"),
-                'antenatal_Oedema'    => $this->input->post("antenatal_oedema"),
-                'antenatal_weight'    => $this->input->post("antenatal_weight"),
-                'urine_sugar'         => $this->input->post("urine"),
-                'urine'               => $this->input->post("urine_aaibumen"),
-                'remark'              => $this->input->post("remark"),
-                'next_visit'          => $this->input->post("next_visit"),
-            );             
-                   
+                'id'                  => $anteexam_id,
+                'primary_examine_id'  => $primary_examine_id,
+                'visit_details_id'    => $this->input->post('visit_detail_id', TRUE),
+                 'ipdid'              => $this->input->post('ipdid', TRUE),
+                'uter_size'           => $this->input->post("uter_size", TRUE),
+                'uterus_size'         => $this->input->post("uterus_size", TRUE),
+                'presentation_position' => $this->input->post("presentation_position", TRUE),
+                'brim_presentation'   => $this->input->post("presentation_brim", TRUE),
+                'foeta_heart'         => $this->input->post("foeta_heart", TRUE),
+                'blood_pressure'      => $this->input->post("blood_pressure", TRUE),
+                'antenatal_Oedema'    => $this->input->post("antenatal_oedema", TRUE),
+                'antenatal_weight'    => $this->input->post("antenatal_weight", TRUE),
+                'urine_sugar'         => $this->input->post("urine", TRUE),
+                'urine'               => $this->input->post("urine_aaibumen", TRUE),
+                'remark'              => $this->input->post("remark", TRUE),
+                'next_visit'          => $this->input->post("next_visit", TRUE),
+            );
+
             $this->antenatal_model->addipdantenatalexamine($antenatal_data);
-			
-			$custom_field_post  = $this->input->post("custom_fields[antenatal]");
+
+            $custom_field_post  = $this->input->post("custom_fields[antenatal]", TRUE);
             $custom_value_array = array();
 
             if (!empty($custom_field_post) ) {
                 
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[antenatal][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[antenatal][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
 					
 					if($antenatal_id>0 ){						 
 						$array_custom['belong_table_id'] = $antenatal_id;
 					}else{
-						// $array_custom['belong_table_id'] = 0; 
 					}
 					
                     $array_custom     = array(                        
@@ -603,7 +608,7 @@ class Antenatal extends Admin_Controller
             if($antenatal_id==""){
                 //send system notification for antenatal
                 $date=date('Y-m-d');
-                $ipd_id=$this->input->post('ipdid');
+                $ipd_id=$this->input->post('ipdid', TRUE);
                 $patient_detail    = $this->patient_model->get_patientidbyIpdId($ipd_id);
                 $event_data = array(
                     'patient_id'  => $patient_detail['patient_id'],

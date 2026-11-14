@@ -1,32 +1,73 @@
-<div id="addonModal" class="modal fade">
-    <div class="modal-dialog">
+<div id="addonModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="addonModalLabel">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">Register your Addon</h4>
-            </div>
-            <form action="<?php echo site_url('admin/admin/updateaddon') ?>" method="POST" id="addon_verify">
-                <div class="modal-body addon_modal-body">
-                    <div class="error_message">
 
-                    </div>
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                <h4 class="modal-title" id="addonModalLabel">
+                    Register Your Addon
+                </h4>
+            </div>
+
+            <form action="<?php echo site_url('admin/admin/updateaddon') ?>" method="POST" id="addon_verify">
+
+                <div class="modal-body addon_modal-body">
+
+                    <div class="error_message"></div>
+
                     <input type="hidden" name="addon" class="addon_type" value="">
                     <input type="hidden" name="addon_version" class="addon_version" value="0">
+
+                    <!-- License Key -->
                     <div class="form-group">
-                        <label class="ainline"><span>Envato Market Purchase Code for Addon ( <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> How to find it?</a> )</span></label>
-                        <input type="text" class="form-control" id="input-app-envato_market_purchase_code" name="app-envato_market_purchase_code">
-                        <div id="error" class="input-error text text-danger"></div>
+                        <label for="input-app-envato_market_purchase_code">
+                            Smart Hospital Addon License Key
+                           
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               id="input-app-envato_market_purchase_code"
+                               name="app-envato_market_purchase_code"
+                               placeholder="Enter your Smart Hospital license key"
+                               autocomplete="off"
+                               >
+
+                        <div id="error" class="text-danger"></div>
                     </div>
 
+                    <!-- Signing Key -->
                     <div class="form-group">
-                        <label for="exampleInputEmail1">Your Email registered with Envato</label>
-                        <input type="text" class="form-control" id="input-app-email" name="app-email">
-                        <div id="error" class="input-error text text-danger"></div>
+                        <label for="input-signing_key">
+                            Signing Key
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               id="input-signing_key"
+                               name="signing_key"
+                               placeholder="Enter your signing key"
+                               autocomplete="off"
+                               >
+
+                        <div id="error" class="text-danger"></div>
                     </div>
+
                 </div>
+
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-info" data-loading-text="<i class='fa fa-spinner fa-spin '></i> Saving...">Save</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times" aria-hidden="true"></i> <?php echo $this->lang->line('cancel'); ?>
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            data-loading-text="<i class='fa fa-spinner fa-spin'></i> <?php echo $this->lang->line('please_wait'); ?>">
+                        <i class="fa fa-check" aria-hidden="true"></i> Register Now
+                    </button>
                 </div>
+
             </form>
         </div>
     </div>

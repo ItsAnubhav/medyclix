@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Calendar extends Admin_Controller
 {
+	public $time_format;
+
 
     public function __construct()
     {
@@ -70,14 +72,18 @@ class Calendar extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
+			
+			$post = $this->security->xss_clean($this->input->post());			
+			
             $userdata          = $this->customlib->getUserData();
-            $event_title       = $this->input->post("task_title");
+            $event_title       = $post['task_title'] ?? '';
             $event_description = '';
             $event_type        = 'task';
             $event_color       = '#000';
-            $date              = $this->input->post('task_date');
+            $date              = $post['task_date'] ?? '';
             $start_date        = $this->customlib->dateFormatToYYYYMMDD($date);
-            $eventid           = $this->input->post("eventid");
+            $eventid           = $post['eventid'] ?? '';
+			
             if (!empty($eventid)) {
                 $eventdata = array('event_title' => $event_title,
                     'event_description'              => $event_description,
@@ -111,6 +117,10 @@ class Calendar extends Admin_Controller
 
     public function saveevent()
     {
+		if (!$this->rbac->hasPrivilege('calendar_to_do_list', 'can_add')) {
+            access_denied();
+        }
+		
         $this->form_validation->set_rules('title', $this->lang->line('event_title'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('event_from', $this->lang->line('event_from'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('event_to', $this->lang->line('event_to'), 'trim|required|xss_clean');
@@ -122,16 +132,19 @@ class Calendar extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $event_title       = $this->input->post("title");
-            $event_description = $this->input->post("description");
-            $event_type        = $this->input->post("event_type");
-            $event_color       = $this->input->post("eventcolor");
+			
+			$post = $this->security->xss_clean($this->input->post());			
+			
+            $event_title       = $post['title'] ?? '';
+            $event_description = $post['description'] ?? '';
+            $event_type        = $post['event_type'] ?? '';
+            $event_color       = $post['eventcolor'] ?? ''; 
             if (empty($event_color)) {
                 $event_color = '#337ab7';
             }
 
-            $event_from        = $this->input->post("event_from");
-            $event_to          = $this->input->post("event_to");
+            $event_from        = $post['event_from'] ?? '';	
+            $event_to          = $post['event_to'] ?? '';
 
             $start_date = $this->customlib->dateFormatToYYYYMMDDHis($event_from, $this->time_format);
             $end_date   = $this->customlib->dateFormatToYYYYMMDDHis($event_to, $this->time_format);
@@ -178,11 +191,14 @@ class Calendar extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $event_title       = $this->input->post("title");
-            $event_description = $this->input->post("description");
-            $event_type        = $this->input->post("eventtype");
-            $event_color       = $this->input->post("eventcolor");
-            $id                = $this->input->post("eventid");
+			
+			$post = $this->security->xss_clean($this->input->post());
+			
+            $event_title       = $post['title'] ?? '';
+            $event_description = $post['description'] ?? '';
+            $event_type        = $post['eventtype'] ?? '';	 
+            $event_color       = $post['eventcolor'] ?? '';	 
+            $id                = $post['eventid'] ?? '';	 
             $event_for         = "";
             $userdata          = $this->customlib->getUserData();
             if ($event_type == 'private') {
@@ -195,8 +211,8 @@ class Calendar extends Admin_Controller
                 $event_for = $userdata["role_id"];
             }
            
-            $event_from        = $this->input->post("eventfrom");
-            $event_to          = $this->input->post("eventto");
+            $event_from        = $post['eventfrom'] ?? '';
+            $event_to          = $post['eventto'] ?? '';
 
             $start_date = $this->customlib->dateFormatToYYYYMMDDHis($event_from, $this->time_format);
             $end_date   = $this->customlib->dateFormatToYYYYMMDDHis($event_to, $this->time_format);
@@ -219,11 +235,11 @@ class Calendar extends Admin_Controller
 	
     public function getevents()
     {
-        $userdata = $this->customlib->getUserData();
-        $result   = $this->calendar_model->getEvents();
-       
+        $userdata  = $this->customlib->getUserData();
+        $result    = $this->calendar_model->getEvents();
+        $eventdata = [];
         if (!empty($result)) {
- 
+
               foreach ($result as $key => $value) {
                 $event_type = $value["event_type"];
                 if ($event_type == 'private') {
@@ -337,9 +353,9 @@ class Calendar extends Admin_Controller
 				}
             }
 			 
-           echo json_encode($eventdata);
         }
-    }	
+        echo json_encode($eventdata);
+    }
 
     public function view_event($id)
     {
@@ -365,7 +381,7 @@ class Calendar extends Admin_Controller
         }
         if (!empty($id)) {
             $result = $this->calendar_model->deleteEvent($id);
-            $array  = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delte_massage'));
+            $array  = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('unable_to_delete_this_event'));
         }
@@ -377,7 +393,7 @@ class Calendar extends Admin_Controller
         if (!$this->rbac->hasPrivilege('calendar_to_do_list', 'can_edit')) {
             access_denied();
         }
-        // $result                    = $this->calendar_model->getEvents($id);
+        
         $result                    = $this->calendar_model->getEventsById($id);
         $result['edit_start_date'] = $this->customlib->YYYYMMDDTodateFormat($result['start_date']);
         echo json_encode($result);
@@ -385,7 +401,7 @@ class Calendar extends Admin_Controller
 
     public function markcomplete($id)
     {
-        $status    = $this->input->post("active");
+        $status    = $this->input->post("active", TRUE);
         $eventdata = array('is_active' => $status, 'id' => $id);
         if (!empty($id)) {
             $this->calendar_model->saveEvent($eventdata);

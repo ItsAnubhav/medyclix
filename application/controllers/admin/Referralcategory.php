@@ -21,7 +21,7 @@ class Referralcategory extends Admin_Controller
           
           //validation to check each input keeps the value or not
             foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('name'), 'trim|required');        
+                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('name'), 'trim|required|xss_clean');        
                 
                 if ($this->form_validation->run() == false) {           
                     $msg = array(
@@ -37,7 +37,7 @@ class Referralcategory extends Admin_Controller
             // save the multiple data 
             $total_rows   = $this->input->post('total_rows');  
             foreach ($total_rows as $row_key => $row_values) {                 
-                $data  = array('name' => $this->input->post('name_'.$row_values));
+                $data  = array('name' => $this->input->post('name_'.$row_values, TRUE));
             $this->referral_category_model->add($data);
             }
             // save the multiple data 
@@ -84,8 +84,8 @@ class Referralcategory extends Admin_Controller
             $data = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $category = array(
-                "id"   => $this->input->post('categoryid'),
-                "name" => $this->input->post('name'),
+                "id"   => $this->input->post('categoryid', TRUE),
+                "name" => $this->input->post('name', TRUE),
             );
 
             $this->referral_category_model->update($category);

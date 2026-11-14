@@ -109,11 +109,11 @@ class Conference_model extends MY_Model
         $condition="";
 
         if($data['created_by']!=""){
-            $condition.=" and conferences.created_id= '".$data['created_by']."' " ;
+            $condition.=" and conferences.created_id= " . (int)$data['created_by'] . " " ;
         }
         if($data['module_type'] == 'opd') {
             $condition.=" and conferences.visit_details_id IS NOT NULL " ;
-        } 
+        }
         if($data['module_type'] == 'ipd') {
             $condition.=" and conferences.ipd_id IS NOT NULL " ;
         }
@@ -122,9 +122,9 @@ class Conference_model extends MY_Model
         }
 
         if(isset($data['start_date']) && $data['start_date']!="" && isset($data['end_date']) && $data['end_date']!="" ){
-            $start_date = $data['start_date'] ;
-            $end_date = $data['end_date'] ;
-            $condition.= " and date_format(conferences.date,'%Y-%m-%d ') >='". $start_date."' and date_format(conferences.date,'%Y-%m-%d') <= '".$end_date."' " ;
+            $start_date = $this->db->escape_str($data['start_date']) ;
+            $end_date   = $this->db->escape_str($data['end_date']) ;
+            $condition.= " and date_format(conferences.date,'%Y-%m-%d ') >='".$start_date."' and date_format(conferences.date,'%Y-%m-%d') <= '".$end_date."' " ;
         }
     
         $sql="SELECT conferences.*,patients.id as patient_id,patients.patient_name,(SELECT COUNT(*) FROM conferences_history WHERE conferences_history.conference_id=conferences.id) as `total_viewers`,`create_by`.`name` as `create_by_name`, `create_by`.`surname` as `create_by_surname`, `create_by`.`employee_id` as `create_by_employee_id` from conferences JOIN `staff` as `create_by` ON `create_by`.`id` = `conferences`.`created_id` left JOIN patients on patients.id = conferences.patient_id where  purpose='consult' and status= 2 ".$condition."  ";
@@ -142,13 +142,13 @@ class Conference_model extends MY_Model
         $condition="";
 
         if($data['created_by']!=""){
-            $condition.=" and conferences.created_id= '".$data['created_by']."' " ;
+            $condition.=" and conferences.created_id= " . (int)$data['created_by'] . " " ;
         }
 
         if(isset($data['start_date']) && $data['start_date']!="" && isset($data['end_date']) && $data['end_date']!="" ){
-            $start_date = $data['start_date'] ;
-            $end_date = $data['end_date'] ;
-            $condition.= " and date_format(conferences.date,'%Y-%m-%d ') >='". $start_date."' and date_format(conferences.date,'%Y-%m-%d') <= '".$end_date."' " ;
+            $start_date = $this->db->escape_str($data['start_date']) ;
+            $end_date   = $this->db->escape_str($data['end_date']) ;
+            $condition.= " and date_format(conferences.date,'%Y-%m-%d ') >='".$start_date."' and date_format(conferences.date,'%Y-%m-%d') <= '".$end_date."' " ;
         }
             
         $sql="SELECT conferences.*,(SELECT COUNT(*) FROM conferences_history WHERE conferences_history.conference_id=conferences.id) as `total_viewers`,`create_by`.`name` as `create_by_name`, `create_by`.`surname` as `create_by_surname`, `create_by`.`employee_id` as `create_by_employee_id` from conferences JOIN `staff` as `create_by` ON `create_by`.`id` = `conferences`.`created_id` where purpose = 'meeting' and status=2 ".$condition."  ";
@@ -401,7 +401,6 @@ class Conference_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
     }
 

@@ -6,6 +6,10 @@ if (!defined('BASEPATH')) {
 
 class System_notification
 {
+	public $notification;
+	public $notificationurl;
+	public $patient_notificationurl;
+
 
     private $_CI;
     private $hospital_setting;
@@ -23,9 +27,14 @@ class System_notification
         $this->patient_notificationurl = $this->_CI->config->item('patient_notification_url'); 
     } 
    
-    public function send_system_notification($event,$event_variables,$notification_array=array()){
+    public function send_system_notification($event,$event_variables,$notification_array=array()){	
+		 
+		
         $notification_data=array();
     	$event_data=$this->_CI->notificationsetting_model->getSystemNotification_byevent($event); 
+        if (empty($event_data)) {
+            return;
+        }
 
          if(array_key_exists('patient_id',$event_variables)){
             $patient_data=$this->_CI->notificationsetting_model->getpatientDetails($event_variables['patient_id']);
@@ -818,7 +827,7 @@ class System_notification
                 $notification_data[] = array(
                     'notification_title' => $event_data['subject'],
                     'notification_desc'  => $staff_message,
-                    'role_id'            =>3,
+                    'role_id'            => 5,
                     'receiver_id'        => $event_variables['doctor_id'],
                     'notification_type'  => $event_data['notification_type'],
                     'date'               => date('Y-m-d H:i:s'),
@@ -880,7 +889,7 @@ class System_notification
                 $notification_data[] = array(
                     'notification_title' => $event_data['subject'],
                     'notification_desc'  => $staff_message,
-                    'role_id'            =>3,
+                    'role_id'            => 5,
                     'receiver_id'        => $event_variables['doctor_id'],
                     'notification_type'  => $event_data['notification_type'],
                     'date'               => date('Y-m-d H:i:s'),
@@ -910,7 +919,7 @@ class System_notification
                 $notification_data[] = array(
                     'notification_title' => $event_data['subject'],
                     'notification_desc'  => $staff_message,
-                    'role_id'            => 3,
+                    'role_id'            => 6,
                     'receiver_id'        => $event_variables['doctor_id'],
                     'notification_type'  => $event_data['notification_type'],
                     'date'               => date('Y-m-d H:i:s'),
@@ -974,7 +983,7 @@ class System_notification
                     $notification_data[] = array(
                     'notification_title' => $event_data['subject'],
                     'notification_desc'  => $staff_message,
-                    'role_id'            => 3,
+                    'role_id'            => 6,
                     'receiver_id'        => $event_variables['doctor_id'],
                     'notification_type'  => $event_data['notification_type'],
                     'date'               => date('Y-m-d H:i:s'),
@@ -994,7 +1003,7 @@ class System_notification
                     'is_active'                                     => 'yes',
                 );
             }
-
+			 
             $this->_CI->notification_model->addSystemNotificationbatch($notification_data);
 
         }elseif($event=='add_bag_stock' && $event_data['is_active']==1){
@@ -1399,6 +1408,35 @@ class System_notification
             }
 
             $this->_CI->notification_model->addSystemNotificationbatch($notification_data);
+        }elseif(in_array($event, array('ipd_indent_pharmacy', 'ipd_indent_radiology', 'ipd_indent_pathology')) && $event_data['is_active']==1){
+
+            $role_map = array(
+                'ipd_indent_pharmacy'  => 4,
+                'ipd_indent_pathology' => 5,
+                'ipd_indent_radiology' => 6,
+            );
+            $role_id = $role_map[$event];
+
+            if ($event_data['is_staff']) {
+                $dept_staff = $this->_CI->notificationsetting_model->getstaffidByID($role_id);
+                if (!empty($dept_staff)) {
+                    foreach ($dept_staff as $dept_staff_value) {
+                        $notification_data[] = array(
+                            'notification_title' => $event_data['subject'],
+                            'notification_desc'  => $staff_message,
+                            'role_id'            => $role_id,
+                            'receiver_id'        => $dept_staff_value['staff_id'],
+                            'notification_type'  => $event_data['notification_type'],
+                            'date'               => date('Y-m-d H:i:s'),
+                            'is_active'          => 'yes',
+                        );
+                    }
+                }
+            }
+
+            if (!empty($notification_data)) {
+                $this->_CI->notification_model->addSystemNotificationbatch($notification_data);
+            }
         }
     }
 

@@ -1,12 +1,9 @@
-<div class="content-wrapper"> 
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('my_leaves'); ?></h3>
-                        <small class="pull-right">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('my_leaves'); ?></h3>
+                        <small class="float-end">
                             <?php if ($this->rbac->hasPrivilege('apply_leave', 'can_add')) { ?>
                                 <a href="#addleave" onclick="addLeave()" class="btn btn-primary btn-sm">
                                     <i class="fa fa-plus"></i> <?php echo $this->lang->line('apply_leave'); ?></a>
@@ -15,8 +12,8 @@
                                     <i class="fa fa-reorder"></i> <?php echo $this->lang->line('approve_leave_request'); ?></a>
                             <?php } ?>
                         </small>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="tab-pane active table-responsive no-padding">
@@ -30,7 +27,7 @@
                                         <th><?php echo $this->lang->line('days'); ?></th>
                                         <th><?php echo $this->lang->line('apply_date'); ?></th>
                                         <th><?php echo $this->lang->line('status'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                         </thead>
                                         <tbody>
@@ -44,119 +41,144 @@
                 </div>
             </div> 
 		</div>
-    </section>
-</div>
 
-<div id="leavedetails" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content mx-2">
+<div id="leavedetails" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="leavedetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('details'); ?></h4>
+                <h5 class="modal-title" id="leavedetailsLabel"><?php echo $this->lang->line('details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <form role="form" id="leavedetails_form" action="">
-                        <div class="col-md-12 table-responsive">  
-                            <table class="table mb0 table-striped table-bordered ">
-                                <tr>
-                                    <th width="15%"><?php echo $this->lang->line('name'); ?></th>
-                                    <td width="35%"><span id='name'></span> (<span id="employee_id"></span>)</td>
-                                </tr>
-                                <tr>
-                                    <th><?php echo $this->lang->line('submitted_by'); ?></th>
-                                    <td><span id="appliedby"></span></td>
-                                    <th><?php echo $this->lang->line('leave_type'); ?></th>
-                                    <td><span id="leave_type"></span>
-                                        <input id="leave_request_id" name="leave_request_id" placeholder="" type="hidden" class="form-control" />
-                                        <span class="text-danger"><?php echo form_error('leave_request_id'); ?></span></td>
-                                </tr>
-                                <tr>
-                                    <th><?php echo $this->lang->line('leave'); ?></th>
-                                    <td><span id='leave_from'></span> - <label> </label><span id='leave_to'> </span> (<span id='days'></span>)
-                                        <span class="text-danger"><?php echo form_error('leave_from'); ?></span></td>
-                                    <th><?php echo $this->lang->line('apply'); ?> <?php echo $this->lang->line('date'); ?></th>
-                                    <td><span id="applied_date"></span></td>
-                                </tr>
-                                <tr>
-                                    <th><?php echo $this->lang->line('reason'); ?></th>
-                                    <td><span id="remark"> </span></td>
-                                    <th><?php echo $this->lang->line('download'); ?></th>
-                                    <td><span id="download_file" data-toggle="tooltip" data-original-title="<?php echo $this->lang->line('download'); ?>"></span></td>
-                                </tr>
-                            </table>
+            <input id="leave_request_id" name="leave_request_id" type="hidden" />
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div class="sh-form-card">
+                        <div class="sh-card-header">
+                            <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
                         </div>
-                    </form>                  
+                        <div class="sh-info-grid">
+                            <div class="row g-0">
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('name'); ?></span>
+                                    <span class="sh-info-value highlight"><span id="name"></span> <small class="text-muted">(<span id="employee_id"></span>)</small></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('submitted_by'); ?></span>
+                                    <span class="sh-info-value"><span id="appliedby"></span></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('leave_type'); ?></span>
+                                    <span class="sh-info-value"><span id="leave_type"></span></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('apply_date'); ?></span>
+                                    <span class="sh-info-value"><span id="applied_date"></span></span>
+                                </div>
+                            </div>
+                            <div class="row g-0 sh-row-divider">
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('leave_from_date'); ?></span>
+                                    <span class="sh-info-value"><span id="leave_from"></span></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('leave_to_date'); ?></span>
+                                    <span class="sh-info-value"><span id="leave_to"></span></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('days'); ?></span>
+                                    <span class="sh-info-value"><span id="days"></span></span>
+                                </div>
+                                <div class="col-6 col-md-3 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('reason'); ?></span>
+                                    <span class="sh-info-value"><span id="remark"></span></span>
+                                </div>
+                            </div>
+                            <div class="row g-0 sh-row-divider">
+                                <div class="col-12 sh-info-item">
+                                    <span class="sh-info-label"><?php echo $this->lang->line('download'); ?></span>
+                                    <span class="sh-info-value"><span id="download_file" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="addleave" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content mx-2">
+<div id="addleave" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="addleaveLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_details'); ?></h4>
+                <h5 class="modal-title" id="addleaveLabel"><?php echo $this->lang->line('add_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form role="form" id="addleave_form" method="post" enctype="multipart/form-data" action="">
-                <div class="scroll-area">
+                <div class="pup-scroll-area">
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                                <label><?php echo $this->lang->line('apply_date'); ?></label><small class="req"> *</small>
-                                <input type="text" id="applieddate" name="applieddate" value="<?php echo date($this->customlib->getHospitalDateFormat()) ?>" class="form-control date">
-                            </div>                            
-                            <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-6 ">
-                                <label>
-                                    <?php echo $this->lang->line('leave_type'); ?></label><small class="req"> *</small>
-                                <div id="leavetypeddl">
-                                    <select name="leave_type" id="leave_type" class="form-control">
-                                    </select>
-                                </div>
-                                <span class="text-danger"><?php echo form_error('leave_type'); ?></span>
-                            </div>                            
-                            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                                <label><?php echo $this->lang->line('leave_from_date'); ?></label><small class="req"> *</small>
-                                <div class="input-group">
-                                    <div class="input-group-addon">
-                                        <i class="fa fa-calendar"></i>
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('leave'); ?> <?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('apply_date'); ?></label><small class="req"> *</small>
+                                        <input type="text" id="applieddate" name="applieddate" value="<?php echo date($this->customlib->getHospitalDateFormat()) ?>" class="form-control date">
                                     </div>
-                                    <input type="text" readonly name="leave_from_date" class="form-control pull-right date" id="reservation">
-                                </div>
-                                <!-- /.input group -->
-                            </div>
-                            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                                <label><?php echo $this->lang->line('leave_to_date'); ?></label><small class="req"> *</small>
-                                <div class="input-group">
-                                    <div class="input-group-addon">
-                                        <i class="fa fa-calendar"></i>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('leave_type'); ?></label><small class="req"> *</small>
+                                        <div id="leavetypeddl">
+                                            <select name="leave_type" id="leave_type" class="form-control">
+                                            </select>
+                                        </div>
+                                        <span class="text-danger"><?php echo form_error('leave_type'); ?></span>
                                     </div>
-                                    <input type="text" readonly name="leave_to_date" class="form-control pull-right date" id="reservation">
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('leave_from_date'); ?></label><small class="req"> *</small>
+                                        <div class="input-group">
+                                            <div class="input-group-text sh-cal-trigger" onclick="$('#leave_from_date').focus();">
+                                                <i class="fa fa-calendar"></i>
+                                            </div>
+                                            <input type="text" name="leave_from_date" class="form-control date" id="leave_from_date">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('leave_to_date'); ?></label><small class="req"> *</small>
+                                        <div class="input-group">
+                                            <div class="input-group-text sh-cal-trigger" onclick="$('#leave_to_date').focus();">
+                                                <i class="fa fa-calendar"></i>
+                                            </div>
+                                            <input type="text" name="leave_to_date" class="form-control date" id="leave_to_date">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 col-12">
+                                        <label><?php echo $this->lang->line('reason'); ?></label>
+                                        <textarea name="reason" id="reason" rows="4" class="form-control sh-no-resize"></textarea>
+                                        <input type="hidden" name="leaverequestid" id="leaverequestid">
+                                    </div>
+                                    <div class="mb-3 col-12">
+                                        <label><?php echo $this->lang->line('attach_document'); ?></label>
+                                        <input type="file" id="file" name="userfile" class="filestyle form-control">
+                                        <input type="hidden" id="filename" name="filename">
+                                    </div>
+                                    <div class="clearfix"></div>
                                 </div>
-                                <!-- /.input group -->
-                            </div> 
-                            <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                                <label><?php echo $this->lang->line('reason'); ?></label><br/>
-                                <textarea name="reason" id="reason" style="resize: none;" rows="4" class="form-control"></textarea>
-                                <input type="hidden" name="leaverequestid" id="leaverequestid">
                             </div>
-                            <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                                <label><?php echo $this->lang->line('attach_document'); ?></label>
-                                <input type="file" id="file" name="userfile" class="filestyle form-control">
-                                <input type="hidden" id="filename" name="filename"> 
-                            </div>
-                            <div class="clearfix"></div>                 
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" id="addleave_formbtn" class="btn btn-primary submit_addLeave pull-right mr3" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> <?php echo $this->lang->line('processing'); ?>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    <input type="reset" name="resetbutton" id="resetbutton" style="display:none">
-                    <button type="button" style="display: none;" id="clearform" onclick="clearForm(this.form)" class="btn btn-primary submit_addLeave pull-right" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> <?php echo $this->lang->line('processing'); ?>"> <?php echo $this->lang->line('clear'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+                    <button type="submit" id="addleave_formbtn" class="btn btn-info submit_addLeave" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <input type="reset" name="resetbutton" id="resetbutton" class="d-none">
+                    <button type="button" class="d-none" id="clearform" onclick="clearForm(this.form)" class="btn btn-primary submit_addLeave" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"> <?php echo $this->lang->line('clear'); ?></button>
                 </div>
-            </form> 
+            </form>
         </div>
     </div>
 </div>
@@ -191,14 +213,10 @@
         $("#resetbutton").click();
         $("#clearform").click();
         var leavedate_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'MM', 'Y' => 'yyyy',]) ?>';
-        var date = '<?php echo date("Y-m-d") ?>';
-        $('input[type=text][name=applieddate]').val(new Date(date).toString(leavedate_format));
+        var date = '<?php echo date($this->customlib->getHospitalDateFormat()) ?>';
+        $('input[type=text][name=applieddate]').val(date);
         $(".dropify-clear").trigger("click");
-        $('#addleave').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addleave'),{backdrop:'static',keyboard:false}).show();
     }
 	
     function deleterecord(id) {
@@ -216,6 +234,17 @@
         }
     }
 
+    function shFormatLeaveDate(dateStr, fmt) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        var pad = function (n) { return n < 10 ? '0' + n : n; };
+        return fmt
+            .replace('yyyy', d.getFullYear())
+            .replace('MM', pad(d.getMonth() + 1))
+            .replace('dd', pad(d.getDate()));
+    }
+
     function getRecord(id) {
         $("#download_file").html('');
         $('input:radio[name=status]').attr('checked', false);
@@ -231,32 +260,28 @@
                 $('input[name="leave_request_id"]').val(result.id);
                 $('#employee_id').html(result.employee_id);
                 $('#name').html(result.name + ' ' + result.surname);
-                $('#leave_from').html(new Date(result.leave_from).toString(leavedate_format));
-                $('#leave_to').html(new Date(result.leave_to).toString(leavedate_format));
+                $('#leave_from').html(shFormatLeaveDate(result.leave_from, leavedate_format));
+                $('#leave_to').html(shFormatLeaveDate(result.leave_to, leavedate_format));
                 $('#leave_type').html(result.type);
                 $('#days').html(result.leave_days + ' <?php echo $this->lang->line('days'); ?>');
                 $('#remark').html(result.employee_remark);
-                $('#applied_date').html(new Date(result.date).toString(leavedate_format));
+                $('#applied_date').html(shFormatLeaveDate(result.date, leavedate_format));
                 $('#appliedby').html(result.applied_by);             
                 $("#detailremark").text(result.admin_remark);
                 if (result.document_file != "") {
                     var cl = "<i class='fa fa-download'></i>";
-                    $("#download_file").html('<a href=' + base_url + 'admin/staff/download/' + result.id + '/' + result.staff_id + ' class=btn btn-default btn-xs  data-toggle=tooltip >' + cl + '</a>');
+                    $("#download_file").html('<a href=' + base_url + 'admin/staff/download/' + result.id + '/' + result.staff_id + ' class=btn btn-secondary btn-sm  data-bs-toggle=tooltip >' + cl + '</a>');
                 }
             }
         });
 
-        $('#leavedetails').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('leavedetails'),{backdrop:'static',keyboard:false}).show();
     }
     ;
 
     $(document).on('click', '.submit_schsetting', function (e) {
         var $this = $(this);
-        $this.button('loading');
+        $this.btnLoading();
         $.ajax({
             url: '<?php echo site_url("admin/leaverequest/leaveStatus") ?>',
             type: 'post',
@@ -273,24 +298,24 @@
                     successMsg(data.message);
                     window.location.reload(true);
                 }
-                $this.button('reset');
+                $this.btnReset();
             }
         });
     });
 
     function checkStatus(status) {
         if (status == 'approve') {
-            $("#reason").hide();
+            $("#reason").addClass('d-none');
         } else if (status == 'pending') {
-            $("#reason").hide();
+            $("#reason").addClass('d-none');
         } else if (status == 'disapprove') {
-            $("#reason").show();
+            $("#reason").removeClass('d-none');
         }
     }
 
     $(document).ready(function (e) {
         $("#addleave_form").on('submit', (function (e) {           
-            $("#addleave_formbtn").button('loading');
+            $("#addleave_formbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: "<?php echo site_url("admin/leaverequest/add_staff_leave") ?>",
@@ -312,7 +337,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#addleave_formbtn").button('reset');
+                    $("#addleave_formbtn").btnReset();
                 }
             });
         }));
@@ -403,10 +428,8 @@
                 $('input[name="leavefrom"]').val(new Date(result.leave_from).toString(leavedate_format));
                 $('input[name="filename"]').val(result.document_file);
                 $('input[name="leavedates"]').val(new Date(result.leave_from).toString(leavedate_format) + '-' + new Date(result.leave_to).toString(leavedate_format));
-                $('#reservation').daterangepicker({
-                    startDate: new Date(result.leave_from).toString(leavedate_format),
-                    endDate: new Date(result.leave_to).toString(leavedate_format)
-                });
+                $('#leave_from_date').val(new Date(result.leave_from).toString(leavedate_format));
+                $('#leave_to_date').val(new Date(result.leave_to).toString(leavedate_format));
                 $('input[name="leaverequestid"]').val(id);
                 $('textarea[name="reason"]').text(result.employee_remark);
                 $('textarea[name="remark"]').text(result.admin_remark);
@@ -420,11 +443,7 @@
             }
         });
 
-        $('#addleave').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addleave'),{backdrop:'static',keyboard:false}).show();
     }
     ;
 

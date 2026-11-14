@@ -1,20 +1,9 @@
-<style type="text/css">
-    @media print
-    {
-        .no-print, .no-print *
-        {
-            display: none !important;
-        }
-    }
-</style>
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<!-- Content Header (Page header) -->
 
     <!-- Main content -->
-    <section class="content">
-        <div class="row">
+    <div class="row">
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <ul class="tablists">					
                         <?php if ($this->rbac->hasPrivilege('item_category', 'can_view')) {?>
                             <li><a href="<?php echo base_url(); ?>admin/itemcategory" class="active"><?php echo $this->lang->line('item_category'); ?></a></li>
@@ -31,23 +20,23 @@
 			<?php if ($this->rbac->hasPrivilege('item_category', 'can_view')) {?>
             <div class="col-md-10">
                 <!-- general form elements -->
-                <div class="box box-primary" id="exphead">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('item_category_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="exphead">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('item_category_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('item_category', 'can_add')) {?>
                             <a onclick="addModal()" class="btn btn-primary btn-sm itemcategory"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_item_category'); ?></a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body  ">
+                    </div><!-- /.card-header -->
+                    <div class="card-body  ">
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
                             <div class="download_label"><?php echo $this->lang->line('item_category_list'); ?></div>
-                            <table class="table table-striped table-bordered table-hover example">
+                            <table class="table table-striped table-bordered table-hover example setup-itemcategory-fixed">
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('item_category'); ?></th>
-                                        <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -60,30 +49,34 @@
         ?>
                                             <tr>
                                                 <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover">
-                                                        <?php echo $category['item_category'] ?>
-                                                    </a>
-                                                    <div class="fee_detail_popover" style="display: none">
-                                                    <?php
-                                                    if ($category['description'] == "") { ?>
-                                                        <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
-                                                    <?php
-                                                    } else { ?>
-                                                        <p class="text text-info"><?php echo $category['description']; ?></p>
-                                                     <?php
-                                                    }    ?>
-                                                    </div>
-                                                </td>
-                                                <td class="mailbox-date pull-right noExport">
-                                                    <?php if ($this->rbac->hasPrivilege('item_category', 'can_edit')) {?>
-                                                        <a onclick="get(<?php echo $category['id']; ?>)" data-target="#editmyModal" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
-                                                            <i class="fa fa-pencil"></i>
-                                                        </a>
-                                                    <?php }if ($this->rbac->hasPrivilege('item_category', 'can_delete')) {?>
-                                                        <a class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/itemcategory/delete/<?php echo $category['id'] ?>', '<?php echo $this->lang->line('delete_confirm') ?>')">
-                                                            <i class="fa fa-trash"></i>
-                                                        </a>
-                                                    <?php }?>
+                                                        <span>
+                                                            <a href="#" data-bs-toggle="popover" class="detail_popover">
+                                                                <?php echo $category['item_category'] ?>
+                                                            </a>
+                                                            <div class="fee_detail_popover d-none">
+                                                            <?php
+                                                            if ($category['description'] == "") { ?>
+                                                                <p class="text text-danger"><?php echo $this->lang->line('no_description'); ?></p>
+                                                            <?php
+                                                            } else { ?>
+                                                                <p class="text text-info"><?php echo $category['description']; ?></p>
+                                                            <?php
+                                                            } ?>
+                                                            </div>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <div class="rowoptionview mt-mius0">
+                                                            <?php if ($this->rbac->hasPrivilege('item_category', 'can_edit')) { ?>
+                                                                <a onclick="get(<?php echo $category['id']; ?>)" data-bs-target="#editmyModal" class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                                    <i class="fa fa-pencil"></i>
+                                                                </a>
+                                                            <?php } if ($this->rbac->hasPrivilege('item_category', 'can_delete')) { ?>
+                                                                <a class="btn btn-default btn-sm" data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="delete_recordByIdReload('admin/itemcategory/delete/<?php echo $category['id'] ?>', '<?php echo $this->lang->line('delete_confirm') ?>')">
+                                                                    <i class="fa fa-trash"></i>
+                                                                </a>
+                                                            <?php } ?>
+                                                        </div>
                                                 </td>
                                             </tr>
                                             <?php
@@ -95,83 +88,96 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div>
 			<?php }?>			
         </div>   <!-- /.row -->
-    </section><!-- /.content -->
+    
 </div>
 
 <!-- add multiple data modal -->
-<div class="modal fade" id="addmultiplerow" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header overflow-hidden">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_item_category') ;?></h4> 
+<div class="modal fade sh-modal sh-modal-accent" id="addmultiplerow" tabindex="-1" aria-labelledby="addItemCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemCategoryLabel"><i class="fa fa-plus me-1"></i> <?php echo $this->lang->line('add_item_category'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="form_add_multiple" action="<?php echo site_url('admin/itemcategory/add_multiple_itemcategory') ?>"  class="ptt10"  method="post" accept-charset="utf-8">
-                    <div class="modal-body pt0">                   
-                        <div class="row">
-                            <div class="col-md-12">    
-                                <div class="table-responsive overflow-visible mb0">
-                                    <table class="table table-striped mb0 table-bordered table-hover tablefull12 tblProducts " id="tableID_vitals">
-                                        <thead>
-                                            <tr class="font13 white-space-nowrap">
-                                                <th width="30"><?php echo $this->lang->line('item_category'); ?><small class="req" style="color:red;"> *</small></th>
-                                                <th width="60%"><?php echo $this->lang->line('description'); ?></th>
-                                                <th width="10%"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody  id="set_row">                                       
-                                        </tbody>
-                                    </table>                                
-                                    <a class="btn btn-info addplus-xs" onclick="addrow()" data-added="0"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add')?></a>
-                                </div>                         
+            <form id="form_add_multiple" action="<?php echo site_url('admin/itemcategory/add_multiple_itemcategory') ?>" method="post" accept-charset="utf-8">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('item_category'); ?></span>
                             </div>
-                        </div>    
+                            <div class="table-responsive overflow-visible">
+                                <table class="table tblProducts align-middle mb-0 sh-tbl-transparent" id="tableID_vitals">
+                                    <thead>
+                                        <tr>
+                                            <th><?php echo $this->lang->line('item_category'); ?><small class="req"> *</small></th>
+                                            <th><?php echo $this->lang->line('description'); ?></th>
+                                            <th class="sh-w-44"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="set_row"></tbody>
+                                </table>
+                            </div>
+                            <div class="p-3 pt-2 text-end">
+                                <a class="btn btn-primary btn-sm" onclick="addrow()" data-added="0"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add'); ?></a>
+                            </div>
+                        </div>
                     </div>
+                </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="formadd_multiple_btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
-                </div>          
-            </form>  
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formadd_multiple_btn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 <!-- add multiple data modal -->
 
 
-<div class="modal fade" id="editmyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_item_category'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="editmyModal" tabindex="-1" aria-labelledby="editItemCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editItemCategoryLabel"><i class="fa fa-pencil me-1"></i> <?php echo $this->lang->line('edit_item_category'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editformadd" action="<?php echo site_url('admin/itemcategory/edit') ?>" name="employeeform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="modal-body pt0 pb0">
-                    <div class="ptt10">
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('item_category'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="itemcategory1" name="itemcategory" placeholder="" type="text" class="form-control" />
-                            <span class="text-danger"><?php echo form_error('itemcategory'); ?></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                            <textarea class="form-control" id="description1" name="description" placeholder="" rows="3"><?php echo set_value('description'); ?></textarea>
-                            <span class="text-danger"><?php echo form_error('description'); ?></span>
-                            <input type="hidden" id="cat_id" name="cat_id">
+            <form id="editformadd" action="<?php echo site_url('admin/itemcategory/edit') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input type="hidden" id="cat_id" name="cat_id">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('item_category'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('item_category'); ?> <small class="req">*</small></label>
+                                        <input autofocus id="itemcategory1" name="itemcategory" type="text" class="form-control form-control-sm">
+                                        <span class="text-danger"><?php echo form_error('itemcategory'); ?></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="description1" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
+                                        <span class="text-danger"><?php echo form_error('description'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div><!--./modal-->
+                </div>
                 <div class="modal-footer">
-                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="editformaddbtn" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="editformaddbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
-        </div><!--./row-->
+        </div>
     </div>
 </div>
 
@@ -185,14 +191,18 @@
 
 <script>
     $(document).ready(function () {
-        $('.detail_popover').popover({
-            placement: 'right',
-            trigger: 'hover',
-            container: 'body',
-            html: true,
-            content: function () {
-                return $(this).closest('td').find('.fee_detail_popover').html();
-            }
+        document.querySelectorAll('.detail_popover').forEach(function (el) {
+            new bootstrap.Popover(el, {
+                placement: 'right',
+                trigger: 'hover',
+                container: 'body',
+                html: true,
+                content: function () {
+                    var td = el.closest('td');
+                    var inner = td ? td.querySelector('.fee_detail_popover') : null;
+                    return inner ? inner.innerHTML : '';
+                }
+            });
         });
     });
 </script>
@@ -206,7 +216,7 @@
 
 <script>
     function get(id) {
-        $('#editmyModal').modal('show');
+        shModal('editmyModal').show();
         $.ajax({
             dataType: 'json',
             url: '<?php echo base_url(); ?>admin/itemcategory/get_data/' + id,
@@ -220,7 +230,7 @@
 
     $(document).ready(function (e) {
         $('#editformadd').on('submit', (function (e) {
-            $("#editformaddbtn").button('loading');
+            $("#editformaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -241,7 +251,7 @@
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#editformaddbtn").button('reset');
+                    $("#editformaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -255,11 +265,8 @@
 	});
 
     $(document).ready(function (e) {
-        $('#addmultiplerow,#editmyModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('addmultiplerow');
+        modal_click_disabled('editmyModal');
     });
 </script>
 <script>
@@ -267,7 +274,7 @@ var total_rows=0;
 addrow();
 function addrow(){
     var id = total_rows+1;    
-    var div = "<tr id='name_row_"+id+"'><td><input class='form-control' name='cat_id_"+id+"' id='cat_id_"+id+"' value='' type='hidden' /><input type='hidden' name='total_rows[]' value='" + id + "'><input name='itemcategory_"+id+"' id='itemcategory_"+id+"'  type='text' class='form-control'  /></td><td><input name='description_"+id+"' id='description_"+id+"'  type='text' class='form-control'/></td><td><button type='button' data-rowid='"+id+"' class='closebtn delete_row'><i class='fa fa-remove'></i></button></td></tr>";
+    var div = "<tr id='name_row_"+id+"'><td><input class='form-control form-control-sm' name='cat_id_"+id+"' id='cat_id_"+id+"' value='' type='hidden' /><input type='hidden' name='total_rows[]' value='" + id + "'><input name='itemcategory_"+id+"' id='itemcategory_"+id+"' type='text' class='form-control form-control-sm' /></td><td><input name='description_"+id+"' id='description_"+id+"' type='text' class='form-control form-control-sm'/></td><td class='sh-w-44'><button type='button' data-rowid='"+id+"' class='btn btn-sm btn-outline-secondary delete_row'><i class='fa fa-times'></i></button></td></tr>";
     $('#set_row').append(div);   
     total_rows++;      
 }
@@ -282,7 +289,7 @@ $(document).on('click','.delete_row',function(e){
 
 $(document).ready(function (e) {
         $('#form_add_multiple').on('submit', (function (e) {
-            $("#formadd_multiple_btn").button('loading');
+            $("#formadd_multiple_btn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -306,7 +313,7 @@ $(document).ready(function (e) {
                         successMsg(data.message);
                         window.location.reload(true);
                     }
-                    $("#formadd_multiple_btn").button('reset');
+                    $("#formadd_multiple_btn").btnReset();
                 },
                 error: function () {
 
@@ -316,7 +323,7 @@ $(document).ready(function (e) {
     });
 
   function addModal(){
-        $('#addmultiplerow').modal('show');
+        shModal('addmultiplerow').show();
         $('#form_add_multiple').trigger("reset");
         $('#set_row').html('');
         addrow();

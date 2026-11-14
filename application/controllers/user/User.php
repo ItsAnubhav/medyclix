@@ -6,6 +6,14 @@ if (!defined('BASEPATH')) {
 
 class User extends Patient_Controller
 {
+	public $appointment_status;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $patient_data;
+	public $payment_mode;
+	public $search_type;
+
     public $setting;
     public $payment_method;
 

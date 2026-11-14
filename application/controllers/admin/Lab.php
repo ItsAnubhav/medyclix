@@ -11,19 +11,19 @@ class Lab extends Admin_Controller
     {
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addlab/index');
-        $lab_id = $this->input->post("lab_id");
+        $lab_id = $this->input->post("lab_id", TRUE);
 
         $labName         = $this->lab_model->getlabName();
         $data["labName"] = $labName;
         $this->form_validation->set_rules(
-            'lab_name', $this->lang->line('category_name'), array('required',
+            'lab_name', $this->lang->line('category_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_parameter_name')),
             )
         );
         $data["title"] = $this->lang->line('add_lab');
         if ($this->form_validation->run()) {
-            $labName = $this->input->post("lab_name");
-            $lab_id  = $this->input->post("id");
+            $labName = $this->input->post("lab_name", TRUE);
+            $lab_id  = $this->input->post("id", TRUE);
             if (empty($lab_id)) {
                 if (!$this->rbac->hasPrivilege('lab', 'can_add')) {
                     access_denied();
@@ -43,9 +43,10 @@ class Lab extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/lab/addlab");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'radiology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/radio/lab", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 	
@@ -56,18 +57,18 @@ class Lab extends Admin_Controller
         }
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addlab/index');
-        $unit_id          = $this->input->post("unit_id");
+        $unit_id          = $this->input->post("unit_id", TRUE);
         $unitname         = $this->lab_model->getunit();
         $data["unitname"] = $unitname;
         $this->form_validation->set_rules(
-            'unit_name', $this->lang->line('unit_name'), array('required',
+            'unit_name', $this->lang->line('unit_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_unit_name')),
             )
         );
         $data["title"] = $this->lang->line('add_unit');
         if ($this->form_validation->run()) {
-            $unit_name = $this->input->post("unit_name");
-            $unit_id   = $this->input->post("id");
+            $unit_name = $this->input->post("unit_name", TRUE);
+            $unit_id   = $this->input->post("id", TRUE);
             if (empty($unit_id)) {
 
                 if (!$this->rbac->hasPrivilege('unit_name', 'can_add')) {
@@ -89,9 +90,10 @@ class Lab extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/pathologycategory/addCategory");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'radiology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/radio/unit", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -118,10 +120,10 @@ class Lab extends Admin_Controller
         if (!$this->rbac->hasPrivilege('radiology_unit', 'can_add')) {
             access_denied();
         }
-        $unit_id = $this->input->post("unit_id");
+        $unit_id = $this->input->post("unit_id", TRUE);
 
         $this->form_validation->set_rules(
-            'unit_name', $this->lang->line('unit_name'), array('required',
+            'unit_name', $this->lang->line('unit_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_unit_name')),
             )
         );
@@ -131,7 +133,7 @@ class Lab extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $unitname = $this->input->post("unit_name");
+            $unitname = $this->input->post("unit_name", TRUE);
             $unittype = 'radio';
             if (!empty($unit_id)) {
                 if (!$this->rbac->hasPrivilege('radiology_unit', 'can_edit')) {
@@ -158,20 +160,20 @@ class Lab extends Admin_Controller
         }
         $this->session->set_userdata('top_menu', 'setup');
         $this->session->set_userdata('sub_menu', 'addlab/index');
-        $lab_id                = $this->input->post("lab_id");
+        $lab_id                = $this->input->post("lab_id", TRUE);
         $parameterName         = $this->lab_model->getradioparameter();
         $data["parameterName"] = $parameterName;
         $unitname              = $this->lab_model->getunit();
         $data["unitname"]      = $unitname;
         $this->form_validation->set_rules(
-            'parameter_name', $this->lang->line('parameter_name'), array('required',
+            'parameter_name', $this->lang->line('parameter_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_lab_name')),
             )
         );
         $data["title"] = "Add Lab";
         if ($this->form_validation->run()) {
-            $labName = $this->input->post("lab_name");
-            $lab_id  = $this->input->post("id");
+            $labName = $this->input->post("lab_name", TRUE);
+            $lab_id  = $this->input->post("id", TRUE);
             if (empty($lab_id)) {
                 if (!$this->rbac->hasPrivilege('lab', 'can_add')) {
                     access_denied();
@@ -191,9 +193,10 @@ class Lab extends Admin_Controller
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('record_added_successfully') . '</div>');
             redirect("admin/lab/radioparameter");
         } else {
-            $this->load->view("layout/header");
+            $data['module'] = 'radiology';
+            $this->load->view("layout/header", $data);
             $this->load->view("admin/radio/radioparameter", $data);
-            $this->load->view("layout/footer");
+            $this->load->view("layout/footer", $data);
         }
     }
 
@@ -202,10 +205,10 @@ class Lab extends Admin_Controller
         if (!$this->rbac->hasPrivilege('radiology_category', 'can_add')) {
             access_denied();
         }
-        $labName = $this->input->post("lab_name");
-        $lab_id  = $this->input->post("lab_id");
+        $labName = $this->input->post("lab_name", TRUE);
+        $lab_id  = $this->input->post("lab_id", TRUE);
         $this->form_validation->set_rules(
-            'lab_name', $this->lang->line('category_name'), array('required',
+            'lab_name', $this->lang->line('category_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_lab_name')),
             )
         );
@@ -215,7 +218,7 @@ class Lab extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $medicineCategory = $this->input->post("medicine_category");
+            $medicineCategory = $this->input->post("medicine_category", TRUE);
             if (!empty($lab_id)) {
                 $data  = array('lab_name' => $labName, 'id' => $lab_id);
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -234,23 +237,23 @@ class Lab extends Admin_Controller
         if (!$this->rbac->hasPrivilege('radiology_parameter', 'can_add')) {
             access_denied();
         }
-        $parametername          = $this->input->post("parameter_name");
-        $referencerange         = $this->input->post("from_reference_range")."-".$this->input->post("to_reference_range");
-        $parameter_id           = $this->input->post("parameter_id");
-        $description            = $this->input->post("description");
-        $unit                   = $this->input->post("unit");
-        $from_reference_range   = $this->input->post("from_reference_range");
-        $to_reference_range     = $this->input->post("to_reference_range");
+        $parametername          = $this->input->post("parameter_name", TRUE);
+        $referencerange         = $this->input->post("from_reference_range", TRUE)."-".$this->input->post("to_reference_range", TRUE);
+        $parameter_id           = $this->input->post("parameter_id", TRUE);
+        $description            = $this->input->post("description", TRUE);
+        $unit                   = $this->input->post("unit", TRUE);
+        $from_reference_range   = $this->input->post("from_reference_range", TRUE);
+        $to_reference_range     = $this->input->post("to_reference_range", TRUE);
 
         $this->form_validation->set_rules(
-            'parameter_name', $this->lang->line('parameter_name'), array('required',
+            'parameter_name', $this->lang->line('parameter_name'), array('required', 'xss_clean',
                 array('check_exists', array($this->lab_model, 'valid_parameter_name')),
             )
         );
 
-       $this->form_validation->set_rules('from_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('from'), 'required');
-       $this->form_validation->set_rules('to_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('to'), 'required');
-       $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required');
+       $this->form_validation->set_rules('from_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('from'), 'required|xss_clean');
+       $this->form_validation->set_rules('to_reference_range', $this->lang->line('reference_range').' '.$this->lang->line('to'), 'required|xss_clean');
+       $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required|xss_clean');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -287,9 +290,10 @@ class Lab extends Admin_Controller
         $data["title"]   = $this->lang->line('edit_lab_name');
         $labName         = $this->lab_model->getLabName();
         $data["labName"] = $labName;
-        $this->load->view("layout/header");
+        $data['module'] = 'radiology';
+        $this->load->view("layout/header", $data);
         $this->load->view("admin/radio/lab", $data);
-        $this->load->view("layout/footer");
+        $this->load->view("layout/footer", $data);
     }
 
     public function delete($id)

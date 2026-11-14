@@ -1,18 +1,15 @@
 <?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); ?>
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <?php if ($this->rbac->hasPrivilege('item_stock', 'can_add') || $this->rbac->hasPrivilege('item_stock', 'can_edit')) { ?> 
                 <div class="col-md-4">
                     <!-- Horizontal Form -->
-                    <div class="box box-primary">
-                        <div class="box-header with-border">
-                            <h3 class="box-title"><?php echo $this->lang->line('add_item_stock'); ?></h3>
-                        </div><!-- /.box-header -->
-                        <form id="form1" action="<?php echo base_url() ?>admin/itemstock/edit/<?php echo $item['id'] ?>" id="itemstockform" name="itemstockform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-                            <div class="box-body">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><?php echo $this->lang->line('add_item_stock'); ?></h3>
+                        </div><!-- /.card-header -->
+                        <form id="form1" action="<?php echo base_url() ?>admin/itemstock/edit_new/<?php echo $item['id'] ?>" id="itemstockform" name="itemstockform" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                            <div class="card-body">
                                 <?php if ($this->session->flashdata('msg')) { ?>
                                     <?php echo $this->session->flashdata('msg') ?>
                                 <?php } ?>
@@ -22,7 +19,7 @@
                                 }
                                 ?>
                                 <?php echo $this->customlib->getCSRF(); ?>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('item_category'); ?></label><small class="req"> *</small>
                                     <select autofocus="" id="item_category_id" name="item_category_id" class="form-control" >
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -40,14 +37,14 @@
                                     </select>
                                     <span class="text-danger"><?php echo form_error('item_category_id'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('item'); ?></label><small class="req"> *</small>
                                     <select id="item_id" name="item_id" class="form-control">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                     </select>
                                     <span class="text-danger"><?php echo form_error('item_id'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('supplier'); ?></label>
                                     <select  id="supplier_id" name="supplier_id" class="form-control" >
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -65,7 +62,7 @@
                                     </select>
                                     <span class="text-danger"><?php echo form_error('supplier_id'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('store'); ?></label>
                                     <select  id="store_id" name="store_id" class="form-control" >
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -83,7 +80,7 @@
                                     </select>
                                     <span class="text-danger"><?php echo form_error('store_id'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('quantity'); ?></label><small class="req"> *</small>
                                     <div class="">
                                         <span class="miplus">
@@ -96,29 +93,29 @@
                                     </div>
                                     <span class="text-danger"><?php echo form_error('quantity'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?></label>
                                     <input id="date" name="date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($item['date']))); ?>" readonly="readonly" />
                                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?></label>
                                     <input id="date" name="date" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($item['date']))); ?>" readonly="readonly" />
                                     <span class="text-danger"><?php echo form_error('date'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('attach_document'); ?></label>
                                     <input id="item_photo" name="item_photo" placeholder="" type="file" class="filestyle form-control" value="<?php echo set_value('item_photo'); ?>" />
                                     <span class="text-danger"><?php echo form_error('item_photo'); ?></span>
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                                    <textarea class="form-control" id="description" name="description" placeholder="" rows="3" placeholder="Enter ..."><?php echo set_value('description', $item['description']); ?></textarea>
+                                    <textarea class="form-control" id="description" name="description" placeholder="" rows="3" placeholder="<?= $this->lang->line('enter') ?>"><?php echo set_value('description', $item['description']); ?></textarea>
                                     <span class="text-danger"></span>
                                 </div>
-                            </div><!-- /.box-body -->
-                            <div class="box-footer">
-                                <button type="submit" class="btn btn-info pull-right"><?php echo $this->lang->line('save'); ?></button>
+                            </div><!-- /.card-body -->
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-info float-end"><?php echo $this->lang->line('save'); ?></button>
                             </div>
                         </form>
                     </div>
@@ -133,13 +130,13 @@
             }
             ?>">
                 <!-- general form elements -->
-                <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('item_stock_list'); ?></h3>
-                        <div class="box-tools pull-right">
-                        </div><!-- /.box-tools -->
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"> <?php echo $this->lang->line('item_stock_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                        </div><!-- /.ms-auto d-flex gap-1 -->
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="table-responsive mailbox-messages">
                             <div class="download_label"><?php echo $this->lang->line('item_stock_list'); ?></div>
                             <table class="table table-hover table-striped table-bordered example">
@@ -151,7 +148,7 @@
                                         <th><?php echo $this->lang->line('store'); ?></th>
                                         <th><?php echo $this->lang->line('quantity'); ?></th>
                                         <th><?php echo $this->lang->line('date'); ?></th>
-                                        <th class="text-right"><?php echo $this->lang->line('action'); ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -165,8 +162,8 @@
                                             ?>
                                             <tr>
                                                 <td class="mailbox-name">
-                                                    <a href="#" data-toggle="popover" class="detail_popover"><?php echo $items['name'] ?></a>
-                                                    <div class="fee_detail_popover" style="display: none">
+                                                    <a href="#" data-bs-toggle="popover" class="detail_popover"><?php echo $items['name'] ?></a>
+                                                    <div class="fee_detail_popover d-none">
                                                         <?php
                                                         if ($items['description'] == "") {
                                                             ?>
@@ -181,32 +178,32 @@
                                                     </div>
                                                 </td>
                                                 <td class="mailbox-name">
-                                                    <?php echo $items['item_category']; ?>
+                                                    <?php echo html_escape($items['item_category']); ?>
                                                 </td>
                                                 <td class="mailbox-name">
-                                                    <?php echo $items['item_supplier']; ?>
+                                                    <?php echo html_escape($items['item_supplier']); ?>
                                                 </td>
                                                 <td class="mailbox-name">
-                                                    <?php echo $items['item_store']; ?>
+                                                    <?php echo html_escape($items['item_store']); ?>
                                                 </td>
                                                 <td class="mailbox-name">
-                                                    <?php echo $items['quantity']; ?>
+                                                    <?php echo html_escape($items['quantity']); ?>
                                                 </td>
                                                 <td class="mailbox-name">
                                                     <?php echo date($this->customlib->getHospitalDateFormat(), $this->customlib->dateyyyymmddTodateformat($items['date'])); ?>
                                                 </td>
-                                                <td class="mailbox-date pull-right">
+                                                <td class="mailbox-date float-end">
                                                     <?php if ($items['attachment']) {
                                                         ?>
-                                                        <a href="<?php echo base_url(); ?>admin/itemstock/download/<?php echo $items['attachment'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>">
+                                                        <a href="<?php echo base_url(); ?>admin/itemstock/download/<?php echo html_escape($items['attachment']) ?>" class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('download'); ?>">
                                                             <i class="fa fa-download"></i>
                                                         </a>
                                                     <?php }
                                                     ?>
-                                                    <a href="<?php echo base_url(); ?>admin/itemstock/edit/<?php echo $items['id'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
+                                                    <a href="<?php echo base_url(); ?>admin/itemstock/edit/<?php echo $items['id'] ?>" class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('edit'); ?>">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <a href="<?php echo base_url(); ?>admin/itemstock/delete/<?php echo $items['id'] ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
+                                                    <a href="<?php echo base_url(); ?>admin/itemstock/delete/<?php echo $items['id'] ?>" class="btn btn-secondary btn-sm"  data-bs-toggle="tooltip" title="<?php echo $this->lang->line('delete'); ?>" onclick="return confirm('<?php echo $this->lang->line('delete_confirm') ?>');">
                                                         <i class="fa fa-remove"></i>
                                                     </a>
                                                 </td>
@@ -218,13 +215,13 @@
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <!-- right column -->
         </div>        
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 
 <script type="text/javascript">
     $(document).ready(function (){
@@ -262,10 +259,7 @@
 
         var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
 		
-        $('#date').datepicker({
-            format: date_format,
-            autoclose: true
-        });
+        /* #date init removed - auto-init via class + event delegation */
 
         $("#btnreset").click(function () {
             $("#form1")[0].reset();

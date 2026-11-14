@@ -6,12 +6,15 @@ if (!defined('BASEPATH')) {
 
 class Expense extends Admin_Controller
 {
+	public $search_type;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->load->library('Customlib');
         $this->load->library("datatables");
+        $this->load->library("SaasValidation");
         $this->config->load("payroll");
         $this->config->load("image_valid");
         $this->load->model("transaction_model");
@@ -37,6 +40,7 @@ class Expense extends Admin_Controller
         $data['fields']      = $this->customfield_model->get_custom_fields('expenses', 1);
         $expnseHead          = $this->expensehead_model->get();
         $data['expheadlist'] = $expnseHead;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/expense/expenseList', $data);
         $this->load->view('layout/footer', $data);
@@ -44,6 +48,9 @@ class Expense extends Admin_Controller
 
     public function getDatatable()
     {
+        if (!$this->rbac->hasPrivilege('expense', 'can_view')) {
+            access_denied();
+        }
         $dt_response = $this->expense_model->getAllRecord();
         $fields      = $this->customfield_model->get_custom_fields('expenses', 1);
         $dt_response = json_decode($dt_response);
@@ -54,41 +61,33 @@ class Expense extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $column_first = '<a href="#" data-toggle="popover" class="detail_popover">' . $value->name . '</a>';
-                $column_first .= '<div class="rowoptionview rowview-mt-19">';
+                $column_first  = '<a href="#" data-bs-toggle="popover" class="detail_popover">' . html_escape($value->name) . '</a>';
+                $column_first .= '<div class="fee_detail_popover" style="display: none">';
+                if ($value->note == "") {
+                    $column_first .= '<p class="text text-danger">' . $this->lang->line('no_description') . '</p>';
+                } else {
+                    $column_first .= '<p class="text text-info">' . html_escape($value->note) . '</p>';
+                }
+                $column_first .= '</div>';
 
+                $action = '';
                 if ($value->documents) {
-
-                    $column_first .= '<a href="' . base_url() . 'admin/expense/download/' . $value->id . '" class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('download') . '"><i class="fa fa-download"></i></a>';
+                    $action .= '<a href="' . base_url() . 'admin/expense/download/' . $value->id . '" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('download') . '"><i class="fa fa-download"></i></a>';
                 }
 
                 if ($this->rbac->hasPrivilege('expense', 'can_edit')) {
-
-                    $column_first .= '<a  onclick="edit(' . $value->id . ')" class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('edit') . '"> <i class="fa fa-pencil"></i> </a>';
+                    $action .= '<a href="#" onclick="edit(' . $value->id . ')" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('edit') . '"><i class="fa fa-pencil"></i></a>';
                 }
+
                 if ($this->rbac->hasPrivilege('expense', 'can_delete')) {
-
-                    $column_first .= '<a class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('delete') . '" onclick="delete_record(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
+                    $action .= '<a href="#" onclick="delete_record(' . $value->id . ')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('delete') . '"><i class="fa fa-trash"></i></a>';
                 }
-                $column_first .= '</div>';
-                $column_first .= '<div class="fee_detail_popover" style="display: none">';
-
-                if ($value->note == "") {
-
-                    $column_first .= '<p class="text text-danger">' . $this->lang->line('no_description') . '</p>';
-
-                } else {
-
-                    $column_first .= '<p class="text text-info">' . $value->note . '</p>';
-                }
-
-                $column_first .= '</div>';
                 //==============================
 
                 $row[] = $column_first;
                 $row[] = $value->invoice_no;
                 $row[] = $this->customlib->YYYYMMDDTodateFormat($value->date);
-                $row[] = $value->note;
+                $row[] = html_escape($value->note);
                 $row[] = $value->exp_category;
                 $row[] = composeStaffNameByString($value->generated_byname, $value->generated_bysurname, $value->generated_byemployee_id);
                 //====================
@@ -104,6 +103,7 @@ class Expense extends Admin_Controller
                 }
                 //====================
                 $row[]     = $value->amount;
+                $row[]     = "<div class='white-space-nowrap'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -125,14 +125,14 @@ class Expense extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[expenses][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[expenses][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $this->form_validation->set_rules('exp_head_id', $this->lang->line('expense_head'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean|valid_amount');
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('exdate', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload'); 
+        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[documents]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'exp_head_id' => form_error('exp_head_id'),
@@ -160,13 +160,13 @@ class Expense extends Admin_Controller
         } else {
             $exdate = $this->input->post('exdate');
             $data   = array(
-                'exp_head_id'  => $this->input->post('exp_head_id'),
-                'name'         => $this->input->post('name'),
+                'exp_head_id'  => $this->input->post('exp_head_id', TRUE),
+                'name'         => $this->input->post('name', TRUE),
                 'date'         => $this->customlib->dateFormatToYYYYMMDD($exdate),
-                'amount'       => $this->input->post('amount'),
-                'invoice_no'   => $this->input->post('invoice_no'),
-                'note'         => $this->input->post('description'),
-                'documents'    => $this->input->post('documents'),
+                'amount'       => $this->input->post('amount', TRUE),
+                'invoice_no'   => $this->input->post('invoice_no', TRUE),
+                'note'         => $this->input->post('description', TRUE),
+                'documents'    => $this->input->post('documents', TRUE),
                 'generated_by' => $this->customlib->getLoggedInUserID(),
             );
             $custom_field_post  = $this->input->post("custom_fields[expenses]");
@@ -190,9 +190,18 @@ class Expense extends Admin_Controller
 
             if (isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
                 $file_name = $this->media_storage->fileupload("documents",'./uploads/hospital_expense/');
-                $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_expense/'.$file_name);
-                $this->expense_model->add($data_img);
-            }   
+                if (!IsNullOrEmptyString($file_name)) {
+                    $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_expense/'.$file_name);
+                    $this->expense_model->add($data_img);
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['documents']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (expense add): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -246,6 +255,7 @@ class Expense extends Admin_Controller
         $data['title']   = $this->lang->line('fees_master_list');
         $expense         = $this->expense_model->get($id);
         $data['expense'] = $expense;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('expense/expenseShow', $data);
         $this->load->view('layout/footer', $data);
@@ -257,6 +267,21 @@ class Expense extends Admin_Controller
             access_denied();
         }
         $data['title'] = $this->lang->line('fees_master_list');
+
+        // SaaS: release the document's storage from the quota and remove the file.
+        $row = $this->expense_model->get($id);
+        if (!empty($row['documents'])) {
+            $file_size_kb = $this->media_storage->getUploadedFileSize($row['documents']);
+            if ($file_size_kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $file_size_kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (expense delete): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($row['documents'], '');
+        }
+
         $this->expense_model->remove($id);
         redirect('admin/expense/index');
     }
@@ -267,8 +292,9 @@ class Expense extends Admin_Controller
             access_denied();
         }
         $data['title'] = $this->lang->line('add_fees_master');
-        $this->form_validation->set_rules('expense', 'Fees Master', 'trim|required|xss_clean');
+        $this->form_validation->set_rules('expense', $this->lang->line('expense'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'finance';
             $this->load->view('layout/header', $data);
             $this->load->view('expense/expenseCreate', $data);
             $this->load->view('layout/footer', $data);
@@ -282,8 +308,22 @@ class Expense extends Admin_Controller
         }
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
     public function getDataByid($id)
     {
+        if (!$this->rbac->hasPrivilege('expense', 'can_view')) {
+            access_denied();
+        }
         $data['title']       = $this->lang->line('edit_fees_master');
         $data['id']          = $id;
         $expense             = $this->expense_model->get($id);
@@ -316,13 +356,13 @@ class Expense extends Admin_Controller
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
 
-                    $this->form_validation->set_rules("custom_fields[expenses][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[expenses][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
 
                 }
             }
         }
         $this->form_validation->set_rules('exp_head_id', $this->lang->line('expense_head'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[documents]');
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
@@ -355,12 +395,12 @@ class Expense extends Admin_Controller
             $custom_field_post = $this->input->post("custom_fields[expenses]");
             $data              = array(
                 'id'           => $id,
-                'exp_head_id'  => $this->input->post('exp_head_id'),
-                'name'         => $this->input->post('name'),
-                'invoice_no'   => $this->input->post('invoice_no'),
+                'exp_head_id'  => $this->input->post('exp_head_id', TRUE),
+                'name'         => $this->input->post('name', TRUE),
+                'invoice_no'   => $this->input->post('invoice_no', TRUE),
                 'date'         => $this->customlib->dateFormatToYYYYMMDD($exdate),
-                'amount'       => $this->input->post('amount'),
-                'note'         => $this->input->post('description'),
+                'amount'       => $this->input->post('amount', TRUE),
+                'note'         => $this->input->post('description', TRUE),
                 'generated_by' => $this->customlib->getLoggedInUserID(),
             );
             $insert_id = $this->expense_model->add($data);
@@ -379,10 +419,33 @@ class Expense extends Admin_Controller
             }
             
             if (isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
+                // Size of the document being replaced, for quota diff calculation.
+                $existing     = $this->expense_model->get($id);
+                $prev_size_kb = (!empty($existing['documents'])) ? $this->media_storage->getUploadedFileSize($existing['documents']) : 0;
+
                 $file_name = $this->media_storage->fileupload("documents",'./uploads/hospital_expense/');
-                $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_expense/'.$file_name);
-                $this->expense_model->add($data_img);
-            }   
+                if (!IsNullOrEmptyString($file_name)) {
+                    // Remove the old physical file that is being replaced.
+                    if (!empty($existing['documents'])) {
+                        $this->media_storage->filedelete($existing['documents'], '');
+                    }
+
+                    $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_expense/'.$file_name);
+                    $this->expense_model->add($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_size_kb = $this->media_storage->getTmpFileSize('documents');
+                        if ($prev_size_kb > $new_size_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $prev_size_kb - $new_size_kb);
+                        } elseif ($new_size_kb > $prev_size_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_size_kb - $prev_size_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (expense edit): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('expense_edit_successfully'));
         }
@@ -423,6 +486,7 @@ class Expense extends Admin_Controller
         $data["searchlist"]  = $this->search_type;
         $data["search_type"] = $search_type;
         $data['fields']      = $this->customfield_model->get_custom_fields('expenses', '', '', 1);
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/expense/expenseSearch', $data);
         $this->load->view('layout/footer', $data);
@@ -454,6 +518,9 @@ class Expense extends Admin_Controller
 
     public function expensereports()
     {
+        if (!$this->rbac->hasPrivilege('expense_report', 'can_view')) {
+            access_denied();
+        }
 
         $search['search_type'] = $this->input->post('search_type');
         $search['date_from']   = $this->input->post('date_from');
@@ -558,6 +625,7 @@ class Expense extends Admin_Controller
         $result              = $this->expense_model->searchexpensegroup($search_type, $head_id);
         $data['headlist']    = $this->expensehead_model->get();
         $data['expenselist'] = $result;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/expense/groupexpenseReport', $data);
         $this->load->view('layout/footer', $data);

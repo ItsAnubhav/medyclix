@@ -181,7 +181,7 @@ class Referral_payment_model extends MY_Model
     }
 
     public function check_billid($billing_id){
-        $query = $this->db->query('select billing_id from referral_payment where billing_id='.$this->db->escape($billing_id)); 
+        $query = $this->db->select('billing_id')->where('billing_id', $billing_id)->get('referral_payment');
         return $query->num_rows();
     }
 }

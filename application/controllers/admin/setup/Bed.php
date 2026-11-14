@@ -34,7 +34,7 @@ class Bed extends Admin_Controller
     public function add()
     {
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->bed_model, 'valid_bed')),
             )
         );
@@ -51,9 +51,9 @@ class Bed extends Admin_Controller
         } else {
 
             $bed = array(
-                'name'         => $this->input->post('name'),
-                'bed_type_id'  => $this->input->post('bed_type'),
-                'bed_group_id' => $this->input->post('bed_group'),
+                'name'         => $this->input->post('name', TRUE),
+                'bed_type_id'  => $this->input->post('bed_type', TRUE),
+                'bed_group_id' => $this->input->post('bed_group', TRUE),
             );
 
             if (isset($_POST['mark_as_unused'])) {
@@ -72,11 +72,11 @@ class Bed extends Admin_Controller
     {
 
         $this->form_validation->set_rules(
-            'name', $this->lang->line('name'), array('required',
+            'name', $this->lang->line('name'), array('required', 'xss_clean',
                 array('check_exists', array($this->bed_model, 'valid_bed')),
             )
         );
-        $bed_status = $this->input->post('bedstatus');
+        $bed_status = $this->input->post('bedstatus', TRUE);
         $this->form_validation->set_rules('bed_type', $this->lang->line('bed_type'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('bed_group', $this->lang->line('bed_group'), 'trim|required|xss_clean');
         $mark_as_unused = "";
@@ -101,10 +101,10 @@ class Bed extends Admin_Controller
         } else {
 
             $bed = array(
-                'id'           => $this->input->post('bedid'),
-                'name'         => $this->input->post('name'),
-                'bed_type_id'  => $this->input->post('bed_type'),
-                'bed_group_id' => $this->input->post('bed_group'),
+                'id'           => $this->input->post('bedid', TRUE),
+                'name'         => $this->input->post('name', TRUE),
+                'bed_type_id'  => $this->input->post('bed_type', TRUE),
+                'bed_group_id' => $this->input->post('bed_group', TRUE),
             );
             if ($mark_as_unused != "") {
                 $bed['is_active'] = $mark_as_unused;
@@ -130,10 +130,10 @@ class Bed extends Admin_Controller
 
     public function getbedbybedgroup()
     {
-        $bed_group = $this->input->post('bed_group');
+        $bed_group = $this->input->post('bed_group', TRUE);
 
-        $active = $this->input->post('active');
-        $bed_id = $this->input->post('bed_id');
+        $active = $this->input->post('active', TRUE);
+        $bed_id = $this->input->post('bed_id', TRUE);
         $result = $this->bed_model->getbedbybedgroup($bed_group, $active, $bed_id);
             
         echo json_encode($result);
@@ -163,7 +163,7 @@ class Bed extends Admin_Controller
 
     public function checkbed()
     {
-        $bedid  = $this->input->post('bed_id');
+        $bedid  = $this->input->post('bed_id', TRUE);
         $result = $this->bed_model->checkbed($bedid);
         if ($result) {
             $json_array = array('status' => 'success', 'error' => '', 'message' => '');

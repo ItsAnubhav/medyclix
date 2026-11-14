@@ -5,6 +5,8 @@ if (!defined('BASEPATH'))
 
 class Sslcommerz extends Patient_Controller
 {
+	public $setting;
+
 
     public $pay_method = "";
     public $amount = 0;
@@ -97,7 +99,7 @@ class Sslcommerz extends Patient_Controller
         	} 
         
         $ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php');
+		curl_setopt($ch, CURLOPT_URL, 'https://securepay.sslcommerz.com/gwprocess/v4/api.php');
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, "$string");

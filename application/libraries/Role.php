@@ -5,6 +5,8 @@ if (!defined('BASEPATH'))
 
 class Role {
 
+    public $CI;
+
     public function __construct() {
         $this->CI = & get_instance();
         $this->CI->student_login_prefix = "std";

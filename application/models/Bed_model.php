@@ -274,7 +274,6 @@ class Bed_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
         return $insert_id;
 
@@ -282,6 +281,9 @@ class Bed_model extends MY_Model
 
     public function updateBedHistory($bed_history)
     {
+        if (empty($bed_history['case_reference_id'])) {
+            return;
+        }
         $this->db->update("patient_bed_history", $bed_history, array("is_active" => "yes", "case_reference_id" => $bed_history['case_reference_id']));
 
         $message   = UPDATE_RECORD_CONSTANT . " On Patient Bed History id " . $bed_history['case_reference_id'];
@@ -304,6 +306,27 @@ class Bed_model extends MY_Model
     public function updateBedHistoryStatus($case_reference_id)
     {
         $this->db->update("patient_bed_history", array("is_active" => "no"), array("case_reference_id" => $case_reference_id));
+    }
+
+    /**
+     * Dashboard widget: total + currently-occupied bed counts.
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getBedOccupancyStats()
+    {
+        // bed.is_active is an availability status, not an existence flag:
+        //   'yes' = available, 'no' = allotted (occupied), 'unused' = disabled.
+        // Mirror the Bed Status page (setup/bedStatus.php) so the dashboard matches it exactly.
+        // Capacity = available + allotted (exclude 'unused'); occupied = allotted only.
+        $available = $this->db->where('is_active', 'yes')->count_all_results('bed');
+        $occupied  = $this->db->where('is_active', 'no')->count_all_results('bed');
+        $unused    = $this->db->where('is_active', 'unused')->count_all_results('bed');
+        return array(
+            'total'     => (int)($available + $occupied),
+            'occupied'  => (int)$occupied,
+            'available' => (int)$available,
+            'unused'    => (int)$unused,
+        );
     }
 
 }

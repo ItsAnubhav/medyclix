@@ -33,9 +33,10 @@ class Events extends Admin_Controller
         $event_content      = $this->config->item('ci_front_event_content');
         $listResult         = $this->cms_program_model->getByCategory($event_content);
         $data['listResult'] = $listResult;
-        $this->load->view('layout/header');
+        $data['module'] = 'front_cms';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/front/events/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function create()
@@ -47,35 +48,40 @@ class Events extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'admin/front/events');
         $data['title']      = 'Add Book';
         $data['title_list'] = 'Book Details';
-        $this->form_validation->set_rules('title', $this->lang->line('title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('start_date', $this->lang->line('start_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('end_date', $this->lang->line('event_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|required');
+        $this->form_validation->set_rules('title',            $this->lang->line('title'),       'trim|required|xss_clean');
+        $this->form_validation->set_rules('start_date',       $this->lang->line('start_date'),  'trim|required|xss_clean');
+        $this->form_validation->set_rules('end_date',         $this->lang->line('event_date'),  'trim|required|xss_clean');
+        $this->form_validation->set_rules('description',      $this->lang->line('description'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('venue',            $this->lang->line('venue'),       'trim|xss_clean');
+        $this->form_validation->set_rules('meta_title',       $this->lang->line('meta_title'),                     'trim|xss_clean');
+        $this->form_validation->set_rules('meta_keywords',    $this->lang->line('meta_keywords'),                  'trim|xss_clean');
+        $this->form_validation->set_rules('meta_description', $this->lang->line('meta_description'),               'trim|xss_clean');
         if ($this->form_validation->run() == false) {
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/events/create', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
-            $category = $this->input->post('content_category');
+            $category = $this->input->post('content_category', TRUE);
             if (isset($category)) {
                 $contents_category = $category;
             } else {
                 $contents_category = "";
             }
             $data = array(
-                'title'            => $this->input->post('title'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'event_start'      => $this->customlib->dateFormatToYYYYMMDD($this->input->post('start_date')),
-                'event_end'        => $this->customlib->dateFormatToYYYYMMDD($this->input->post('end_date')),
-                'event_venue'      => $this->input->post('venue'),
-                'feature_image'    => $this->input->post('image'),
-                'sidebar'          => $this->input->post('sidebar'),
-                'sidebar'          => $this->input->post('sidebar'),
+                'title'            => $this->input->post('title', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'event_start'      => $this->customlib->dateFormatToYYYYMMDD($this->input->post('start_date', TRUE)),
+                'event_end'        => $this->customlib->dateFormatToYYYYMMDD($this->input->post('end_date', TRUE)),
+                'event_venue'      => $this->input->post('venue', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
                 'type'             => $this->config->item('ci_front_event_content'),
-                'meta_description' => $this->input->post('meta_description'),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
             $data['slug'] = $this->slug->create_uri($data);
             $data['url']  = $this->config->item('ci_front_page_read_url') . $data['slug'];
@@ -87,7 +93,7 @@ class Events extends Admin_Controller
 
     public function delete_image()
     {
-        $delte_image = $this->input->post('id');
+        $delte_image = $this->input->post('id', TRUE);
         if ($delte_image == "" && !isset($delte_image)) {
 
         } else {
@@ -100,8 +106,8 @@ class Events extends Admin_Controller
 
     public function enableFeatured()
     {
-        $id        = $this->input->post('id');
-        $record_id = $this->input->post('record_id');
+        $id        = $this->input->post('id', TRUE);
+        $record_id = $this->input->post('record_id', TRUE);
         if ($id == "" && !isset($id)) {
 
         } else {
@@ -129,7 +135,7 @@ class Events extends Admin_Controller
 
                         foreach ($responses["images"] as $response) {
                             $data = array(
-                                'program_id' => $this->input->post('record_id'),
+                                'program_id' => $this->input->post('record_id', TRUE),
                                 'image'      => $response['file_name'],
                                 'thumb_path' => $response['thumb_path'],
                                 'dir_path'   => $response['dir_path'],
@@ -163,33 +169,38 @@ class Events extends Admin_Controller
         $result             = $this->cms_program_model->getBySlug($slug);
 
         $data['result'] = $result;
-        $this->form_validation->set_rules('title', $this->lang->line('title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('start_date', $this->lang->line('start_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('end_date', $this->lang->line('event_date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|required');
+        $this->form_validation->set_rules('title',            $this->lang->line('title'),       'trim|required|xss_clean');
+        $this->form_validation->set_rules('start_date',       $this->lang->line('start_date'),  'trim|required|xss_clean');
+        $this->form_validation->set_rules('end_date',         $this->lang->line('event_date'),  'trim|required|xss_clean');
+        $this->form_validation->set_rules('description',      $this->lang->line('description'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('venue',            $this->lang->line('venue'),       'trim|xss_clean');
+        $this->form_validation->set_rules('meta_title',       $this->lang->line('meta_title'),                     'trim|xss_clean');
+        $this->form_validation->set_rules('meta_keywords',    $this->lang->line('meta_keywords'),                  'trim|xss_clean');
+        $this->form_validation->set_rules('meta_description', $this->lang->line('meta_description'),               'trim|xss_clean');
         if ($this->form_validation->run() == false) {
 
-            $this->load->view('layout/header');
+            $data['module'] = 'front_cms';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/front/events/edit', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
 
             $data = array(
-                'id'               => $this->input->post('id'),
-                'title'            => $this->input->post('title'),
-                'description'      => htmlspecialchars_decode($this->input->post('description')),
-                'meta_title'       => $this->input->post('meta_title'),
-                'meta_keyword'     => $this->input->post('meta_keywords'),
-                'event_start'      => $this->customlib->dateFormatToYYYYMMDD($this->input->post('start_date')),
-                'event_end'        => $this->customlib->dateFormatToYYYYMMDD($this->input->post('end_date')),
-                'event_venue'      => $this->input->post('venue'),
-                'feature_image'    => $this->input->post('image'),
-                'sidebar'          => $this->input->post('sidebar'),
+                'id'               => $this->input->post('id', TRUE),
+                'title'            => $this->input->post('title', TRUE),
+                'description'      => htmlspecialchars_decode($this->security->xss_clean($this->input->post('description'))),
+                'meta_title'       => $this->input->post('meta_title', TRUE),
+                'meta_keyword'     => $this->input->post('meta_keywords', TRUE),
+                'event_start'      => $this->customlib->dateFormatToYYYYMMDD($this->input->post('start_date', TRUE)),
+                'event_end'        => $this->customlib->dateFormatToYYYYMMDD($this->input->post('end_date', TRUE)),
+                'event_venue'      => $this->input->post('venue', TRUE),
+                'feature_image'    => $this->input->post('image', TRUE),
+                'sidebar'          => $this->input->post('sidebar', TRUE),
                 'type'             => $this->config->item('ci_front_event_content'),
-                'meta_description' => $this->input->post('meta_description'),
+                'meta_description' => $this->input->post('meta_description', TRUE),
             );
 
-            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id'));
+            $data['slug'] = $this->slug->create_uri($data, $this->input->post('id', TRUE));
             $data['url']  = $this->config->item('ci_front_page_read_url') . $data['slug'];
             $this->cms_program_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">Event updated successfully</div>');

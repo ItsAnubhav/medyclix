@@ -1,23 +1,10 @@
 
-<div class="content-wrapper" style="min-height: 946px;">  
-    <section class="content-header">
-        <h1>
-            <i class="fa fa-warning"></i> <?php echo $this->lang->line('access_denied'); ?></h1>
-    </section>
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- general form elements -->
-                <div class="box box-primary">
-
-                    <div class="box-body">
-                        <div class="alert alert-warning"><?php echo $this->lang->line('not_authoried'); ?></div>
-
-                    </div>
-                    <!-- /.box-body -->
-                </div>
-                <!-- /.box -->
-            </div>
-        </div>
-    </section>
+<div class="container-fluid py-3">
+    <div class="page-header d-flex align-items-center gap-2 mb-3">
+        <i class="fa fa-warning text-warning"></i>
+        <h4 class="mb-0"><?php echo $this->lang->line('access_denied'); ?></h4>
+    </div>
+    <div class="alert alert-warning">
+        <?php echo $this->lang->line('not_authoried'); ?>
+    </div>
 </div>

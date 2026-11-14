@@ -2,26 +2,23 @@
 $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
 $genderList = $this->customlib->getGender();
 ?>
-<div class="content-wrapper"> 
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
            <?php $this->load->view('setting/sidebar.php'); ?>
             
             <div class="col-md-10">
-               <div class="box box-primary">
-                    <div class="box-header ptbnull">
-                    <h3 class="box-title titlefix"> <?php echo $this->lang->line('general_settings'); ?></h3>
-                        <div class="box-tools pull-right">
+               <div class="card">
+                    <div class="card-header ptbnull">
+                    <h3 class="card-title titlefix"> <?php echo $this->lang->line('general_settings'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                         </div><!-- /.box-tools -->
                     </div><!-- /.box-header -->
                     <div class="">
                         <form role="form" id="schsetting_form" action="<?php echo site_url('schsettings/ajax_schedit') ?>" class="" method="post" enctype="multipart/form-data">
-                            <div class="box-body">
+                            <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group row">
-                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital') . " " . $this->lang->line('name'); ?><small class="req"> *</small></label>
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital_name') ; ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" id="name" name="sch_name" value="<?php echo $settinglist[0]['name'] ?>">
                                                 <span class="text-danger"><?php echo form_error('name'); ?></span> <input type="hidden" name="sch_id" value="<?php echo $settinglist[0]['id']; ?>">
@@ -30,8 +27,8 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
-                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital') . " " . $this->lang->line('code') ?></label>
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital_code'); ?></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" id="dise_code" name="sch_dise_code"  value="<?php echo $settinglist[0]['dise_code'] ?>">
                                                 <span class="text-danger"><?php echo form_error('dise_code'); ?></span>
@@ -41,7 +38,7 @@ $genderList = $this->customlib->getGender();
                                 </div><!--./row-->
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-2"><?php echo $this->lang->line('address'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-10">
                                                 <input type="text" class="form-control" id="address" name="sch_address" value="<?php echo $settinglist[0]['address'] ?>"> <span class="text-danger"><?php echo form_error('address'); ?></span>
@@ -51,7 +48,7 @@ $genderList = $this->customlib->getGender();
                                 </div><!--./row-->
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('phone'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" id="phone" name="sch_phone" value="<?php echo $settinglist[0]['phone'] ?>"><span class="text-danger"><?php echo form_error('phone'); ?></span>
@@ -59,7 +56,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('email'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control"  id="email" name="sch_email" value="<?php echo $settinglist[0]['email'] ?>">
@@ -71,27 +68,27 @@ $genderList = $this->customlib->getGender();
                                 <hr/>
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group row">
-                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital')." ".$this->lang->line('logo') ?><small class="req"> *</small></label>
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital_logo'); ?><small class="req"> *</small></label>
                                          <?php
                                             if ($settinglist[0]['image'] == "") {
                                                 ?>
-                                                <img src="<?php echo $this->media_storage->getImageURL("uploads/hospital_content/logo/images.png") ?>" class="" alt="" style="height: 15px;">
+                                                <img src="<?php echo $this->media_storage->getImageURL("uploads/hospital_content/logo/images.png") ?>" class="" alt="" class="sh-img-h15">
                                                 <?php
                                             } else {
                                                 ?>
-                                                <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/'.$settinglist[0]['image']) ?>" class="" alt="" style="height: 15px;margin-top: 5px;">
+                                                <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/'.$settinglist[0]['image']) ?>" class="" alt="" class="sh-img-h15-mt5">
                                                 <?php
                                             }
                                             ?>&nbsp;
                                            <?php if ($this->rbac->hasPrivilege('general_setting', 'can_edit')) { ?>
-				                            <a href="#schsetting" role="button" class="btn btn-primary btn-sm upload_logo pull-right"   data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit_logo'); ?></a>
+				                            <a href="#schsetting" role="button" class="btn btn-primary btn-sm upload_logo float-end"   data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit_logo'); ?></a>
 				                        <?php } ?>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                         <div class="form-group row">
-                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital')." ".$this->lang->line('small')." ".$this->lang->line('logo') ?><small class="req"> *</small></label>
+                                         <div class="mb-3 row">
+                                            <label class="col-sm-4"><?php echo $this->lang->line('hospital_small_logo'); ?><small class="req"> *</small></label>
                                             <?php
                                             if ($settinglist[0]['mini_logo'] == "") {
                                                 ?>
@@ -104,7 +101,7 @@ $genderList = $this->customlib->getGender();
                                             }
                                             ?>
                                              &nbsp; <?php if ($this->rbac->hasPrivilege('general_setting', 'can_edit')) { ?>
-					                            <a href="#" role="button" class="btn btn-primary btn-sm upload_minilogo pull-right"  data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit') . " " . $this->lang->line('small') . " " . $this->lang->line('logo'); ?></a>
+					                            <a href="#" role="button" class="btn btn-primary btn-sm upload_minilogo float-end"  data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit_small_logo') ; ?></a>
 					                        <?php } ?>
                                         </div>
                                     </div>
@@ -116,7 +113,7 @@ $genderList = $this->customlib->getGender();
                                     </div><!--./col-md-12-->
 
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('language'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <select  id="language_id" name="sch_lang_id" class="form-control" >
@@ -134,7 +131,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-6"><?php echo $this->lang->line('language_rtl_text_mode'); ?></label>
                                             <div class="col-sm-6">
                                                <label class="radio-inline">
@@ -155,7 +152,7 @@ $genderList = $this->customlib->getGender();
                                         <h4 class="session-head"><?php echo $this->lang->line('date') . " " . $this->lang->line('time'); ?></h4>
                                     </div><!--./col-md-12-->
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('date_format'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <select  id="date_format" name="sch_date_format"  class="form-control" >
@@ -173,7 +170,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('time_zone'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <select  id="language_id" name="sch_timezone" class="form-control" >
@@ -198,7 +195,7 @@ $genderList = $this->customlib->getGender();
                                         <h4 class="session-head"><?php echo $this->lang->line('currency') ?></h4>
                                     </div><!--./col-md-12-->
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('currency'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                 <select  id="currency" name="sch_currency" class="form-control" >
@@ -216,7 +213,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('currency_symbol'); ?><small class="req"> *</small></label> 
                                             <div class="col-sm-8">
                                                   <input id="currency_symbol" name="sch_currency_symbol" placeholder="" type="text" class="form-control" value="<?php echo $settinglist[0]['currency_symbol'] ?>" />
@@ -225,7 +222,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('credit_limit'); ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                   <input id="credit_limit" name="credit_limit" placeholder="" type="text" class="form-control" value="<?php echo $settinglist[0]['credit_limit']; ?>" />
@@ -234,7 +231,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-4"><?php echo $this->lang->line('time_format') ?><small class="req"> *</small></label>
                                             <div class="col-sm-8">
                                                   <select  id="time_format" name="time_format" class="form-control" >
@@ -259,7 +256,7 @@ $genderList = $this->customlib->getGender();
                                             <h4 class="session-head"><?php echo $this->lang->line('mobile_app'); ?></h4>
                                             <?php if (!$app_ver) {
                                                 ?>
-                                                <button type="button" class="btn btn-info btn-sm impbtntitle3" data-toggle="modal" data-target="#andappModal">Register Your Android App</button>
+                                                <button type="button" class="btn btn-info btn-sm impbtntitle3" data-bs-toggle="modal" data-bs-target="#andappModal"><?= $this->lang->line('register_your_android_app') ?></button>
                                                 <?php
                                             }
                                             ?>
@@ -268,7 +265,7 @@ $genderList = $this->customlib->getGender();
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-2"> <?php echo $this->lang->line('mobile_app_api_url') ?></label>
                                             <div class="col-sm-10">
                                                 <input type="text" name="mobile_api_url" id="mobile_api_url" class="form-control" value="<?php echo $settinglist[0]['mobile_api_url']; ?>">
@@ -279,7 +276,7 @@ $genderList = $this->customlib->getGender();
                                     </div>                                  
                                     <div class="row">
                                         <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-5"><?php echo $this->lang->line('app_primary_color_code'); ?></label>
                                             <div class="col-sm-7">
                                                 <input type="text" name="app_primary_color_code" id="app_primary_color_code" class="form-control" value="<?php echo $settinglist[0]['app_primary_color_code']; ?>">
@@ -288,8 +285,8 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
-                                            <label class="col-sm-6"> <?php echo $this->lang->line('app_secondary_color_code'); ?></label>
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-6"> <?php echo $this->lang->line('mobile_app_secondary_color_code'); ?></label>
                                             <div class="col-sm-6">
                                                 <input type="text" name="app_secondary_color_code" id="app_secondary_color_code" class="form-control" value="<?php echo $settinglist[0]['app_secondary_color_code']; ?>">
                                                 <span class="text-danger"><?php echo form_error('app_secondary_color_code'); ?></span>
@@ -299,21 +296,21 @@ $genderList = $this->customlib->getGender();
                                     </div>
                                     <div class="row">
                                     <div class="col-md-12">
-                                        <div class="form-group row">
-                                             <label class="col-sm-2"> <?php echo $this->lang->line('mobile_app')." ".$this->lang->line('logo') ?></label>
+                                        <div class="mb-3 row">
+                                             <label class="col-sm-2"> <?php echo $this->lang->line('mobile_app_logo'); ?></label>
                                              <?php
 						                        if ($settinglist[0]['app_logo'] == "") {
 						                            ?>
-						                            <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/images.png') ?>" class="" alt="" style="height: 15px;">
+						                            <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/images.png') ?>" class="" alt="" class="sh-img-h15">
 						                            <?php
 						                        } else {
 						                            ?>
-						                            <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/'.$settinglist[0]['app_logo']) ?>" class="" alt="" style="height: 15px;margin-top: 5px;">
+						                            <img src="<?php echo $this->media_storage->getImageURL('uploads/hospital_content/logo/'.$settinglist[0]['app_logo']) ?>" class="" alt="" class="sh-img-h15-mt5">
 						                            <?php
 						                        }
 						                        ?>
                                                 <?php if ($this->rbac->hasPrivilege('general_setting', 'can_edit')) { ?>
-					                            &nbsp;<a href="#" role="button" class="btn btn-primary btn-sm upload_applogo "   data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit')." ".$this->lang->line('app')." ".$this->lang->line('logo'); ?></a>
+					                            &nbsp;<a href="#" role="button" class="btn btn-primary btn-sm upload_applogo "   data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-picture-o"></i> <?php echo $this->lang->line('edit_app_logo'); ?></a>
 					                        <?php } ?>
                                         </div>
                                     </div>
@@ -328,7 +325,7 @@ $genderList = $this->customlib->getGender();
                                     </div>
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-5"><?php echo $this->lang->line('doctor_restriction_mode'); ?></label>
                                             <div class="col-sm-7">
                                                <label class="radio-inline">
@@ -341,7 +338,7 @@ $genderList = $this->customlib->getGender();
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group row">
+                                        <div class="mb-3 row">
                                             <label class="col-sm-6"> <?php echo $this->lang->line('superadmin_restriction'); ?></label>
                                             <div class="col-sm-6">
                                                 <label class="radio-inline">
@@ -362,7 +359,7 @@ $genderList = $this->customlib->getGender();
                                     <div class="col-sm-12">
                                         <div id="input-type">
                                             <div class="row">                                                
-                                                <div class="col-sm-3 col-xs-6 col20">
+                                                <div class="col-sm-3 col-6 col20">
                                                     <label class="radio-img">
                                                         <input name="theme" <?php
                                                         if ($settinglist[0]['theme'] == "default.jpg") {
@@ -372,7 +369,7 @@ $genderList = $this->customlib->getGender();
                                                         <img src="<?php echo $this->media_storage->getImageURL('backend/images/default.jpg'); ?>">
                                                     </label>
                                                 </div>
-                                                <div class="col-sm-3 col-xs-6 col20">
+                                                <div class="col-sm-3 col-6 col20">
                                                     <label class="radio-img">
                                                         <input name="theme" <?php
                                                         if ($settinglist[0]['theme'] == "red.jpg") {
@@ -382,7 +379,7 @@ $genderList = $this->customlib->getGender();
                                                         <img src="<?php echo $this->media_storage->getImageURL('backend/images/red.jpg'); ?>">
                                                     </label>
                                                 </div>
-                                                <div class="col-sm-3 col-xs-6 col20">
+                                                <div class="col-sm-3 col-6 col20">
                                                     <label class="radio-img">
                                                         <input name="theme" <?php
                                                         if ($settinglist[0]['theme'] == "blue.jpg") {
@@ -392,7 +389,7 @@ $genderList = $this->customlib->getGender();
                                                         <img src="<?php echo $this->media_storage->getImageURL('backend/images/blue.jpg'); ?>">
                                                     </label>
                                                 </div>
-                                                <div class="col-sm-3 col-xs-6 col20">
+                                                <div class="col-sm-3 col-6 col20">
                                                     <label class="radio-img">
                                                         <input name="theme" <?php
                                                         if ($settinglist[0]['theme'] == "gray.jpg") {
@@ -407,11 +404,11 @@ $genderList = $this->customlib->getGender();
                                     </div>
                                 </div>
                             </div><!-- /.box-body -->
-                            <div class="box-footer">
+                            <div class="card-footer">
                                 <?php
                                 if ($this->rbac->hasPrivilege('general_setting', 'can_edit')) {
                                     ?>
-                                    <button type="button" class="btn btn-primary submit_schsetting pull-right edit_setting" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"> <?php echo $this->lang->line('save'); ?></button>
+                                    <button type="button" class="btn btn-primary submit_schsetting float-end edit_setting" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"> <?php echo $this->lang->line('save'); ?></button>
                                     <?php
                                 }
                                 ?>
@@ -420,16 +417,14 @@ $genderList = $this->customlib->getGender();
                     </div><!-- /.box-body -->
                 </div>
             </div><!--./col-md-9-->            
-        </div> 
-    </section>
-</div>
+        </div>
 
-<div class="modal fade" id="modal-uploadfile" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content mx-2">
+<div class="modal fade sh-modal sh-modal-accent" id="modal-uploadfile" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('edit_logo'); ?> <span id="imagesize">(182px X 18px)</span></h4>
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('edit_logo'); ?> <span id="imagesize">(182px X 18px)</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form class="box_upload boxupload" id="ajaxlogo" method="post" action="<?php echo site_url('schsettings/ajax_editlogo') ?>" enctype="multipart/form-data">
@@ -438,7 +433,7 @@ $genderList = $this->customlib->getGender();
                         <input class="box__file" type="file" name="file" id="file"/>
                         <input value="<?php echo $settinglist[0]['id'] ?>" type="hidden" name="id" id="id"/>
                         <label for="file"><strong>Choose a file</strong><span class="box__dragndrop"> or drag it here</span>.</label>
-                        <button class="box__button" type="submit">Upload</button>
+                        <button class="box__button" type="submit"><?= $this->lang->line('upload') ?></button>
                     </div>
                     <div class="box__uploading">Uploading&hellip;</div>
                 </form>
@@ -447,26 +442,26 @@ $genderList = $this->customlib->getGender();
     </div>
 </div>
 
-<div id="andappModal" class="modal fade">
-    <div class="modal-dialog">
+<div id="andappModal" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="andappModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">Register your Android App purchase code</h4>
+                <h5 class="modal-title" id="andappModalLabel"><?= $this->lang->line('register_your_android_app_purchase_code') ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="<?php echo site_url('admin/admin/updateandappCode') ?>" method="POST" id="andapp_code">
                 <div class="modal-body andapp_modal-body">
                     <div class="error_message">
 
                     </div>
-                    <div class="form-group">
+                    <div class="mb-3">
                         <label class="ainline"><span>Envato Market Purchase Code for Smart Hospital Android App ( <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> How to find it?</a> )</span></label>
                         <input type="text" class="form-control" id="input-app-envato_market_purchase_code" name="app-envato_market_purchase_code">
                         <div id="error" class="input-error text text-danger"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="exampleInputEmail1">Your Email registered with Envato</label>
+                    <div class="mb-3">
+                        <label for="exampleInputEmail1"><?= $this->lang->line('your_email_registered_with_envato') ?></label>
                         <input type="text" class="form-control" id="input-app-email" name="app-email">
                         <div id="error" class="input-error text text-danger"></div>
                     </div>
@@ -487,57 +482,45 @@ $genderList = $this->customlib->getGender();
         $("#imagesize").html(' (182px X 18px)');
         var $this = $(this);
         $("#ajaxlogo").attr('action', '<?php echo site_url('schsettings/ajax_editlogo') ?>');
-        $this.button('loading');
-        $('#modal-uploadfile').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        $this.btnLoading();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-uploadfile'),{backdrop:'static',keyboard:false}).show();
     });
 
      var base_url = '<?php echo base_url(); ?>';
     $('.upload_applogo').on('click', function (e) {
         e.preventDefault();
-        $("#myModalLabel").html('<?php echo $this->lang->line('edit')." ".$this->lang->line('app')." ".$this->lang->line('logo') ?> (152px X 18px)');
+        $("#myModalLabel").html('<?php echo $this->lang->line('edit_app_logo'); ?> (152px X 18px)');
         $("#imagesize").html(' (152px X 18px)');
         var $this = $(this);
         $("#ajaxlogo").attr('action', '<?php echo site_url('schsettings/ajax_applogo') ?>');
-        $('#modal-uploadfile').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-uploadfile'),{backdrop:'static',keyboard:false}).show();
     });
 	
     $('.upload_minilogo').on('click', function (e) {
         e.preventDefault();
-        $("#myModalLabel").html('<?php echo $this->lang->line('edit') . " " . $this->lang->line('small') . " " . $this->lang->line('logo') ?> (41px X 25px)');
+        $("#myModalLabel").html('<?php echo $this->lang->line('edit_small_logo') ?> (41px X 25px)');
         $("#imagesize").html(' (41px X 25px)');
         var $this = $(this);
         $("#ajaxlogo").attr('action', '<?php echo site_url('schsettings/ajax_minilogo') ?>');        
-        $('#modal-uploadfile').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-uploadfile'),{backdrop:'static',keyboard:false}).show();
     });
 	
 // set focus when modal is opened
     $('#modal-uploadfile').on('shown.bs.modal', function () {
-        $('.upload_logo').button('reset');
+        $('.upload_logo').btnReset();
     });
 
      $('#modal-uploadappfile').on('shown.bs.modal', function () {
-        $('.upload_applogo').button('reset');
+        $('.upload_applogo').btnReset();
     });
     $('#modal-minilogo').on('shown.bs.modal', function () {
-        $('.upload_minilogo').button('reset');
+        $('.upload_minilogo').btnReset();
     });
 
     $('.edit_setting').on('click', function (e) {
         e.preventDefault();
         var $this = $(this);
-        $this.button('loading');
+        $this.btnLoading();
         $.ajax({
             url: base_url + '/schsettings/getSchsetting',
             type: 'POST',
@@ -568,24 +551,20 @@ $genderList = $this->customlib->getGender();
                 $('select[name="sch_date_format"] option[value="' + result.date_format + '"]').attr("selected", "selected");
                 $('select[name="time_format"] option[value="' + result.time_format + '"]').attr("selected", "selected");
                 $('select[name="sch_currency"] option[value="' + result.currency + '"]').attr("selected", "selected");
-                $('#schsetting').modal({
-                    show: true,
-                    backdrop: 'static',
-                    keyboard: false
-                });
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('schsetting'),{backdrop:'static',keyboard:false}).show();
             },
             error: function () {
                 console.log("error on form");
             }
 
         }).done(function () {
-            $this.button('reset');
+            $this.btnReset();
         });
     });
 
     $(document).on('click', '.submit_schsetting', function (e) {
         var $this = $(this);
-        $this.button('loading');
+        $this.btnLoading();
         $.ajax({
             url: '<?php echo site_url("schsettings/ajax_schedit") ?>',
             type: 'post',
@@ -603,7 +582,7 @@ $genderList = $this->customlib->getGender();
                     window.location.reload(true);
                 }
 
-                $this.button('reset');
+                $this.btnReset();
             }
         });
     });
@@ -757,7 +736,7 @@ $genderList = $this->customlib->getGender();
                 var iframeName = 'uploadiframe' + new Date().getTime(),
                         iframe = document.createElement('iframe');
 
-                $iframe = $('<iframe name="' + iframeName + '" style="display: none;"></iframe>');
+                $iframe = $('<iframe name="' + iframeName + '" class="d-none"></iframe>');
 
                 iframe.setAttribute('name', iframeName);
                 iframe.style.display = 'none';

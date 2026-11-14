@@ -2,21 +2,19 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary"> 
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('radiology_test'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card"> 
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('radiology_test'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
+                            <a href="<?php echo base_url('admin/patient/department_indents/radiology'); ?>" class="btn btn-warning btn-sm"><i class="fas fa-clipboard-list"></i> Pending IPD Indents</a>
                             <?php if ($this->rbac->hasPrivilege('radiology_test', 'can_add')) { ?>   
                                  <button  class="btn btn-primary btn-sm radiology addtest" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> <?php echo $this->lang->line('please_wait'); ?>"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_radiology_test'); ?></button>
                             <?php } ?>                           
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('radiology_test'); ?></div>
                     <div class="table-responsive">    
                         <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('radiology_test'); ?>">
@@ -37,9 +35,10 @@ $genderList = $this->customlib->getGender();
                                             } 
                                         } 
                                     ?> 
-                                    <th class="text-right" ><?php echo $this->lang->line('tax'); ?> (%)</th>
-                                    <th class="text-right"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
-                                    <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end" ><?php echo $this->lang->line('tax'); ?> (%)</th>
+                                    <th class="text-end"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                    <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -49,99 +48,80 @@ $genderList = $this->customlib->getGender();
                     </div>
                 </div>                                                    
             </div>                                                                                                                                    
-        </div>  
-    </section>
-</div>
-
-<div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon"> 
-                    <div id='edit_delete'>
-                        <a href="#" data-target="#editModal" data-toggle="modal" title="" data-original-title="<?php echo $this->lang->line('edit'); ?>"><i class="fa fa-pencil"></i></a>
-                        <a href="#" data-toggle="tooltip" title="" data-original-title="<?php echo $this->lang->line('delete'); ?>"><i class="fa fa-trash"></i></a>
-                    </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('test_details'); ?></h4> 
-            </div>
-            <form id="view" accept-charset="utf-8" method="get">    
-                <div class="modal-body">
-                        <div class="table-responsive">
-                            <table class="table mb0 table-striped table-bordered examples">
-                               
-                            </table>
-                            <div class="" id="parameterview">
-                            </div>
-                        </div>
-                </div>
-            </form>
         </div>
-    </div>    
-</div>
 
-<div class="modal fade" id="addTestReportModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-               <h4 class="modal-title" id="modaltitle"></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('test_details'); ?></h5>
+                <div class="d-flex align-items-center gap-2" id='edit_delete'></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-             <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
-                <div class="scroll-area">
-                    <input type="hidden" name="duplicate_test" id="duplicate_test" value="">
-                    <div class="modal-body pb0 pt0">
-                    
-                    </div>
-                </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body"></div>
+            </div>
             <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="formaddbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>                        
-                    </div>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-accent" id="addTestReportModal" tabindex="-1" aria-labelledby="modaltitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modaltitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <input type="hidden" name="duplicate_test" id="duplicate_test" value="">
+                <div class="pup-scroll-area">
+                    <div class="modal-body"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" data-loading-text='<i class="fa fa-circle-o-notch fa-spin"></i>' id="formaddbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
             </form>
         </div>
-    </div>    
+    </div>
 </div>
 
 <!-- dd -->
 <script type="text/javascript">
 			var radiology_parmeter_rows=1;
 			function holdModal(modalId) {
-                $('#' + modalId).modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                    show: true
-                });
+                (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
             }
      
 	$(document).on('click','.addtest',function(){
 		var createModal=$('#addTestReportModal');
 		var $this = $(this);
-		$this.button('loading');
+		$this.btnLoading();
 		$.ajax({
 			url: '<?php echo base_url(); ?>admin/radio/createRadiologyTest',
 			type: "POST",
 			dataType: 'json',
 			beforeSend: function() {
-				$this.button('loading');
+				$this.btnLoading();
                 createModal.addClass('modal_loading');
 			},
 			success: function(res) {              
 				$('#modaltitle').html("<?php echo $this->lang->line('add_test_details'); ?>");
 				$('#addTestReportModal .modal-body').html(res.page);
 				$('.select2').select2();
-				$('#addTestReportModal').modal('show');
+				shModal('addTestReportModal').show();
                  createModal.removeClass('modal_loading');
 			},
             error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-				$this.button('reset');
+				$this.btnReset();
                 createModal.removeClass('modal_loading');
 			},
             complete: function() {
-                   $this.button('reset');
+                   $this.btnReset();
                    createModal.removeClass('modal_loading');
             }
       });
@@ -150,11 +130,7 @@ $genderList = $this->customlib->getGender();
 
 <script type="text/javascript">
             $(document).ready(function (e) {
-$('#addTestReportModal').modal({
-    backdrop: 'static',
-    keyboard: false,
-    show:false
-})
+modal_click_disabled('addTestReportModal')
                 $(".printsavebtn").on('click', (function (e) {
                     var form = $(this).parents('form').attr('id');
                     var str = $("#" + form).serializeArray();
@@ -166,7 +142,7 @@ $('#addTestReportModal').modal({
                     var input = document.querySelector('input[type=file]'),
                       file = input.files[0];
                        postData.append("radiology_report", file);
-                    $("#formbatchbtn").button('loading');
+                    $("#formbatchbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/radio/testReportBatch',
@@ -188,7 +164,7 @@ $('#addTestReportModal').modal({
                                 successMsg(data.message);
                                 printData(data.id,radioid);
                             }
-                            $("#formbatchbtn").button('reset');
+                            $("#formbatchbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -271,7 +247,7 @@ $('#addTestReportModal').modal({
 
             $(document).ready(function (e) {
                 $("#formadd").on('submit', (function (e) {
-                    $("#formaddbtn").button('loading');
+                    $("#formaddbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/radio/add',
@@ -292,7 +268,7 @@ $('#addTestReportModal').modal({
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formaddbtn").button('reset');
+                            $("#formaddbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -302,7 +278,7 @@ $('#addTestReportModal').modal({
 
             $(document).ready(function (e) {
                 $("#formedit").on('submit', (function (e) {
-                    $("#formeditbtn").button('loading');
+                    $("#formeditbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/radio/update',
@@ -323,7 +299,7 @@ $('#addTestReportModal').modal({
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formeditbtn").button('reset');
+                            $("#formeditbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -351,7 +327,7 @@ $('#addTestReportModal').modal({
                         $("#updateid").val(id);                       
                         $('select[id="radiology_category_id"] option[value="' + data.radiology_category_id + '"]').attr("selected", "selected");
                         $('select[id="charge_category_id"] option[value="' + data.charge_category_id + '"]').attr("selected", "selected");
-                        $("#viewModal").modal('hide');
+                        shModal('viewModal').hide();
                         $("#radiology_category_id").select2().select2('val', data.radiology_category_id);
                         holdModal('myModaledit');
                     },
@@ -384,7 +360,7 @@ $('#addTestReportModal').modal({
                         success: function (data) {
                             successMsg('<?php echo $this->lang->line('delete_message'); ?>');
                             table.ajax.reload();
-                            $("#viewModal").modal('hide');
+                            shModal('viewModal').hide();
                         }
                     })
                 }
@@ -450,8 +426,8 @@ $('#addTestReportModal').modal({
                     dataType: 'json',
                     success: function (data) {
                         $('#viewModal .modal-body').html(data.page);
-						$('#viewModal').modal('show');                     
-                        $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('radiology_test', 'can_edit')) { ?><a href='#' class='edittest' data-record-id='"+id+"'  data-loading-text='<i class= \"fa fa-circle-o-notch fa-spin\"></i>' data-toggle='tooltip'   data-original-title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } if ($this->rbac->hasPrivilege('radiology_test', 'can_delete')) { ?><a onclick='delete_record(" + id + ")'  href='#'  data-toggle='tooltip'  data-original-title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php } ?>");
+						shModal('viewModal').show();                     
+                        $('#edit_delete').html("<?php if ($this->rbac->hasPrivilege('radiology_test', 'can_edit')) { ?><a href='#' class='edittest btn btn-sm btn-light' data-record-id='"+id+"'  data-loading-text='<i class= \"fa fa-circle-o-notch fa-spin\"></i>' data-bs-toggle='tooltip'   title='<?php echo $this->lang->line('edit'); ?>'><i class='fa fa-pencil'></i></a><?php } if ($this->rbac->hasPrivilege('radiology_test', 'can_delete')) { ?><a onclick='delete_record(" + id + ")'  href='#'  class='btn btn-sm btn-light' data-bs-toggle='tooltip'  title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-trash'></i></a><?php } ?>");
                         holdModal('viewModal');
                     },
                 });             
@@ -459,7 +435,7 @@ $('#addTestReportModal').modal({
         
             $(document).ready(function (e) {
                 $("#formbatch").on('submit', (function (e) {
-                    $("#formbatchbtn").button('loading');
+                    $("#formbatchbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/radio/testReportBatch',
@@ -480,7 +456,7 @@ $('#addTestReportModal').modal({
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formbatchbtn").button('reset');
+                            $("#formbatchbtn").btnReset();
                         },
                         error: function () {
 
@@ -502,7 +478,7 @@ $('#addTestReportModal').modal({
                 var table_len = (table.rows.length);
                 radiology_parmeter_rows++;
                 var div = "<td width='35%'><input type='hidden' name='total_rows[]' value='"+radiology_parmeter_rows+"'><input type='hidden' name='inserted_id_' value='0'><select class='form-control select2 radiology_parmeter check_dublicate' id='parameter_name_"+ radiology_parmeter_rows +"' name='parameter_name_"+ radiology_parmeter_rows +"'><option value='<?php echo set_value('parameter_name'); ?>'><?php echo $this->lang->line('select') ?></option><?php foreach ($parametername as $dkey => $dvalue) { ?><option value='<?php echo $dvalue["id"]; ?>'><?php echo $dvalue["parameter_name"] ?></option><?php } ?></select></td><td width='30%'><input type='text' name='reference_range_"+ radiology_parmeter_rows +"' readonly id='reference_range" + radiology_parmeter_rows + "' class='form-control reference_range'></td><td width='30%'><input type='text' name='radio_unit_"+ radiology_parmeter_rows +"' readonly id='radio_unit" + radiology_parmeter_rows + "' class='form-control radio_unit'></td>";                    
-                var row = table.insertRow(table_len).outerHTML = "<tr id='row" + radiology_parmeter_rows + "'>" + div + "<td><button type='button' class='closebtn delete_row'><i class='fa fa-remove'></i></button></td></tr>";
+                var row = table.insertRow(table_len).outerHTML = "<tr id='row" + radiology_parmeter_rows + "'>" + div + "<td class='text-center'><button type='button' class='btn btn-sm btn-light delete_row' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('delete'); ?>'><i class='fa fa-times text-danger'></i></button></td></tr>";
                 $('.select2').select2();
           });  
            
@@ -539,14 +515,14 @@ $('#addTestReportModal').modal({
 		var createModal=$('#addTestReportModal');
 		var $this = $(this);
         var record_id=$this.data('recordId')
-		$this.button('loading');
+		$this.btnLoading();
 			$.ajax({
 			url: '<?php echo base_url(); ?>admin/radio/editRadiologyTest',
 			type: "POST",
 			data:{'id':record_id},
 			dataType: 'json',
 			beforeSend: function() {
-				$this.button('loading');
+				$this.btnLoading();
                 createModal.addClass('modal_loading');
 			},
 			success: function(res) {
@@ -563,16 +539,16 @@ $('#addTestReportModal').modal({
 					getparameterdetails(pathology_parmeter_obj,post_parameter_value)
 
 				});
-				$('#addTestReportModal').modal('show');
+				shModal('addTestReportModal').show();
                  createModal.removeClass('modal_loading');
 			},
              error: function(xhr) { // if error occured
 				alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-             $this.button('reset');
+             $this.btnReset();
                 createModal.removeClass('modal_loading');
          },
               complete: function() {
-                   $this.button('reset');
+                   $this.btnReset();
                    createModal.removeClass('modal_loading');
              }
 		});
@@ -593,11 +569,7 @@ $('#addTestReportModal').modal({
             }
 
     $(document).ready(function (e) {
-        $('#viewModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('viewModal');
     });
 </script>
 

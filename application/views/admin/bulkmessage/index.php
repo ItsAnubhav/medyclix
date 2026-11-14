@@ -2,67 +2,61 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $genderList = $this->customlib->getGender();
 ?>
-<div class="content-wrapper">
-  <!-- Main content -->
-  <section class="content">
-    <div class="row">
+<div class="row">
       <div class="col-md-12">
-        <div class="box box-primary">
-          <div class="box-header with-border">
-            <h3 class="box-title titlefix"> <?php echo $this->lang->line('send_patient_credential'); ?></h3>
-          </div><!-- /.box-header -->
-          <div class="box-body">		  
-            <form action="<?php echo site_url('admin/bulkmessage/sendbulkmail') ?>" method="POST" id="bulkmail">	
-				<div class="row">                     
-                    <div class="col-sm-2">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('select_all'); ?> </label><br>
-                            <input type="checkbox" name="checkAll">
-                        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title titlefix"> <?php echo $this->lang->line('send_patient_credential'); ?></h3>
+          </div><!-- /.card-header -->
+          <div class="card-body">
+            <form action="<?php echo site_url('admin/bulkmessage/sendbulkmail') ?>" method="POST" id="bulkmail">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><?php echo $this->lang->line('credential_type'); ?> <small class="req">*</small></label>
+                        <select id="notification_type" name="notification_type" class="form-control">
+                            <?php foreach ($notificationtype as $key => $notificationtype_value) {?>
+                            <option value="<?php echo $key; ?>"><?php echo $notificationtype_value; ?></option>
+                            <?php }?>
+                        </select>
                     </div>
-                    <div class="col-sm-3">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('credential_type'); ?> <small class="req"> *</small></label>
-                            <select  id="notification_type" name="notification_type" class="form-control" >														
-                                <?php foreach ($notificationtype as $key => $notificationtype_value) {?>
-                                <option value="<?php echo $key; ?>"><?php echo $notificationtype_value; ?></option>
-                                <?php }?>
-                            </select>
-                        </div>
-                    </div>                    
-                </div>				
-				<div class="table-responsive">					
-					<table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('patient_login_credential'); ?>">
-						<thead>					 
-							<tr>
-								<th><?php echo '#'; ?></th> 
-								<th><?php echo $this->lang->line('patient_id'); ?></th>
-								<th><?php echo $this->lang->line('patient_name'); ?></th>
-								<th><?php echo $this->lang->line('email'); ?></th>
-								<th><?php echo $this->lang->line('mobile_number'); ?></th>
-								<th><?php echo $this->lang->line('username'); ?></th>
-								<th class="text-right"><?php echo $this->lang->line('password'); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-						</tbody>
-					</table>
-				</div>			   
-				<button type="submit" class="btn btn-primary pull-right btn-sm mt15" id="load" data-loading-text="<i class='fa fa-spinner fa-spin '></i> <?php echo $this->lang->line('please_wait') ?>"> <?php echo $this->lang->line('send') ?></button>	  
-			</form>			
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-hover align-middle ajaxlist mb-0" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('patient_login_credential'); ?>">
+                        <thead>
+                            <tr>
+                                <th class="sh-th-40 text-center align-middle">
+                                    <input type="checkbox" name="checkAll" id="checkAll" title="<?php echo $this->lang->line('select_all'); ?>" class="sh-scale-130 sh-cursor-pointer">
+                                </th>
+                                <th><?php echo $this->lang->line('patient_id'); ?></th>
+                                <th><?php echo $this->lang->line('patient_name'); ?></th>
+                                <th><?php echo $this->lang->line('email'); ?></th>
+                                <th><?php echo $this->lang->line('mobile_number'); ?></th>
+                                <th><?php echo $this->lang->line('username'); ?></th>
+                                <th class="text-end"><?php echo $this->lang->line('password'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary" id="load" data-loading-text="<i class='fa fa-spinner fa-spin'></i> <?php echo $this->lang->line('please_wait') ?>"><i class="fa fa-paper-plane me-1"></i> <?php echo $this->lang->line('send') ?></button>
+                </div>
+            </form>
           </div>
         </div>
       </div>
     </div>
-  </section>
-</div>
 
 <!-- //========datatable start===== -->
 <script type="text/javascript">
   ( function ( $ ) {      
       'use strict';
       $(document).ready(function () {
-          initDatatable('ajaxlist','admin/bulkmessage/getcredentialdatatable',[],[],100);
+          initDatatable('ajaxlist','admin/bulkmessage/getcredentialdatatable',[],[],100,[
+              { "bSortable": false, "aTargets": [0], 'sClass': 'text-center'},
+              { "bSortable": false, "aTargets": [-1], 'sClass': 'dt-body-right'}
+          ]);
       });
   } ( jQuery ) )  
     
@@ -87,7 +81,7 @@ $genderList = $this->customlib->getGender();
                     data: form.serialize(), // serializes the form's elements.
                     dataType: "JSON", // serializes the form's elements.
                     beforeSend: function () {
-                        submit_button.button('loading');
+                        submit_button.btnLoading();
                     },
                     success: function (data)
                     {
@@ -103,11 +97,11 @@ $genderList = $this->customlib->getGender();
                         }
                     },
                     error: function (xhr) { // if error occured
-                        submit_button.button('reset');
+                        submit_button.btnReset();
                         alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
                     },
                     complete: function () {
-                        submit_button.button('reset');
+                        submit_button.btnReset();
                     }
                 });
         }

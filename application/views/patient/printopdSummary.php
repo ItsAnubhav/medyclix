@@ -5,12 +5,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
     <div class="fixed-print-header">
         <?php if (!empty($print_details[0]['print_header'])) {
         ?>
@@ -19,7 +14,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     if (!empty($print_details[0]['print_header'])) {
             echo $this->media_storage->getImageURL($print_details[0]['print_header']);
         }
-        ?>" class="img-responsive" style="height:100px; width: 100%;">
+        ?>" class="img-fluid sh-avatar-cover" >
                             </div>
                         <?php }?>
     </div> 
@@ -57,9 +52,9 @@ if (!empty($result['month'])) {
                             <td width="20%" class="text-left"><?php echo $result["gender"]; ?></td>
                         </tr>
                          <tr>
-                            <th width="20%"><?php echo $this->lang->line('admission') . " " . $this->lang->line('date'); ?></th>
+                            <th width="20%"><?php echo $this->lang->line('admission_date') ; ?></th>
                             <td width="25%"><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date'])); ?></td>
-                            <th><?php echo $this->lang->line('discharged') . " " . $this->lang->line('date'); ?></th>
+                            <th><?php echo $this->lang->line('discharged_date'); ?></th>
                             <td width="30%" class="text-left"><?php echo date($this->customlib->getHospitalDateFormat(true, false), strtotime($result['discharge_date'])); ?></td>
                         </tr>
                         <tr>

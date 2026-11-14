@@ -23,14 +23,15 @@ class Medicineunit extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicineunit');
         $data['unitname'] = $this->pharmacy_model->getpharmacyunit();
-		$this->load->view("layout/header");
-        $this->load->view("admin/pharmacy/medicine_unit",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/pharmacy/medicine_unit", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function addunit(){
 
- 		$id = $this->input->post("id"); 		
+ 		$id = $this->input->post("id", TRUE);
  		$this->form_validation->set_rules('unit_name', $this->lang->line('unit_name'), 'trim|required|xss_clean');
 
         if ($this->form_validation->run() == false) {
@@ -39,7 +40,7 @@ class Medicineunit extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $unitname = $this->input->post("unit_name");
+            $unitname = $this->input->post("unit_name", TRUE);
             $unittype = 'pharmacy';
 
             if (!empty($id)) { //edit unit               
@@ -69,13 +70,14 @@ class Medicineunit extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicineunit/medicine_company');
         $data['company'] = $this->pharmacy_model->getcomapnyname();
-        $this->load->view("layout/header");
-        $this->load->view("admin/pharmacy/medicine_company",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/pharmacy/medicine_company", $data);
+        $this->load->view("layout/footer", $data);
     }
 
     public function add_company(){
-        $id = $this->input->post("id");               
+        $id = $this->input->post("id", TRUE);
         $company_name=$this->form_validation->set_rules('company_name', $this->lang->line('company_name'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -83,7 +85,7 @@ class Medicineunit extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {    
-            $company_name = $this->input->post("company_name");    
+            $company_name = $this->input->post("company_name", TRUE);
             if (!empty($id)) {              
                 $data  = array('company_name' => "$company_name",'id' => $id);
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -99,28 +101,28 @@ class Medicineunit extends Admin_Controller
 
  /* this funtion is used to save multiple company */
     public function add_multiple_company() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('company_name_'.$row_value, $this->lang->line('company_name'), 'trim|required');        
-                
-                if ($this->form_validation->run() == false) {           
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('company_name_'.$row_value, $this->lang->line('company_name'), 'trim|required|xss_clean');
+
+                if ($this->form_validation->run() == false) {
                     $msg = array(
                         'name' => form_error('company_name_'.$row_value),
                     );
-                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');  
+                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
                     echo json_encode($json_array);
-                    return false;          
+                    return false;
                 }
-            } 
+            }
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);  
             foreach ($total_rows as $row_key => $row_values) {                 
-                $data  = array('company_name' => $this->input->post('company_name_'.$row_values));
+                $data  = array('company_name' => $this->input->post('company_name_'.$row_values, TRUE));
                 $insert_id = $this->pharmacy_model->add_company($data);
             }
             // save the multiple data 
@@ -151,13 +153,14 @@ class Medicineunit extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'medicine/index');
         $this->session->set_userdata('sub_sidebar_menu', 'admin/medicineunit/medicine_group');
         $data['get_medicine_group'] = $this->pharmacy_model->get_medicine_group();
-        $this->load->view("layout/header");
-        $this->load->view("admin/pharmacy/medicine_group",$data);
-        $this->load->view("layout/footer");
+        $data['module'] = 'pharmacy';
+        $this->load->view("layout/header", $data);
+        $this->load->view("admin/pharmacy/medicine_group", $data);
+        $this->load->view("layout/footer", $data);
     }
 
 	public function add_medicine_group(){
-        $id = $this->input->post("id");               
+        $id = $this->input->post("id", TRUE);
         $group_name=$this->form_validation->set_rules('group_name', $this->lang->line('medicine_group'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -165,7 +168,7 @@ class Medicineunit extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {    
-            $group_name = $this->input->post("group_name");    
+            $group_name = $this->input->post("group_name", TRUE);
             if (!empty($id)) {              
                 $data  = array('group_name' => "$group_name",'id' => $id);
                 $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
@@ -180,28 +183,28 @@ class Medicineunit extends Admin_Controller
 
  /* this funtion is used to save multiple Group*/
     public function add_multiple_group() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('group_name_'.$row_value, $this->lang->line('medicine_group'), 'trim|required');        
-                
-                if ($this->form_validation->run() == false) {           
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('group_name_'.$row_value, $this->lang->line('medicine_group'), 'trim|required|xss_clean');
+
+                if ($this->form_validation->run() == false) {
                     $msg = array(
                         'name' => form_error('group_name_'.$row_value),
                     );
-                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');  
+                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
                     echo json_encode($json_array);
-                    return false;          
+                    return false;
                 }
-            } 
+            }
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);  
             foreach ($total_rows as $row_key => $row_values) {                 
-                $data  = array('group_name' => $this->input->post('group_name_'.$row_values));
+                $data  = array('group_name' => $this->input->post('group_name_'.$row_values, TRUE));
                 $insert_id = $this->pharmacy_model->add_medicine_group($data);
             }
             // save the multiple data 
@@ -225,29 +228,29 @@ class Medicineunit extends Admin_Controller
 
 	/* this funtion is used to save multiple pharmacy unit */
     public function add_multiple_pharmacyunit() {   
-        $total_rows = $this->input->post('total_rows');
-        if (isset($total_rows) && !empty($total_rows)) {          
-          
+        $total_rows = $this->input->post('total_rows', TRUE);
+        if (isset($total_rows) && !empty($total_rows)) {
+
           //validation to check each input keeps the value or not
-            foreach ($total_rows as $row_key => $row_value) {  
-                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('unit_name'), 'trim|required');        
-                
-                if ($this->form_validation->run() == false) {           
+            foreach ($total_rows as $row_key => $row_value) {
+                $this->form_validation->set_rules('name_'.$row_value, $this->lang->line('unit_name'), 'trim|required|xss_clean');
+
+                if ($this->form_validation->run() == false) {
                     $msg = array(
                         'name' => form_error('name_'.$row_value),
                     );
-                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');  
+                    $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
                     echo json_encode($json_array);
-                    return false;          
+                    return false;
                 }
-            } 
+            }
             //validation to check each input keeps the value or not
 
-            // save the multiple data 
-            $total_rows   = $this->input->post('total_rows');  
+            // save the multiple data
+            $total_rows   = $this->input->post('total_rows', TRUE);  
             foreach ($total_rows as $row_key => $row_values) {                  
                 $unittype = 'pharmacy';
-                $data  = array('unit_name' => $this->input->post('name_' . $row_values), 'unit_type' => $unittype);
+                $data  = array('unit_name' => $this->input->post('name_' . $row_values, TRUE), 'unit_type' => $unittype);
                 $insert_id = $this->pharmacy_model->addunit($data);
             }
             // save the multiple data 

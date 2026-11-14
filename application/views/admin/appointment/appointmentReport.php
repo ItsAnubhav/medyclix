@@ -1,22 +1,19 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="box box-primary">
-                <?php $this->load->view('admin/report/_appointment');?> 
-                <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('appointment_report'); ?></h3>
-                    </div>
-                    <form id="form1" action="" method="post">
-                        <div class="box-body row pb0">
+<div class="row g-0">
+    <div class="col-md-12">
+        <div class="card border-0 rounded-0">
+            <?php $this->load->view('admin/report/_appointment');?>
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0"><?php echo $this->lang->line('appointment_report'); ?></h5>
+            </div>
+            <div class="card-body pb-0">
+                <form id="form1" action="" method="post">
+                    <div class="row">
                             <?php echo $this->customlib->getCSRF(); ?>
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('search_type'); ?></label><small class="req"> *</small>
                                                 <select class="form-control" name="search_type"  id="search_type_select" onchange="showdate(this.value)">
                                                 <option value=""><?php echo $this->lang->line('select')?></option> 
@@ -33,9 +30,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         </div> 
 
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line("doctor"); ?></label>
-                                                    <select class="form-control select2" onchange="getDoctorShift()" name="collect_staff" style="width: 100%" id="collect_staff_select">
+                                                    <select class="form-control select2 w-100" onchange="getDoctorShift()" name="collect_staff" id="collect_staff_select">
                                                         <option value=""><?php echo $this->lang->line('select') ?></option>
                                                         <?php foreach ($doctorlist as $dkey => $value) { ?>
                                                             <option value="<?php echo $value["id"] ?>"<?php
@@ -49,18 +46,18 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         </div>
 
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line("shift"); ?></label>
-                                                    <select class="form-control select2" name="shift" style="width: 100%" id="shift">
+                                                    <select class="form-control select2 w-100" name="shift" id="shift">
                                                         <option value=""><?php echo $this->lang->line('select') ?></option>
                                                     </select>
                                             </div>
                                         </div>
 
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line("appointment_priority"); ?></label>
-                                                <select class="form-control select2 appointment_priority_select2"  name='priority' style="width:100%">
+                                                <select class="form-control select2 appointment_priority_select2 w-100" name='priority'>
                                                     <option value=""><?php echo $this->lang->line("select"); ?></option>
                                                     <?php foreach ($appoint_priority_list as $dkey => $dvalue) { ?>
                                                     <option value="<?php echo $dvalue["id"]; ?>"> 
@@ -70,12 +67,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 </select>
                                             </div>
                                         </div>
-                            </div>
-                            <div class="box-body row pt0">
+
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line("source"); ?></label>
-                                                    <select class="form-control select2" name="appointment_type" style="width: 100%" id="appointment_type">
+                                                    <select class="form-control select2 w-100" name="appointment_type" id="appointment_type">
                                                         <option value=""><?php echo $this->lang->line("select"); ?></option>
                                                     <?php foreach($appointment_type as $typekey => $typevalue){ ?>
                                                         <option value="<?php echo $typekey; ?>"><?php echo $typevalue; ?></option>
@@ -85,9 +81,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         </div>
                                         
                                         <div class="col-sm-6 col-md-3">
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                             <label><?php echo $this->lang->line("status"); ?></label>
-                                                <select class="form-control select2" name="appointment_status" style="width: 100%" id="appointment_status">
+                                                <select class="form-control select2 w-100" name="appointment_status" id="appointment_status">
                                                     <option value=""><?php echo $this->lang->line('select'); ?></option>
                                                     <?php foreach ($appointment_status as $appointment_status_key => $appointment_status_value) {  ?>
                                                     <option value="<?php echo $appointment_status_key ?>"><?php echo $appointment_status_value ?></option>
@@ -96,34 +92,36 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             </div>
                                         </div>
                           
-                                        <div class="col-sm-6 col-md-3" id="fromdate" style="display: none">
-                                            <div class="form-group">
+                                        <div class="col-sm-6 col-md-3 d-none" id="fromdate">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('date_from'); ?></label><small class="req"> *</small>
                                                 <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                                 <span class="text-danger" id="error_date_from"><?php echo form_error('date_from'); ?></span>
 												 
                                             </div>
                                         </div>
-                                        <div class="col-sm-6 col-md-3" id="todate" style="display: none">
-                                            <div class="form-group">
+                                        <div class="col-sm-6 col-md-3 d-none" id="todate">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('date_to'); ?></label><small class="req"> *</small>
                                                 <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                                 <span class="text-danger" id="error_date_to"><?php echo form_error('date_to'); ?></span>
                                             </div>
                                         </div>
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                 <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                                        <div class="col-sm-6 col-md-auto d-flex align-items-end ps-md-3">
+                                            <div class="mb-3">
+                                                <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2">
+                                                    <i class="fa fa-search"></i>
+                                                    <?php echo $this->lang->line('search'); ?>
+                                                </button>
                                             </div>
-                                        </div> 
+                                        </div>
                                     </div>
-                    </form>
+                </form>
+            </div><!-- /.card-body -->
 
-                    <div class="box border0 clear">
-                        <div class="box-header ptbnull"></div>
-                        <div class="box-body table-responsive">
-                            <div class="download_label"><?php echo $this->lang->line('appointment_report'); ?></div>
-                            <div class="table-responsive">
+            <div class="card-body pt-0">
+                <div class="download_label"><?php echo $this->lang->line('appointment_report'); ?></div>
+                <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('appointment_report'); ?>">
                                     <thead>
                                         <tr>
@@ -142,31 +140,27 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 } 
                                              }
                                             ?> 
-                                            <th class="text text-right"><?php echo $this->lang->line('discount').' (%)'; ?></th>
-                                            <th class="text text-right"><?php echo $this->lang->line('fees').' ('.$currency_symbol.')'; ?></th>
-                                            <th class="text text-right"><?php echo $this->lang->line('status'); ?></th>
+                                            <th class="text text-end"><?php echo $this->lang->line('discount').' (%)'; ?></th>
+                                            <th class="text text-end"><?php echo $this->lang->line('fees').' ('.$currency_symbol.')'; ?></th>
+                                            <th class="text text-end"><?php echo $this->lang->line('status'); ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                      </tbody>  
                                 </table>
-                            </div>    
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-     </div>
-    </section>
-</div>
+                </div><!-- /.table-responsive -->
+            </div><!-- /.card-body -->
+        </div><!-- /.card -->
+    </div><!-- /.col -->
+</div><!-- /.row -->
 <script type="text/javascript">
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>

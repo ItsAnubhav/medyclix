@@ -29,6 +29,7 @@ class Generatecertificate extends Admin_Controller
         $data['certificateList'] = $certificateList;
         $patientlist             = $this->patient_model->getPatientListall();
         $data['patientlist']     = $patientlist;
+        $data['module'] = 'certificate';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/certificate/generatecertificate', $data);
         $this->load->view('layout/footer', $data);
@@ -41,19 +42,21 @@ class Generatecertificate extends Admin_Controller
 
         $certificateList         = $this->certificate_model->getpatientcertificate();
         $data['certificateList'] = $certificateList;
-        $data['module']          = $this->input->post('module');
-        $data['patient_status']  = $this->input->post('patient_status');
-        $data['certificate']     = $this->input->post('certificate_id');
-        $button                  = $this->input->post('search');
+        $data['module']          = $this->input->post('module', TRUE);
+        $data['patient_status']  = $this->input->post('patient_status', TRUE);
+        $data['certificate']     = $this->input->post('certificate_id', TRUE);
+        $button                  = $this->input->post('search', TRUE);
         if ($this->input->server('REQUEST_METHOD') == "GET") {
+            $data['module'] = 'certificate';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/certificate/generatecertificate', $data);
             $this->load->view('layout/footer', $data);
         } else {
-            $module         = $this->input->post('module');
-            $patient_status = $this->input->post('patient_status');
-            $search         = $this->input->post('search');
-            $certificate    = $this->input->post('certificate_id');
+            $module         = $this->input->post('module', TRUE);
+            $patient_status = $this->input->post('patient_status', TRUE);
+            $search         = $this->input->post('search', TRUE);
+            $certificate    = $this->input->post('certificate_id', TRUE);
+            $data['module'] = 'certificate';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/certificate/generatecertificate', $data);
             $this->load->view('layout/footer', $data);
@@ -62,7 +65,7 @@ class Generatecertificate extends Admin_Controller
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('module', $this->lang->line('module'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('certificate_id', $this->lang->line('certificate_template'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
@@ -74,9 +77,9 @@ class Generatecertificate extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'module'         => $this->input->post('module'),
-                'certificate_id' => $this->input->post('certificate_id'),
-                'patient_status' => $this->input->post('patient_status'),
+                'module'         => $this->input->post('module', TRUE),
+                'certificate_id' => $this->input->post('certificate_id', TRUE),
+                'patient_status' => $this->input->post('patient_status', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -86,13 +89,18 @@ class Generatecertificate extends Admin_Controller
 
     public function getgeneratedatatable()
     {
-        $modules = $this->input->post('module');
-        $status  = $this->input->post('patient_status');
+        $modules = $this->input->post('module', TRUE);
+        $status  = $this->input->post('patient_status', TRUE);
+
+        // Guard the module: if it is neither opd nor ipd (e.g. a stray/empty
+        // request before a real search), $dt_response would stay undefined and
+        // the json_decode below would null-fault — corrupting the JSON body and
+        // triggering the DataTables "Invalid JSON response" alert. Return a
+        // valid, empty DataTables payload instead.
+        $dt_response = null;
         if ($modules == 'opd') {
             $dt_response = $this->patient_model->getAllOpdPatientforcertificate($status);
-        }
-
-        if ($modules == 'ipd') {
+        } elseif ($modules == 'ipd') {
             $dt_response = $this->patient_model->getAllIpdPatientforcertificate($status);
         }
 
@@ -104,29 +112,32 @@ class Generatecertificate extends Admin_Controller
             foreach ($dt_response->data as $key => $value) {
                 $row = array();
 
-                $checkbox_fields = "<input type='checkbox' class='checkbox center-block'  name='check' data-patient_id='" . $value->id . "' value='" . $value->id . "'>";
+                $checkbox_fields = "<input type='checkbox' class='checkbox center-block'  name='check' data-patient_id='" . (int)$value->id . "' value='" . (int)$value->id . "'>";
 
+                $moduleno = '';
                 if ($value->module == 'opd') {
                     $moduleno = $this->customlib->getSessionPrefixByType('checkup_id') . $value->checkup_id;
                 } elseif ($value->module == 'ipd') {
                     $moduleno = $this->customlib->getSessionPrefixByType('ipd_no') . $value->id;
-
                 }
                 //====================================
+                // Null-safe casts: PHP 8.4 emits a deprecation notice when null
+                // is passed to strtolower()/lang->line(), which would also poison
+                // the JSON output. Coerce to string first.
                 $row[] = $checkbox_fields;
                 $row[] = $moduleno;
-                $row[] = $value->patient_name . " (" . $value->patient_id . ")";
-                $row[] = $this->lang->line(strtolower($value->gender));
-                $row[] = $value->mobileno;
-                $row[] = $this->lang->line($value->discharged);
+                $row[] = html_escape($value->patient_name) . " (" . html_escape($value->patient_id) . ")";
+                $row[] = $this->lang->line(strtolower((string) $value->gender));
+                $row[] = html_escape($value->mobileno);
+                $row[] = $this->lang->line((string) $value->discharged);
                 //====================
                 $dt_data[] = $row;
             }
         }
         $json_data = array(
-            "draw"            => intval($dt_response->draw),
-            "recordsTotal"    => intval($dt_response->recordsTotal),
-            "recordsFiltered" => intval($dt_response->recordsFiltered),
+            "draw"            => intval(isset($dt_response->draw) ? $dt_response->draw : 0),
+            "recordsTotal"    => intval(isset($dt_response->recordsTotal) ? $dt_response->recordsTotal : 0),
+            "recordsFiltered" => intval(isset($dt_response->recordsFiltered) ? $dt_response->recordsFiltered : 0),
             "data"            => $dt_data,
         );
         echo json_encode($json_data);
@@ -134,10 +145,10 @@ class Generatecertificate extends Admin_Controller
 
     public function generatemultiple()
     {
-        $patienttid          = $this->input->post('data');
+        $patienttid          = $this->input->post('data', TRUE);
         $patient_array       = json_decode($patienttid);
-        $certificate_id      = $this->input->post('certificate_id');
-        $module_status       = $this->input->post('module_status');
+        $certificate_id      = $this->input->post('certificate_id', TRUE);
+        $module_status       = $this->input->post('module_status', TRUE);
         $data                = array();
         $pat_arr             = array();
         $data['sch_setting'] = $this->setting_model->get();

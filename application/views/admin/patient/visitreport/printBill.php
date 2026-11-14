@@ -6,12 +6,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <head> 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
     <div class="fixed-print-header">
         <?php if (!empty($print_details[0]['print_header'])) { ?>
                             <div>
@@ -19,7 +14,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 if (!empty($print_details[0]['print_header'])) {
                                     echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                                 }
-                                ?>" class="img-responsive" style="height:100px; width: 100%;">
+                                ?>" class="img-fluid sh-avatar-cover" >
                             </div>
         <?php } ?>
     </div>    
@@ -40,9 +35,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 <div>
                     <table width="100%" class="printablea4">
                         <tr>
-                            <td class="text-left"><?php echo $this->lang->line('bill_no'); ?> <?php echo $this->customlib->getSessionPrefixByType('ambulance_call_billing').$result["id"] ?>
+                            <td class="text-start"><?php echo $this->lang->line('bill_no'); ?> <?php echo $this->customlib->getSessionPrefixByType('ambulance_call_billing').$result["id"] ?>
                             </td>
-                            <td class="text-right rtl-text-left"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['date'])) ?>
+                            <td class="text-end rtl-text-start"><?php echo $this->lang->line('date') . " : "; ?><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['date'])) ?>
                             </td>
                         </tr>
                     </table>
@@ -52,13 +47,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <th width="20%"><?php echo $this->lang->line('patient_name'); ?></th>
                             <td width="25%"><?php echo composePatientName($result['patientname'],$result['patient_id']); ?></td>
                             <th width="25%"><?php echo $this->lang->line('driver_name'); ?></th>
-                            <td width="30%" class="text-left"><?php echo $result["driver"]; ?></td>
+                            <td width="30%" class="text-start"><?php echo $result["driver"]; ?></td>
                         </tr>
                         <tr>
                             <th width="20%"><?php echo $this->lang->line('vehicle_number'); ?></th>
                             <td width="25%"><?php echo $result["vehicle_no"]; ?></td>
                             <th width="25%"><?php echo $this->lang->line('vehicle_model'); ?></th>
-                            <td width="30%" class="text-left"><?php echo $result['vehicle_model']; ?></td> 
+                            <td width="30%" class="text-start"><?php echo $result['vehicle_model']; ?></td> 
                         </tr>
                         <tr>
                             <th width="20%"><?php echo $this->lang->line('case_id'); ?></th>
@@ -108,18 +103,18 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 ?> 
                     </table> 
                     <div class="divider mb-10 mt-10"></div>
-                    <table class="printablea4" style="width: 30%; float: right;">
+                    <table class="printablea4 sh-print-right-30" >
                         <?php if (!empty($result["standard_charge"])) { ?>
                             <tr>
-                                <th style="padding-bottom: 5px;"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
-                                <td class="text-right" style="padding-bottom: 5px;"><?php echo number_format((float)$result["standard_charge"], 2, '.', ''); ?></td>
+                                <th class="sh-pb-5px"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?></th>
+                                <td class="text-end sh-pb-5px" ><?php echo number_format((float)$result["standard_charge"], 2, '.', ''); ?></td>
                             </tr>
                         <?php } ?>
 
                         <?php if (!empty($result["amount"])) { ?>
                             <tr>
-                                <th style="padding-bottom: 5px;"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
-                                <td class="text-right" style="padding-bottom: 5px;"><?php echo $result["amount"]; ?></td>
+                                <th class="sh-pb-5px"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                <td class="text-end sh-pb-5px" ><?php echo $result["amount"]; ?></td>
                             </tr>
                         <?php } ?>
                    
@@ -129,7 +124,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     echo $this->lang->line('discount') . " (" . $currency_symbol . ")";
                                     ;
                                     ?></th>
-                                <td class="text-right"><?php echo amountFormat($result['discount']); ?><?php echo " (".$result["discount_percentage"]."%) ";?></td>
+                                <td class="text-end"><?php echo amountFormat($result['discount']); ?><?php echo " (".$result["discount_percentage"]."%) ";?></td>
                             </tr>
                         <?php } ?>
 
@@ -139,7 +134,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     echo $this->lang->line('tax') . " (" . $currency_symbol . ")";
                                     ;
                                     ?></th>
-                                <td class="text-right"><?php 
+                                <td class="text-end"><?php 
                                  echo amountFormat((($result['amount']-$result['discount'])*$result["tax_percentage"])/100);
                                ?><?php echo " (".$result["tax_percentage"]."%) ";?></td>
                             </tr>
@@ -151,7 +146,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")";
                                         ;
                                         ?></th>
-                                    <td class="text-right"><?php echo amountFormat($result["net_amount"]); ?></td>
+                                    <td class="text-end"><?php echo amountFormat($result["net_amount"]); ?></td>
                                 </tr>
                                 <?php
                         }
@@ -160,7 +155,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         if (!empty($result["total_paid"])) { ?>
                                 <tr>
                                     <th><?php echo $this->lang->line('paid_amount') . " (" . $currency_symbol . ")";?></th>
-                                    <td class="text-right"><?php echo $result["total_paid"]; ?></td>
+                                    <td class="text-end"><?php echo $result["total_paid"]; ?></td>
                                 </tr>
                                 <?php
                         }
@@ -170,12 +165,12 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                         echo $this->lang->line('due_amount') . " (" . $currency_symbol . ")";
                                         ;
                                         ?></th>
-                                    <td class="text-right"><?php echo amountFormat($result["net_amount"]-$result["total_paid"]); ?></td>
+                                    <td class="text-end"><?php echo amountFormat($result["net_amount"]-$result["total_paid"]); ?></td>
                                 </tr>
                     </table>
                          <div class="divider mb-10 mt-10"></div>  
                          <div class="table-responsive">          
-                     <table style="width: 100%;">
+                     <table class="w-100">
                       <?php if (!empty($result["note"])) { ?>
                             
                           <tr>

@@ -1,23 +1,20 @@
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row"> 
+<div class="row"> 
             <div class="col-md-2">
-                <div class="box border0">
+                <div class="card border0">
                     <?php $this->load->view("admin/charges/sidebar"); ?>
                 </div>
             </div>
             <div class="col-md-10">
-                <div class="box box-primary" id="tachelist">
-                    <div class="box-header ptbnull">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('tax_category_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card" id="tachelist">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('tax_category_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('tax_category', 'can_add')) {?>
                                 <a onclick="add()" class="btn btn-primary btn-sm charge_type"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_tax_category'); ?></a>
                             <?php }?>
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="mailbox-controls">
                         </div>
                         <div class="table-responsive mailbox-messages overflow-visible">
@@ -25,7 +22,8 @@
                                 <thead>
                                     <tr>
                                         <th><?php echo $this->lang->line('name'); ?></th>
-                                        <th><?php echo $this->lang->line('percentage'); ?>(%)</th>                                         
+                                        <th><?php echo $this->lang->line('percentage'); ?>(%)</th>
+                                        <th class="text-end noExport sh-th-140"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -41,36 +39,46 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-mid" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" id="title"><?php ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm400 modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><span id="title"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formadd" action="<?php echo site_url('admin/taxcategory/add') ?>"  id="employeeform" name="employeeform" method="post" accept-charset="utf-8" class="ptt10">
-                    <div class="modal-body pt0 pb0">
-                        <div class="form-group">
-                            <label><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
-                            <input autofocus="" id="name"  name="name"  type="text" class="form-control"  />
-                             <input autofocus="" id="id"  name="id"  type="hidden" class="form-control"  />
-                            <span class="text-danger"><?php echo form_error('name'); ?></span>
-                        </div>
-                      <div class="form-group"> 
-                         <label><?php echo $this->lang->line('percentage'); ?></label><small class="req"> *</small>
-                        <div class="input-group">                           
-                            <input type="text" class="form-control right-border-none" name="percentage" id="percentage"  autocomplete="off">
-                            <span class="input-group-addon "> %</span>
+            <form id="formadd" action="<?php echo site_url('admin/taxcategory/add') ?>" name="employeeform" method="post" accept-charset="utf-8">
+                <input type="hidden" id="id" name="id">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('tax_category'); ?></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('name'); ?></label><small class="req"> *</small>
+                                        <input autofocus="" id="name" name="name" type="text" class="form-control">
+                                        <span class="text-danger"><?php echo form_error('name'); ?></span>
+                                    </div>
+                                    <div class="mb-0 col-12">
+                                        <label class="form-label"><?php echo $this->lang->line('percentage'); ?></label><small class="req"> *</small>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control right-border-none text-end" name="percentage" id="percentage" autocomplete="off">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>  
-                        <div class="modal-footer">
-                            <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -79,11 +87,11 @@
 	function add(){
 		$('#title').html('<?php echo $this->lang->line('add_tax_category'); ?>');
         $("#formadd").trigger('reset');
-		$('#myModal').modal('show');
+		shModal('myModal').show();
 	}
     $(document).ready(function (e) {
         $('#formadd').on('submit', (function (e) {
-            $("#formaddbtn").button('loading');
+            $("#formaddbtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),
@@ -102,10 +110,10 @@
                         errorMsg(message);
                     } else {
                         successMsg(data.message);
-                      $('#myModal').modal('hide');
+                      shModal('myModal').hide();
                       $('.ajaxlist').DataTable().ajax.reload();
                     }
-                    $("#formaddbtn").button('reset');
+                    $("#formaddbtn").btnReset();
                 },
                 error: function () {
 
@@ -123,7 +131,7 @@
             data: {tax_id: record_id},
             dataType: 'json',
               beforeSend: function(){
-                 btn.button('loading');
+                 btn.btnLoading();
                  },
             success: function (data) {
                      if (data.status == 0) {                     
@@ -133,26 +141,22 @@
                     	$('#id').val(data.id);
                     	$('#name').val(data.name);
                     	$('#percentage').val(data.percentage);
-						$('#myModal').modal('show');
+						shModal('myModal').show();
                     }
-                 btn.button('reset');
+                 btn.btnReset();
             }, 
             error: function () {
-               btn.button('reset');
+               btn.btnReset();
                 },
                 complete: function(){
-                 btn.button('reset');
+                 btn.btnReset();
    }
         });
 
  });
  
     $(document).ready(function (e) {
-        $('#myModal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show:false
-        });
+        modal_click_disabled('myModal');
     });
 	
 </script>

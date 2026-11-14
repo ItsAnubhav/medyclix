@@ -12,6 +12,7 @@ class Complaint extends Admin_Controller
         parent::__construct();
         $this->load->library('form_validation');
         $this->load->library('datatables');
+        $this->load->library('SaasValidation');
         $this->config->load("image_valid");
     }
 
@@ -23,35 +24,48 @@ class Complaint extends Admin_Controller
 
         $this->session->set_userdata('top_menu', 'front_office');
         $this->session->set_userdata('sub_menu', 'admin/complaint');
-        $this->form_validation->set_rules('name', $this->lang->line('complaint_by'), 'required');
+        $this->form_validation->set_rules('name', $this->lang->line('complaint_by'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
 
         if ($this->form_validation->run() == false) {
             $data['complaint_type']  = $this->complaint_model->getComplaintType();
             $data['complaintsource'] = $this->complaint_model->getComplaintSource();
-            $this->load->view('layout/header');
+            $data['module'] = 'front_office';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/frontoffice/complaintview', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
-            $date      = $this->input->post('date');
+            $date      = $this->input->post('date', TRUE);
             $complaint = array(
-                'complaint_type_id' => $this->input->post('complaint'),
-                'source'            => $this->input->post('source'),
-                'name'              => $this->input->post('name'),
-                'contact'           => $this->input->post('contact'),
+                'complaint_type_id' => $this->input->post('complaint', TRUE),
+                'source'            => $this->input->post('source', TRUE),
+                'name'              => $this->input->post('name', TRUE),
+                'contact'           => $this->input->post('contact', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description'       => $this->input->post('description'),
-                'action_taken'      => $this->input->post('action_taken'),
-                'assigned'          => $this->input->post('assigned'),
-                'note'              => $this->input->post('note'),
+                'description'       => $this->input->post('description', TRUE),
+                'action_taken'      => $this->input->post('action_taken', TRUE),
+                'assigned'          => $this->input->post('assigned', TRUE),
+                'note'              => $this->input->post('note', TRUE),
             );
+			
+			if ($this->rbac->hasPrivilege('complain', 'can_add')) {
+				
+				$complaint_id = $this->complaint_model->add($complaint);
+			
+				if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+					$fileInfo = pathinfo($_FILES["file"]["name"]);
+					$img_name = 'id' . $complaint_id . '.' . $fileInfo['extension'];
+					move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/front_office/complaints/" . $img_name);
+					$this->complaint_model->image_add($complaint_id, $img_name);
 
-            $complaint_id = $this->complaint_model->add($complaint);
-            if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-                $fileInfo = pathinfo($_FILES["file"]["name"]);
-                $img_name = 'id' . $complaint_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/front_office/complaints/" . $img_name);
-                $this->complaint_model->image_add($complaint_id, $img_name);
-            }
+					// SaaS: add uploaded file size to the storage quota usage.
+					try {
+						$this->saasvalidation->updateStorageLimit('storage', ['file']);
+					} catch (Exception $e) {
+						log_message('error', 'SaaS storage quota update failed (complaint index add): ' . $e->getMessage());
+					}
+				}
+			}
 
             $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('complaint_added_successfully') . ' </div>');
             redirect('admin/complaint');
@@ -60,31 +74,33 @@ class Complaint extends Admin_Controller
 
     public function getcomplaintdatatable()
     {
+		if (!$this->rbac->hasPrivilege('complain', 'can_view')) {
+            access_denied();
+        }
+		
         $dt_response = $this->complaint_model->getAllcomplaintRecord();
         $dt_response = json_decode($dt_response);
         $dt_data     = array();
         if (!empty($dt_response->data)) {
             foreach ($dt_response->data as $key => $value) {
-                $row = array();
-                $action = "";
+                $row    = array();
+                $action = '';
 
-                $action .= "<a href='#' onclick=getRecord(" . $value->id . ") class='btn btn-default btn-xs'  data-toggle='tooltip' data-target='#complaintdetails' title=''  data-original-title=" . $this->lang->line('view') . "><i class='fa fa-reorder' aria-hidden='true'></i></a>";
-
-                if ($this->rbac->hasPrivilege('complain', 'can_edit')) {
-                    $action .= "<a href='#' onclick=get('" . $value->id . "') class='btn btn-default btn-xs ' data-toggle='tooltip' data-target='#editmyModal' title='' data-target='#editmyModal'  data-original-title=" . $this->lang->line('edit') . "><i class='fa fa-pencil'></i></a>";
-                }
+                $action .= "<a href='#' onclick='getRecord(" . $value->id . ")' class='btn btn-sm btn-outline-secondary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('view') . "'><i class='fa fa-reorder'></i></a>";
 
                 if ($value->image !== "") {
-                    $action .= "<a href='" . base_url() . 'admin/complaint/download/' . $value->id . "' class='btn btn-default btn-xs' data-toggle='tooltip' title='' data-target='#editmyModal'  data-original-title=" . $this->lang->line('download') . "><i class='fa fa-download'></i></a>";
+                    $action .= "<a href='" . base_url() . 'admin/complaint/download/' . $value->id . "' class='btn btn-sm btn-outline-secondary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
+                }
+
+                if ($this->rbac->hasPrivilege('complain', 'can_edit')) {
+                    $action .= "<a href='#' onclick='get(" . $value->id . ")' class='btn btn-sm btn-outline-primary' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
                 }
 
                 if ($this->rbac->hasPrivilege('complain', 'can_delete')) {
                     if ($value->image !== "") {
-                        $action .= "<a
-                        href='#'  onclick='delete_image_record(" . $value->id . ")' 
-                          class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title=''  data-original-title=" . $this->lang->line('delete') . "><i class='fa fa-trash' aria-hidden='true'></i></a>";
+                        $action .= "<a href='#' onclick='delete_image_record(" . $value->id . ")' class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     } else {
-                        $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-default btn-xs pull-right'  data-toggle='tooltip' title='' data-original-title=" . $this->lang->line('delete') . "><i class='fa fa-trash' aria-hidden='true'></i></a>";
+                        $action .= "<a href='#' onclick='delete_record(" . $value->id . ")' class='btn btn-sm btn-outline-danger' data-bs-toggle='tooltip' data-bs-placement='top' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
                     }
                 }
 
@@ -100,7 +116,7 @@ class Complaint extends Admin_Controller
                 $row[] = $value->name;
                 $row[] = $value->contact;
                 $row[] = $date;
-                $row[]     = $action;
+                $row[]     = "<div class='d-inline-flex gap-1 justify-content-end flex-nowrap'>" . $action . "</div>";
                 $dt_data[] = $row;
             }
         }
@@ -113,11 +129,41 @@ class Complaint extends Admin_Controller
         echo json_encode($json_data);
     }
 
+    // SaaS storage pre-check callback — blocks save when upload would exceed quota.
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    // Returns the image filename after releasing its storage quota (model->delete leaves the physical file).
+    private function releaseComplaintImageQuota($id)
+    {
+        $existing  = $this->complaint_model->complaint_list($id);
+        $old_image = (!empty($existing['image'])) ? $existing['image'] : '';
+        if (!empty($old_image)) {
+            $kb = $this->media_storage->getUploadedFileSize($old_image, 'uploads/front_office/complaints');
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (complaint): ' . $e->getMessage());
+                }
+            }
+        }
+        return $old_image;
+    }
+
     public function add()
     {
-        $this->form_validation->set_rules('name', $this->lang->line('complain_by'), 'required');
-        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'numeric');
-        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload');
+
+		if (!$this->rbac->hasPrivilege('complain', 'can_add')) {
+            access_denied();
+        }     
+		 
+        $this->form_validation->set_rules('name', $this->lang->line('complain_by'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('contact', $this->lang->line('phone'), 'trim|numeric|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -128,24 +174,24 @@ class Complaint extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $date      = $this->input->post('date');
+            $date      = $this->input->post('date', TRUE);
 
-            if ($this->input->post('complaint')) {
-                $complaint = $this->input->post('complaint');
+            if ($this->input->post('complaint', TRUE)) {
+                $complaint = $this->input->post('complaint', TRUE);
             } else {
                 $complaint = null;
             }
 
             $complaint = array(
                 'complaint_type_id' => $complaint,
-                'source'            => $this->input->post('source'),
-                'name'              => $this->input->post('name'),
-                'contact'           => $this->input->post('contact'),
+                'source'            => $this->input->post('source', TRUE),
+                'name'              => $this->input->post('name', TRUE),
+                'contact'           => $this->input->post('contact', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description'       => $this->input->post('description'),
-                'action_taken'      => $this->input->post('action_taken'),
-                'assigned'          => $this->input->post('assigned'),
-                'note'              => $this->input->post('note'),
+                'description'       => $this->input->post('description', TRUE),
+                'action_taken'      => $this->input->post('action_taken', TRUE),
+                'assigned'          => $this->input->post('assigned', TRUE),
+                'note'              => $this->input->post('note', TRUE),
             );
 
             $complaint_id = $this->complaint_model->add($complaint);
@@ -154,6 +200,13 @@ class Complaint extends Admin_Controller
                 $file_name = $this->media_storage->fileupload("file", "./uploads/front_office/complaints/");
                 if (!IsNullOrEmptyString($file_name)) {
                     $this->complaint_model->image_add($complaint_id, $file_name);
+
+                    // SaaS: add uploaded file size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (complaint add): ' . $e->getMessage());
+                    }
                 }
             }
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -163,12 +216,12 @@ class Complaint extends Admin_Controller
 
     public function edit()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         if (!$this->rbac->hasPrivilege('complain', 'can_edit')) {
             access_denied();
         }
-        $this->form_validation->set_rules('name', $this->lang->line('complain_by'), 'required');
-        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('name', $this->lang->line('complain_by'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[file]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -178,23 +231,43 @@ class Complaint extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $date      = $this->input->post('date');
+            $date      = $this->input->post('date', TRUE);
             $complaint = array(
-                'complaint_type_id' => $this->input->post('complaint'),
-                'source'            => $this->input->post('source'),
-                'name'              => $this->input->post('name'),
-                'contact'           => $this->input->post('contact'),
+                'complaint_type_id' => $this->input->post('complaint', TRUE),
+                'source'            => $this->input->post('source', TRUE),
+                'name'              => $this->input->post('name', TRUE),
+                'contact'           => $this->input->post('contact', TRUE),
                 'date'              => $this->customlib->dateFormatToYYYYMMDD($date),
-                'description'       => $this->input->post('description'),
-                'action_taken'      => $this->input->post('action_taken'),
-                'assigned'          => $this->input->post('assigned'),
-                'note'              => $this->input->post('note'),
+                'description'       => $this->input->post('description', TRUE),
+                'action_taken'      => $this->input->post('action_taken', TRUE),
+                'assigned'          => $this->input->post('assigned', TRUE),
+                'note'              => $this->input->post('note', TRUE),
             );
 
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: capture the existing image for quota diff + cleanup.
+                $existing  = $this->complaint_model->complaint_list($id);
+                $old_image = (!empty($existing['image'])) ? $existing['image'] : '';
+                $old_kb    = (!empty($old_image)) ? $this->media_storage->getUploadedFileSize($old_image, 'uploads/front_office/complaints') : 0;
+
                 $file_name = $this->media_storage->fileupload("file", "./uploads/front_office/complaints/");
                 if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($old_image)) {
+                        $this->media_storage->filedelete($old_image, 'uploads/front_office/complaints');
+                    }
                     $this->complaint_model->image_add($id, $file_name);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_kb = $this->media_storage->getTmpFileSize('file');
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (complaint edit): ' . $e->getMessage());
+                    }
                 }
             }
 
@@ -221,6 +294,12 @@ class Complaint extends Admin_Controller
             access_denied();
         }
 
+        // SaaS: release the image's storage and remove the physical file (model->delete leaves it).
+        $img = $this->releaseComplaintImageQuota($id);
+        if (!empty($img)) {
+            $this->media_storage->filedelete($img, 'uploads/front_office/complaints');
+        }
+
         $this->complaint_model->delete($id);
         $this->session->set_flashdata('msg', '<div class="alert alert-success">' . $this->lang->line('complaint_deleted_successfully') . ' </div>');
         redirect('admin/complaint');
@@ -228,6 +307,9 @@ class Complaint extends Admin_Controller
 
     public function download($id)
     {
+		if (!$this->rbac->hasPrivilege('complain', 'can_download')) {
+            access_denied();
+        }
         $complaint= $this->complaint_model->complaint_list($id);  
         $this->media_storage->filedownload($complaint['image'], "./uploads/front_office/complaints/");
     }
@@ -239,6 +321,19 @@ class Complaint extends Admin_Controller
         }
         $complaint_list=$this->complaint_model->complaint_list($id);
         $image= $complaint_list['image'];
+
+        // SaaS: release the image's storage (model->image_delete removes the file itself).
+        if (!empty($image)) {
+            $kb = $this->media_storage->getUploadedFileSize($image, 'uploads/front_office/complaints');
+            if ($kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (complaint imagedelete): ' . $e->getMessage());
+                }
+            }
+        }
+
         $this->complaint_model->delete($id);
         $this->complaint_model->image_delete($id, "$image");
         echo json_encode(array("status" => 1, "msg" => $this->lang->line("delete_message")));

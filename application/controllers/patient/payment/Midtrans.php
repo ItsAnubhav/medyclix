@@ -4,6 +4,9 @@
 
 class Midtrans extends Patient_Controller
 {
+	public $patient_data;
+	public $setting;
+
     public $api_config     = "";
     public $payment_method = array();
     public $pay_method     = array();

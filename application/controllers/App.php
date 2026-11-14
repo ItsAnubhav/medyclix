@@ -35,7 +35,7 @@ class App extends CI_Controller
                 ->set_content_type('application/json')
                 ->set_status_header(405)
                 ->set_output(json_encode(array(
-                    'error' => "Method Not Allowed",
+                    'error' => $this->lang->line('method_not_allowed'),
                 )));
         }
 

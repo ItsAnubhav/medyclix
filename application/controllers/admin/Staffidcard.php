@@ -5,11 +5,14 @@ if (!defined('BASEPATH')) {
 
 class Staffidcard extends Admin_Controller
 {
+	public $sch_setting_detail;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->load->model(array('Staffidcard_model'));
+        $this->load->library('SaasValidation');
         $this->config->load('image_valid');
         $this->sch_setting_detail = $this->setting_model->getSetting();
     }
@@ -22,9 +25,21 @@ class Staffidcard extends Admin_Controller
         $this->session->set_userdata('top_menu', 'Certificate');
         $this->session->set_userdata('sub_menu', 'admin/staffidcard');
         $data['staffidcardlist'] = $this->Staffidcard_model->staffidcardlist();
-        $this->load->view('layout/header');
+        $data['module'] = 'certificate';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/staffidcard/staffidcardview', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Pass a comma-separated list of $_FILES field names; blocks the save when
+     * their combined size would push the tenant over its storage quota.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function create()
@@ -35,15 +50,16 @@ class Staffidcard extends Admin_Controller
         $this->form_validation->set_rules('hospital_name', $this->lang->line('hospital_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('address', $this->lang->line('address_phone_email'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('title', $this->lang->line('id_card_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload');
+        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload|callback_validateCanUploadFile[background_image,logo_img,sign_image]');
         $this->form_validation->set_rules('logo_img', $this->lang->line('logo_image'), 'callback_logo_handle_upload');
         $this->form_validation->set_rules('sign_image', $this->lang->line('signature_image'), 'callback_signature_handle_upload');
 
         if ($this->form_validation->run() == false) {
             $this->data['staffidcardlist'] = $this->Staffidcard_model->staffidcardlist();
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/staffidcard/staffidcardview', $this->data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $staff_id          = 0;
             $department        = 0;
@@ -56,44 +72,44 @@ class Staffidcard extends Admin_Controller
             $phone             = 0;
             $dob               = 0;
             $barcode           = 0;
-            if ($this->input->post('is_active_staff_id') == 1) {
-                $staff_id = $this->input->post('is_active_staff_id');
+            if ($this->input->post('is_active_staff_id', TRUE) == 1) {
+                $staff_id = $this->input->post('is_active_staff_id', TRUE);
             }
-            if ($this->input->post('is_active_department') == 1) {
-                $department = $this->input->post('is_active_department');
+            if ($this->input->post('is_active_department', TRUE) == 1) {
+                $department = $this->input->post('is_active_department', TRUE);
             }
-            if ($this->input->post('is_active_designation') == 1) {
-                $designation = $this->input->post('is_active_designation');
+            if ($this->input->post('is_active_designation', TRUE) == 1) {
+                $designation = $this->input->post('is_active_designation', TRUE);
             }
-            if ($this->input->post('is_active_staff_name') == 1) {
-                $name = $this->input->post('is_active_staff_name');
+            if ($this->input->post('is_active_staff_name', TRUE) == 1) {
+                $name = $this->input->post('is_active_staff_name', TRUE);
             }
-            if ($this->input->post('is_active_staff_father_name') == 1) {
-                $fathername = $this->input->post('is_active_staff_father_name');
+            if ($this->input->post('is_active_staff_father_name', TRUE) == 1) {
+                $fathername = $this->input->post('is_active_staff_father_name', TRUE);
             }
-            if ($this->input->post('is_active_staff_mother_name') == 1) {
-                $mothername = $this->input->post('is_active_staff_mother_name');
+            if ($this->input->post('is_active_staff_mother_name', TRUE) == 1) {
+                $mothername = $this->input->post('is_active_staff_mother_name', TRUE);
             }
-            if ($this->input->post('is_active_date_of_joining') == 1) {
-                $date_of_joining = $this->input->post('is_active_date_of_joining');
+            if ($this->input->post('is_active_date_of_joining', TRUE) == 1) {
+                $date_of_joining = $this->input->post('is_active_date_of_joining', TRUE);
             }
-            if ($this->input->post('is_active_staff_permanent_address') == 1) {
-                $permanent_address = $this->input->post('is_active_staff_permanent_address');
+            if ($this->input->post('is_active_staff_permanent_address', TRUE) == 1) {
+                $permanent_address = $this->input->post('is_active_staff_permanent_address', TRUE);
             }
-            if ($this->input->post('is_active_staff_phone') == 1) {
-                $phone = $this->input->post('is_active_staff_phone');
+            if ($this->input->post('is_active_staff_phone', TRUE) == 1) {
+                $phone = $this->input->post('is_active_staff_phone', TRUE);
             }
-            if ($this->input->post('is_active_staff_dob') == 1) {
-                $dob = $this->input->post('is_active_staff_dob');
+            if ($this->input->post('is_active_staff_dob', TRUE) == 1) {
+                $dob = $this->input->post('is_active_staff_dob', TRUE);
             }
-            if ($this->input->post('is_active_staff_barcode') == 1) {
-                $barcode = $this->input->post('is_active_staff_barcode');
+            if ($this->input->post('is_active_staff_barcode', TRUE) == 1) {
+                $barcode = $this->input->post('is_active_staff_barcode', TRUE);
             }
             $data = array(
-                'title'                    => $this->input->post('title'),
-                'hospital_name'            => $this->input->post('hospital_name'),
-                'hospital_address'         => $this->input->post('address'),
-                'header_color'             => $this->input->post('header_color'),
+                'title'                    => $this->input->post('title', TRUE),
+                'hospital_name'            => $this->input->post('hospital_name', TRUE),
+                'hospital_address'         => $this->input->post('address', TRUE),
+                'header_color'             => $this->input->post('header_color', TRUE),
                 'enable_staff_id'          => $staff_id,
                 'enable_staff_department'  => $department,
                 'enable_designation'       => $designation,
@@ -129,6 +145,16 @@ class Staffidcard extends Admin_Controller
 
             $upload_data = array('id' => $insert_id, 'logo' => $logo_img, 'background' => $background, 'sign_image' => $sign_image);
             $this->Staffidcard_model->addstaffidcard($upload_data);
+
+            // SaaS: add the combined size of any uploaded images to the storage quota usage.
+            if (!IsNullOrEmptyString($background) || !IsNullOrEmptyString($logo_img) || !IsNullOrEmptyString($sign_image)) {
+                try {
+                    $this->saasvalidation->updateStorageLimit('storage', ['background_image', 'logo_img', 'sign_image']);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (staffidcard create): ' . $e->getMessage());
+                }
+            }
+
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
             redirect('admin/staffidcard/index');
         }
@@ -145,15 +171,16 @@ class Staffidcard extends Admin_Controller
         $this->form_validation->set_rules('hospital_name', $this->lang->line('hospital_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('address', $this->lang->line('address_phone_email'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('title', $this->lang->line('id_card_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload');
+        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload|callback_validateCanUploadFile[background_image,logo_img,sign_image]');
         $this->form_validation->set_rules('logo_img', $this->lang->line('logo_image'), 'callback_logo_handle_upload');
         $this->form_validation->set_rules('sign_image', $this->lang->line('signature_image'), 'callback_signature_handle_upload');
 
         if ($this->form_validation->run() == false) {
             $this->data['staffidcardlist'] = $this->Staffidcard_model->staffidcardlist();
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/staffidcard/staffidcardedit', $this->data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
             $staff_id          = 0;
             $department        = 0;
@@ -166,43 +193,43 @@ class Staffidcard extends Admin_Controller
             $phone             = 0;
             $dob               = 0;
             $barcode           = 0;
-            if ($this->input->post('is_active_staff_id') == 1) {
-                $staff_id = $this->input->post('is_active_staff_id');
+            if ($this->input->post('is_active_staff_id', TRUE) == 1) {
+                $staff_id = $this->input->post('is_active_staff_id', TRUE);
             }
-            if ($this->input->post('is_active_department') == 1) {
-                $department = $this->input->post('is_active_department');
+            if ($this->input->post('is_active_department', TRUE) == 1) {
+                $department = $this->input->post('is_active_department', TRUE);
             }
-            if ($this->input->post('is_active_designation') == 1) {
-                $designation = $this->input->post('is_active_designation');
+            if ($this->input->post('is_active_designation', TRUE) == 1) {
+                $designation = $this->input->post('is_active_designation', TRUE);
             }
-            if ($this->input->post('is_active_staff_name') == 1) {
-                $name = $this->input->post('is_active_staff_name');
+            if ($this->input->post('is_active_staff_name', TRUE) == 1) {
+                $name = $this->input->post('is_active_staff_name', TRUE);
             }
-            if ($this->input->post('is_active_staff_father_name') == 1) {
-                $fathername = $this->input->post('is_active_staff_father_name');
+            if ($this->input->post('is_active_staff_father_name', TRUE) == 1) {
+                $fathername = $this->input->post('is_active_staff_father_name', TRUE);
             }
-            if ($this->input->post('is_active_staff_mother_name') == 1) {
-                $mothername = $this->input->post('is_active_staff_mother_name');
+            if ($this->input->post('is_active_staff_mother_name', TRUE) == 1) {
+                $mothername = $this->input->post('is_active_staff_mother_name', TRUE);
             }
-            if ($this->input->post('is_active_date_of_joining') == 1) {
-                $date_of_joining = $this->input->post('is_active_date_of_joining');
+            if ($this->input->post('is_active_date_of_joining', TRUE) == 1) {
+                $date_of_joining = $this->input->post('is_active_date_of_joining', TRUE);
             }
-            if ($this->input->post('is_active_staff_permanent_address') == 1) {
-                $permanent_address = $this->input->post('is_active_staff_permanent_address');
+            if ($this->input->post('is_active_staff_permanent_address', TRUE) == 1) {
+                $permanent_address = $this->input->post('is_active_staff_permanent_address', TRUE);
             }
-            if ($this->input->post('is_active_staff_phone') == 1) {
-                $phone = $this->input->post('is_active_staff_phone');
+            if ($this->input->post('is_active_staff_phone', TRUE) == 1) {
+                $phone = $this->input->post('is_active_staff_phone', TRUE);
             }
-            if ($this->input->post('is_active_staff_dob') == 1) {
-                $dob = $this->input->post('is_active_staff_dob');
+            if ($this->input->post('is_active_staff_dob', TRUE) == 1) {
+                $dob = $this->input->post('is_active_staff_dob', TRUE);
             }
-            if ($this->input->post('is_active_staff_barcode') == 1) {
-                $barcode = $this->input->post('is_active_staff_barcode');
+            if ($this->input->post('is_active_staff_barcode', TRUE) == 1) {
+                $barcode = $this->input->post('is_active_staff_barcode', TRUE);
             }
-            
-            $remove_background_image    = $this->input->post('remove_background_image');
-            $remove_logo                = $this->input->post('remove_logo');
-            $remove_sign_image          = $this->input->post('remove_sign_image');
+
+            $remove_background_image    = $this->input->post('remove_background_image', TRUE);
+            $remove_logo                = $this->input->post('remove_logo', TRUE);
+            $remove_sign_image          = $this->input->post('remove_sign_image', TRUE);
 
             if ($remove_background_image != '') {
                 $data['background'] = '';
@@ -230,11 +257,11 @@ class Staffidcard extends Admin_Controller
                 } 
 
             
-                $data['id']                       = $this->input->post('id');
-                $data['title']                     = $this->input->post('title');
-                $data['hospital_name']             = $this->input->post('hospital_name');
-                $data['hospital_address']          = $this->input->post('address');
-                $data['header_color']              = $this->input->post('header_color');
+                $data['id']                       = $this->input->post('id', TRUE);
+                $data['title']                     = $this->input->post('title', TRUE);
+                $data['hospital_name']             = $this->input->post('hospital_name', TRUE);
+                $data['hospital_address']          = $this->input->post('address', TRUE);
+                $data['header_color']              = $this->input->post('header_color', TRUE);
                 $data['enable_staff_id']           = $staff_id;
                 $data['enable_staff_department']   = $department;
                 $data['enable_designation']        = $designation;
@@ -249,6 +276,43 @@ class Staffidcard extends Admin_Controller
                 $data['status']                    = 1;
            
             $this->Staffidcard_model->addstaffidcard($data);
+
+            // SaaS: per-image quota adjust (replace = diff, remove = release) and
+            // clean up the replaced/removed physical files. Dirs are fixed per column.
+            $old_card    = (!empty($editstaffidcard)) ? $editstaffidcard[0] : null;
+            $saas_images = array(
+                array('file' => 'background_image', 'col' => 'background', 'dir' => 'uploads/staff_id_card/background', 'remove' => 'remove_background_image'),
+                array('file' => 'logo_img',         'col' => 'logo',       'dir' => 'uploads/staff_id_card/logo',       'remove' => 'remove_logo'),
+                array('file' => 'sign_image',       'col' => 'sign_image', 'dir' => 'uploads/staff_id_card/signature',  'remove' => 'remove_sign_image'),
+            );
+            foreach ($saas_images as $img) {
+                try {
+                    $old_file = ($old_card !== null && !empty($old_card->{$img['col']})) ? $old_card->{$img['col']} : '';
+                    $old_kb   = (!empty($old_file)) ? $this->media_storage->getUploadedFileSize($old_file, $img['dir']) : 0;
+                    $new_uploaded = isset($_FILES[$img['file']]) && !empty($_FILES[$img['file']]['name']);
+                    $removed      = $this->input->post($img['remove'], TRUE) != '';
+
+                    if ($new_uploaded) {
+                        $new_kb = $this->media_storage->getTmpFileSize($img['file']);
+                        if (!empty($old_file)) {
+                            $this->media_storage->filedelete($old_file, $img['dir']);
+                        }
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } elseif ($removed && !empty($old_file)) {
+                        if ($old_kb > 0) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb);
+                        }
+                        $this->media_storage->filedelete($old_file, $img['dir']);
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (staffidcard edit ' . $img['col'] . '): ' . $e->getMessage());
+                }
+            }
+
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/staffidcard');
         }
@@ -257,6 +321,31 @@ class Staffidcard extends Admin_Controller
     public function delete($id)
     {
         $data['title'] = 'Certificate List';
+
+        // SaaS: release storage for all 3 images and remove the physical files.
+        $rows = $this->Staffidcard_model->get($id);
+        if (!empty($rows)) {
+            $row         = $rows[0];
+            $saas_images = array(
+                array('col' => 'background', 'dir' => 'uploads/staff_id_card/background'),
+                array('col' => 'logo',       'dir' => 'uploads/staff_id_card/logo'),
+                array('col' => 'sign_image', 'dir' => 'uploads/staff_id_card/signature'),
+            );
+            foreach ($saas_images as $img) {
+                if (!empty($row->{$img['col']})) {
+                    $kb = $this->media_storage->getUploadedFileSize($row->{$img['col']}, $img['dir']);
+                    if ($kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (staffidcard delete ' . $img['col'] . '): ' . $e->getMessage());
+                        }
+                    }
+                    $this->media_storage->filedelete($row->{$img['col']}, $img['dir']);
+                }
+            }
+        }
+
         $this->Staffidcard_model->remove($id);
         $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('delete_message') . '</div>');
         redirect('admin/staffidcard/index');
@@ -264,7 +353,7 @@ class Staffidcard extends Admin_Controller
 
     public function view()
     {
-        $id                 = $this->input->post('certificateid');
+        $id                 = $this->input->post('certificateid', TRUE);
         $data['idcard']     = $this->Staffidcard_model->idcardbyid($id);
         $data['scan_type']  = $this->sch_setting_detail->scan_code_type;
         $this->load->view('admin/staffidcard/staffidcardpreview', $data);

@@ -1,20 +1,16 @@
 <?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
+                <div class="card">
                 <?php $this->load->view('admin/report/_tpa');?>
-                <div class="box-header ptbnull"></div>
-                    <div class="box-header with-border">                        
-                        <h3 class="box-title"><?php echo $this->lang->line('tpa_report'); ?></h3>
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('tpa_report'); ?></h3>
                     </div>
                     <form id="form1" action="" method="post">
-                        <div class="box-body row">
+                        <div class="card-body row pb-0">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="col-sm-6 col-md-3" >
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('search_type'); ?></label>
                                     <select class="form-control" name="search_type" onchange="showdate(this.value)">
                                         <option value=""><?php echo $this->lang->line('select') ?></option>
@@ -31,9 +27,9 @@
                                 </div>
                             </div>
                             <div class="col-sm-6 col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('doctor'); ?></label>
-                                    <select name="constant_id" id="constant_id" class="form-control select2"  style="width: 100%">
+                                    <select name="constant_id" id="constant_id" class="form-control select2">
                                         <option value=""><?php echo $this->lang->line('select') ?></option>
                                         <?php foreach ($doctorlist as $dkey => $value) {
                                             ?>
@@ -42,52 +38,52 @@
                                                 echo "selected";
                                             }
                                             ?> ><?php echo $value["name"] . " " . $value["surname"]." (".$value["employee_id"].")"; ?></option> 
-<?php } ?>
+										<?php } ?>
                                     </select>
                                     <span class="text-danger"><?php echo form_error('doctor'); ?></span>
                                 </div>
                             </div> 
                             <div class="col-sm-6 col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('tpa'); ?></label>
-                                    <select class="form-control select2" id="organisation"  name="organisation" style="width: 100%">
+                                    <select class="form-control select2" id="organisation" name="organisation">
                                         <option value=""><?php echo $this->lang->line('select') ?></option>
                                         <?php foreach ($organisation as $orgkey => $orgvalue) {
                                             ?>
                                             <option value="<?php echo $orgvalue["id"] ?>" <?php
-                                            if ((isset($tpa_select)) && ($tpa_select == $orgvalue["id"])) {
+                                            if (((isset($tpa_select)) && ($tpa_select == $orgvalue["id"])) || (!empty($preselect_org) && $preselect_org == $orgvalue["id"])) {
                                                 echo "selected";
                                             }
                                             ?> ><?php echo $orgvalue["organisation_name"] ?></option> 
-<?php } ?>
+										<?php } ?>
                                     </select>
                                     <span class="text-danger" id="error_organisation"><?php echo form_error('doctor'); ?></span>
                                 </div>
                             </div> 
                             <div class="col-sm-6 col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('case_id'); ?></label>
                                     <input type="text" name="case_id" class="form-control">                                    
                                 </div>
                             </div> 
-                            <div class="col-sm-6 col-md-3" id="fromdate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-3 d-none" id="fromdate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_from'); ?></label>
                                     <input id="date_from" name="date_from" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_from', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_from'); ?></span>
                                 </div>
                             </div> 
-                            <div class="col-sm-6 col-md-3" id="todate" style="display: none">
-                                <div class="form-group">
+                            <div class="col-sm-6 col-md-3 d-none" id="todate">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('date_to'); ?></label>
                                     <input id="date_to" name="date_to" placeholder="" type="text" class="form-control date" value="<?php echo set_value('date_to', date($this->customlib->getHospitalDateFormat())); ?>"  />
                                     <span class="text-danger"><?php echo form_error('date_to'); ?></span>
                                 </div>
                             </div> 
                             <div class="col-md-3">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('charge_category'); ?></label>
-                                     <select name="charge_category" style="width: 100%" class="form-control charge_category select2">
+                                     <select name="charge_category" class="form-control charge_category select2">
                                         <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php foreach ($charge_category as $key => $value) {
                                                 ?>
@@ -100,25 +96,26 @@
                                 </div>
                             </div> 
                             <div class="col-md-3">
-                                 <div class="form-group">
+                                 <div class="mb-3">
                                     <label><?php echo $this->lang->line('charge'); ?></label>
-                                    <select name="charge_id" style="width: 100%" class="form-control charge select2">
+                                    <select name="charge_id" class="form-control charge select2">
                                         <option value=""><?php echo $this->lang->line('select')?></option>
                                     </select>
                                      <span class="text-danger"><?php echo form_error('apply_charge'); ?></span>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <div class="col-sm-12">
-                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                            <div class="col-sm-6 col-md-auto d-flex align-items-end ps-md-3">
+                                <div class="mb-3">
+                                    <button type="submit" name="search" value="search_filter" class="btn btn-primary d-inline-flex align-items-center gap-1 py-2">
+                                        <i class="fa fa-search"></i>
+                                        <?php echo $this->lang->line('search'); ?>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </form>
-                    <div class="box border0 clear">
-                        <div class="box-header ptbnull"></div>
-                        <div class="box-body table-responsive">
-                            <div class="download_label"><?php echo $this->lang->line('tpa_report'); ?></div>
+                    <div class="card-body table-responsive pt-0">
+                        <div class="download_label"><?php echo $this->lang->line('tpa_report'); ?></div>
                             <table class="table table-striped table-bordered table-hover allajaxlist" data-export-title="<?php echo $this->lang->line('tpa_report'); ?>">
                                 <thead>
                                     <tr>
@@ -133,24 +130,20 @@
                                         <th><?php echo $this->lang->line('charge_name');?></th>
                                         <th><?php echo $this->lang->line('charge_category');?></th>
                                         <th><?php echo $this->lang->line('charge_type');?></th>
-                                        <th class="text text-right"><?php echo $this->lang->line('standard_charge');?> (<?php echo $currency_symbol; ?>)</th>
-                                        <th class="text text-right"><?php echo $this->lang->line('applied_charge');?> (<?php echo $currency_symbol; ?>)</th>
-                                        <th class="text text-right"><?php echo $this->lang->line('tpa_charge');?> (<?php echo $currency_symbol; ?>)</th>
-                                        <th class="text text-right"><?php echo $this->lang->line('tax');?> </th>
-                                        <th class="text text-right"><?php echo $this->lang->line('amount');?> (<?php echo $currency_symbol; ?>)</th>                                    
+                                        <th class="text text-end"><?php echo $this->lang->line('standard_charge');?> (<?php echo $currency_symbol; ?>)</th>
+                                        <th class="text text-end"><?php echo $this->lang->line('applied_charge');?> (<?php echo $currency_symbol; ?>)</th>
+                                        <th class="text text-end"><?php echo $this->lang->line('tpa_charge');?> (<?php echo $currency_symbol; ?>)</th>
+                                        <th class="text text-end"><?php echo $this->lang->line('tax');?> </th>
+                                        <th class="text text-end"><?php echo $this->lang->line('amount');?> (<?php echo $currency_symbol; ?>)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                </tbody>                             
+                                </tbody>
                             </table>
-                        </div>
                     </div>
                 </div>
-            </div> 
-        </div>   
-    </div>  
-</section>
-</div>
+            </div>
+        </div>
 <script>
     $(function () {
         //Initialize Select2 Elements
@@ -160,20 +153,20 @@
 <script type="text/javascript">
     function showdate(value) {
         if (value == 'period') {
-            $('#fromdate').show();
-            $('#todate').show();
+            $('#fromdate').removeClass('d-none');
+            $('#todate').removeClass('d-none');
         } else {
-            $('#fromdate').hide();
-            $('#todate').hide();
+            $('#fromdate').addClass('d-none');
+            $('#todate').addClass('d-none');
         }
     }
 </script>
 
 <script>
-    $(document).ready(function (e) {      
+    $(document).ready(function (e) {
         emptyDatatable('allajaxlist', 'data');
     });
-    
+
 ( function ( $ ) {
     'use strict';
     $(document).ready(function () {
@@ -200,7 +193,6 @@
                     $("#error_organisation").html('');
                 initDatatable('allajaxlist', 'admin/tpamanagement/tpareports/',data.param,[],100,[
                           {  "sWidth": "100px", "bSortable": false, "aTargets": [ -1,-2,-3,-4,-5 ] ,'sClass': 'dt-body-right'},
-                     
                           { "sWidth": "70px", "aTargets": [ 0 ] ,'sClass': 'dt-body-left'},
                           { "sWidth": "50px", "aTargets": [ 1,2 ] ,'sClass': 'dt-body-left'},
                           { "sWidth": "100px", "aTargets": [ 5,6 ] ,'sClass': 'dt-body-left'}
@@ -210,6 +202,9 @@
         });
         }
        ));
+       <?php if (!empty($preselect_org)) { ?>
+       $('#form1').trigger('submit');
+       <?php } ?>
    });
 
 } ( jQuery ) );
@@ -223,7 +218,7 @@
  });
 
     function getchargecode(charge_category,charge_id) {     
-      var div_data = "<option value=''>Select</option>";
+      var div_data = "<option value=''><?= $this->lang->line('select') ?></option>";
       if(charge_category != ""){
           $.ajax({
             url: base_url+'admin/charges/getchargeDetails',

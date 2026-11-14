@@ -1,35 +1,26 @@
 <?php
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('staff_payroll'); ?></h3>             
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('staff_payroll'); ?></h3>             
                     </div>
                     <form id='form1' action="<?php echo site_url('admin/payroll') ?>"  method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <div class="row"> 
                                <?php  if($this->session->flashdata('msg')){ ?> <div>  <?php echo $this->session->flashdata('msg') ?> </div> <?php $this->session->unset_userdata('msg'); }   ?>
                                 <?php echo $this->customlib->getCSRF(); ?>
 
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1">
-                                            <?php echo $this->lang->line("staff_role"); ?>
-                                        </label>
+                                    <div class="mb-3">
+                                        <label><?php echo $this->lang->line("staff_role"); ?></label>
                                         <select onchange="getEmployeeName(this.value)" id="role" name="role" class="form-control">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php
+                                            $role_selected = $this->input->post('role', TRUE) ?: '';
                                             foreach ($classlist as $key => $class) {
-                                                if (isset($_POST["role"])) {
-                                                    $role_selected = $_POST["role"];
-                                                } else {
-                                                    $role_selected = '';
-                                                }
                                                 ?>
                                                 <option value="<?php echo $class["type"] ?>" 
                                                 <?php
@@ -46,8 +37,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </div>
 
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('month') ?></label>
+                                    <div class="mb-3">
+                                        <label><?php echo $this->lang->line('month') ?></label>
                                         <select autofocus="" id="class_id" name="month" class="form-control" >
                                             <option value="select"><?php echo $this->lang->line('select'); ?></option>
                                             <?php
@@ -71,8 +62,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('year'); ?></label>
+                                    <div class="mb-3">
+                                        <label><?php echo $this->lang->line('year'); ?></label>
                                         <?php
                                         if (isset($year)) {
                                             $selected_year = $year;
@@ -97,16 +88,15 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 </div>
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <button type="submit" name="search" value="search" class="btn btn-primary btn-sm pull-right checkbox-toggle"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
+                        <div class="card-footer">
+                            <button type="submit" name="search" value="search" class="btn btn-primary btn-sm float-end"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>
                         </div>
                     </form>
                     <?php
                     if (isset($resultlist)) {
                         ?>
-                        <div class="ptbnull"></div>  
-                        <div class="box border0 clear">
-                            <div class="box-body table-responsive">
+                        <div class="card border0 clear">
+                            <div class="card-body table-responsive">
                                 <div class="download_label"><?php echo $this->lang->line('staff_list'); ?></div>
                                 <table class="table table-striped table-bordered table-hover example">
                                     <thead>
@@ -117,24 +107,23 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                             <th><?php echo $this->lang->line('staff_department'); ?></th>
                                             <th><?php echo $this->lang->line('staff_designation'); ?></th>
                                             <th><?php echo $this->lang->line('staff_phone'); ?></th>
-                                            <th><?php echo $this->lang->line('status'); ?></th>
-                                            <th class="text-right noExport"><?php echo $this->lang->line('action'); ?></th>
+                                            <th class="text-center"><?php echo $this->lang->line('status'); ?></th>
+                                            <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                         </tr>
                                     </thead>            
                                     <tbody>    
                                         <?php
-                                        $count = 1;
                                         foreach ($resultlist as $staff) {
                                             $status = $staff["status"];
 
                                             if ($staff["status"] == "paid") {
-                                                $label = "class='label label-success'";
+                                                $label   = "class='badge sh-status-paid'";
                                                 $wstatus = $payroll_status[$staff["status"]];
-                                            } else if ($staff["status"] == "generated") {
-                                                $label = "class='label label-warning'";
+                                            } elseif ($staff["status"] == "generated") {
+                                                $label   = "class='badge bg-warning'";
                                                 $wstatus = $payroll_status[$staff["status"]];
                                             } else {
-                                                $label = "class='label label-default'";
+                                                $label   = "class='badge bg-secondary'";
                                                 $wstatus = $payroll_status["not_generate"];
                                             }
                                             ?>
@@ -145,53 +134,46 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                                 <td><?php echo $staff['department']; ?></td>
                                                 <td><?php echo $staff['designation']; ?></td>
                                                 <td><?php echo $staff['contact_no']; ?></td>
-                                                <td><small <?php echo $label; ?>><?php echo $wstatus; ?></small></td>
-                                                <?php if ($status == "paid") { ?>
-                                                    <td class="pull-right no-print">
-                                                        <?php
-                                                        if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) {
-                                                            ?>
-                                                            <a class="btn btn-default btn-xs" onclick="return confirm('<?php echo $this->lang->line('are_you_sure_you_want_to_revert_this_record') ?>')" href="<?php echo base_url() . "admin/payroll/revertpayroll/" . $staff["payslip_id"] . "/" . $month_selected . "/" . date("Y") . "/" . $role_selected ?>" title="Revert" data-toggle="tooltip" data-title="Revert" >
-                                                                <i class="fa fa-undo"> </i>
+                                                <td class="text-center"><span <?php echo $label; ?>><?php echo $wstatus; ?></span></td>
+                                                <td class="text-end noExport text-nowrap">
+                                                    <div class="d-inline-flex gap-1 justify-content-end">
+                                                    <?php if ($status == "paid") { ?>
+                                                        <?php if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) { ?>
+                                                            <a class="btn btn-sm btn-outline-secondary sh-icon-btn" onclick="return confirm('<?php echo $this->lang->line('are_you_sure_you_want_to_revert_this_record') ?>')" href="<?php echo base_url() . "admin/payroll/revertpayroll/" . $staff["payslip_id"] . "/" . $month_selected . "/" . date("Y") . "/" . $role_selected ?>" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('revert'); ?>">
+                                                                <i class="fa fa-undo"></i>
                                                             </a>
                                                         <?php } ?>
-                                                        <a href="#" onclick="getPayslip('<?php echo $staff["payslip_id"]; ?>')"  role="button" class="btn btn-primary btn-xs checkbox-toggle edit_setting" data-toggle="tooltip" title="<?php echo $this->lang->line('payslip_view'); ?>" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><?php echo $this->lang->line('view'); ?> <?php echo $this->lang->line('staff_payslip'); ?></a>
-                                                    <?php } ?></td>
-                                                <?php if ($status == "generated") { ?>
-                                                    <td class="pull-right no-print">                                                        
-                                                        <?php
-                                                        if ($this->rbac->hasPrivilege('staff_payroll', 'can_edit')) {
-                                                            ?>                                                    
-                                                            <a href="<?php echo site_url('admin/payroll/edit/'.$staff["payslip_id"]) ?>" class="btn btn-default btn-xs"  data-toggle="tooltip" title="<?php echo $this->lang->line('edit') ?>"><i class="fa fa-pencil"> </i> </a>                                                            
-                                                        <?php }
-                                                        
-                                                        if ($this->rbac->hasPrivilege('staff_payroll', 'can_delete')) {
-                                                            ?>
-                                                            <a href="<?php echo base_url() ?>admin/payroll/deletepayroll/<?php echo $staff["payslip_id"] . "/" . $month_selected . "/" . date("Y") . "/" . $role_selected ?>" class="btn btn-default btn-xs" onclick="return confirm('<?php echo $this->lang->line('are_you_sure_you_want_to_revert_this_record') ?>')" title="Revert" data-toggle="tooltip" data-title="Revert">
-                                                                <i class="fa fa-undo"> </i>
+                                                        <a href="#" onclick="getPayslip('<?php echo $staff["payslip_id"]; ?>')" class="btn btn-sm btn-outline-primary sh-icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('payslip_view'); ?>">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                    <?php } elseif ($status == "generated") { ?>
+                                                        <?php if ($this->rbac->hasPrivilege('staff_payroll', 'can_edit')) { ?>
+                                                            <a href="<?php echo site_url('admin/payroll/edit/'.$staff["payslip_id"]) ?>" class="btn btn-sm btn-outline-primary sh-icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('edit') ?>">
+                                                                <i class="fa fa-pencil"></i>
                                                             </a>
-                                                            <?php
-                                                        }
-                                                        if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) {
-                                                            ?>
-                                                            <a href="#" onclick="getRecord('<?php echo $staff["id"] ?>', '<?php echo $year ?>')" role="button" class="btn btn-primary btn-xs checkbox-toggle edit_setting" data-toggle="tooltip" title="<?php echo $this->lang->line('proceed_to_payment'); ?>" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><?php echo $this->lang->line('proceed_to_pay'); ?></a>
-                                                            <?php
-                                                        }
-                                                    }
-                                                    ?></td>
-                                                <?php if ($staff["payslip_id"] == 0) { ?>
-                                                    <td class="pull-right no-print">
-                                                        <?php
-                                                        if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) {
-                                                            ?>
-                                                            <a class="btn btn-primary btn-xs checkbox-toggle edit_setting" role="button" href="<?php echo base_url() . "admin/payroll/create/" .strtolower($month_selected) . "/" . $year . "/" . $staff["id"] ?>"><?php echo $this->lang->line('generate'); ?> <?php echo $this->lang->line('staff_payroll'); ?></a>
                                                         <?php } ?>
-                                                    </td>
-                                                <?php } ?>
+                                                        <?php if ($this->rbac->hasPrivilege('staff_payroll', 'can_delete')) { ?>
+                                                            <a href="<?php echo base_url() ?>admin/payroll/deletepayroll/<?php echo $staff["payslip_id"] . "/" . $month_selected . "/" . date("Y") . "/" . $role_selected ?>" class="btn btn-sm btn-outline-danger sh-icon-btn" onclick="return confirm('<?php echo $this->lang->line('are_you_sure_you_want_to_revert_this_record') ?>')" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('revert'); ?>">
+                                                                <i class="fa fa-undo"></i>
+                                                            </a>
+                                                        <?php } ?>
+                                                        <?php if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) { ?>
+                                                            <a href="#" onclick="getRecord('<?php echo $staff["id"] ?>', '<?php echo $year ?>')" class="btn btn-sm btn-primary sh-icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('proceed_to_payment'); ?>">
+                                                                <i class="fa fa-money"></i>
+                                                            </a>
+                                                        <?php } ?>
+                                                    <?php } elseif ($staff["payslip_id"] == 0) { ?>
+                                                        <?php if ($this->rbac->hasPrivilege('staff_payroll', 'can_add')) { ?>
+                                                            <a class="btn btn-sm btn-primary sh-icon-btn" href="<?php echo base_url() . "admin/payroll/create/" . strtolower($month_selected) . "/" . $year . "/" . $staff["id"] ?>" data-bs-toggle="tooltip" data-bs-placement="top" title="<?php echo $this->lang->line('generate'); ?> <?php echo $this->lang->line('staff_payroll'); ?>">
+                                                                <i class="fa fa-cogs"></i>
+                                                            </a>
+                                                        <?php } ?>
+                                                    <?php } ?>
+                                                    </div>
+                                                </td>
                                             </tr>
                                             <?php
                                         }
-                                        $count++;
                                         ?>
                                     </tbody>
                                 </table>
@@ -208,103 +190,108 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                 <input type="hidden" name="staffid" id="staffid">
             </form>
         </div>
-    </section>
-</div>
 
-<div id="payslipview" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content mx-2">
+<div id="payslipview" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="payslipviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('details'); ?><span id="print" class="moprint-sm"></span></h4>
+                <h5 class="modal-title" id="payslipviewLabel"><?php echo $this->lang->line('details'); ?><span id="print" class="moprint-sm"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="testdata">
+            <div class="pup-scroll-area">
+                <div class="modal-body" id="testdata">
 
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('close'); ?></button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="proceedtopay" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog2 modal-lg">
-        <div class="modal-content mx-2">
+<div id="proceedtopay" class="modal fade sh-modal sh-modal-accent" tabindex="-1" aria-labelledby="proceedtopayLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('proceed_to_pay'); ?></h4>
+                <h5 class="modal-title" id="proceedtopayLabel"><?php echo $this->lang->line('proceed_to_pay'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
+            <div class="pup-scroll-area">
+                <div class="modal-body">
                     <form role="form" id="schsetting_form" action="<?php echo site_url('admin/payroll/paymentSuccess') ?>" enctype="multipart/form-data">
-                        <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1">
-                                <?php echo $this->lang->line('staff'); ?> <?php echo $this->lang->line('Name'); ?></label>
-                            <input type="text" name="emp_name" readonly class="form-control" id="emp_name">
-                        </div>
-                        <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('amount').' ('.$currency_symbol.')'; ?></label>
-                            <input type="text" name="amount" readonly class="form-control" id="amount">
-                        </div>
-                        <div class="form-group  col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line("month") ?> <?php echo $this->lang->line('year'); ?></label> 
-                            <input id="monthid" name="month" readonly placeholder="" type="text" class="form-control" />
-                            <input  name="paymentmonth" placeholder="" type="hidden" class="form-control" />
-                            <input name="paymentyear" placeholder="" type="hidden" class="form-control" />
-                            <input name="paymentid" placeholder="" type="hidden" class="form-control" />
-                            <input name="staff_id" placeholder="" type="hidden" class="form-control" />
-                            <input name="staff_role" placeholder="" type="hidden" class="form-control" />
-                        </div>
-                        <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('mode'); ?></label><span class="req"> *</span><br/><span id="remark">
-                            </span>
-                            <select name="payment_mode" id="payment_mode"  class="form-control payment_mode">
-                                <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                <?php
-                                foreach ($payment_mode as $pkey => $pvalue) {
-                                    ?>
-                                    <option value="<?php echo $pkey ?>"><?php echo $pvalue ?></option>
-                                    <?php
-                                }
-                                ?>
-                            </select>
-                            <span class="text-danger"><?php echo form_error('payment_mode'); ?></span>
-                        </div>
-                        <div class="cheque_div" style="display: none;">                           
-                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small> 
-                                    <input type="text" name="cheque_no" id="cheque_no" class="form-control">
-                                    <span class="text-danger"><?php echo form_error('cheque_no'); ?></span>
-                                </div> 
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('payment_details'); ?></span>
                             </div>
-                              <div class="col-md-4">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small> 
-                                    <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
-                                    <span class="text-danger"><?php echo form_error('cheque_date'); ?></span>
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('staff_name'); ?> </label>
+                                        <input type="text" name="emp_name" readonly class="form-control" id="emp_name">
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('amount').' ('.$currency_symbol.')'; ?></label>
+                                        <input type="text" name="amount" readonly class="form-control" id="amount">
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line("month") ?> <?php echo $this->lang->line('year'); ?></label>
+                                        <input id="monthid" name="month" readonly placeholder="" type="text" class="form-control" />
+                                        <input name="paymentmonth" placeholder="" type="hidden" class="form-control" />
+                                        <input name="paymentyear" placeholder="" type="hidden" class="form-control" />
+                                        <input name="paymentid" placeholder="" type="hidden" class="form-control" />
+                                        <input name="staff_id" placeholder="" type="hidden" class="form-control" />
+                                        <input name="staff_role" placeholder="" type="hidden" class="form-control" />
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('mode'); ?></label><span class="req"> *</span>
+                                        <span id="remark"></span>
+                                        <select name="payment_mode" id="payment_mode" class="form-control payment_mode">
+                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                            <?php foreach ($payment_mode as $pkey => $pvalue) { ?>
+                                                <option value="<?php echo $pkey ?>"><?php echo $pvalue ?></option>
+                                            <?php } ?>
+                                        </select>
+                                        <span class="text-danger"><?php echo form_error('payment_mode'); ?></span>
+                                    </div>
+                                    <div class="cheque_div col-12 d-none">
+                                        <div class="row">
+                                            <div class="mb-3 col-12 col-sm-4">
+                                                <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small>
+                                                <input type="text" name="cheque_no" id="cheque_no" class="form-control">
+                                                <span class="text-danger"><?php echo form_error('cheque_no'); ?></span>
+                                            </div>
+                                            <div class="mb-3 col-12 col-sm-4">
+                                                <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small>
+                                                <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
+                                                <span class="text-danger"><?php echo form_error('cheque_date'); ?></span>
+                                            </div>
+                                            <div class="mb-3 col-12 col-sm-4">
+                                                <label><?php echo $this->lang->line('attach_document'); ?></label>
+                                                <input type="file" class="filestyle form-control" name="document">
+                                                <span class="text-danger"><?php echo form_error('document'); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('date'); ?></label><small class="req"> *</small>
+                                        <input type="text" name="payment_date" id="payment_date" class="form-control date" value="<?php echo date($this->customlib->getHospitalDateFormat()) ?>">
+                                    </div>
+                                    <div class="mb-3 col-12 col-sm-6">
+                                        <label><?php echo $this->lang->line('note'); ?></label>
+                                        <span id="remark"></span>
+                                        <textarea name="remarks" class="form-control sh-no-resize"></textarea>
+                                    </div>
+                                    <div class="clearfix"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label><?php echo $this->lang->line('attach_document'); ?></label>
-                                    <input type="file" class="filestyle form-control"   name="document">
-                                    <span class="text-danger"><?php echo form_error('document'); ?></span> 
-                                </div>
-                            </div>
                         </div>
-                        <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('payment'); ?> <?php echo $this->lang->line('date'); ?></label><small class="req"> *</small> 
-                            <input type="text" name="payment_date" id="payment_date" class="form-control date" value="<?php echo date($this->customlib->getHospitalDateFormat()) ?>">
-                        </div>
-                        <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-6">
-                            <label for="exampleInputEmail1"><?php echo $this->lang->line('note'); ?></label><br/><span id="remark"> </span>
-                            <textarea name="remarks" class="form-control" ></textarea>
-                        </div>
-                        <div class="clearfix"></div>
-                        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                            <button type="submit" class="btn btn-primary submit_schsetting pull-right" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                        </div>
-                    </form>                  
+                    </form>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                <button type="submit" form="schsetting_form" class="btn btn-info submit_schsetting" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i>"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
             </div>
         </div>
     </div>
@@ -338,11 +325,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             }
         });
 
-        $('#proceedtopay').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('proceedtopay'),{backdrop:'static',keyboard:false}).show();
     }
     ;     
 
@@ -353,27 +336,22 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
             type: 'POST',
             data: {payslipid: id},
             success: function (result) {
-                $("#print").html("<a href='#' data-toggle='tooltip' class='pull-right modal-title moprint' onclick='printData(" + id + ")'  title='<?php echo $this->lang->line('print') ?>'><i class='fa fa-print'></i></a>");
+                $("#print").html("<a href='#' data-bs-toggle='tooltip' class='float-end modal-title moprint' onclick='printData(" + id + ")'  title='<?php echo $this->lang->line('print') ?>'><i class='fa fa-print'></i></a>");
                 $("#testdata").html(result);
             }
         });
 
-        $('#payslipview').modal({
-            show: true,
-            backdrop: 'static',
-            keyboard: false
-        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('payslipview'),{backdrop:'static',keyboard:false}).show();
     }
     ;
 
     function printData(id) {
         var base_url = '<?php echo base_url() ?>';
         $.ajax({
-            url: base_url + 'admin/payroll/payslipView',
+            url: base_url + 'admin/payroll/payslipPrint',
             type: 'POST',
             data: {payslipid: id},
             success: function (result) {
-                $("#testdata").html(result);
                 popup(result);
             }
         });
@@ -402,16 +380,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 	
     function create(id) {
 
-        var month = '<?php
-                                if (isset($_POST["month"])) {
-                                    echo $_POST["month"];
-                                }
-                                ?>';
-        var year = '<?php
-                                if (isset($_POST["year"])) {
-                                    echo $_POST["year"];
-                                }
-                                ?>';
+        var month = '<?php echo $this->input->post('month', TRUE); ?>';
+        var year  = '<?php echo $this->input->post('year', TRUE); ?>';
 
         $("#month").val(month);
         $("#year").val(year);
@@ -442,69 +412,33 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     window.location.reload(true);
                 }
 
-                $this.button('reset');
+                $("#formaddbtn").btnReset();
             }
         });
     });
 
-    function getSectionByClass(class_id, section_id) {
-        if (class_id != "" && section_id != "") {
-            $('#section_id').html("");
-            var base_url = '<?php echo base_url() ?>';
-            var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
-            $.ajax({
-                type: "GET",
-                url: base_url + "sections/getByClass",
-                data: {'class_id': class_id},
-                dataType: "json",
-                success: function (data) {
-                    $.each(data, function (i, obj)
-                    {
-                        var sel = "";
-                        if (section_id == obj.section_id) {
-                            sel = "selected";
-                        }
-                        div_data += "<option value=" + obj.section_id + " " + sel + ">" + obj.section + "</option>";
-                    });
-                    $('#section_id').append(div_data);
-                }
-            });
-        }
-    }
-
-    $(document).ready(function () {
-        var class_id = $('#class_id').val();
-        var section_id = '<?php echo set_value('section_id') ?>';
-        getSectionByClass(class_id, section_id);
-        $(document).on('change', '#class_id', function (e) {
-            $('#section_id').html("");
-            var class_id = $(this).val();
-            var base_url = '<?php echo base_url() ?>';
-            var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
-            $.ajax({
-                type: "GET",
-                url: base_url + "sections/getByClass",
-                data: {'class_id': class_id},
-                dataType: "json",
-                success: function (data) {
-                    $.each(data, function (i, obj)
-                    {
-                        div_data += "<option value=" + obj.section_id + ">" + obj.section + "</option>";
-                    });
-                    $('#section_id').append(div_data);
-                }
-            });
-        });
-    });
 </script>
 
 <script type="text/javascript">
     $(document).on('change','.payment_mode',function(){
       var mode=$(this).val();
       if(mode == "Cheque"){
-        $('.cheque_div').css("display", "block");
+        $('.cheque_div').removeClass('d-none');
       }else{
-        $('.cheque_div').css("display", "none");
+        $('.cheque_div').addClass('d-none');
       }
+    });
+
+    // Initialize Bootstrap 5 tooltips (re-init on DataTable draw for pagination/sort/search)
+    $(document).ready(function () {
+        function initActionTooltips() {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                var existing = bootstrap.Tooltip.getInstance(el);
+                if (existing) { existing.dispose(); }
+                new bootstrap.Tooltip(el);
+            });
+        }
+        initActionTooltips();
+        $('.example').on('draw.dt', initActionTooltips);
     });
 </script>

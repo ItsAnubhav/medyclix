@@ -1,4 +1,4 @@
-<FORM action="https://pay.skrill.com" name="pay_now">
+﻿<FORM action="https://pay.skrill.com" name="pay_now">
             <?php  
                  foreach ($form_fields as $key => $value) {
                      

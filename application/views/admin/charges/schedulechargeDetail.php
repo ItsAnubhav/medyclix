@@ -6,7 +6,7 @@ $genderList      = $this->customlib->getGender();
     <thead>
         <tr>
             <th><?php echo $this->lang->line('schedule_charge_name'); ?></th>
-            <th class="text-right"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
+            <th class="text-end"><?php echo $this->lang->line('charge') . " (" . $currency_symbol . ")"; ?></th>
         </tr>
     </thead>
     <tbody>
@@ -16,7 +16,7 @@ foreach ($allCharge as $detail) {
     ?>
             <tr>
                 <td><?php echo $detail['organisation_name']; ?></td>
-                <td class="text-right"><?php echo $detail['org_charge']; ?></td>
+                <td class="text-end"><?php echo $detail['org_charge']; ?></td>
             </tr>
             <?php
 $count++;

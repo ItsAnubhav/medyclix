@@ -222,7 +222,6 @@ class Staff_model extends MY_Model
             $this->db->trans_rollback();
             return false;
         } else {
-            //return $return_value;
         }
     }
 
@@ -421,7 +420,7 @@ class Staff_model extends MY_Model
         }
         $field_variable      = implode(',', $field_var_array);
 		
-        $query = $this->db->select("staff.*,staff_designation.designation,department.department_name as department,roles.name as user_type,".$field_variable)->join('staff_designation', "staff_designation.id = staff.staff_designation_id", "left")->join('staff_roles', "staff_roles.staff_id = staff.id", "left")->join('roles', "roles.id = staff_roles.role_id", "left")->join('department', "department.id = staff.department_id", "left")->where("staff.is_active", $active)->where("roles.id", $role)->get("staff");
+        $query = $this->db->select("staff.*,staff_designation.designation,department.department_name as department,roles.name as user_type,specialist.specialist_name,".$field_variable)->join('staff_designation', "staff_designation.id = staff.staff_designation_id", "left")->join('staff_roles', "staff_roles.staff_id = staff.id", "left")->join('roles', "roles.id = staff_roles.role_id", "left")->join('department', "department.id = staff.department_id", "left")->join('specialist', "staff.specialist = specialist.id", "left")->where("staff.is_active", $active)->where("roles.id", $role)->get("staff");
         return $query->result_array();
     }
 
@@ -475,11 +474,23 @@ class Staff_model extends MY_Model
         return $query->result_array();
     }
 
-    public function getStaffSpeciality($id)
+    public function getStaffSpeciality_old($id)
     {
+        $id = (int)$id;
         $query = $this->db->query("SELECT t2.id,t2.specialist_name FROM staff as t1 LEFT JOIN specialist as t2 ON find_in_set(t2.id, t1.specialist) where t1.id=$id");
         return $query->result();
     }
+	
+	public function getStaffSpeciality($id)
+	{
+		$this->db->select('t2.id, t2.specialist_name');
+		$this->db->from('staff as t1');
+		$this->db->join('specialist as t2', 'FIND_IN_SET(t2.id, t1.specialist)', 'left');
+		$this->db->where('t1.id', $id);
+
+		$query = $this->db->get();
+		return $query->result();
+	}
  
     public function getSpecialist()
     {
@@ -562,11 +573,12 @@ class Staff_model extends MY_Model
             }
         }
         $field_variable      = implode(',', $field_var_array);
-        $this->db->select('staff.*, staff_designation.designation as designation`, department.department_name as department,roles.name as user_type,roles.id as role_id,'.$field_variable)->from('staff');
+        $this->db->select('staff.*, staff_designation.designation as designation`, department.department_name as department,roles.name as user_type,roles.id as role_id,specialist.specialist_name,'.$field_variable)->from('staff');
         $this->db->join('staff_roles', 'staff_roles.staff_id = staff.id', "LEFT");
         $this->db->join('staff_designation', "staff_designation.id=staff.staff_designation_id", "LEFT");
         $this->db->join('roles', 'roles.id = staff_roles.role_id', "LEFT");
         $this->db->join('department', 'department.id = staff.department_id', "LEFT");
+        $this->db->join('specialist', 'staff.specialist = specialist.id', "LEFT");
         $this->db->where('staff.is_active',$active);
         if($searchterm){
         $this->db->group_start();
@@ -648,16 +660,20 @@ class Staff_model extends MY_Model
         }
        
 
-        $staff_data=$this->staff_model->getstaff($staff_id);
+        $staff_data=$this->staff_model->getstaff($id);
         
-        if($doc==1){             
-             unlink(BASEPATH . "uploads/staff_documents/" . $staff_data['resume']);
-        }else if($doc==2){             
-             unlink(BASEPATH . "uploads/staff_documents/" . $staff_data['joining_letter']);
-        }else if($doc==3){             
-             unlink(BASEPATH . "uploads/staff_documents/" . $staff_data['resignation_letter']);
-        }else if($doc==4){             
-             unlink(BASEPATH . "uploads/staff_documents/" . $staff_data['other_document_file']);
+        if($doc==1 && !empty($staff_data['resume'])){
+             $file = FCPATH . "uploads/staff_documents/" . $staff_data['resume'];
+             if(file_exists($file)){ unlink($file); }
+        }else if($doc==2 && !empty($staff_data['joining_letter'])){
+             $file = FCPATH . "uploads/staff_documents/" . $staff_data['joining_letter'];
+             if(file_exists($file)){ unlink($file); }
+        }else if($doc==3 && !empty($staff_data['resignation_letter'])){
+             $file = FCPATH . "uploads/staff_documents/" . $staff_data['resignation_letter'];
+             if(file_exists($file)){ unlink($file); }
+        }else if($doc==4 && !empty($staff_data['other_document_file'])){
+             $file = FCPATH . "uploads/staff_documents/" . $staff_data['other_document_file'];
+             if(file_exists($file)){ unlink($file); }
         }
 
 

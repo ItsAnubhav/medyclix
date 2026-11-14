@@ -14,7 +14,7 @@ class Leaverequest_model extends MY_model
         }
         $query = $this->db->select('staff.name,staff.surname,staff.employee_id,staff_designation.designation,staff_leave_request.*,leave_types.type,approved_by.name as apply_by_name,approved_by.surname as apply_by_surname,approved_by.employee_id as apply_by_employee_id,staff_roles.role_id as apply_by_role_id')
         ->join("staff", "staff.id = staff_leave_request.staff_id")
-        ->join("staff as approved_by", "approved_by.id = staff_leave_request.status_updated_by")
+        ->join("staff as approved_by", "approved_by.id = staff_leave_request.status_updated_by", "left")
         ->join("staff_roles", "staff_roles.staff_id = approved_by.id")		
         ->join("staff_designation", "staff_designation.id = staff.staff_designation_id", "left")
         ->join("leave_types", "leave_types.id = staff_leave_request.leave_type_id")
@@ -151,5 +151,12 @@ class Leaverequest_model extends MY_model
     public function myallotedLeaveType($id, $leave_type_id) {
         $query = $this->db->select('staff_leave_details.*,leave_types.type,leave_types.id as typeid')->where(array('staff_id' => $id, 'leave_types.id' => $leave_type_id))->join("leave_types", "staff_leave_details.leave_type_id = leave_types.id")->get("staff_leave_details");
         return $query->row_array();
+    }
+
+    // Lightweight getter for SaaS quota diff/release on edit & delete — returns the
+    // leave request's stored document filename (bare name) plus staff_id, which forms
+    // the upload directory uploads/staff_documents/<staff_id>.
+    public function getLeaveRequestById($id) {
+        return $this->db->select('id, staff_id, document_file')->where('id', $id)->get('staff_leave_request')->row_array();
     }
 }

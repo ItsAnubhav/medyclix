@@ -15,7 +15,7 @@ class Calendar_model extends MY_Model
         if (isset($data["id"])) {
             
             $this->db->where("id", $data["id"])->update("events", $data);
-            $insert_id = $this->db->insert_id();
+            $insert_id = $data["id"];
         } else {
             
             $this->db->insert("events", $data);
@@ -47,20 +47,47 @@ class Calendar_model extends MY_Model
         }
     }
 
-    public function getEvents(){  
-        return $data=$this->db->query("select a.event_title,a.id,a.event_type, a.start_date, a.end_date,a.event_description,a.event_color,a.event_for,a.role_id from events a
-        UNION ALL
-        select 0 as title,annual_calendar.id,annual_calendar.holiday_type as event_type, annual_calendar.from_date as start_date, 
-        annual_calendar.to_date as end_date, annual_calendar.description as event_description, annual_calendar.holiday_color as event_color,0 as event_for,null as role_id from annual_calendar where annual_calendar.holiday_type!=0")->result_array();   
-    }  
+	public function getEvents()
+	{		
+		$q1 = $this->db->select('a.event_title, a.id, a.event_type, a.start_date, a.end_date, a.event_description, a.event_color, a.event_for, a.role_id')
+			->from('events a')
+			->get_compiled_select();
 
-    public function getPatientEvents($id = null)
-    {
-        return $data=$this->db->query("select a.event_title,a.id,a.event_type, a.start_date, a.end_date,a.event_description,a.event_color,a.event_for,a.role_id,null as front_site from events a where a.event_type = 'public' or a.event_type = 'task'
-        UNION ALL
-        select 0 as title,annual_calendar.id,annual_calendar.holiday_type as event_type, annual_calendar.from_date as start_date, 
-        annual_calendar.to_date as end_date, annual_calendar.description as event_description, annual_calendar.holiday_color as event_color,0 as event_for,null as role_id,annual_calendar.front_site from annual_calendar where annual_calendar.holiday_type!=0 and annual_calendar.front_site=1")->result_array();   
-    }
+		
+		$q2 = $this->db->select('0 as event_title, annual_calendar.id, annual_calendar.holiday_type as event_type, annual_calendar.from_date as start_date, annual_calendar.to_date as end_date, annual_calendar.description as event_description, annual_calendar.holiday_color as event_color, 0 as event_for, NULL as role_id', FALSE)
+			->from('annual_calendar')
+			->where('annual_calendar.holiday_type !=', 0)
+			->get_compiled_select();
+
+		// Combine with UNION ALL
+		$query = $this->db->query($q1 . " UNION ALL " . $q2);
+
+		return $query->result_array();
+	}	
+
+	public function getPatientEvents($id = null)
+	{	
+		$q1 = $this->db
+			->select('a.event_title, a.id, a.event_type, a.start_date, a.end_date, a.event_description, a.event_color, a.event_for, a.role_id, NULL as front_site', FALSE)
+			->from('events a')
+			->group_start()
+				->where('a.event_type', 'public')
+				->or_where('a.event_type', 'task')
+			->group_end()
+			->get_compiled_select();
+
+		$q2 = $this->db
+			->select('0 as event_title, annual_calendar.id, annual_calendar.holiday_type as event_type, annual_calendar.from_date as start_date, annual_calendar.to_date as end_date, annual_calendar.description as event_description, annual_calendar.holiday_color as event_color, 0 as event_for, NULL as role_id, annual_calendar.front_site', FALSE)
+			->from('annual_calendar')
+			->where('annual_calendar.holiday_type !=', 0)
+			->where('annual_calendar.front_site', 1)
+			->get_compiled_select();
+
+		// UNION ALL combine
+		$sql = $q1 . " UNION ALL " . $q2;
+
+		return $this->db->query($sql)->result_array();
+	}
 
     public function deleteEvent($id)
     {

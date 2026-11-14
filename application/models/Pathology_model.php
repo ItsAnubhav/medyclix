@@ -109,6 +109,27 @@ class Pathology_model extends MY_Model
             $this->log($message, $record_id, $action);
         }
 
+        // On update, remove any existing reports for this bill that are no longer present in
+        // the form. Done BEFORE inserting new rows (so the just-added tests aren't deleted) and
+        // derived from the rows actually kept ($updateReports) rather than the client-posted
+        // prev_reports — which gets wiped when the TPA toggle reloads the modal body, previously
+        // leaving the old tests behind as duplicates.
+        if ($pathology_billing_id > 0) {
+            $keep_ids = array();
+            if (!empty($updateReports)) {
+                foreach ($updateReports as $ur) {
+                    if (isset($ur['id']) && $ur['id'] > 0) {
+                        $keep_ids[] = $ur['id'];
+                    }
+                }
+            }
+            $this->db->where('pathology_bill_id', $pathology_billing_id);
+            if (!empty($keep_ids)) {
+                $this->db->where_not_in('id', $keep_ids);
+            }
+            $this->db->delete('pathology_report');
+        }
+
         if (!empty($addReports)) {
             foreach ($addReports as $report_key => $report_value) {
                 $addReports[$report_key]['pathology_bill_id'] = $inserted;
@@ -120,11 +141,8 @@ class Pathology_model extends MY_Model
             $this->db->update_batch('pathology_report', $updateReports, 'id');
         }
 
-        if (!empty($deleteReports) && $pathology_billing_id > 0) {
-            $this->db->where_in('id', $deleteReports);
-            $this->db->where('pathology_bill_id', $pathology_billing_id);
-            $this->db->delete('pathology_report');
-        }
+        // Deletion of removed tests is handled robustly above (before the inserts), derived
+        // from the rows actually kept rather than the client-posted prev_reports.
   
         if (isset($transcation_data) && !empty($transcation_data)) {
             $transcation_data['pathology_billing_id'] = $inserted;
@@ -176,6 +194,23 @@ class Pathology_model extends MY_Model
             ->where('patient_id', $patient_id)
             ->get('pathology_billing');
         return $query->row_array();
+    }
+
+    /**
+     * Patient dashboard — returns the last N OPD-allotted pathology bills
+     * for a given patient. "OPD-allotted" means the billing's case_reference_id
+     * matches an opd_details row (vs ipd_details). Joined to opd_details so
+     * the view can show the OPD number (opd_id) tag. Read-only, no audit log.
+     */
+    public function getPatientLastOpdPathology($patient_id, $limit = 5)
+    {
+        $this->db->select('pathology_billing.id, pathology_billing.date, pathology_billing.net_amount, pathology_billing.doctor_name, pathology_billing.transaction_id, opd_details.id AS opd_id');
+        $this->db->from('pathology_billing');
+        $this->db->join('opd_details', 'opd_details.case_reference_id = pathology_billing.case_reference_id', 'inner');
+        $this->db->where('pathology_billing.patient_id', $patient_id);
+        $this->db->order_by('pathology_billing.date', 'desc');
+        $this->db->limit($limit);
+        return $this->db->get()->result_array();
     }
 	
     public function getAllpathologyRecord()
@@ -517,6 +552,7 @@ class Pathology_model extends MY_Model
 
     public function getPatientPathologyReportParameterDetails($pathology_report_id)
     {
+        $pathology_report_id = (int) $pathology_report_id;
         $sql    = "SELECT pathology_parameterdetails.*,pathology_report.pathology_result,pathology_parameter.parameter_name,pathology_parameter.description,pathology_parameter.reference_range,unit.unit_name,IFNULL(pathology_report_parameterdetails.id,0) as `pathology_report_parameterdetail_id`,pathology_report_parameterdetails.pathology_report_id,pathology_report_parameterdetails.pathology_parameterdetail_id,pathology_report_parameterdetails.pathology_report_value,pathology_parameter.range_from,pathology_parameter.range_to FROM `pathology_report` INNER join pathology_parameterdetails on pathology_parameterdetails.pathology_id=pathology_report.pathology_id INNER JOIN pathology_parameter on pathology_parameterdetails.pathology_parameter_id=pathology_parameter.id INNER JOIN unit on pathology_parameter.unit=unit.id LEFT join pathology_report_parameterdetails on pathology_report_parameterdetails.pathology_parameterdetail_id=pathology_parameterdetails.id and pathology_report_parameterdetails.pathology_report_id=pathology_report.id WHERE pathology_report.id =" . $pathology_report_id;
         $query  = $this->db->query($sql);
         $result = $query->result();
@@ -537,7 +573,9 @@ class Pathology_model extends MY_Model
         //=======================Code Start===========================
         $this->db->where('id', $id);
         $this->db->delete('pathology');
-        $this->db->where("pathology_id", $id)->delete('pathology_parameterdetails');
+        if (!empty($id)) {
+            $this->db->where("pathology_id", $id)->delete('pathology_parameterdetails');
+        }
         $message   = DELETE_RECORD_CONSTANT . " On  Pathology Test  id " . $id;
         $action    = "Delete";
         $record_id = $id;
@@ -563,7 +601,9 @@ class Pathology_model extends MY_Model
         //=======================Code Start===========================
         $this->db->where('id', $id);
         $this->db->delete('pathology_billing');
-		$this->db->delete("transactions", array("pathology_billing_id" => $id)); 		
+		if (!empty($id)) {
+			$this->db->delete("transactions", array("pathology_billing_id" => $id));
+		}
         $message   = DELETE_RECORD_CONSTANT . " On  Pathology Bill  id " . $id;
         $action    = "Delete";
         $record_id = $id;

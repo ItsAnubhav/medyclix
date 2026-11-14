@@ -2,10 +2,8 @@
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); 
 ?>
 <script src="<?php echo base_url(); ?>backend/custom/jquery.validate.min.js"></script>
-<div class="content-wrapper" style="min-height: 946px;">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<!-- Main content -->
+    <div class="row">
             <div class="col-md-2">
                 <?php
 $this->load->view('admin/onlineappointment/appointmentSidebar');
@@ -13,20 +11,20 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
             </div>
             <div class="col-md-10">
                 <?php if ($this->rbac->hasPrivilege('online_appointment_slot', 'can_view')) { ?>
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('slots'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?php echo $this->lang->line('slots'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                         </div>
                     </div>
                     <form action="<?php echo site_url('admin/onlineappointment/') ?>" id="doctor_form" method="post" accept-charset="utf-8">
-                        <div class="box-body">
+                        <div class="card-body">
                             <?php echo $this->customlib->getCSRF(); ?>
                             <div class="row">
                                 <div class="col-lg-3 col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('doctor'); ?><small class="req"> *</small></label>
-                                        <select autofocus="" style="width: 100%" onchange="getDoctorShift()" id="doctor" name="doctor" class="select2">
+                                        <select autofocus="" onchange="getDoctorShift()" id="doctor" name="doctor" class="select2 w-100">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php foreach ($doctors as $doctor) { ?>
                                             <option value="<?php echo $doctor['id'] ?>" <?php
@@ -40,7 +38,7 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                                     </div>
                                 </div>
                                 <div class="col-lg-3 col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line("shift"); ?><small class="req"> *</small></label>
                                         <select autofocus="" id="shift" name="shift" class="form-control" >
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
@@ -48,10 +46,10 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                                         <span class="text-danger"><?php echo form_error('shift'); ?></span>
                                     </div>
                                 </div>
-                                <div class="col-lg-3 col-md-3 mt-5">
-                                    <label></label>
-                                    <div class="form-group">
-                                        <button type="button" onclick="search()" class="btn btn-primary btn-sm"><?php echo $this->lang->line('search'); ?></button>
+                                <div class="col-lg-3 col-md-3">
+                                    <div class="mb-3">
+                                        <label class="d-block">&nbsp;</label>
+                                        <button type="button" onclick="search()" class="btn btn-primary"><?php echo $this->lang->line('search'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -59,15 +57,15 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                     <hr/>
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="form-group"> 
+                                    <div class="mb-3"> 
                                         <label><?php echo $this->lang->line("consultation_duration_minutes"); ?><small class="req"> *</small></label>
                                         <input type="number" name='consult_time' form="" value="<?php echo isset($duration)?$duration:''; ?>" placeholder='' class="form-control" id="consult_time"/>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('charge_category'); ?></label>
-                                        <select name="charge_category" style="width: 100%" form=""  class="form-control charge_category select2">
+                                        <select name="charge_category" form=""  class="form-control charge_category select2 w-100">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php foreach ($charge_category as $key => $value) {
                                                 ?>
@@ -79,9 +77,9 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                                     </div>
                                 </div> 
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('charge'); ?></label><small class="req"> *</small>
-                                            <select name="charge_id" style="width: 100%" form="" class="form-control charge select2">
+                                            <select name="charge_id" form="" class="form-control charge select2 w-100">
                                                 <option value=""><?php echo $this->lang->line('select')?></option>
                                                 <?php if(!empty($charge)){ 
                                                     foreach ($charge as $charge_key => $charge_value) {
@@ -93,7 +91,7 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label><?php echo $this->lang->line('amount').' ('.$currency_symbol.')'; ?></label>
                                         <input type="text" class="form-control standard_charge" value="<?php echo isset($appointment_charge)?amountFormat($appointment_charge):''; ?>" disabled="disabled" />
                                     </div>
@@ -101,7 +99,7 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                             </div>
                         </div>                    
                     <?php if (isset($days)) { ?>
-                    <div class="box-header ptbnull"></div>
+                    <div class="card-header ptbnull"></div>
                     <div class="nav-tabs-custom border0">
                         <ul class="nav nav-tabs" id="myTabs">
                             <?php
@@ -110,7 +108,7 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                                 $cls = "";
                                 if ($count == 1) {
                                 } ?>
-                                <li <?php echo $cls; ?>><a href="#tab_<?php echo $count; ?>" data-s="<?php echo set_value("shift") ?>" data-d="<?php echo set_value("doctor"); ?>" data-day="<?php echo $days_key; ?>" data-toggle="tab" aria-expanded="true"><?php echo $days_value; ?></a></li>
+                                <li <?php echo $cls; ?>><a class="nav-link" href="#tab_<?php echo $count; ?>" data-s="<?php echo set_value("shift") ?>" data-d="<?php echo set_value("doctor"); ?>" data-day="<?php echo $days_key; ?>" data-bs-toggle="tab" aria-expanded="true"><?php echo $days_value; ?></a></li>
                                 <?php $count++; } ?>
                         </ul>
                         <div class="tab-content">
@@ -128,20 +126,14 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
                     </div>
                 </div>
                 <?php } } ?>
-    </section>
-</div>
 
 <script type="text/javascript">
-    $(document).on('focus', '.time', function () {
-        var $this = $(this);
-        $this.datetimepicker({
-            format: 'LT'
-        });
-    });
+    // Time picker init handled globally via event delegation in footer.php
+    // (inputs have class="timepicker" — auto-initialized as time-only TD 6 picker)
     var tot_count = 0;
     var doctor = '<?php echo set_value('doctor') ?>';
 
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href"); // activated tab
         var target_id = $(e.target).attr("id"); // activated tab
         var ajax_data = $(e.target).data(); // activated tab
@@ -177,19 +169,20 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
 
     $(document).ready(function () {
         $(".select2").select2();
-        $('#myTabs a:first').tab('show');
+        var firstTab = document.querySelector('#myTabs a:first-child');
+        if (firstTab) { bootstrap.Tab.getOrCreateInstance(firstTab).show(); }
         var counter = 0;
 
         $(document).on("click", ".addrow", function () {
             var newRow = $("<tr>");
             var cols = "";
-            cols += '<td><input type="hidden" name="total_row[]" value="' + tot_count + '"><input type="hidden" name="prev_id_' + tot_count + '" value="0"><div class="input-group"><input type="text" name="time_from_' + tot_count + '" class="form-control time_from time" id="time_from_' + tot_count + '"  aria-invalid="false"><div class="input-group-addon"><i class="fa fa-clock-o"></i></div></div></td>';
+            cols += '<td><input type="hidden" name="total_row[]" value="' + tot_count + '"><input type="hidden" name="prev_id_' + tot_count + '" value="0"><div class="input-group"><input type="text" name="time_from_' + tot_count + '" class="form-control time_from timepicker" id="time_from_' + tot_count + '"  aria-invalid="false"><div class="input-group-text"><i class="fa fa-clock-o"></i></div></div></td>';
 
-            cols += '<td><div class="input-group"><input type="text" name="time_to_' + tot_count + '" class="form-control time_to time" id="time_to_' + tot_count + '"  aria-invalid="false"><div class="input-group-addon"><i class="fa fa-clock-o"></i></div></div></td>';
+            cols += '<td><div class="input-group"><input type="text" name="time_to_' + tot_count + '" class="form-control time_to timepicker" id="time_to_' + tot_count + '"  aria-invalid="false"><div class="input-group-text"><i class="fa fa-clock-o"></i></div></div></td>';
         
          <?php if ($this->rbac->hasPrivilege('online_appointment_slot', 'can_delete')) { ?>
          
-            cols += '<td width="30" class="text-right"><button type="button" class="ibtnDel btn btn-danger btn-sm btn-danger"><i class="fa fa-trash"></i></button></td>';
+            cols += '<td width="30" class="text-end"><button type="button" class="ibtnDel btn btn-danger btn-sm btn-danger"><i class="fa fa-trash"></i></button></td>';
             
          <?php } ?>
          
@@ -256,7 +249,7 @@ $this->load->view('admin/onlineappointment/appointmentSidebar');
      });
 
     function getchargecode(charge_category,charge_id) {
-      var div_data = "<option value=''>Select</option>";
+      var div_data = "<option value=''><?= $this->lang->line('select') ?></option>";
       if(charge_category != ""){
           $.ajax({
             url: base_url+'admin/charges/getchargeDetails',

@@ -22,17 +22,17 @@ if (!empty($result->tests)) {
                     <div class="ptt10">
                         <div class="row">
                             <div class="col-sm-12">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('header_note'); ?></label> 
                                     <textarea style="height:50px" name="header_note" class="form-control" id="compose-textareanew"><?php echo $result->header_note; ?></textarea>
                                 </div> 
                                 <hr/>
                             </div> 
-                               <table class="table table-striped table-bordered table-hover" style="width:100%;">
+                               <table class="table table-striped table-bordered table-hover w-100" >
                                     <tr>
                                         <td>
                                          <label><?php echo $this->lang->line('finding_category'); ?></label> 
-                                            <select class="form-control select2 findingtype " style="width: 100%" name='finding_type[]' id="finding_type" multiple>
+                                            <select class="form-control select2 findingtype  w-100"  name='finding_type[]' id="finding_type" multiple>
                                                 <option value=""><?php echo $this->lang->line('select'); ?> </option>
                                                 <?php
                                                 foreach ($findingresult as $fvalue) {
@@ -55,7 +55,7 @@ if (!empty($result->tests)) {
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="form-group">
+                                            <div class="mb-3">
                                                 <label><?php echo $this->lang->line('finding_description'); ?></label> 
                                                 <textarea name="finding_description" id="finding_description" class="form-control" rows="15"><?php echo $result->finding_description ; ?></textarea> 
                                             </div>
@@ -83,12 +83,12 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
 <input type="hidden" name="post_dosage_id" value="<?php echo $medicine_value->dosage_id; ?>" class="post_dosage_id">
 
                                     <input type="hidden" name="rows[]" value="<?php echo $medicine_row?>">        
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                  <?php if($i==0){ ?>
                                                 <label><?php echo $this->lang->line('medicine_category'); ?></label>
                                             <?php } ?>
-                    <select class="form-control select2 medicine_category" style="width: 100%" name='medicine_cat_<?php echo $medicine_row?>'>
+                    <select class="form-control select2 medicine_category w-100"  name='medicine_cat_<?php echo $medicine_row?>'>
                     <option value="<?php echo set_value('medicine_category_id'); ?>"><?php echo $this->lang->line('select') ?>
                                                     </option>
                                             <?php
@@ -100,34 +100,34 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                                                 </select>
                                             </div>
                                         </div>                     
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                 <?php if($i==0){ ?>
                                                 <label><?php echo $this->lang->line('medicine'); ?></label>
                                             <?php } ?>
-                                                <select data-rowid="<?php echo $medicine_row?>" class="form-control select2 medicine_name" style="width: 100%"  name="medicine_<?php echo $medicine_row?>">
+                                                <select data-rowid="<?php echo $medicine_row?>" class="form-control select2 medicine_name w-100"   name="medicine_<?php echo $medicine_row?>">
                                                     <option value=""><?php echo $this->lang->line('select') ?></option>
                                                 </select>
                                                 <span id="stock_info_<?php echo $medicine_row?>"></span>
                                                 <div id="suggesstion-box0"></div>
                                             </div>
                                         </div>
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                 <?php if($i==0){ ?>
                                                 <label><?php echo $this->lang->line("dose"); ?></label>
                                             <?php } ?>
-                                                <select class="form-control select2 medicine_dosage" style="width: 100%" name="dosage_<?php echo $medicine_row?>">
+                                                <select class="form-control select2 medicine_dosage w-100"  name="dosage_<?php echo $medicine_row?>">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                                 </select>
                                             </div> 
                                         </div>
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                <?php if($i==0){ ?>
                                                 <label>
                                                 <?php echo $this->lang->line("dose_interval"); ?></label><?php } ?>
-                                                <select class="form-control select2 " style="width: 100%" name='interval_dosage_<?php echo $medicine_row?>'>
+                                                <select class="form-control select2  w-100"  name='interval_dosage_<?php echo $medicine_row?>'>
                                                 <option value="<?php echo set_value('dose_interval_id'); ?>"><?php echo $this->lang->line('select') ?>
                                                     </option>
                                                    <?php
@@ -139,12 +139,12 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                                                 </select>
                                             </div>
                                         </div>  
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                 <?php if($i==0){ ?>
                                                 <label>
                                                 <?php echo $this->lang->line("dose_duration"); ?></label><?php } ?>
-                                                <select class="form-control select2 " style="width: 100%" name='duration_dosage_<?php echo $medicine_row?>'>
+                                                <select class="form-control select2  w-100"  name='duration_dosage_<?php echo $medicine_row?>'>
                                                 <option value="<?php echo set_value('dose_duration_id'); ?>"><?php echo $this->lang->line('select') ?>
                                                     </option>
                                                    <?php
@@ -156,8 +156,8 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-sm-2 col-xs-6">
-                                            <div class="form-group">
+                                        <div class="col-sm-2 col-6">
+                                            <div class="mb-3">
                                                 <?php if($i==0){ ?> <label><?php echo $this->lang->line('instruction'); ?></label> <?php } ?>
                                                 <textarea name="instruction_<?php echo $medicine_row?>" style="height: 28px;" class="form-control" ><?php echo $medicine_value->instruction; ?></textarea>
                                             </div> 
@@ -188,7 +188,7 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                             </div>
                             <hr>
                             <div class="col-sm-12">
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <label><?php echo $this->lang->line('footer_note'); ?></label> 
                                     <textarea style="height:50px" rows="1" name="footer_note" class="form-control" id="compose-textareas"><?php echo $result->footer_note; ?></textarea>
                                 </div> 
@@ -199,9 +199,9 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                 <div class="col-sm-3">
                     <div class="ptt10">
                         <div class="col-sm-12">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label><?php echo $this->lang->line('prescribe_by'); ?><small class='req'> *</small></label>                            
-                                <select class="form-control select2" style="width: 100%" name='prescribe_by'>
+                                <select class="form-control select2 w-100"  name='prescribe_by'>
                                     <option value=""><?php echo $this->lang->line('select')?></option>                           
                                     <?php foreach ($priscribe_list as $key => $value) { ?>
                                         <option <?php if($value['id']==$result->prescribe_by){ echo "selected";}?> value="<?php echo $value["id"]; ?>"><?php echo $value['name']; ?>
@@ -211,10 +211,10 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                         </div>
                     </div>
                     <div class="col-sm-12">
-                        <div class="form-group">
+                        <div class="mb-3">
                         <label>
                              <?php echo $this->lang->line('pathology'); ?></label>
-                              <select class="form-control multiselect2" style="width: 100%" name='pathology[]' multiple id="pathologyOpt">
+                              <select class="form-control multiselect2 w-100"  name='pathology[]' multiple id="pathologyOpt">
                              <?php foreach ($pathology as $key => $value) { ?>
                             <option value="<?php echo $value["id"]; ?>" <?php echo check_test('pathology',$value["id"],$result) ? " selected" : "ddd" ?>><?php echo " (".$value["short_name"].") ".$value["test_name"]; ?>
                                      </option>   
@@ -223,10 +223,10 @@ foreach ($result->medicines as $medicine_key => $medicine_value) {
                         </div>
                     </div>
                     <div class="col-sm-12">
-                        <div class="form-group">
+                        <div class="mb-3">
                         <label>
                              <?php echo $this->lang->line('radiology'); ?></label>
-                             <select class="form-control multiselect2" style="width: 100%" name='radiology[]' id="radiologyOpt" multiple>
+                             <select class="form-control multiselect2 w-100"  name='radiology[]' id="radiologyOpt" multiple>
                             
                                 <?php foreach ($radiology as $key => $value) { ?>
                                     <option value="<?php echo $value["id"]; ?>"  <?php echo check_test('radiology',$value["id"],$result) ? " selected" : "ddd" ?>><?php echo " (".$value["short_name"].") ".$value["test_name"]; ?>

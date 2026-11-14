@@ -29,14 +29,27 @@ class Bloodissue_model extends MY_Model
 
     public function bloodBankChargeById($id, $patient_id = null)
     {
-        $sql    = "SELECT * from (SELECT `charges`.*, `organisations_charges`.`id` as `org_charge_id`, `organisations_charges`.`org_id`, `organisations_charges`.`org_charge`, IFNULL(tax_category.percentage, 0) as `percentage`,IFNULL(patients.organisation_id,0) as temp_col,patients.insurance_validity  FROM `charges` JOIN `organisations_charges` ON `organisations_charges`.`charge_id` = `charges`.`id` LEFT join patients on `patients`.`organisation_id` = `organisations_charges`.`org_id` and patients.id= " . $this->db->escape($patient_id) . " LEFT JOIN `tax_category` ON `tax_category`.`id` = `charges`.`tax_category_id` WHERE `charges`.`id` =  ".$this->db->escape($id).") d where d.temp_col = (SELECT CASE WHEN COUNT(*) = 1 THEN IFNULL(patients.organisation_id,0) ELSE COUNT(*) END AS 'Updated City' FROM `patients` where patients.id=" . $this->db->escape($patient_id) . ")";       
+        // Standard (non-TPA) case: no patient/organisation context. Return the standard
+        // charge directly without requiring an organisations_charges (TPA) entry, otherwise
+        // charges that have no TPA org-charge configured wrongly report
+        // "No Charge has configured for selected category".
+        if (empty($patient_id)) {
+            $sql   = "SELECT `charges`.*, IFNULL(tax_category.percentage, 0) as `percentage` FROM `charges` LEFT JOIN `tax_category` ON `tax_category`.`id` = `charges`.`tax_category_id` WHERE `charges`.`id` = " . $this->db->escape($id);
+            $query = $this->db->query($sql);
+            if ($query->num_rows() > 0) {
+                return $query->row_array();
+            }
+            return false;
+        }
+
+        $sql    = "SELECT * from (SELECT `charges`.*, `organisations_charges`.`id` as `org_charge_id`, `organisations_charges`.`org_id`, `organisations_charges`.`org_charge`, IFNULL(tax_category.percentage, 0) as `percentage`,IFNULL(patients.organisation_id,0) as temp_col,patients.insurance_validity  FROM `charges` JOIN `organisations_charges` ON `organisations_charges`.`charge_id` = `charges`.`id` LEFT join patients on `patients`.`organisation_id` = `organisations_charges`.`org_id` and patients.id= " . $this->db->escape($patient_id) . " LEFT JOIN `tax_category` ON `tax_category`.`id` = `charges`.`tax_category_id` WHERE `charges`.`id` =  ".$this->db->escape($id).") d where d.temp_col = (SELECT CASE WHEN COUNT(*) = 1 THEN IFNULL(patients.organisation_id,0) ELSE COUNT(*) END AS 'Updated City' FROM `patients` where patients.id=" . $this->db->escape($patient_id) . ")";
         $query  = $this->db->query($sql);
         if ($query->num_rows() > 0) {
             $result = $query->row_array();
             return $result;
         }
         return false;
-        
+
     }
 
     public function searchFullText()
@@ -124,7 +137,12 @@ class Bloodissue_model extends MY_Model
             ->join('staff as generated_by_staff', 'generated_by_staff.id = blood_issue.generated_by', "left")	
             ->join('charge_units', 'charge_units.id = blood_donor_cycle.unit', "left")	
             ->searchable('blood_issue.id,blood_issue.case_reference_id,blood_issue.date_of_issue,patients.patient_name, blood_bank_products.name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no,blood_issue.amount,net_amount' . $custom_field_column)
-            ->orderable('blood_issue.id,blood_issue.date_of_issue,patients.patient_name,blood_bank_products.name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no' . $custom_field_column . ',tax_percentage,net_amount,paid_amount')		
+          
+
+            ->orderable('blood_issue.id,blood_issue.date_of_issue,patients.patient_name,blood_bank_products.name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no' . $custom_field_column . ',"","","","","","","","",""')	
+
+
+
             ->sort('blood_issue.id', 'desc')
             ->from('blood_issue');
         return $this->datatables->generate('json');
@@ -133,7 +151,9 @@ class Bloodissue_model extends MY_Model
     public function getpatientbloodissueRecord($patient_id)
     {
         $i                         = 1;
-        $custom_fields             = $this->customfield_model->get_custom_fields('blood_issue', 1);
+        // Use visible_on_patient_panel filter — must match the controller iteration in
+        // patient/Dashboard::getbloodissueDatatable() so SELECTed columns line up with $value->{field_name}
+        $custom_fields             = $this->customfield_model->get_custom_fields('blood_issue', '', '', '', 1);
         $custom_field_column_array = array();
         $field_var_array           = array();
         if (!empty($custom_fields)) {
@@ -152,13 +172,11 @@ class Bloodissue_model extends MY_Model
             ->select('blood_issue.*,charge_units.unit as unit_name, IFNULL((SELECT sum(transactions.amount) from transactions WHERE transactions.blood_issue_id= blood_issue.id and transactions.patient_id = blood_issue.patient_id),0) as `paid_amount`, blood_bank_products.name as blood_group,patients.patient_name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no,blood_donor_cycle.volume,blood_donor_cycle.unit' . $field_variable)
             ->join('patients', 'patients.id = blood_issue.patient_id')
             ->join('blood_donor_cycle', 'blood_donor_cycle.id = blood_issue.blood_donor_cycle_id')
-            ->join('transactions', 'transactions.blood_issue_id = blood_issue.id', 'left')
             ->join('blood_donor', 'blood_donor_cycle.blood_donor_id = blood_donor.id')
             ->join('blood_bank_products', 'blood_bank_products.id = blood_donor.blood_bank_product_id')
-            ->join('charge_units', 'charge_units.id = blood_donor_cycle.unit')
+            ->join('charge_units', 'charge_units.id = blood_donor_cycle.unit', 'left')
             ->searchable('blood_issue.id,blood_issue.date_of_issue,patients.patient_name, blood_bank_products.name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no,blood_issue.amount,net_amount' . $custom_field_column)
             ->orderable('blood_issue.id,blood_issue.date_of_issue,patients.patient_name,blood_bank_products.name,patients.gender,blood_donor.donor_name,blood_donor_cycle.bag_no' . $custom_field_column . ',net_amount,paid_amount')
-            ->group_by('transactions.blood_issue_id')
             ->sort('blood_issue.id', 'desc')
             ->from('blood_issue')->where('patients.id', $patient_id);
         return $this->datatables->generate('json');
@@ -235,7 +253,7 @@ class Bloodissue_model extends MY_Model
                 blood_issue.discount_percentage,
                 blood_issue.tax_percentage,
                 blood_issue.net_amount,
-                ""')
+                "","","",""')
            
             ->searchable('blood_issue.id,
                 case_reference_id,
@@ -547,7 +565,9 @@ class Bloodissue_model extends MY_Model
         $this->db->where('id', $id);
         $this->db->delete('blood_issue');
 		
-		$this->db->delete("transactions", array("blood_issue_id" => $id)); 
+		if (!empty($id)) {
+			$this->db->delete("transactions", array("blood_issue_id" => $id));
+		}
 
         $message   = DELETE_RECORD_CONSTANT . " Where Blood Issue id " . $id;
         $action    = "Delete";
@@ -657,10 +677,36 @@ class Bloodissue_model extends MY_Model
 			->join('patients', 'patients.id = blood_issue.patient_id')
 			->join('charge_units', 'charge_units.id=blood_donor_cycle.unit')
 			->join('staff', 'staff.id = blood_issue.generated_by')
-			->where('case_reference_id', $case_id)		
-			->get('blood_issue');              
-         return $query->result_array();    
-		 
+			->where('case_reference_id', $case_id)
+			->get('blood_issue');
+         return $query->result_array();
+
     }
-	
+
+    /**
+     * Dashboard widget: blood-issue flow (today + last 7 days).
+     * Returns: ['today' => N, 'week' => N]
+     * Used by admin/admin/dashboard Variant B (2026-05-15).
+     */
+    public function getDashboardFlow()
+    {
+        $today      = date('Y-m-d');
+        $week_start = date('Y-m-d', strtotime('-6 days'));
+
+        // Column name confirmed: blood_issue.date_of_issue (not 'date')
+        // — see Bloodissue_model::getDetail() and other existing methods.
+        $today_cnt = $this->db
+            ->where("DATE(blood_issue.date_of_issue) =", $today)
+            ->count_all_results('blood_issue');
+
+        $week_cnt = $this->db
+            ->where("DATE(blood_issue.date_of_issue) >=", $week_start)
+            ->count_all_results('blood_issue');
+
+        return array(
+            'today' => (int)$today_cnt,
+            'week'  => (int)$week_cnt,
+        );
+    }
+
 }

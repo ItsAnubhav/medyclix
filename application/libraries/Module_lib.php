@@ -8,6 +8,8 @@ class Module_lib {
     private $allPatientModules = array();
     protected $modules;
     var $perm_category;
+    public $CI;
+    public $patientModules;
 
     function __construct() {
         $this->CI = & get_instance();
@@ -18,6 +20,9 @@ class Module_lib {
     }
 
     function loadModule() {
+        if (!isset($this->CI->module_model)) {
+            $this->CI->load->model('Module_model');
+        }
         $this->allModules = $this->CI->module_model->get();
 
         if (!empty($this->allModules)) {
@@ -33,7 +38,10 @@ class Module_lib {
         }
     }
 
-    function loadPatientModule() { 
+    function loadPatientModule() {
+        if (!isset($this->CI->module_model)) {
+            $this->CI->load->model('Module_model');
+        }
         $this->allPatientModules = $this->CI->module_model->getPatientModule();
 
         if (!empty($this->allPatientModules)) {
@@ -50,7 +58,7 @@ class Module_lib {
     }
 
     function hasActive($module = null) {
-
+         
         if ($this->modules[$module]) {
             return true;
         }

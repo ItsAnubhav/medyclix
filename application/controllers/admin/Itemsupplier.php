@@ -24,6 +24,7 @@ class Itemsupplier extends Admin_Controller
         $data['title']            = $this->lang->line('item_supplier_list');
         $itemsupplier_result      = $this->itemsupplier_model->get();
         $data['itemsupplierlist'] = $itemsupplier_result;
+        $data['module'] = 'inventory';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/itemsupplier/itemsupplierList', $data);
         $this->load->view('layout/footer', $data);
@@ -55,20 +56,21 @@ class Itemsupplier extends Admin_Controller
         $this->form_validation->set_rules('contact_person_email', $this->lang->line('contact_person_email'), 'trim|xss_clean|valid_email');
 
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'inventory';
             $this->load->view('layout/header', $data);
             $this->load->view('admin/itemsupplier/itemsupplierList', $data);
             $this->load->view('layout/footer', $data);
         } else {
 
             $data = array(
-                'phone'                => $this->input->post('phone'),
-                'contact_person_phone' => $this->input->post('contact_person_phone'),
-                'item_supplier'        => $this->input->post('name'),
-                'email'                => $this->input->post('email'),
-                'address'              => $this->input->post('address'),
-                'contact_person_name'  => $this->input->post('contact_person_name'),
-                'contact_person_email' => $this->input->post('contact_person_email'),
-                'description'          => $this->input->post('description'),
+                'phone'                => $this->input->post('phone', TRUE),
+                'contact_person_phone' => $this->input->post('contact_person_phone', TRUE),
+                'item_supplier'        => $this->input->post('name', TRUE),
+                'email'                => $this->input->post('email', TRUE),
+                'address'              => $this->input->post('address', TRUE),
+                'contact_person_name'  => $this->input->post('contact_person_name', TRUE),
+                'contact_person_email' => $this->input->post('contact_person_email', TRUE),
+                'description'          => $this->input->post('description', TRUE),
             );
             $this->itemsupplier_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('item_supplier_added_successfully') . '</div>');
@@ -87,6 +89,9 @@ class Itemsupplier extends Admin_Controller
         $this->form_validation->set_rules('email', $this->lang->line('email'), 'trim|xss_clean|valid_email');
         $this->form_validation->set_rules('contact_person_phone', $this->lang->line('contact_person_phone'), 'trim|numeric|xss_clean');
         $this->form_validation->set_rules('contact_person_email', $this->lang->line('email'), 'trim|xss_clean|valid_email');
+        $this->form_validation->set_rules('address', $this->lang->line('address'), 'trim|xss_clean');
+        $this->form_validation->set_rules('contact_person_name', $this->lang->line('contact_person_name'), 'trim|xss_clean');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -101,14 +106,14 @@ class Itemsupplier extends Admin_Controller
         } else {
 
             $data = array(
-                'phone'                => $this->input->post('phone'),
-                'contact_person_phone' => $this->input->post('contact_person_phone'),
-                'item_supplier'        => $this->input->post('name'),
-                'email'                => $this->input->post('email'),
-                'address'              => $this->input->post('address'),
-                'contact_person_name'  => $this->input->post('contact_person_name'),
-                'contact_person_email' => $this->input->post('contact_person_email'),
-                'description'          => $this->input->post('description'),
+                'phone'                => $this->input->post('phone', TRUE),
+                'contact_person_phone' => $this->input->post('contact_person_phone', TRUE),
+                'item_supplier'        => $this->input->post('name', TRUE),
+                'email'                => $this->input->post('email', TRUE),
+                'address'              => $this->input->post('address', TRUE),
+                'contact_person_name'  => $this->input->post('contact_person_name', TRUE),
+                'contact_person_email' => $this->input->post('contact_person_email', TRUE),
+                'description'          => $this->input->post('description', TRUE),
             );
 
             $this->itemsupplier_model->add($data);
@@ -117,7 +122,7 @@ class Itemsupplier extends Admin_Controller
         }
         echo json_encode($array);
     }
-   
+
 
     public function edit()
     {
@@ -125,12 +130,15 @@ class Itemsupplier extends Admin_Controller
             access_denied();
         }
 
-        $id = $this->input->post('supp_id');
+        $id = $this->input->post('supp_id', TRUE);
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('phone', $this->lang->line('phone'), 'trim|numeric|xss_clean');
         $this->form_validation->set_rules('email', $this->lang->line('email'), 'trim|xss_clean|valid_email');
         $this->form_validation->set_rules('contact_person_phone', $this->lang->line('contact_person_phone'), 'trim|numeric|xss_clean');
         $this->form_validation->set_rules('contact_person_email', $this->lang->line('email'), 'trim|xss_clean|valid_email');
+        $this->form_validation->set_rules('address', $this->lang->line('address'), 'trim|xss_clean');
+        $this->form_validation->set_rules('contact_person_name', $this->lang->line('contact_person_name'), 'trim|xss_clean');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -146,14 +154,14 @@ class Itemsupplier extends Admin_Controller
 
             $data = array(
                 'id'                   => $id,
-                'phone'                => $this->input->post('phone'),
-                'contact_person_phone' => $this->input->post('contact_person_phone'),
-                'item_supplier'        => $this->input->post('name'),
-                'email'                => $this->input->post('email'),
-                'address'              => $this->input->post('address'),
-                'contact_person_name'  => $this->input->post('contact_person_name'),
-                'contact_person_email' => $this->input->post('contact_person_email'),
-                'description'          => $this->input->post('description'),
+                'phone'                => $this->input->post('phone', TRUE),
+                'contact_person_phone' => $this->input->post('contact_person_phone', TRUE),
+                'item_supplier'        => $this->input->post('name', TRUE),
+                'email'                => $this->input->post('email', TRUE),
+                'address'              => $this->input->post('address', TRUE),
+                'contact_person_name'  => $this->input->post('contact_person_name', TRUE),
+                'contact_person_email' => $this->input->post('contact_person_email', TRUE),
+                'description'          => $this->input->post('description', TRUE),
             );
             $this->itemsupplier_model->add($data);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));

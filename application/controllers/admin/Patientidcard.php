@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class patientidcard extends Admin_Controller
 {
+	public $sch_setting_detail;
+
 
     public function __construct()
     {
@@ -14,6 +16,7 @@ class patientidcard extends Admin_Controller
         $this->load->library('Customlib');
         $this->config->load("image_valid");
         $this->load->library('upload');
+        $this->load->library('SaasValidation');
         $this->load->model(array('Patient_id_card_model'));
         $this->sch_setting_detail = $this->setting_model->getSetting();
     }
@@ -26,9 +29,21 @@ class patientidcard extends Admin_Controller
         $this->session->set_userdata('top_menu', 'Certificate');
         $this->session->set_userdata('sub_menu', 'admin/patientidcard');
         $this->data['idcardlist'] = $this->Patient_id_card_model->idcardlist();
-        $this->load->view('layout/header');
+        $data['module'] = 'certificate';
+        $this->load->view('layout/header', $this->data);
         $this->load->view('admin/patientidcard/createpatientidcard', $this->data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $this->data);
+    }
+
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Pass a comma-separated list of $_FILES field names; blocks the save when
+     * their combined size would push the tenant over its storage quota.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
     }
 
     public function create()
@@ -42,14 +57,15 @@ class patientidcard extends Admin_Controller
         $this->form_validation->set_rules('hospital_name', $this->lang->line('hospital_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('address', $this->lang->line('address_phone_email'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('title', $this->lang->line('patient_id_card_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload');
+        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload|callback_validateCanUploadFile[background_image,logo_img,sign_image]');
         $this->form_validation->set_rules('logo_img', $this->lang->line('logo_image'), 'callback_logo_handle_upload');
         $this->form_validation->set_rules('sign_image', $this->lang->line('signature_image'), 'callback_signature_handle_upload');
         if ($this->form_validation->run() == false) {
             $this->data['idcardlist'] = $this->Patient_id_card_model->idcardlist();
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $this->data);
             $this->load->view('admin/patientidcard/createpatientidcard', $this->data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $this->data);
         } else {
             $patientname     = 0;
             $guardianname    = 0;
@@ -59,37 +75,38 @@ class patientidcard extends Admin_Controller
             $dob             = 0;
             $bloodgroup      = 0;
             $patientuniqueid = 0;
+            $barcode         = 0;
 
-            if ($this->input->post('is_active_patient_name') == 1) {
-                $patientname = $this->input->post('is_active_patient_name');
+            if ($this->input->post('is_active_patient_name', TRUE) == 1) {
+                $patientname = $this->input->post('is_active_patient_name', TRUE);
             }
-            if ($this->input->post('is_active_guardian_name') == 1) {
-                $guardianname = $this->input->post('is_active_guardian_name');
+            if ($this->input->post('is_active_guardian_name', TRUE) == 1) {
+                $guardianname = $this->input->post('is_active_guardian_name', TRUE);
             }
-            if ($this->input->post('is_active_patient_unique_id') == 1) {
-                $patientuniqueid = $this->input->post('is_active_patient_unique_id');
+            if ($this->input->post('is_active_patient_unique_id', TRUE) == 1) {
+                $patientuniqueid = $this->input->post('is_active_patient_unique_id', TRUE);
             }
-            if ($this->input->post('is_active_address') == 1) {
-                $address = $this->input->post('is_active_address');
+            if ($this->input->post('is_active_address', TRUE) == 1) {
+                $address = $this->input->post('is_active_address', TRUE);
             }
-            if ($this->input->post('is_active_phone') == 1) {
-                $phone = $this->input->post('is_active_phone');
+            if ($this->input->post('is_active_phone', TRUE) == 1) {
+                $phone = $this->input->post('is_active_phone', TRUE);
             }
-            if ($this->input->post('is_active_dob') == 1) {
-                $dob = $this->input->post('is_active_dob');
+            if ($this->input->post('is_active_dob', TRUE) == 1) {
+                $dob = $this->input->post('is_active_dob', TRUE);
             }
-            if ($this->input->post('is_active_blood_group') == 1) {
-                $bloodgroup = $this->input->post('is_active_blood_group');
+            if ($this->input->post('is_active_blood_group', TRUE) == 1) {
+                $bloodgroup = $this->input->post('is_active_blood_group', TRUE);
             }
 
-            if ($this->input->post('is_active_barcode') == 1) {
-                $barcode = $this->input->post('is_active_barcode');
+            if ($this->input->post('is_active_barcode', TRUE) == 1) {
+                $barcode = $this->input->post('is_active_barcode', TRUE);
             }
             $data = array(
-                'title'                    => $this->input->post('title'),
-                'hospital_name'            => $this->input->post('hospital_name'),
-                'hospital_address'         => $this->input->post('address'),
-                'header_color'             => $this->input->post('header_color'),
+                'title'                    => $this->input->post('title', TRUE),
+                'hospital_name'            => $this->input->post('hospital_name', TRUE),
+                'hospital_address'         => $this->input->post('address', TRUE),
+                'header_color'             => $this->input->post('header_color', TRUE),
                 'enable_patient_name'      => $patientname,
                 'enable_guardian_name'     => $guardianname,
                 'enable_patient_unique_id' => $patientuniqueid,
@@ -123,6 +140,15 @@ class patientidcard extends Admin_Controller
             $upload_data = array('id' => $insert_id, 'logo' => $logo_img, 'background' => $background, 'sign_image' => $sign_image);
             $this->Patient_id_card_model->addidcard($upload_data);
 
+            // SaaS: add the combined size of any uploaded images to the storage quota usage.
+            if (!IsNullOrEmptyString($background) || !IsNullOrEmptyString($logo_img) || !IsNullOrEmptyString($sign_image)) {
+                try {
+                    $this->saasvalidation->updateStorageLimit('storage', ['background_image', 'logo_img', 'sign_image']);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (patientidcard create): ' . $e->getMessage());
+                }
+            }
+
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('success_message') . '</div>');
             redirect('admin/patientidcard/index');
         }
@@ -141,15 +167,16 @@ class patientidcard extends Admin_Controller
         $this->form_validation->set_rules('hospital_name', $this->lang->line('hospital_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('address', $this->lang->line('address_phone_email'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('title', $this->lang->line('id_card_title'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload');
+        $this->form_validation->set_rules('background_image', $this->lang->line('background_image'), 'callback_background_handle_upload|callback_validateCanUploadFile[background_image,logo_img,sign_image]');
         $this->form_validation->set_rules('logo_img', $this->lang->line('logo_image'), 'callback_logo_handle_upload');
         $this->form_validation->set_rules('sign_image', $this->lang->line('signature_image'), 'callback_signature_handle_upload');
 
         if ($this->form_validation->run() == false) {
             $this->data['idcardlist'] = $this->Patient_id_card_model->idcardlist();
-            $this->load->view('layout/header');
+            $data['module'] = 'certificate';
+            $this->load->view('layout/header', $this->data);
             $this->load->view('admin/patientidcard/patientidcardedit', $this->data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $this->data);
         } else {
 
             $patientname     = 0;
@@ -161,34 +188,34 @@ class patientidcard extends Admin_Controller
             $bloodgroup      = 0;
             $barcode         = 0;
 
-            if ($this->input->post('is_active_patient_name') == 1) {
-                $patientname = $this->input->post('is_active_patient_name');
+            if ($this->input->post('is_active_patient_name', TRUE) == 1) {
+                $patientname = $this->input->post('is_active_patient_name', TRUE);
             }
-            if ($this->input->post('is_active_guardian_name') == 1) {
-                $guardianname = $this->input->post('is_active_guardian_name');
+            if ($this->input->post('is_active_guardian_name', TRUE) == 1) {
+                $guardianname = $this->input->post('is_active_guardian_name', TRUE);
             }
-            if ($this->input->post('is_active_patient_unique_id') == 1) {
-                $patientuniqueid = $this->input->post('is_active_patient_unique_id');
+            if ($this->input->post('is_active_patient_unique_id', TRUE) == 1) {
+                $patientuniqueid = $this->input->post('is_active_patient_unique_id', TRUE);
             }
-            if ($this->input->post('is_active_address') == 1) {
-                $address = $this->input->post('is_active_address');
+            if ($this->input->post('is_active_address', TRUE) == 1) {
+                $address = $this->input->post('is_active_address', TRUE);
             }
-            if ($this->input->post('is_active_phone') == 1) {
-                $phone = $this->input->post('is_active_phone');
+            if ($this->input->post('is_active_phone', TRUE) == 1) {
+                $phone = $this->input->post('is_active_phone', TRUE);
             }
-            if ($this->input->post('is_active_dob') == 1) {
-                $dob = $this->input->post('is_active_dob');
+            if ($this->input->post('is_active_dob', TRUE) == 1) {
+                $dob = $this->input->post('is_active_dob', TRUE);
             }
-            if ($this->input->post('is_active_blood_group') == 1) {
-                $bloodgroup = $this->input->post('is_active_blood_group');
+            if ($this->input->post('is_active_blood_group', TRUE) == 1) {
+                $bloodgroup = $this->input->post('is_active_blood_group', TRUE);
             }
-            if ($this->input->post('is_active_barcode') == 1) {
-                $barcode = $this->input->post('is_active_barcode');
+            if ($this->input->post('is_active_barcode', TRUE) == 1) {
+                $barcode = $this->input->post('is_active_barcode', TRUE);
             }
-            
-            $remove_background_image    = $this->input->post('remove_background_image');
-            $remove_logo                = $this->input->post('remove_logo');
-            $remove_sign_image          = $this->input->post('remove_sign_image');
+
+            $remove_background_image    = $this->input->post('remove_background_image', TRUE);
+            $remove_logo                = $this->input->post('remove_logo', TRUE);
+            $remove_sign_image          = $this->input->post('remove_sign_image', TRUE);
 
             if ($remove_background_image != '') {
                 $data['background'] = '';
@@ -212,11 +239,11 @@ class patientidcard extends Admin_Controller
                     $data['sign_image'] = $this->media_storage->fileupload("sign_image",'./uploads/patient_id_card/signature/');
                 } 
 
-                $data['id']                       = $this->input->post('id');
-                $data['title']                    = $this->input->post('title');
-                $data['hospital_name']            = $this->input->post('hospital_name');
-                $data['hospital_address']         = $this->input->post('address');
-                $data['header_color']             = $this->input->post('header_color');
+                $data['id']                       = $this->input->post('id', TRUE);
+                $data['title']                    = $this->input->post('title', TRUE);
+                $data['hospital_name']            = $this->input->post('hospital_name', TRUE);
+                $data['hospital_address']         = $this->input->post('address', TRUE);
+                $data['header_color']             = $this->input->post('header_color', TRUE);
                 $data['enable_patient_name']      = $patientname;
                 $data['enable_guardian_name']     = $guardianname;
                 $data['enable_patient_unique_id'] = $patientuniqueid;
@@ -229,6 +256,43 @@ class patientidcard extends Admin_Controller
             
 
            $this->Patient_id_card_model->addidcard($data);
+
+            // SaaS: per-image quota adjust (replace = diff, remove = release) and
+            // clean up the replaced/removed physical files. Dirs are fixed per column.
+            $old_card    = (!empty($editidcard)) ? $editidcard[0] : null;
+            $saas_images = array(
+                array('file' => 'background_image', 'col' => 'background', 'dir' => 'uploads/patient_id_card/background', 'remove' => 'remove_background_image'),
+                array('file' => 'logo_img',         'col' => 'logo',       'dir' => 'uploads/patient_id_card/logo',       'remove' => 'remove_logo'),
+                array('file' => 'sign_image',       'col' => 'sign_image', 'dir' => 'uploads/patient_id_card/signature',  'remove' => 'remove_sign_image'),
+            );
+            foreach ($saas_images as $img) {
+                try {
+                    $old_file = ($old_card !== null && !empty($old_card->{$img['col']})) ? $old_card->{$img['col']} : '';
+                    $old_kb   = (!empty($old_file)) ? $this->media_storage->getUploadedFileSize($old_file, $img['dir']) : 0;
+                    $new_uploaded = isset($_FILES[$img['file']]) && !empty($_FILES[$img['file']]['name']);
+                    $removed      = $this->input->post($img['remove'], TRUE) != '';
+
+                    if ($new_uploaded) {
+                        $new_kb = $this->media_storage->getTmpFileSize($img['file']);
+                        if (!empty($old_file)) {
+                            $this->media_storage->filedelete($old_file, $img['dir']);
+                        }
+                        if ($old_kb > $new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb - $new_kb);
+                        } elseif ($new_kb > $old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_kb - $old_kb);
+                        }
+                    } elseif ($removed && !empty($old_file)) {
+                        if ($old_kb > 0) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $old_kb);
+                        }
+                        $this->media_storage->filedelete($old_file, $img['dir']);
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (patientidcard edit ' . $img['col'] . '): ' . $e->getMessage());
+                }
+            }
+
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('update_message') . '</div>');
             redirect('admin/patientidcard');
         }
@@ -236,6 +300,30 @@ class patientidcard extends Admin_Controller
 
     public function delete($id)
     {
+        // SaaS: release storage for all 3 images and remove the physical files.
+        $rows = $this->Patient_id_card_model->get($id);
+        if (!empty($rows)) {
+            $row         = $rows[0];
+            $saas_images = array(
+                array('col' => 'background', 'dir' => 'uploads/patient_id_card/background'),
+                array('col' => 'logo',       'dir' => 'uploads/patient_id_card/logo'),
+                array('col' => 'sign_image', 'dir' => 'uploads/patient_id_card/signature'),
+            );
+            foreach ($saas_images as $img) {
+                if (!empty($row->{$img['col']})) {
+                    $kb = $this->media_storage->getUploadedFileSize($row->{$img['col']}, $img['dir']);
+                    if ($kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (patientidcard delete ' . $img['col'] . '): ' . $e->getMessage());
+                        }
+                    }
+                    $this->media_storage->filedelete($row->{$img['col']}, $img['dir']);
+                }
+            }
+        }
+
         $this->Patient_id_card_model->remove($id);
         $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('delete_message') . '</div>');
         redirect('admin/patientidcard/index');

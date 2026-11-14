@@ -1,18 +1,24 @@
 $(document).ready(function () {
-        var table = $('.example').DataTable({
-            "aaSorting": [],           
+    $('.example').each(function () {
+        var $tbl = $(this);
+        // Per-table export heading: prefer the table's own data-export-title
+        // (same convention as initDatatable); fall back to the first .download_label
+        // so every existing page keeps its current behaviour.
+        var exportTitle = $tbl.data('exportTitle') || $('.download_label').html();
+        $tbl.DataTable({
+            "aaSorting": [],
             rowReorder: {
             selector: 'td:nth-child(2)'
             },
             //responsive: 'false',
-            dom: "Bfrtip",
+            dom: '<"dt-toolbar"f<"dt-toolbar-right"lB>>rtip',
             buttons: [
 
                 {
                     extend: 'copyHtml5',
                     text: '<i class="fa fa-files-o"></i>',
                     titleAttr: 'Copy',
-                    title: $('.download_label').html(),
+                    title: exportTitle,
                      exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -23,7 +29,7 @@ $(document).ready(function () {
                     text: '<i class="fa fa-file-excel-o"></i>',
                     titleAttr: 'Excel',
                    
-                    title: $('.download_label').html(),
+                    title: exportTitle,
                      exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -33,7 +39,7 @@ $(document).ready(function () {
                     extend: 'csvHtml5',
                     text: '<i class="fa fa-file-text-o"></i>',
                     titleAttr: 'CSV',
-                    title: $('.download_label').html(),
+                    title: exportTitle,
                      exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -43,7 +49,7 @@ $(document).ready(function () {
                     extend: 'pdfHtml5',
                     text: '<i class="fa fa-file-pdf-o"></i>',
                     titleAttr: 'PDF',
-                    title: $('.download_label').html(),
+                    title: exportTitle,
                     exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -53,22 +59,42 @@ $(document).ready(function () {
                     extend: 'print',
                     text: '<i class="fa fa-print"></i>',
                     titleAttr: 'Print',
-                    title: $('.download_label').html(),
+                    title: exportTitle,
                  customize: function ( win ) {
 
                     $(win.document.body).find('th').addClass('display').css('text-align', 'left');
                     $(win.document.body).find('td').addClass('display').css('text-align', 'left');
                     $(win.document.body).find('table').addClass('display').css('font-size', '14px');
-                    // $(win.document.body).find('table').addClass('display').css('text-align', 'center');
-                    $(win.document.body).find('h1').css('text-align', 'center');
+                    // Only strip the H1 when it's the noisy document.title fallback (no real
+                    // export title set). A real heading comes from data-export-title (exportTitle)
+                    // or a .download_label — keep and centre it in either case.
+                    if (!$.trim(exportTitle || '') && !$.trim($('.download_label').text())) {
+                        $(win.document.body).find('h1').remove();
+                    } else {
+                        $(win.document.body).find('h1').css('text-align', 'center');
+                    }
                 },
                      exportOptions: {
-                    columns: ["thead th:not(.noExport)"]
+                    columns: ["thead th:not(.noExport)"],
+                    format: {
+                        body: function(data, row, column, node) {
+                            // exportData strips HTML so checkboxes become empty — read DOM state directly.
+                            var $cb = $(node).find('input[type="checkbox"]');
+                            if ($cb.length) {
+                                return $cb.prop('checked') ? 'Yes' : 'No';
+                            }
+                            return data;
+                        }
+                    }
                   }
                 }
-            ]
+            ],
+            "language": {
+                sLengthMenu: "_MENU_"
+            }
         });
     });
+});
 
 
 /*--dropify--*/
@@ -135,7 +161,10 @@ $(document).ready(function(){
         if ($.fn.DataTable.isDataTable('.'+_selector)) { // if exist datatable it will destrory first
          $('.'+_selector).DataTable().destroy();
        }
-        table= $('.'+_selector)
+        // Resolve the export heading once so the print customize can decide whether
+        // to keep the <h1> based on the REAL title, not on .download_label existence.
+        var exportTitle = $('.'+_selector).data("exportTitle");
+        var table = $('.'+_selector)
     .on( 'preInit.dt', function (e, settings ) {
 
      var api = new $.fn.dataTable.Api( settings );
@@ -151,7 +180,7 @@ $(document).ready(function(){
 
     }).DataTable({
         // "scrollX": true,
-        dom: '<"top"f><Bl>r<t>ip',
+        dom: '<"dt-toolbar"f<"dt-toolbar-right"lB>>r<t>ip',
     
          lengthMenu: [[100, -1], [100, "All"]],
        
@@ -161,7 +190,7 @@ $(document).ready(function(){
                 text:      '<i class="fa fa-files-o"></i>',
                 titleAttr: 'Copy',
                  className: "btn-copy",
-                title: $('.'+_selector).data("exportTitle"),
+                title: exportTitle,
                   exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -171,7 +200,7 @@ $(document).ready(function(){
                 text:      '<i class="fa fa-file-excel-o"></i>',
                 titleAttr: 'Excel',
                      className: "btn-excel",
-                title: $('.'+_selector).data("exportTitle"),
+                title: exportTitle,
                   exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -181,7 +210,7 @@ $(document).ready(function(){
                 text:      '<i class="fa fa-file-text-o"></i>',
                 titleAttr: 'CSV',
                 className: "btn-csv",
-                title: $('.'+_selector).data("exportTitle"),
+                title: exportTitle,
                   exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   }
@@ -191,7 +220,7 @@ $(document).ready(function(){
                 text:      '<i class="fa fa-file-pdf-o"></i>',
                 titleAttr: 'PDF',
                 className: "btn-pdf",
-                title: $('.'+_selector).data("exportTitle"),
+                title: exportTitle,
                   exportOptions: {
                     columns: ["thead th:not(.noExport)"]
                   },
@@ -202,17 +231,33 @@ $(document).ready(function(){
                 text:      '<i class="fa fa-print"></i>',
                 titleAttr: 'Print',
                 className: "btn-print",
-                title: $('.'+_selector).data("exportTitle"),
+                title: exportTitle,
                 customize: function ( win ) {
 
                     $(win.document.body).find('th').addClass('display').css('text-align', 'left');
                     $(win.document.body).find('table').addClass('display').css('font-size', '14px');
                      $(win.document.body).find('td').addClass('display').css('text-align', 'left');
-                    $(win.document.body).find('h1').css('text-align', 'center');
+                    // Only strip the H1 when it's the noisy document.title fallback (no real
+                    // export title set). A real heading comes from data-export-title (exportTitle)
+                    // or a .download_label — keep and centre it in either case.
+                    if (!$.trim(exportTitle || '') && !$.trim($('.download_label').text())) {
+                        $(win.document.body).find('h1').remove();
+                    } else {
+                        $(win.document.body).find('h1').css('text-align', 'center');
+                    }
                 },
                 exportOptions: {
-                    columns: ["thead th:not(.noExport)"]
-                    
+                    columns: ["thead th:not(.noExport)"],
+                    format: {
+                        body: function(data, row, column, node) {
+                            // exportData strips HTML so checkboxes become empty — read DOM state directly.
+                            var $cb = $(node).find('input[type="checkbox"]');
+                            if ($cb.length) {
+                                return $cb.prop('checked') ? 'Yes' : 'No';
+                            }
+                            return data;
+                        }
+                    }
                   }
 
             }
@@ -227,6 +272,7 @@ $(document).ready(function(){
         "pageLength": pageLength,
         "searching": searching,
         "aaSorting": aaSorting, // default sorting [ [0,'asc'], [1,'asc'] ]
+        "autoWidth": false,
         "aoColumnDefs": aoColumnDefs, //disable sorting { "bSortable": false, "aTargets": [ 1,2 ] }
         "processing": true,
         "serverSide": true,
@@ -236,13 +282,21 @@ $(document).ready(function(){
         "dataSrc": dataSrc,
         "type": "POST",
         'data': params,
-     }
-     
+     },
+        "drawCallback": function() {
+            this.api().table().container().querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+                var existing = bootstrap.Tooltip.getInstance(el);
+                if (existing) { existing.dispose(); }
+                new bootstrap.Tooltip(el);
+            });
+        }
+
     });
+    return table;
     }
 
    function emptyDatatable(_selector,dataSrc="data"){
-          
+
         $('.'+_selector).DataTable({
         "searching": false,
         "processing": true,

@@ -25,6 +25,7 @@ class Prefix extends Admin_Controller
         $data['title']         = $this->lang->line('sms_config_list');
         $prefix_result         = $this->prefix_model->get();
         $data['prefix_result'] = $prefix_result;
+        $data['module'] = 'setup';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/prefix/index', $data);
         $this->load->view('layout/footer', $data);
@@ -54,9 +55,9 @@ class Prefix extends Admin_Controller
             $check_array          = array();
             $update_session_array = array();
             foreach ($prefix_result as $prefix_key => $prefix_value) {
-                $check_array[]                             = $this->input->post($prefix_value->type);
-                $update_array[]                            = array('type' => $prefix_value->type, 'prefix' => $this->input->post($prefix_value->type));
-                $update_session_array[$prefix_value->type] = $this->input->post($prefix_value->type);
+                $check_array[]                             = $this->input->post($prefix_value->type, TRUE);
+                $update_array[]                            = array('type' => $prefix_value->type, 'prefix' => $this->input->post($prefix_value->type, TRUE));
+                $update_session_array[$prefix_value->type] = $this->input->post($prefix_value->type, TRUE);
             }
             if (!has_duplicate_array($check_array)) {
                 if ($this->prefix_model->update($update_array)) {

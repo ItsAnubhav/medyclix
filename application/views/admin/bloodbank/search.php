@@ -4,22 +4,19 @@ $genderList      = $this->customlib->getGender();
 
 ?>
  
-<div class="content-wrapper">
-    <!-- Main content -->
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('donor_details'); ?>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"> <?php echo $this->lang->line('donor_details'); ?>
                         </h3>
-                        <div class="box-tools pull-right">
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('blood_donor', 'can_add')) {?>
-                                <a data-toggle="modal" onclick="holdModal('myModal')" class="btn btn-primary btn-sm addblood"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_blood_donor'); ?></a>
+                                <a data-bs-toggle="modal" onclick="holdModal('myModal')" class="btn btn-primary btn-sm addblood"><i class="fa fa-plus"></i> <?php echo $this->lang->line('add_blood_donor'); ?></a>
                             <?php }?>
                         </div>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                        <div class="download_label"><?php echo $this->lang->line('donor_details'); ?></div>
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered table-hover ajaxlist" cellspacing="0" width="100%" data-export-title="<?php echo $this->lang->line('donor_details'); ?>">
@@ -41,6 +38,7 @@ $genderList      = $this->customlib->getGender();
                                                 } 
                                             }
                                         ?>
+                                        <th class="text-end noExport"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -50,428 +48,392 @@ $genderList      = $this->customlib->getGender();
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-</div> 
+        </div> 
 
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_donor_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_donor_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formadd" accept-charset="utf-8" method="post" class="ptt10">
-                <div class="scroll-area">
-                    <div class="modal-body pt0 pb0">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('donor_name'); ?></label>
-                                        <small class="req"> *</small>
-                                        <input type="text" name="donor_name" class="form-control">
-                                        <span class="text-danger"><?php echo form_error('donor_name'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('date_of_birth'); ?></label>
-                                        <small class="req"> *</small>
-                                        <input type="text" name="date_of_birth" class="form-control date">
-                                        <span class="text-danger"><?php echo form_error('date_of_birth'); ?></span>
-                                    </div>
-                                </div>                            
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('blood_group'); ?></label><small class="req"> *</small>
-                                        <select name="blood_group"  class="form-control" >
-                                            <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                            <?php
-                                                foreach ($bloodgroup as $key => $value) {
-                                                    ?>
-                                                <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) {
-                                                    echo "selected";
-                                                }
-                                                ?>><?php echo $value; ?></option>
-                                                <?php
-                                            }
-                                            ?>
-                                        </select>
-                                        <span class="text-danger"><?php echo form_error('blood_group'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label> <?php echo $this->lang->line('gender'); ?></label><small class="req"> *</small>
-                                        <select class="form-control" name="gender">
-                                            <option value="<?php echo set_value('gender'); ?>"><?php echo $this->lang->line('select'); ?></option>
-                                            <?php
-                                                foreach ($genderList as $key => $value) {
-                                                    ?>
-                                                <option value="<?php echo $key; ?>" <?php if (set_value('gender') == $key) {
-                                                echo "selected";
-                                            }
-                                            ?>><?php echo $value; ?></option>
-                                                <?php
-                                                    }
-                                                    ?>
-                                        </select>
-                                        <span class="text-danger"><?php echo form_error('gender'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('father_name'); ?></label>
-                                        <input type="text" name="father_name" class="form-control">
-                                        <span class="text-danger"><?php echo form_error('father_name'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('contact_no'); ?></label>
-                                        <input type="text" name="contact_no" class="form-control">
-                                        <span class="text-danger"><?php echo form_error('contact_no'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="Address"><?php echo $this->lang->line('address'); ?></label>
-                                        <textarea name="address"  class="form-control" ></textarea>
-                                    </div>
-                                </div>
-                                <div>
-                                  <?php echo display_custom_fields('donor'); ?>
-                                </div>
-                            </div><!--./row-->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- dd -->
-<div class="modal fade" id="myModaledit" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_donor_details'); ?></h4>
-            </div>
-            <form id="formedit" accept-charset="utf-8" method="post" class="ptt10">
-                   <div class="scroll-area">
-                        <div class="modal-body pt0 pb0">
-                                <div class="row">
-                                    <input type="hidden" name="id" id="id" value="<?php echo set_value('id'); ?>">
+            <form id="formadd" accept-charset="utf-8" method="post">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card mb-3">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('donor_details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-2">
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('donor_name'); ?></label>
-                                            <small class="req"> *</small>
-                                            <input type="text" name="donor_name" id="donor_name" value="<?php echo set_value('donor_name'); ?>" class="form-control">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('donor_name'); ?> <small class="req">*</small></label>
+                                            <input type="text" name="donor_name" class="form-control form-control-sm">
                                             <span class="text-danger"><?php echo form_error('donor_name'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                    <div class="form-group">
-                                        <label><?php echo $this->lang->line('date_of_birth'); ?></label>
-                                        <small class="req"> *</small>
-                                        <input type="text" name="date_of_birth" id="date_of_birth" class="form-control date">
-                                        <span class="text-danger"><?php echo form_error('date_of_birth'); ?></span>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('date_of_birth'); ?> <small class="req">*</small></label>
+                                            <input type="text" name="date_of_birth" class="form-control form-control-sm date">
+                                            <span class="text-danger"><?php echo form_error('date_of_birth'); ?></span>
+                                        </div>
                                     </div>
-                                </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('blood_group'); ?></label><small class="req"> *</small>
-                                            <select id="blood_group" name="blood_group"  class="form-control" >
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('blood_group'); ?> <small class="req">*</small></label>
+                                            <select name="blood_group" class="form-control form-control-sm">
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
-                                                <?php
-                                                foreach ($bloodgroup as $key => $value) {
-                                                    ?>
-                                                    <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) {
-                                                        echo "selected";
-                                                    }
-                                                    ?>><?php echo $value; ?></option>
-                                                    <?php
-                                                    }
-                                                    ?>
+                                                <?php foreach ($bloodgroup as $key => $value) { ?>
+                                                <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) { echo "selected"; } ?>><?php echo $value; ?></option>
+                                                <?php } ?>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('blood_group'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('gender'); ?></label><small class="req"> *</small>
-                                            <select class="form-control" id="gender" name="gender">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('gender'); ?> <small class="req">*</small></label>
+                                            <select class="form-control form-control-sm" name="gender">
                                                 <option value="<?php echo set_value('gender'); ?>"><?php echo $this->lang->line('select'); ?></option>
-                                                <?php
-                                                foreach ($genderList as $key => $value) {
-                                                    ?>
-                                                    <option value="<?php echo $key; ?>" <?php if (set_value('gender') == $key) {
-                                                        echo "selected";
-                                                    }
-                                                    ?>><?php echo $value; ?></option>
-                                                    <?php
-                                                }
-                                                ?>
+                                                <?php foreach ($genderList as $key => $value) { ?>
+                                                <option value="<?php echo $key; ?>" <?php if (set_value('gender') == $key) { echo "selected"; } ?>><?php echo $value; ?></option>
+                                                <?php } ?>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('gender'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('father_name'); ?></label>
-                                            <input type="text" name="father_name"  id="father_name" value="<?php echo set_value('father_name'); ?>" class="form-control">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('father_name'); ?></label>
+                                            <input type="text" name="father_name" class="form-control form-control-sm">
                                             <span class="text-danger"><?php echo form_error('father_name'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('contact_no'); ?></label>
-                                            <input type="text" name="contact_no" id="contact_no" value="<?php echo set_value('contact_no'); ?>" class="form-control">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('contact_no'); ?></label>
+                                            <input type="text" name="contact_no" class="form-control form-control-sm">
                                             <span class="text-danger"><?php echo form_error('contact_no'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label for="Address"><?php echo $this->lang->line('address'); ?></label>
-                                            <textarea name="address" id="address" value="<?php echo set_value('address'); ?>" class="form-control"></textarea>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('address'); ?></label>
+                                            <textarea name="address" class="form-control form-control-sm"></textarea>
                                         </div>
                                     </div>
-                                    <div id="customfield">
-                                        
-                                    </div>
-                                </div><!--./row-->                        
+                                </div>
+                                <div><?php echo display_custom_fields('donor'); ?></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <div class="pull-right">
-                    <button type="submit" id="formeditbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>                    
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formaddbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
-            </div>
-           </form> 
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="addBloodDetailModal" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close pupclose" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('bag_stock_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModaledit" tabindex="-1" aria-labelledby="myModaleditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModaleditLabel"><?php echo $this->lang->line('edit_donor_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-         <form id="donorblood" accept-charset="utf-8" method="post" class="ptt10">    
-            <div class="pup-scroll-area">
-                <div class="modal-body pt0 pb0">
-                        <input type="hidden" name="blood_donor_id" id="donor_id">
-                                <input type="hidden" name="blood_bank_product" id="blood_bank_product">
-                                <div class="row">
+            <form id="formedit" accept-charset="utf-8" method="post">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <div class="sh-form-card mb-3">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('donor_details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <input type="hidden" name="id" id="id" value="<?php echo set_value('id'); ?>">
+                                <div class="row g-2">
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('donate_date'); ?></label>
-                                            <small class="req"> *</small>
-                                            <input name="donate_date" type="text" class="form-control datetime"/>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('donor_name'); ?> <small class="req">*</small></label>
+                                            <input type="text" name="donor_name" id="donor_name" value="<?php echo set_value('donor_name'); ?>" class="form-control form-control-sm">
+                                            <span class="text-danger"><?php echo form_error('donor_name'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('date_of_birth'); ?> <small class="req">*</small></label>
+                                            <input type="text" name="date_of_birth" id="date_of_birth" class="form-control form-control-sm date">
+                                            <span class="text-danger"><?php echo form_error('date_of_birth'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('blood_group'); ?> <small class="req">*</small></label>
+                                            <select id="blood_group" name="blood_group" class="form-control form-control-sm">
+                                                <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                <?php foreach ($bloodgroup as $key => $value) { ?>
+                                                <option value="<?php echo $key; ?>" <?php if (set_value('blood_group') == $key) { echo "selected"; } ?>><?php echo $value; ?></option>
+                                                <?php } ?>
+                                            </select>
+                                            <span class="text-danger"><?php echo form_error('blood_group'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('gender'); ?> <small class="req">*</small></label>
+                                            <select class="form-control form-control-sm" id="gender" name="gender">
+                                                <option value="<?php echo set_value('gender'); ?>"><?php echo $this->lang->line('select'); ?></option>
+                                                <?php foreach ($genderList as $key => $value) { ?>
+                                                <option value="<?php echo $key; ?>" <?php if (set_value('gender') == $key) { echo "selected"; } ?>><?php echo $value; ?></option>
+                                                <?php } ?>
+                                            </select>
+                                            <span class="text-danger"><?php echo form_error('gender'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('father_name'); ?></label>
+                                            <input type="text" name="father_name" id="father_name" value="<?php echo set_value('father_name'); ?>" class="form-control form-control-sm">
+                                            <span class="text-danger"><?php echo form_error('father_name'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('contact_no'); ?></label>
+                                            <input type="text" name="contact_no" id="contact_no" value="<?php echo set_value('contact_no'); ?>" class="form-control form-control-sm">
+                                            <span class="text-danger"><?php echo form_error('contact_no'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('address'); ?></label>
+                                            <textarea name="address" id="address" class="form-control form-control-sm"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="customfield"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="formeditbtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade sh-modal sh-modal-nospace" id="addBloodDetailModal" tabindex="-1" aria-labelledby="addBloodDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBloodDetailModalLabel"><?php echo $this->lang->line('bag_stock_details'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="donorblood" accept-charset="utf-8" method="post">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <input type="hidden" name="blood_donor_id" id="donor_id">
+                        <input type="hidden" name="blood_bank_product" id="blood_bank_product">
+                        <div class="sh-form-card mb-3">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('bag_stock_details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-2">
+                                    <div class="col-sm-3">
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('donate_date'); ?> <small class="req">*</small></label>
+                                            <input name="donate_date" type="text" class="form-control form-control-sm datetime">
                                             <span class="text-danger"><?php echo form_error('quantity'); ?></span>
                                         </div>
-                                    </div>                                
+                                    </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('bag_no'); ?> </label> <small class="req"> *</small>
-                                            <input name="bag_no" type="text" class="form-control"/>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('bag_no'); ?> <small class="req">*</small></label>
+                                            <input name="bag_no" type="text" class="form-control form-control-sm">
                                             <span class="text-danger"><?php echo form_error('bag_no'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1"><?php echo $this->lang->line('volume'); ?></label>  
-                                            <input autofocus="" id="volume"  name="volume"  type="text" class="form-control"  />
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('volume'); ?></label>
+                                            <input id="volume" name="volume" type="text" class="form-control form-control-sm">
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('unit_type'); ?></label>
-                                            <select name="unit" id="unit" class="form-control unit_type">
-                                                <option value=""><?php echo $this->lang->line('select') ?></option>
-                                                <?php foreach ($unit_type as $unit_type_key => $unit_type_value) {?>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('unit_type'); ?></label>
+                                            <select name="unit" id="unit" class="form-control form-control-sm unit_type">
+                                                <option value=""><?php echo $this->lang->line('select'); ?></option>
+                                                <?php foreach ($unit_type as $unit_type_key => $unit_type_value) { ?>
                                                 <option value="<?php echo $unit_type_value->id; ?>"><?php echo $unit_type_value->unit; ?></option>
-                                                <?php }?>
+                                                <?php } ?>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('unit_type'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('lot'); ?> </label>
-                                            <input name="lot" type="text" class="form-control"/>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('lot'); ?></label>
+                                            <input name="lot" type="text" class="form-control form-control-sm">
                                         </div>
-                                    </div>                                    
+                                    </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('charge_category'); ?></label><small class="req"> *</small> 
-                                            <select name="charge_category" id="charge_category" style="width: 100%" class="form-control select2 charge_category">
-                                                <option value=""><?php echo $this->lang->line('select') ?></option>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('charge_category'); ?> <small class="req">*</small></label>
+                                            <select name="charge_category" id="charge_category" class="form-control form-control-sm select2 charge_category">
+                                                <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('charge_category'); ?></span>
                                         </div>
                                     </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('charge_name'); ?></label> </label><small class="req"> *</small>     
-                                                <select name="charge_id" id="code" style="width: 100%" class="form-control addcharge select2 " >
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('charge_name'); ?> <small class="req">*</small></label>
+                                            <select name="charge_id" id="code" class="form-control form-control-sm addcharge select2">
                                                 <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             </select>
                                             <span class="text-danger"><?php echo form_error('code'); ?></span>
                                         </div>
-                                    </div>                                    
+                                    </div>
                                     <div class="col-sm-3">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")" ?></label> </label><small class="req"> *</small> 
-                                            <input type="text" name="standard_charge" id="addstandard_charge" class="form-control" value="<?php echo set_value('standard_charge'); ?>"> 
-                                        
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('standard_charge') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></label>
+                                            <input type="text" name="standard_charge" id="addstandard_charge" class="form-control form-control-sm" value="<?php echo set_value('standard_charge'); ?>">
                                             <span class="text-danger"><?php echo form_error('standard_charge'); ?></span>
                                         </div>
                                     </div>
-                                    <div class="col-sm-3 hide">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('qty'); ?></label><small class="req"> *</small> 
-                                        <input type="text" name="qty" id="qty" class="form-control"> 
-                                            <span class="text-danger"><?php echo form_error('qty'); ?></span>
-                                        </div>
-                                    </div>                                    
+                                    <input type="hidden" name="qty" id="qty" value="1">
                                     <div class="col-sm-12">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('institution'); ?></label>
-                                            <input  name="institution" type="text" class="form-control"/>
+                                        <div class="mb-2">
+                                            <label class="form-label small"><?php echo $this->lang->line('institution'); ?></label>
+                                            <input name="institution" type="text" class="form-control form-control-sm">
                                         </div>
                                     </div>
-                                </div><!--./row-->
-                                    <div class="divider"></div>
-                                        <div class="row">
-                                            <div class="col-sm-6">
-                                                <div class="row">
-                                                    <div class="col-sm-12">
-                                                        <div class="form-group">
-                                                            <label><?php echo $this->lang->line('note'); ?></label>
-                                                            <textarea name="note" rows="3" id="note" class="form-control"></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                </div>
-                                                </div>                                                
-                                            </div><!--./col-sm-6-->
-                                            <div class="col-sm-6">
-                                                <table class="printablea4">
-                                                    <tr>
-                                                        <th width="40%"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
-                                                        <td width="60%" colspan="2" class="text-right ipdbilltable">
-                                                        <input type="text" placeholder="Total" value="0" name="total" id="total" style="width: 30%; float: right" class="form-control total" readonly /></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></th>
-                                                        <td class="text-right ipdbilltable">
-                                                            <h4 style="float: right;font-size: 12px; padding-left: 5px;"> %</h4>
-                                                    <input type="text" placeholder="<?php echo $this->lang->line('discount'); ?>" name="discount_percent" id="discount_percent" class="form-control discount_percent" style="width: 70%; float: right;font-size: 12px;"/></td>
-
-                                                        <td class="text-right ipdbilltable">
-                                            <input type="text" placeholder="<?php echo $this->lang->line('discount'); ?>" value="0" name="discount" id="discount" style="width: 50%; float: right" class="form-control discount"/></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></th>
-                                                        <td class="text-right ipdbilltable">
-                                                            <h4 style="float: right;font-size: 12px; padding-left: 5px;"> %</h4>
-															<input type="text" placeholder="<?php echo $this->lang->line('tax'); ?>" name="tax_percentage" id="tax_percentage" class="form-control tax_percentage" readonly style="width: 70%; float: right;font-size: 12px;"/></td>
-                                                        <td class="text-right ipdbilltable">
-                                                            <input type="text" placeholder="<?php echo $this->lang->line('tax'); ?>" name="tax" value="0" id="tax" style="width: 50%; float: right" class="form-control tax" readonly/>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
-                                                        <td colspan="2" class="text-right ipdbilltable">
-                                                            <input type="text" placeholder="<?php echo $this->lang->line('net_amount'); ?>" value="0" name="net_amount" id="net_amount" style="width: 30%; float: right" class="form-control net_amount" readonly/></td>
-                                                    </tr>
-                                                </table>
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('payment_mode'); ?></label>
-                                            <select class="form-control payment_mode" name="payment_mode">
-                                                <?php foreach ($payment_mode as $key => $value) {
-                                                        ?>
-                                        <option value="<?php echo $key ?>"><?php echo $value ?></option>
-                                                <?php
-                                                }
-                                                ?>
-                                            </select>
-                                            <span class="text-danger"><?php echo form_error('payment_mode'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('payment_amount') . " (" . $currency_symbol . ")"; ?></label><small class="req"> *</small>
-                                            <input type="text" readonly name="payment_amount" id="payment_amount" class="form-control payment_amount text-right">
-                                            <span class="text-danger"><?php echo form_error('payment_amount'); ?></span>
-                                        </div>
-                                    </div>
-                                <div class="cheque_div" style="display:none;">
-                                    <div class="col-sm-4">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('cheque_no'); ?></label><small class="req"> *</small>
-                                            <input type="text" name="cheque_no" id="cheque_no" class="form-control">
-                                            <span class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-4">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('cheque_date'); ?></label><small class="req"> *</small>
-                                            <input type="text" name="cheque_date" id="cheque_date" class="form-control date">
-                                            <span class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-4">
-                                        <div class="form-group">
-                                            <label><?php echo $this->lang->line('attach_document'); ?></label>
-                                            <input type="file" class="filestyle form-control" name="document">
-                                            <span class="text-danger"><?php echo form_error('document'); ?></span>
-                                        </div>
-                                    </div>
-                                </div>                                   
                                 </div>
-                           </div>
-                        </div><!--./row-->                       
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="sh-flex-col">
+                                <div class="sh-form-card h-100">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><?php echo $this->lang->line('note'); ?></span>
+                                    </div>
+                                    <div class="px-2 py-3">
+                                        <textarea name="note" rows="4" id="note" class="form-control form-control-sm"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sh-flex-col">
+                                <div class="sh-form-card h-100 overflow-hidden">
+                                    <div class="sh-card-header">
+                                        <span class="sh-card-header-title"><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></span>
+                                    </div>
+                                    <div class="sh-summary-row border-bottom">
+                                        <span><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></span>
+                                        <input type="text" value="0" name="total" id="total" class="form-control sh-summary-input text-end total" readonly>
+                                    </div>
+                                    <div class="sh-summary-row border-bottom">
+                                        <span><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")"; ?></span>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <input type="text" name="discount_percent" id="discount_percent" value="0" class="form-control sh-summary-input-pct text-end discount_percent">
+                                            <span class="text-muted small">%</span>
+                                            <input type="text" value="0" name="discount" id="discount" class="form-control sh-summary-input text-end discount">
+                                        </div>
+                                    </div>
+                                    <div class="sh-summary-row border-bottom">
+                                        <span><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")"; ?></span>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <input type="text" name="tax_percentage" id="tax_percentage" class="form-control sh-summary-input-pct text-end tax_percentage" readonly>
+                                            <span class="text-muted small">%</span>
+                                            <input type="text" value="0" name="tax" id="tax" class="form-control sh-summary-input text-end tax" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="sh-summary-row border-bottom">
+                                        <span><?php echo $this->lang->line('net_amount'); ?></span>
+                                        <input type="text" value="0" name="net_amount" id="net_amount" class="form-control sh-summary-input text-end net_amount" readonly>
+                                    </div>
+                                    <div class="px-2 py-3">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <div class="mb-2">
+                                                    <label class="form-label small"><?php echo $this->lang->line('payment_mode'); ?></label>
+                                                    <select class="form-control form-control-sm payment_mode" name="payment_mode">
+                                                        <?php foreach ($payment_mode as $key => $value) { ?>
+                                                        <option value="<?php echo $key; ?>"><?php echo $value; ?></option>
+                                                        <?php } ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="mb-2">
+                                                    <label class="form-label small"><?php echo $this->lang->line('payment_amount') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></label>
+                                                    <input type="text" readonly name="payment_amount" id="payment_amount" class="form-control form-control-sm payment_amount text-end">
+                                                    <span class="text-danger"><?php echo form_error('payment_amount'); ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="cheque_div mt-2 d-none" >
+                                            <div class="d-flex gap-3">
+                                                <div class="flex-fill">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small"><?php echo $this->lang->line('cheque_no'); ?> <small class="req">*</small></label>
+                                                        <input type="text" name="cheque_no" id="cheque_no" class="form-control form-control-sm">
+                                                    </div>
+                                                </div>
+                                                <div class="flex-fill">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small"><?php echo $this->lang->line('cheque_date'); ?> <small class="req">*</small></label>
+                                                        <input type="text" name="cheque_date" id="cheque_date" class="form-control form-control-sm date">
+                                                    </div>
+                                                </div>
+                                                <div class="flex-fill">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small"><?php echo $this->lang->line('attach_document'); ?></label>
+                                                        <input type="file" class="filestyle form-control form-control-sm" name="document">
+                                                        <span class="text-danger"><?php echo form_error('document'); ?></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer sticky-footer">
-                <div class="pull-right">
-                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="donorbloodbtn" class="btn btn-info"> <i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>                    
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" data-loading-text="<?php echo $this->lang->line('processing'); ?>" id="donorbloodbtn" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
-            </div>
-          </form>  
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="viewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog pup100" role="document">
-        <div class="modal-content modal-media-content">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <div class="modalicon">
-                    <div id='edit_delete'>
-
-                    </div>
-                </div>
-                <h4 class="modal-title"><?php echo $this->lang->line('donor_details'); ?></h4>
+<div class="modal fade sh-modal sh-modal-nospace" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel"><?php echo $this->lang->line('donor_details'); ?></h5>
+                <div class="d-flex align-items-center gap-2" id="edit_delete"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        <form id="view" accept-charset="utf-8" method="get" class="ptt10">    
-            <div class="modal-body pt0 pb0">
-                  <div id="reportdata"></div>
-               </div>
-            </form>
+            <div class="pup-scroll-area">
+                <div class="modal-body">
+                    <div id="reportdata"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+            </div>
         </div>
     </div>
 </div>
@@ -489,9 +451,9 @@ $genderList      = $this->customlib->getGender();
       var mode=$(this).val();
       if(mode == "Cheque"){
   
-        $('.cheque_div').css("display", "block");
+        $('.cheque_div').removeClass('d-none');
       }else{
-        $('.cheque_div').css("display", "none");
+        $('.cheque_div').addClass('d-none');
       }
     });    
 </script> 
@@ -569,7 +531,7 @@ $genderList      = $this->customlib->getGender();
 <script>
             $(document).ready(function (e) {
                 $("#formadd").on('submit', (function (e) {
-                    $("#formaddbtn").button('loading');
+                    $("#formaddbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/bloodbank/add',
@@ -590,7 +552,7 @@ $genderList      = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formaddbtn").button('reset');
+                            $("#formaddbtn").btnReset();
                         },
                         error: function () {
                         }
@@ -600,7 +562,7 @@ $genderList      = $this->customlib->getGender();
 			
             $(document).ready(function (e) {
                 $("#formedit").on('submit', (function (e) {
-                    $("#formeditbtn").button('loading');
+                    $("#formeditbtn").btnLoading();
                     e.preventDefault();
                     $.ajax({
                         url: '<?php echo base_url(); ?>admin/bloodbank/update',
@@ -621,7 +583,7 @@ $genderList      = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#formeditbtn").button('reset');
+                            $("#formeditbtn").btnReset();
                         },
                         error: function () {
 
@@ -659,7 +621,7 @@ $genderList      = $this->customlib->getGender();
                         $('select[id="blood_group"] option[value="' + data.blood_group + '"]').attr("selected", "selected");
                         $('select[id="gender"] option[value="' + data.gender + '"]').attr("selected", "selected");
                        
-                        $("#viewModal").modal('hide');
+                        shModal('viewModal').hide();
                         holdModal('myModaledit');
                     },
                 })
@@ -667,9 +629,9 @@ $genderList      = $this->customlib->getGender();
 			
             $(document).ready(function (e) {
                 var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'DD', 'm' => 'MM', 'Y' => 'YYYY']) ?>';
-                $('#dates_of_birth').datepicker();
+                /* picker init removed - auto-init via class + event delegation in footer.php */
             });
-            
+
             function viewDetail(id) {
                 $.ajax({
                     url: '<?php echo base_url(); ?>admin/bloodbank/getDonorBloodBatch',
@@ -678,7 +640,7 @@ $genderList      = $this->customlib->getGender();
                     dataType: 'json',
                     success: function (data) {
                          $('#reportdata').html(data.page);
-                        $("#edit_delete").html("<a href='#' onclick='printData(" + id + ")' data-placement='bottom' data-toggle='tooltip' title='' data-original-title='<?php echo $this->lang->line('print')?>'><i class='fa fa-print'></i></a><?php if ($this->rbac->hasPrivilege('blood_donor', 'can_edit')) {?><a href='#' onclick='getRecord(" + id + ")' data-toggle='tooltip' data-placement='bottom' title='' data-original-title='<?php echo $this->lang->line('edit')?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('blood_donor', 'can_delete')) {?><a onclick='delete_record(" + id + ")'  href='#'  data-toggle='tooltip' data-placement='bottom'  data-original-title='<?php echo $this->lang->line('delete')?>'><i class='fa fa-trash'></i></a><?php }?>");
+                        $("#edit_delete").html("<a href='#' class='btn btn-sm btn-light' onclick='printData(" + id + ")' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('print')?>'><i class='fa fa-print'></i></a><?php if ($this->rbac->hasPrivilege('blood_donor', 'can_edit')) {?><a href='#' class='btn btn-sm btn-light' onclick='getRecord(" + id + ")' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('edit')?>'><i class='fa fa-pencil'></i></a><?php }if ($this->rbac->hasPrivilege('blood_donor', 'can_delete')) {?><a onclick='delete_record(" + id + ")' href='#' class='btn btn-sm btn-light' data-bs-toggle='tooltip' title='<?php echo $this->lang->line('delete')?>'><i class='fa fa-trash'></i></a><?php }?>");
                         holdModal('viewModal');
                     },
                 });
@@ -729,7 +691,7 @@ $genderList      = $this->customlib->getGender();
                         cache: false,
                         processData: false,
                         beforeSend: function(){
-                 button_loading.button("loading");
+                 button_loading.btnLoading();
                  },
                         success: function (data) {
                             if (data.status == "fail") {
@@ -742,25 +704,21 @@ $genderList      = $this->customlib->getGender();
                                 successMsg(data.message);
                                 window.location.reload(true);
                             }
-                            $("#donorbloodbtn").button('reset');
+                            $("#donorbloodbtn").btnReset();
                         },
                         error: function () {
-                 button_loading.button('reset');
+                 button_loading.btnReset();
                 },
   
                 complete: function(){
-                 button_loading.button('reset');
+                 button_loading.btnReset();
                 }
                     });
                 }));
             });
 			
             function holdModal(modalId) {
-                $('#' + modalId).modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                    show: true
-                });
+                (function(){var _el=document.getElementById(modalId);if(_el)bootstrap.Modal.getOrCreateInstance(_el,{backdrop:'static',keyboard:false}).show();})();;
             }
 
 $(".addblood").click(function(){
@@ -925,25 +883,25 @@ $(".addDonorBlood").click(function(){
         var $this = $(this);
         var record_id=$this.data('recordid');
         var transation_id=$this.data('transation_id');
-        $this.button('loading');
+        $this.btnLoading();
         $.ajax({
           url: '<?php echo base_url(); ?>admin/bloodbank/printDonorTransaction',
           type: "POST",
           data:{'transaction_id':transation_id,'donor_id':record_id},
           dataType: 'json',
            beforeSend: function() {
-                 $this.button('loading');      
+                 $this.btnLoading();      
           },
           success: function(res) {
            popup(res.page);
           },
              error: function(xhr) { // if error occured
           alert("<?php echo $this->lang->line('error_occurred_please_try_again'); ?>");
-                  $this.button('reset');
+                  $this.btnReset();
               
          },
               complete: function() {
-                   $this.button('reset');                 
+                   $this.btnReset();                 
              }
       });
   }); 
@@ -956,7 +914,8 @@ $(".addDonorBlood").click(function(){
         $(document).ready(function(){
             initDatatable('ajaxlist','admin/bloodbank/getdonordatatable',{},[],100,[
             
-            { "sWidth": "200px",  "aTargets": [ -1, -2, -3 ] } 
+            { "sWidth": "200px",  "aTargets": [ -1, -2, -3 ] },
+            { "bSortable": false, "aTargets": [ -1 ], "sClass": "dt-body-right" }
 			 
             ]);
         });

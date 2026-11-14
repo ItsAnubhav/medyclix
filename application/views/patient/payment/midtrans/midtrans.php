@@ -13,15 +13,15 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
         <div class="row">
             <div class="col-md-12">
                 <!-- Horizontal Form -->
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title"><?php echo $this->lang->line('payment_details'); ?></h3>
-                    </div><!-- /.box-header -->
-                    <div class="box-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0"><?php echo $this->lang->line('payment_details'); ?></h3>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
                         <div class="row" id="patient_details"></div>
                         <hr>
                         <div class="row">
-                            <div class="col-md-offset-6 col-xs-6">
+                            <div class="offset-md-6 col-6">
                                 <p class="lead"><?php echo $this->lang->line('amount'); ?></p>
                                 <div class="table-responsive">
                                     <table class="table">
@@ -46,13 +46,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     <input type="hidden" name="result_data" id="result-data" value=""></div>
                                 </form>
                                 <form id="checkoutform" action="#" method="post" >
-                                        <div class="text-right">
+                                        <div class="text-end">
                                             <button type="button" id="pay-button" class="btn btn-primary submit_button"><i class="fa fa fa-money"></i> <?php echo $this->lang->line('make_payment') ?></button>
                                         </div> 
                                 </form>
                             </div>
                         </div>
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (right) -->
         </div>   <!-- /.row -->

@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Banner extends Admin_Controller
 {
+	public $banner_content;
+
 
     public function __construct()
     {
@@ -26,9 +28,10 @@ class Banner extends Admin_Controller
         if (!empty($result)) {
             $data['banner_images'] = $this->cms_program_model->front_cms_program_photos($result[0]['id']);
         }
-        $this->load->view('layout/header');
+        $data['module'] = 'front_cms';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/front/banner/index', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function add()
@@ -44,20 +47,20 @@ class Banner extends Admin_Controller
             $data = array(
                 'content_id' => form_error('content_id'),
             );
-            $array = array('status' => '0', 'error' => 'Something wrong');
+            $array = array('status' => '0', 'error' => $this->lang->line('something_wrong'));
             echo json_encode($array);
         } else {
 
             $data = array(
                 'program_id'       => 0,
-                'media_gallery_id' => $this->input->post('content_id'),
+                'media_gallery_id' => $this->input->post('content_id', TRUE),
             );
 
             $response = $this->cms_program_model->banner($banner_content, $data);
             if ($response) {
                 $array = array('status' => '1', 'error' => '', 'msg' => $this->lang->line('success_message'));
             } else {
-                $array = array('status' => '0', 'error' => 'Something wrong', 'msg' => $this->lang->line('worning_message'));
+                $array = array('status' => '0', 'error' => $this->lang->line('something_wrong'), 'msg' => $this->lang->line('worning_message'));
             }
             echo json_encode($array);
         }
@@ -77,12 +80,12 @@ class Banner extends Admin_Controller
             $array = array('status' => '0', 'error' => $this->lang->line('worning_message'));
             echo json_encode($array);
         } else {
-            $media_gallery_id = $this->input->post('content_id');
+            $media_gallery_id = $this->input->post('content_id', TRUE);
             $response         = $this->cms_program_model->bannerDelete($banner_content, $media_gallery_id);
             if ($response) {
                 $array = array('status' => '1', 'error' => '', 'msg' => $this->lang->line('delete_message'));
             } else {
-                $array = array('status' => '0', 'error' => 'Something wrong', 'msg' => $this->lang->line('worning_message'));
+                $array = array('status' => '0', 'error' => $this->lang->line('something_wrong'), 'msg' => $this->lang->line('worning_message'));
             }
             echo json_encode($array);
         }

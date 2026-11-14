@@ -7,6 +7,8 @@ if (!defined('BASEPATH')) {
 class Payroll_model extends MY_Model
 {
 
+    public $current_date;
+
     public function __construct()
     {
         parent::__construct();
@@ -295,13 +297,15 @@ class Payroll_model extends MY_Model
         $action = "Delete";
         $record_id = $payslipid;        
         
-        $this->db->where("id", $payslipid)->delete("staff_payslip");        
-        $message = DELETE_RECORD_CONSTANT . " On Staff Payslip where id " . $id;        
+        $this->db->where("id", $payslipid)->delete("staff_payslip");
+        $message = DELETE_RECORD_CONSTANT . " On Staff Payslip where id " . $payslipid;
         $this->log($message, $record_id, $action);
-        
-        $this->db->where("staff_payslip_id", $payslipid)->delete("payslip_allowance");        
-        $message = DELETE_RECORD_CONSTANT . " On Payslip Allowance id " . $id;        
-        $this->log($message, $record_id, $action);      
+
+        if (!empty($payslipid)) {
+            $this->db->where("staff_payslip_id", $payslipid)->delete("payslip_allowance");
+        }
+        $message = DELETE_RECORD_CONSTANT . " On Payslip Allowance id " . $payslipid;
+        $this->log($message, $record_id, $action);
         //======================Code End==============================
 
         $this->db->trans_complete(); # Completing transaction

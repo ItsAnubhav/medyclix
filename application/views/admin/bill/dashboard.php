@@ -1,13 +1,11 @@
 <link rel="stylesheet" href="<?php echo base_url();?>backend\dist\css\jquery-ui.css">
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row row-equal">
+<div class="row row-equal">
         	<div class="col-md-6">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('single_module_billing'); ?></h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('single_module_billing'); ?></h3>
                     </div>
-                    <div class="box-body pb0">
+                    <div class="card-body pb0">
                         <div class="row">
                             <?php if ($this->rbac->hasPrivilege('appointment_billing', 'can_view')) {?>
                             <div class="col-lg-4 col-md-6 col-sm-6">
@@ -65,33 +63,69 @@
                             </div><!--./col-lg-4-->
                         <?php } ?>
                         </div>
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <div class="col-md-6">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"><?php echo $this->lang->line('opd_ipd_billing_through_case_id'); ?></h3>
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('unified_service_posting'); ?></h3>
                     </div>
-                    <div class="box-body min-h-4">
+                    <div class="card-body pb0">
+                        <div class="row">
+                            <?php if ($this->rbac->hasPrivilege('opd_service_posting', 'can_view')) { ?>
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="billingbox text-center">
+                                    <a href="<?php echo base_url('admin/bill/opd_service_posting'); ?>">
+                                        <div class="billingbox-icon"><i class="fas fa-receipt"></i></div>
+                                        <p><?php echo $this->lang->line('opd_service_posting'); ?></p>
+                                    </a>
+                                </div>
+                            </div>
+                            <?php } ?>
+                            <?php if ($this->rbac->hasPrivilege('ipd_service_posting', 'can_view')) { ?>
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="billingbox text-center">
+                                    <a href="<?php echo base_url('admin/bill/ipd_service_posting'); ?>">
+                                        <div class="billingbox-icon"><i class="fas fa-procedures"></i></div>
+                                        <p><?php echo $this->lang->line('ipd_service_posting'); ?></p>
+                                    </a>
+                                </div>
+                            </div>
+                            <?php } ?>
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="billingbox text-center">
+                                    <a href="<?php echo base_url('admin/bill/credit_bills'); ?>">
+                                        <div class="billingbox-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                                        <p><?php echo $this->lang->line('credit_bills'); ?></p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title titlefix"><?php echo $this->lang->line('opd_ipd_billing_through_case_id'); ?></h3>
+                    </div>
+                    <div class="card-body min-h-4">
                         <form action="<?php echo base_url()?>admin/bill/dashboard" accept-charset="utf-8" method="post" class="form-inline ">
                                     <?php echo $this->customlib->getCSRF(); ?>
-                                    <div class="form-group align-top">
+                                    <div class="mb-3 align-top">
                                         <div> 
                                             <label><?php echo $this->lang->line('case_id'); ?></label><small class="req"> *</small>
-                                            <input type="text" name="case_id" class="form-control" id="case_id" value="<?php echo set_value('case_id');?>" placeholder="<?php echo $this->lang->line('enter_case_id'); ?>">
-                                            <span class="text-danger"><?php echo form_error('case_id'); ?></span>
+                                            <input type="text" name="case_id" class="form-control" id="case_id" value="<?php echo set_value('case_id');?>" placeholder="<?php echo $this->lang->line('enter_case_id'); ?>">                                            <span class="text-danger"><?php echo form_error('case_id'); ?></span>
                                         </div>    
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <div> 
-                                            <button type="submit" id="serach_btn"  value="search_filter" class="btn btn-primary btn-sm checkbox-toggle pull-right"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>   
+                                            <button type="submit" id="serach_btn"  value="search_filter" class="btn btn-primary btn-sm checkbox-toggle float-end"><i class="fa fa-search"></i> <?php echo $this->lang->line('search'); ?></button>   
                                         </div>     
                                     </div> 
                                     <?php 
                                     if(!empty($error_message)){
                                         ?>
-                                        <div class="box-body">
+                                        <div class="card-body">
                                     <div class="alert alert-danger"><?php echo $error_message;?></div>                               
 
                                     </div>
@@ -100,12 +134,12 @@
                                     ?>
                                                                         
                             </form> 
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
+    
+
 <script type="text/javascript">
      $(document).ready(function() {
 

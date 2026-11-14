@@ -1,18 +1,16 @@
 <?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat();?>
-<div class="content-wrapper">
-    <section class="content">
-        <div class="row">
+<div class="row">
             <div class="col-md-12">
-                <div class="box box-primary">
-                    <div class="box-header with-border">
-                        <h3 class="box-title titlefix"> <?php echo $this->lang->line('income_list'); ?></h3>
-                        <div class="box-tools pull-right">
+                <div class="card">
+                    <div class="card-header ptbnull">
+                        <h3 class="card-title titlefix"> <?php echo $this->lang->line('income_list'); ?></h3>
+                        <div class="d-flex gap-2 align-items-center flex-wrap float-end">
                             <?php if ($this->rbac->hasPrivilege('income', 'can_add')) {?>
-                                <a data-toggle="modal" data-target="#myModal" class="btn btn-primary btn-sm addincome"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_income'); ?></a>
+                                <a data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary btn-sm addincome"><i class="fa fa-plus"></i>  <?php echo $this->lang->line('add_income'); ?></a>
                             <?php }?>
                         </div>
                     </div>
-                    <div class="box-body">
+                    <div class="card-body">
                         <div class="download_label"><?php echo $this->lang->line('income_list'); ?></div>
                         <div class="table-responsive mailbox-messages overflow-visible-lg">
                             <table class="table table-hover table-striped table-bordered ajaxlist" data-export-title="<?php echo $this->lang->line('income_list'); ?>">
@@ -34,121 +32,97 @@
                                                 } 
                                             }
                                          ?>
-                                        <th class="text-right"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                        <th class="text-end"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?></th>
+                                        <th class="noExport text-end"><?php echo $this->lang->line('action'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 </tbody>
                             </table><!-- /.table -->
                         </div><!-- /.mail-box-messages -->
-                    </div><!-- /.box-body -->
+                    </div><!-- /.card-body -->
                 </div>
             </div><!--/.col (left) -->
             <!-- right column -->
         </div>
-    </section><!-- /.content -->
-</div><!-- /.content-wrapper -->
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('add_income'); ?></h4>
+    
+
+<div class="modal fade sh-modal sh-modal-accent" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel"><?php echo $this->lang->line('add_income'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="add_income" class="ptt10" accept-charset="utf-8" enctype="multipart/form-data">
-                <div class="scroll-area">
-                    <div class="modal-body pt0 pb0">
-                            <div class="row">
-                                <?php if ($this->session->flashdata('msg')) {?>
-                                    <?php echo $this->session->flashdata('msg');
-                                    $this->session->unset_userdata('msg'); ?>
-                                <?php }?>
-                                <?php
-                                if (isset($error_message)) {
-                                    echo "<div class='alert alert-danger'>" . $error_message . "</div>";
-                                }
-                                ?>
-                                <?php echo $this->customlib->getCSRF(); ?>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('income_head'); ?> <small class="req"> *</small></label>
-                                        <select autofocus="" id="inc_head_id" name="inc_head_id" class="form-control" >
+            <form id="add_income" accept-charset="utf-8" enctype="multipart/form-data">
+                <div class="pup-scroll-area">
+                    <div class="modal-body">
+                        <?php if ($this->session->flashdata('msg')) { echo $this->session->flashdata('msg'); $this->session->unset_userdata('msg'); } ?>
+                        <?php if (isset($error_message)) { echo "<div class='alert alert-danger'>" . $error_message . "</div>"; } ?>
+                        <?php echo $this->customlib->getCSRF(); ?>
+                        <div class="sh-form-card">
+                            <div class="sh-card-header">
+                                <span class="sh-card-header-title"><?php echo $this->lang->line('details'); ?></span>
+                            </div>
+                            <div class="p-2">
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('income_head'); ?> <small class="req">*</small></label>
+                                        <select autofocus id="inc_head_id" name="inc_head_id" class="form-select form-select-sm">
                                             <option value=""><?php echo $this->lang->line('select'); ?></option>
                                             <?php foreach ($incheadlist as $inchead) { ?>
-                                            <option value="<?php echo $inchead['id'] ?>"<?php
-                                            if (set_value('inc_head_id') == $inchead['id']) {
-                                                    echo "selected = selected";
-                                                }
-                                                ?>><?php echo $inchead['income_category'] ?>                                                    
-                                            </option>
-                                            <?php $count++; } ?>
+                                            <option value="<?php echo (int)$inchead['id'] ?>"<?php if (set_value('inc_head_id') == $inchead['id']) echo ' selected'; ?>><?php echo html_escape($inchead['income_category']) ?></option>
+                                            <?php } ?>
                                         </select>
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('name'); ?><small class="req"> *</small></label>
-                                        <input id="name" name="name" placeholder="" type="text" class="form-control" value="<?php echo set_value('name'); ?>" />
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('name'); ?> <small class="req">*</small></label>
+                                        <input id="name" name="name" type="text" class="form-control form-control-sm" value="<?php echo set_value('name'); ?>">
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('invoice_number'); ?></label>
-                                        <input id="invoice_no" name="invoice_no" placeholder="" type="text" class="form-control" value="<?php echo set_value('invoice_no'); ?>" />
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('invoice_number'); ?></label>
+                                        <input id="invoice_no" name="invoice_no" type="text" class="form-control form-control-sm" value="<?php echo set_value('invoice_no'); ?>">
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('date'); ?><small class="req"> *</small></label>
-                                        <input id="date" name="date" placeholder="" type="text" class="form-control" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly="readonly" />
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('date'); ?> <small class="req">*</small></label>
+                                        <input id="date" name="date" type="text" class="form-control form-control-sm date" value="<?php echo set_value('date', date($this->customlib->getHospitalDateFormat())); ?>" readonly autocomplete="off">
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?><small class="req"> *</small></label>
-                                        <input id="amount" name="amount" placeholder="" type="text" class="form-control" value="<?php echo set_value('amount'); ?>" />
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('amount') . " (" . $currency_symbol . ")"; ?> <small class="req">*</small></label>
+                                        <input id="amount" name="amount" type="text" class="form-control form-control-sm" value="<?php echo set_value('amount'); ?>">
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('attach_document'); ?></label>
-                                        <input id="documents" name="documents" placeholder="" type="file" class="filestyle form-control" value="<?php echo set_value('documents'); ?>" />
+                                    <div class="col-sm-6">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('attach_document'); ?></label>
+                                        <input id="documents" name="documents" type="file" class="filestyle form-control form-control-sm" value="<?php echo set_value('documents'); ?>">
                                     </div>
-                                </div>
-                                <div class="col-sm-12">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1"><?php echo $this->lang->line('description'); ?></label>
-                                        <textarea class="form-control" id="description" name="description" placeholder="" rows="3" placeholder="Enter ..."><?php echo set_value('description'); ?></textarea>
-                                        <span class="text-danger"></span>
+                                    <div class="col-sm-12">
+                                        <label class="form-label form-label-sm"><?php echo $this->lang->line('description'); ?></label>
+                                        <textarea class="form-control form-control-sm" id="description" name="description" rows="3"><?php echo set_value('description'); ?></textarea>
                                     </div>
-                                </div>
-                                <div>
                                     <?php echo display_custom_fields('income'); ?>
                                 </div>
-                            </div><!-- /.box-body -->
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <div class="pull-right">
-                        <button type="submit" id="add_incomebtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info pull-right"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                    <button type="submit" id="add_incomebtn" data-loading-text="<?php echo $this->lang->line('processing'); ?>" class="btn btn-info"><i class="fa fa-check-circle"></i> <?php echo $this->lang->line('save'); ?></button>
                 </div>
-             </form>
+            </form>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="myModaledit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content modal-media-content mx-2">
-            <div class="modal-header modal-media-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $this->lang->line('edit_income'); ?></h4>
+<div class="modal fade sh-modal sh-modal-accent" id="myModaledit" tabindex="-1" aria-labelledby="myModaleditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModaleditLabel"><?php echo $this->lang->line('edit_income'); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt0 pb0">
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12" id="edit_data">
-                    </div>
+            <div class="pup-scroll-area">
+                <div class="modal-body" id="edit_data">
                 </div>
             </div>
         </div>
@@ -157,12 +131,18 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        var date_format = '<?php echo $result = strtr($this->customlib->getHospitalDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy']) ?>';
-        $('#date').datepicker({
-            format: date_format,
-            endDate: '+0d',
-            autoclose: true
-        });
+        // #date auto-initialized as Tempus Dominus 6 picker via .date class + event delegation in footer.php
+        // Apply max date = today restriction (preserves old endDate:'+0d' behavior)
+        var dateEl = document.getElementById('date');
+        if (dateEl) {
+            dateEl.addEventListener('focus', function() {
+                if (dateEl._pickerInit) {
+                    dateEl._pickerInit.updateOptions({
+                        restrictions: { maxDate: new tempusDominus.DateTime() }
+                    });
+                }
+            }, { once: true });
+        }
 
         $("#btnreset").click(function () {
             $("#form1")[0].reset();
@@ -185,20 +165,24 @@
     }   
 	
     $(document).ready(function () {
-        $('.detail_popover').popover({
-            placement: 'right',
-            trigger: 'hover',
-            container: 'body',
-            html: true,
-            content: function () {
-                return $(this).closest('td').find('.fee_detail_popover').html();
-            }
+        document.querySelectorAll('.detail_popover').forEach(function (el) {
+            new bootstrap.Popover(el, {
+                placement: 'right',
+                trigger: 'hover',
+                container: 'body',
+                html: true,
+                content: function () {
+                    var td = el.closest('td');
+                    var inner = td ? td.querySelector('.fee_detail_popover') : null;
+                    return inner ? inner.innerHTML : '';
+                }
+            });
         });
     });
 
     $(document).ready(function (e) {
         $("#add_income").on('submit', (function (e) {
-            $("#add_incomebtn").button('loading');
+            $("#add_incomebtn").btnLoading();
             e.preventDefault();
             $.ajax({
                 url: '<?php echo base_url(); ?>admin/income/add',
@@ -218,10 +202,10 @@
                     } else {
                         successMsg(data.message);
                         $('.ajaxlist').DataTable().ajax.reload();                        
-                        $('#myModal').modal('hide');
+                        shModal('myModal').hide();
                         window.location.reload(true);
                     }
-                    $("#add_incomebtn").button('reset');
+                    $("#add_incomebtn").btnReset();
                 },
                 error: function () {
                     alert("Fail")
@@ -231,7 +215,7 @@
     });
 
     function edit(id) {
-        $('#myModaledit').modal('show');
+        shModal('myModaledit').show();
         $.ajax({
             url: '<?php echo base_url(); ?>admin/income/getDataByid/' + id,
             success: function (data) {
@@ -251,11 +235,7 @@
 	});
 
     $(document).ready(function (e) {
-        $('#myModal,#myModaledit').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show:false
-        });
+        modal_click_disabled('myModal', 'myModaledit');
     });
 </script>
 
@@ -269,3 +249,7 @@
 } ( jQuery ) )
 </script>
 <!-- //========datatable end===== -->
+
+<?php if ($this->input->get('action') === 'add'): ?>
+<script>$(function(){ shModal('myModal').show(); shCleanUrlParam('action'); });</script>
+<?php endif; ?>

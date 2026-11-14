@@ -6,12 +6,16 @@ if (!defined('BASEPATH')) {
 
 class Income extends Admin_Controller
 {
+	public $modules;
+	public $search_type;
+
 
     public function __construct()
     {
         parent::__construct();
         $this->load->helper('form');
         $this->load->library("datatables");
+        $this->load->library("SaasValidation");
         $this->load->model("transaction_model");
         $this->modules = $this->config->item('modules');
         $this->config->load("payroll");
@@ -33,6 +37,7 @@ class Income extends Admin_Controller
         $data['fields']      = $this->customfield_model->get_custom_fields('income', 1);
         $incomeHead          = $this->incomehead_model->get();
         $data['incheadlist'] = $incomeHead;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/income/incomeList', $data);
         $this->load->view('layout/footer', $data);
@@ -40,6 +45,9 @@ class Income extends Admin_Controller
 
     public function getDatatable()
     {
+        if (!$this->rbac->hasPrivilege('income', 'can_view')) {
+            access_denied();
+        }
         $dt_response = $this->income_model->getAllRecord();
         $fields      = $this->customfield_model->get_custom_fields('income', 1);
         $dt_response = json_decode($dt_response);
@@ -50,38 +58,34 @@ class Income extends Admin_Controller
 
                 $row = array();
                 //====================================
-                $column_first = '<a href="#" data-toggle="popover" class="detail_popover">' . $value->name . '</a>';
-                $column_first .= '<div class="rowoptionview rowview-mt-19">';
-
-                if ($value->documents) {
-                    $column_first .= ' <a href="' . base_url() . 'admin/income/downloadincome/' . $value->id . '" class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('download') . '"><i class="fa fa-download"></i></a>';
-                }
-
-                if ($this->rbac->hasPrivilege('income', 'can_edit')) {
-                    $column_first .= ' <a onclick="edit(' . $value->id . ')" class="btn btn-default btn-xs" data-toggle="tooltip" title="' . $this->lang->line('edit') . '"> <i class="fa fa-pencil"></i> </a>';
-                }
-				
-                if ($this->rbac->hasPrivilege('income', 'can_delete')) {
-                    $column_first .= ' <a class="btn btn-default btn-xs"  data-toggle="tooltip" title="' . $this->lang->line('delete') . '" onclick="delete_record(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
-                }
-
-                $column_first .= '</div>';
+                $column_first  = '<a href="#" data-bs-toggle="popover" class="detail_popover">' . html_escape($value->name) . '</a>';
                 $column_first .= '<div class="fee_detail_popover" style="display: none">';
-
                 if ($value->note == "") {
                     $column_first .= '<p class="text text-danger">' . $this->lang->line('no_description') . '</p>';
                 } else {
-                    $column_first .= '<p class="text text-info">' . $value->note . '</p>';
+                    $column_first .= '<p class="text text-info">' . html_escape($value->note) . '</p>';
+                }
+                $column_first .= '</div>';
+
+                $action = '';
+                if ($value->documents) {
+                    $action .= '<a href="' . base_url() . 'admin/income/downloadincome/' . $value->id . '" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('download') . '"><i class="fa fa-download"></i></a>';
                 }
 
-                $column_first .= '</div>';
+                if ($this->rbac->hasPrivilege('income', 'can_edit')) {
+                    $action .= '<a href="#" onclick="edit(' . $value->id . ')" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('edit') . '"><i class="fa fa-pencil"></i></a>';
+                }
+
+                if ($this->rbac->hasPrivilege('income', 'can_delete')) {
+                    $action .= '<a href="#" onclick="delete_record(' . $value->id . ')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $this->lang->line('delete') . '"><i class="fa fa-trash"></i></a>';
+                }
                 //==============================
 
                 $row[] = $column_first;
-                $row[] = $value->invoice_no;
+                $row[] = html_escape($value->invoice_no);
                 $row[] = $this->customlib->YYYYMMDDTodateFormat($value->date);
-                $row[] = $value->note;
-                $row[] = $value->income_category;
+                $row[] = html_escape($value->note);
+                $row[] = html_escape($value->income_category);
                 $row[] = composeStaffNameByString($value->generated_byname, $value->generated_bysurname, $value->generated_byemployee_id);
                 //====================
                 if (!empty($fields)) {
@@ -89,13 +93,16 @@ class Income extends Admin_Controller
                     foreach ($fields as $fields_key => $fields_value) {
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
+                            $display_field = "<a href=" . html_escape($value->{"$fields_value->name"}) . " target='_blank'>" . html_escape($value->{"$fields_value->name"}) . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
                 }
                 //====================
                 $row[] = $value->amount;
+                $row[] = "<div class='white-space-nowrap'>" . $action . "</div>";
 
                 $dt_data[] = $row;
             }
@@ -121,15 +128,16 @@ class Income extends Admin_Controller
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[income][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[income][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
-		
+
         $this->form_validation->set_rules('inc_head_id[]', $this->lang->line('income_head'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean|valid_amount');
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
+        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[documents]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'inc_head_id[]' => form_error('inc_head_id[]'),
@@ -157,15 +165,15 @@ class Income extends Admin_Controller
 
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
-            $date = $this->input->post('date');
+            $date = $this->input->post('date', TRUE);
             $data = array(
-                'inc_head_id'  => $this->input->post('inc_head_id'),
-                'name'         => $this->input->post('name'),
+                'inc_head_id'  => $this->input->post('inc_head_id', TRUE),
+                'name'         => $this->input->post('name', TRUE),
                 'date'         => $this->customlib->dateFormatToYYYYMMDD($date),
-                'amount'       => $this->input->post('amount'),
-                'invoice_no'   => $this->input->post('invoice_no'),
-                'note'         => $this->input->post('description'),
-                'documents'    => $this->input->post('documents'),
+                'amount'       => $this->input->post('amount', TRUE),
+                'invoice_no'   => $this->input->post('invoice_no', TRUE),
+                'note'         => $this->input->post('description', TRUE),
+                'documents'    => $this->input->post('documents', TRUE),
                 'generated_by' => $this->customlib->getLoggedInUserID(),
             );
 			
@@ -189,11 +197,20 @@ class Income extends Admin_Controller
                 $this->customfield_model->insertRecord($custom_value_array, $insert_id);
             }
 
-            if(isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
-                $file_name = $this->media_storage->fileupload("documents",'./uploads/hospital_income/');
-                $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_income/'.$file_name);
-                $this->income_model->add($data_img);
-            }   
+            if (isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
+                $file_name = $this->media_storage->fileupload("documents", './uploads/hospital_income/');
+                if (!IsNullOrEmptyString($file_name)) {
+                    $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_income/' . $file_name);
+                    $this->income_model->add($data_img);
+
+                    // SaaS: add the uploaded document's size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['documents']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (income add): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -213,6 +230,7 @@ class Income extends Admin_Controller
         $data['title']  = $this->lang->line('fees_master_list');
         $income         = $this->income_model->get($id);
         $data['income'] = $income;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('income/incomeShow', $data);
         $this->load->view('layout/footer', $data);
@@ -224,6 +242,21 @@ class Income extends Admin_Controller
             access_denied();
         }
         $data['title'] = $this->lang->line('fees_master_list');
+
+        // SaaS: release the document's storage from the quota and remove the file.
+        $row = $this->income_model->get($id);
+        if (!empty($row['documents'])) {
+            $file_size_kb = $this->media_storage->getUploadedFileSize($row['documents']);
+            if ($file_size_kb > 0) {
+                try {
+                    $this->saasvalidation->deleteResouceQuota('storage', $file_size_kb);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota release failed (income delete): ' . $e->getMessage());
+                }
+            }
+            $this->media_storage->filedelete($row['documents'], '');
+        }
+
         $this->income_model->remove($id);
         redirect('admin/income/index');
     }
@@ -233,12 +266,13 @@ class Income extends Admin_Controller
         $data['title'] = $this->lang->line('add_fees_master');
         $this->form_validation->set_rules('income', $this->lang->line('fees_master'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
+            $data['module'] = 'finance';
             $this->load->view('layout/header', $data);
             $this->load->view('income/incomeCreate', $data);
             $this->load->view('layout/footer', $data);
         } else {
             $data = array(
-                'income' => $this->input->post('income'),
+                'income' => $this->input->post('income', TRUE),
             );
             $this->income_model->add($data);
             $this->session->set_flashdata('msg', '<div class="alert alert-success text-left">' . $this->lang->line('income_added_successfully') . '</div>');
@@ -280,8 +314,22 @@ class Income extends Admin_Controller
         return true;
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
     public function getDataByid($id)
     {
+        if (!$this->rbac->hasPrivilege('income', 'can_view')) {
+            access_denied();
+        }
         $data['title']       = $this->lang->line('edit_fees_master');
         $data['id']          = $id;
         $income              = $this->income_model->get($id);
@@ -308,7 +356,7 @@ class Income extends Admin_Controller
                 if ($custom_fields_value['validation']) {
                     $custom_fields_id   = $custom_fields_value['id'];
                     $custom_fields_name = $custom_fields_value['name'];
-                    $this->form_validation->set_rules("custom_fields[income][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                    $this->form_validation->set_rules("custom_fields[income][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
                 }
             }
         }
@@ -317,7 +365,8 @@ class Income extends Admin_Controller
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload');
+        $this->form_validation->set_rules('description', $this->lang->line('description'), 'trim|xss_clean');
+        $this->form_validation->set_rules('documents', $this->lang->line('documents'), 'callback_handle_upload|callback_validateCanUploadFile[documents]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'inc_head_id[]' => form_error('inc_head_id[]'),
@@ -344,15 +393,15 @@ class Income extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
             $custom_field_post = $this->input->post("custom_fields[income]");
-            $date              = $this->input->post('date');
+            $date              = $this->input->post('date', TRUE);
             $data              = array(
                 'id'           => $id,
-                'inc_head_id'  => $this->input->post('inc_head_id'),
-                'name'         => $this->input->post('name'),
+                'inc_head_id'  => $this->input->post('inc_head_id', TRUE),
+                'name'         => $this->input->post('name', TRUE),
                 'date'         => $this->customlib->dateFormatToYYYYMMDD($date),
-                'amount'       => $this->input->post('amount'),
-                'invoice_no'   => $this->input->post('invoice_no'),
-                'note'         => $this->input->post('description'),
+                'amount'       => $this->input->post('amount', TRUE),
+                'invoice_no'   => $this->input->post('invoice_no', TRUE),
+                'note'         => $this->input->post('description', TRUE),
                 'generated_by' => $this->customlib->getLoggedInUserID(),
             );
             $insert_id = $this->income_model->add($data);
@@ -370,11 +419,34 @@ class Income extends Admin_Controller
                 $this->customfield_model->updateRecord($custom_value_array, $id, 'income');
             }
            
-            if(isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
-                $file_name = $this->media_storage->fileupload("documents",'./uploads/hospital_income/');
-                $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_income/'.$file_name);
-                $this->income_model->add($data_img);
-            }   
+            if (isset($_FILES["documents"]) && !empty($_FILES['documents']['name'])) {
+                // Size of the document being replaced, for quota diff calculation.
+                $existing     = $this->income_model->get($id);
+                $prev_size_kb = (!empty($existing['documents'])) ? $this->media_storage->getUploadedFileSize($existing['documents']) : 0;
+
+                $file_name = $this->media_storage->fileupload("documents", './uploads/hospital_income/');
+                if (!IsNullOrEmptyString($file_name)) {
+                    // Remove the old physical file that is being replaced.
+                    if (!empty($existing['documents'])) {
+                        $this->media_storage->filedelete($existing['documents'], '');
+                    }
+
+                    $data_img = array('id' => $insert_id, 'documents' => 'uploads/hospital_income/' . $file_name);
+                    $this->income_model->add($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $new_size_kb = $this->media_storage->getTmpFileSize('documents');
+                        if ($prev_size_kb > $new_size_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $prev_size_kb - $new_size_kb);
+                        } elseif ($new_size_kb > $prev_size_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $new_size_kb - $prev_size_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (income edit): ' . $e->getMessage());
+                    }
+                }
+            }
 
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('update_message'));
         }
@@ -394,6 +466,7 @@ class Income extends Admin_Controller
         $custom_fields      = $this->customfield_model->get_custom_fields('income', '', '', 1);
         $data["searchlist"] = $this->search_type;
         $data['fields']     = $custom_fields;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/income/incomeSearch', $data);
         $this->load->view('layout/footer', $data);
@@ -401,6 +474,9 @@ class Income extends Admin_Controller
 
     public function checkvalidation()
     {
+        if (!$this->rbac->hasPrivilege('income_report', 'can_view')) {
+            access_denied();
+        }
         $search = $this->input->post('search');
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('modules_select', $this->lang->line('modules'), 'trim|required|xss_clean');
@@ -413,11 +489,11 @@ class Income extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'    => $this->input->post('search_type'),
-                'collect_staff'  => $this->input->post('collect_staff'),
-                'modules_select' => $this->input->post('modules_select'),
-                'date_from'      => $this->input->post('date_from'),
-                'date_to'        => $this->input->post('date_to'),
+                'search_type'    => $this->input->post('search_type', TRUE),
+                'collect_staff'  => $this->input->post('collect_staff', TRUE),
+                'modules_select' => $this->input->post('modules_select', TRUE),
+                'date_from'      => $this->input->post('date_from', TRUE),
+                'date_to'        => $this->input->post('date_to', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -436,9 +512,9 @@ class Income extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type' => $this->input->post('search_type'),
-                'date_from'   => $this->input->post('date_from'),
-                'date_to'     => $this->input->post('date_to'),
+                'search_type' => $this->input->post('search_type', TRUE),
+                'date_from'   => $this->input->post('date_from', TRUE),
+                'date_to'     => $this->input->post('date_to', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -461,6 +537,7 @@ class Income extends Admin_Controller
         $data["modules"]        = $this->customlib->get_modules();
         $data["searchlist"]     = $this->search_type;
         $data['search_data']    = '';
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/income/alltransactionReport', $data);
         $this->load->view('layout/footer', $data);
@@ -468,11 +545,14 @@ class Income extends Admin_Controller
 
     public function transactionreports()
     {
-        $search['search_type']    = $this->input->post('search_type');
-        $search['collect_staff']  = $this->input->post('collect_staff');
-        $search['modules_select'] = $this->input->post('modules_select');
-        $search['date_from']      = $this->input->post('date_from');
-        $search['date_to']        = $this->input->post('date_to');
+        if (!$this->rbac->hasPrivilege('all_transaction_report', 'can_view')) {
+            access_denied();
+        }
+        $search['search_type']    = $this->input->post('search_type', TRUE);
+        $search['collect_staff']  = $this->input->post('collect_staff', TRUE);
+        $search['modules_select'] = $this->input->post('modules_select', TRUE);
+        $search['date_from']      = $this->input->post('date_from', TRUE);
+        $search['date_to']        = $this->input->post('date_to', TRUE);
         $start_date               = '';
         $end_date                 = '';
         $currency_symbol           = $this->customlib->getHospitalCurrencyFormat();
@@ -500,7 +580,7 @@ class Income extends Admin_Controller
         $search['end_date']   = $end_date;
 
         if ($search['modules_select'] == 'all') {
-            $transactiondata = $this->transaction_model->transactionRecord($start_date, $end_date, $search['collect_staff']);
+            $transactiondata = $this->transaction_model->allTransactionRecord($start_date, $end_date, $search['collect_staff']);
         } elseif ($search['modules_select'] == 'appointment') {
             $transactiondata = $this->transaction_model->appointmentpatientRecord($start_date, $end_date, $search['collect_staff']);            
         } elseif ($search['modules_select'] == 'opd_patient') {
@@ -537,7 +617,7 @@ class Income extends Admin_Controller
 					$total_amount -= $value->amount;
 				}
 
-                if (!empty($value->ward)) {
+                if (!empty($value->ward) && !in_array($value->ward, ['income', 'expenses'])) {
                     $ward = $this->customlib->getSessionPrefixbyType($value->ward);
                 } else {
                     $ward = '';
@@ -597,8 +677,8 @@ class Income extends Admin_Controller
                     $row[]="";
                  }
                
-                $row[]     = $ward . $reference;
-                $row[]     = $section;
+                $row[]     = html_escape($ward) . html_escape($reference);
+                $row[]     = html_escape($section);
                 $row[]     = composeStaffNameByString($value->name, $value->surname, $value->employee_id);
                 $row[]     = $type;
                 $row[]     = $payment_mode;
@@ -630,9 +710,12 @@ class Income extends Admin_Controller
 
     public function incomereports()
     {
-        $search['search_type'] = $this->input->post('search_type');
-        $search['date_from']   = $this->input->post('date_from');
-        $search['date_to']     = $this->input->post('date_to');
+        if (!$this->rbac->hasPrivilege('income_report', 'can_view')) {
+            access_denied();
+        }
+        $search['search_type'] = $this->input->post('search_type', TRUE);
+        $search['date_from']   = $this->input->post('date_from', TRUE);
+        $search['date_to']     = $this->input->post('date_to', TRUE);
         $start_date            = '';
         $end_date              = '';
         $fields                = $this->customfield_model->get_custom_fields('income', '', '', 1);
@@ -666,16 +749,17 @@ class Income extends Admin_Controller
 
                 $total_amount += $value->amount;
                 $row   = array();
-                $row[] = $value->invoice_name;
-                $row[] = $value->invoice_no;
-                $row[] = $value->income_category;
+                $row[] = html_escape($value->invoice_name);
+                $row[] = html_escape($value->invoice_no);
+                $row[] = html_escape($value->income_category);
                 $row[] = $this->customlib->YYYYMMDDTodateFormat($value->payment_date);
                 if (!empty($fields)) {
                     foreach ($fields as $fields_key => $fields_value) {
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
-
+                            $display_field = "<a href=" . html_escape($value->{"$fields_value->name"}) . " target='_blank'>" . html_escape($value->{"$fields_value->name"}) . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }
@@ -715,14 +799,11 @@ class Income extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'reports/finance');
         $this->session->set_userdata('subsub_menu', 'reports/income/incomegroup');
 
-        if (isset($_POST['search_type'])) {
-            $search_type = $this->input->post("search_type");
-        } else {
-            $search_type = "";
-        }
+        $search_type = $this->input->post('search_type', TRUE) ?: '';
         $data['head_id'] = $head_id = "";
-        if (isset($_POST['head']) && $_POST['head'] != '') {
-            $data['head_id'] = $head_id = $_POST['head'];
+        $head_post = $this->input->post('head', TRUE);
+        if ($head_post != '') {
+            $data['head_id'] = $head_id = $head_post;
         }
         $data['fields']      = $this->customfield_model->get_custom_fields('income', '', '', 1);
         $data["searchlist"]  = $this->search_type;
@@ -730,6 +811,7 @@ class Income extends Admin_Controller
         $incomeList          = $this->income_model->searchincomegroup($search_type, $head_id);
         $data['headlist']    = $this->incomehead_model->get();
         $data['incomeList']  = $incomeList;
+        $data['module'] = 'finance';
         $this->load->view('layout/header', $data);
         $this->load->view('admin/income/groupincomeReport', $data);
         $this->load->view('layout/footer', $data);
@@ -806,20 +888,21 @@ class Income extends Admin_Controller
                     $row[] = "";
                     $count++;
                 } else {
-                    $row[] = $value->income_category;
+                    $row[] = html_escape($value->income_category);
                     $count = 0;
                 }
                 $row[] = $value->id;
-                $row[] = $value->name;
+                $row[] = html_escape($value->name);
                 $row[] = $this->customlib->YYYYMMDDTodateFormat($value->date);
-                $row[] = $value->invoice_no;
+                $row[] = html_escape($value->invoice_no);
 
                 if (!empty($fields)) {
                     foreach ($fields as $fields_key => $fields_value) {
                         $display_field = $value->{"$fields_value->name"};
                         if ($fields_value->type == "link") {
-                            $display_field = "<a href=" . $value->{"$fields_value->name"} . " target='_blank'>" . $value->{"$fields_value->name"} . "</a>";
-
+                            $display_field = "<a href=" . html_escape($value->{"$fields_value->name"}) . " target='_blank'>" . html_escape($value->{"$fields_value->name"}) . "</a>";
+                        } else {
+                            $display_field = html_escape($display_field);
                         }
                         $row[] = $display_field;
                     }

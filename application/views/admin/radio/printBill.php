@@ -5,13 +5,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title><?php echo $this->lang->line('bill'); ?></title>
-        <style type="text/css">
-            .printablea4{width: 100%;}
-            /*.printablea4 p{margin-bottom: 0;}*/
-            .printablea4>tbody>tr>th,
-            .printablea4>tbody>tr>td{padding:2px 0; line-height: 1.42857143;vertical-align: top; font-size: 12px;}
-        </style>
-    </head>
+</head>
         <div class="fixed-print-header"> 
             <?php if (!empty($print_details[0]['print_header'])) { ?>
                         <div>
@@ -19,7 +13,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             if (!empty($print_details[0]['print_header'])) {
                                 echo $this->media_storage->getImageURL($print_details[0]['print_header']);
                             }
-                            ?>" class="img-responsive" style="height:100px; width: 100%;">
+                            ?>" class="img-fluid sh-avatar-cover" >
                         </div>
                     <?php } ?>
         </div>   
@@ -41,9 +35,9 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                    
                      <table class="printablea4" cellspacing="0" width="100%">
                         <tr>
-                            <td width="33%" class="text-left"><?php echo $this->lang->line('recept')."# ".$result["id"]; ?></td>
+                            <td width="33%" class="text-start"><?php echo $this->lang->line('receipt')."# ".$result["id"]; ?></td>
                             <td width="33%" class="text-center"><?php echo $this->lang->line('bill')." ".$this->lang->line('no')."# ".$this->customlib->getSessionPrefixByType('radiology_billing').$result["id"]; ?></td>
-                            <td width="33%" class="text-right"><?php echo $this->lang->line('date').": ".date($this->customlib->getHospitalDateFormat(true, false), strtotime($result["date"])); ?></td>
+                            <td width="33%" class="text-end"><?php echo $this->lang->line('date').": ".date($this->customlib->getHospitalDateFormat(true, false), strtotime($result["date"])); ?></td>
                         </tr>
                     </table>
                     <div class="divider mt-10 mb-10"></div>
@@ -79,8 +73,8 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                     <table class="printablea4" cellspacing="0" cellpadding="0" width="100%">
                         <tr>
                             <th width="20%"><?php echo $this->lang->line('test') . " " . $this->lang->line('name'); ?></th> 
-                            <th><?php echo $this->lang->line('short') . " " . $this->lang->line('name'); ?></th>
-                            <th><?php echo $this->lang->line('report') . " " . $this->lang->line('date'); ?></th>
+                            <th><?php echo $this->lang->line('short_name'); ?></th>
+                            <th><?php echo $this->lang->line('report_date') ; ?></th>
                             <th><?php echo $this->lang->line('amount'); ?></th>
                         </tr>                       
                             <?php
@@ -97,23 +91,23 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             ?>                       
                     </table>
                     <div class="divider mt-10 mb-10"></div>
-					<table class="printablea4" style="width: 40%; float: right;">                
+					<table class="printablea4 sh-print-right-50" >                
                         <?php if (!empty($result["total"])) {?>
                             <tr>
                                 <th style="width: 30%;"><?php echo $this->lang->line('total') . " (" . $currency_symbol . ")"; ?></th>
-                                <td class="text-right"><?php echo $result["total"]; ?></td>
+                                <td class="text-end"><?php echo $result["total"]; ?></td>
                             </tr>
                         <?php }?>
                         <?php if (!empty($result["discount"])) {  ?>
                             <tr>
                                 <th><?php echo $this->lang->line('discount') . " (" . $currency_symbol . ")";  ?></th>
-                                <td class="text-right"><?php echo $result["discount"]; ?></td>
+                                <td class="text-end"><?php echo $result["discount"]; ?></td>
                             </tr>
                         <?php }?>
                         <?php if (!empty($result["tax"])) {  ?>
                             <tr>
                                 <th><?php echo $this->lang->line('tax') . " (" . $currency_symbol . ")";  ?></th>
-                                <td class="text-right"><?php echo $result["tax"]; ?></td>
+                                <td class="text-end"><?php echo $result["tax"]; ?></td>
                             </tr>
                         <?php }?>
                         <?php
@@ -122,7 +116,7 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 ?>
                         <tr>
                             <th><?php echo $this->lang->line('net_amount') . " (" . $currency_symbol . ")"; ?></th>
-                            <td class="text-right"><?php echo $result["net_amount"]; ?></td>
+                            <td class="text-end"><?php echo $result["net_amount"]; ?></td>
                         </tr>
                                 <?php
                         }
@@ -132,13 +126,13 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                 ?>
                         <tr>
                             <th><?php echo $this->lang->line("paid_amount"); ?></th>
-                            <td class="text-right"><?php echo $result["total_deposit"]; ?></td>
+                            <td class="text-end"><?php echo $result["total_deposit"]; ?></td>
                         </tr>
                         <?php
                         } ?>
                         <tr>
                             <th><?php echo $this->lang->line("balance_amount"); ?></th>
-                            <td class="text-right"><?php echo $result["net_amount"] - $result["total_deposit"] ; ?></td>
+                            <td class="text-end"><?php echo $result["net_amount"] - $result["total_deposit"] ; ?></td>
                         </tr>
                         <?php if (!empty($result["note"])) {?>                         
                         <?php }
@@ -147,18 +141,18 @@ if (!$print) {
     ?>
                             <tr id="generated_by">
                                 <th><?php echo $this->lang->line('collected_by'); ?></th>
-                                <td class="text-right"><?php echo $result["generated_byname"]; ?></td>
+                                <td class="text-end"><?php echo $result["generated_byname"]; ?></td>
                             </tr>
                         <?php
 }
 ?>
                     </table>                   
                     <div class="divider mt-10 mb-10"></div> 
-                    <table class="printablea4" width="100%" style="width:30%; float: right;">                       
+                    <table class="printablea4 sh-print-right-30" width="100%">                       
                         <?php if (($print) != 'yes') { ?>
                             <tr id="generated_by">
                                 <th><?php echo $this->lang->line('collected_by'); ?></th>
-                                <td class="text-right"><?php echo $result["generated_byname"]; ?></td>
+                                <td class="text-end"><?php echo $result["generated_byname"]; ?></td>
                             </tr>
                         <?php } ?>
                     </table>

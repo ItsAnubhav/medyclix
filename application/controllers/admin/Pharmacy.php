@@ -6,6 +6,16 @@ if (!defined('BASEPATH')) {
 
 class Pharmacy extends Admin_Controller
 {
+	public $agerange;
+	public $blood_group;
+	public $charge_type;
+	public $marital_status;
+	public $opd_prefix;
+	public $patient_login_prefix;
+	public $payment_mode;
+	public $search_type;
+	public $time_format;
+
 
     public function __construct()
     {
@@ -17,7 +27,9 @@ class Pharmacy extends Admin_Controller
         $this->load->library('CSVReader');
         $this->load->library('datatables');
         $this->load->library('system_notification');
+        $this->load->library('SaasValidation');
         $this->load->model(array('pharmacy_model', 'prefix_model', 'transaction_model'));
+        $this->pharmacy_model->ensureWalkinBillingSchema();
         $this->marital_status       = $this->config->item('marital_status');
         $this->payment_mode         = $this->config->item('payment_mode');
         $this->search_type          = $this->config->item('search_type');
@@ -49,12 +61,12 @@ class Pharmacy extends Admin_Controller
 
         $this->form_validation->set_rules('payment_date', $this->lang->line('date'), 'required');
         $this->form_validation->set_rules('amount', $this->lang->line('amount'), 'required|valid_amount');
-        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required');
+        $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required|xss_clean');
 
-        if ($this->input->post('payment_mode') == "Cheque") {
-            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
+            $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required|xss_clean');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($this->form_validation->run() == false) {
@@ -69,7 +81,7 @@ class Pharmacy extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $pharmacy_bill_basic_id = $this->input->post('pharmacy_bill_basic_id');
+            $pharmacy_bill_basic_id = $this->input->post('pharmacy_bill_basic_id', TRUE);
             $pharmacy_bill_basic    = $this->transaction_model->pharmacyTotalPayments($pharmacy_bill_basic_id);
 
             if (!empty($pharmacy_bill_basic)) {
@@ -79,39 +91,46 @@ class Pharmacy extends Admin_Controller
                 $net_amount = 0;
                 $total_paid = 0;
             }
-            $amount_paying = $this->input->post('amount');
-            $refund_amount = $this->input->post('refund_amount');
+            $amount_paying = $this->input->post('amount', TRUE);
+            $refund_amount = $this->input->post('refund_amount', TRUE);
 
             if (($net_amount + $refund_amount) >= ($total_paid + $amount_paying)) {
 
                 $picture         = "";
-                $bill_date       = $this->input->post("payment_date");
+                $bill_date       = $this->input->post("payment_date", TRUE);
                 $payment_section = $this->config->item('payment_section');
                 $payment_array   = array(
-                    'amount'                 => $this->input->post('amount'),
-                    'patient_id'             => $this->input->post('patient_id'),
+                    'amount'                 => $this->input->post('amount', TRUE),
+                    'patient_id'             => $this->input->post('patient_id', TRUE) ?: null,
                     'section'                => $payment_section['pharmacy'],
                     'type'                   => 'payment',
-                    'pharmacy_bill_basic_id' => $this->input->post('pharmacy_bill_basic_id'),
-                    'payment_mode'           => $this->input->post('payment_mode'),
-                    'note'                   => $this->input->post('note'),
+                    'pharmacy_bill_basic_id' => $this->input->post('pharmacy_bill_basic_id', TRUE),
+                    'payment_mode'           => $this->input->post('payment_mode', TRUE),
+                    'note'                   => $this->input->post('note', TRUE),
                     'payment_date'           => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->customlib->getHospitalTimeFormat()),
                     'received_by'            => $this->customlib->getLoggedInUserID(),
                 );
-                if (!empty($this->input->post('case_reference_id')) && $this->input->post('case_reference_id') != "") {
-                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id');
+                if (!empty($this->input->post('case_reference_id', TRUE)) && $this->input->post('case_reference_id', TRUE) != "") {
+                    $payment_array['case_reference_id'] = $this->input->post('case_reference_id', TRUE);
                 }
-              
-                $cheque_date = $this->input->post("cheque_date");
-                if ($this->input->post('payment_mode') == "Cheque") {
+
+                $cheque_date = $this->input->post("cheque_date", TRUE);
+                if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                     $payment_array['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                    $payment_array['cheque_no']       = $this->input->post('cheque_no');
+                    $payment_array['cheque_no']       = $this->input->post('cheque_no', TRUE);
 
                     if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                         $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                         $payment_array['attachment']      = $file_name;
                         $payment_array['attachment_name'] = $_FILES["document"]["name"];
-                    }   
+
+                        // SaaS: add the uploaded document's size to the storage quota usage.
+                        try {
+                            $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota update failed (pharmacy partialbill): ' . $e->getMessage());
+                        }
+                    }
                 }
 
                 $this->transaction_model->add($payment_array);
@@ -137,9 +156,9 @@ class Pharmacy extends Admin_Controller
         );
 		
         $this->form_validation->set_rules('medicine_category_id', $this->lang->line('medicine_category'), 'required');       
-        $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required');
-        $this->form_validation->set_rules('unit_packing', $this->lang->line('unit_packing'), 'required');
-        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload', 'required'); 
+        $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required|xss_clean');
+        $this->form_validation->set_rules('unit_packing', $this->lang->line('unit_packing'), 'required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('image'), 'callback_handle_upload|callback_validateCanUploadFile[file]', 'required');
         if ($this->form_validation->run() == false) {
 
             $msg = array(
@@ -155,19 +174,19 @@ class Pharmacy extends Admin_Controller
         } else {
 
             $pharmacy = array(
-                'medicine_name'        => $this->input->post('medicine_name'),
-                'medicine_category_id' => $this->input->post('medicine_category_id'),
-                'medicine_company'     => $this->input->post('medicine_company'),
-                'medicine_composition' => $this->input->post('medicine_composition'),
-                'medicine_group'       => $this->input->post('medicine_group'),
-                'unit'                 => $this->input->post('unit'),
-                'min_level'            => $this->input->post('min_level'),
-                'reorder_level'        => $this->input->post('reorder_level'),
-                'vat'                  => $this->input->post('vat'),
-                'unit_packing'         => $this->input->post('unit_packing'),
-                'note'                 => $this->input->post('note'),
-                'vat_ac'               => $this->input->post('vat_ac'),
-                'rack_number'          => $this->input->post('rack_number'),
+                'medicine_name'        => $this->input->post('medicine_name', TRUE),
+                'medicine_category_id' => $this->input->post('medicine_category_id', TRUE),
+                'medicine_company'     => $this->input->post('medicine_company', TRUE),
+                'medicine_composition' => $this->input->post('medicine_composition', TRUE),
+                'medicine_group'       => $this->input->post('medicine_group', TRUE),
+                'unit'                 => $this->input->post('unit', TRUE),
+                'min_level'            => $this->input->post('min_level', TRUE),
+                'reorder_level'        => $this->input->post('reorder_level', TRUE),
+                'vat'                  => $this->input->post('vat', TRUE),
+                'unit_packing'         => $this->input->post('unit_packing', TRUE),
+                'note'                 => $this->input->post('note', TRUE),
+                'vat_ac'               => $this->input->post('vat_ac', TRUE),
+                'rack_number'          => $this->input->post('rack_number', TRUE),
             );
 
             $insert_id = $this->pharmacy_model->add($pharmacy);
@@ -176,18 +195,25 @@ class Pharmacy extends Admin_Controller
                 $file_name = $this->media_storage->fileupload("file","./uploads/medicine_images/");
                 $data_img = array('id' => $insert_id, 'medicine_image' => 'uploads/medicine_images/' . $file_name);
                 $this->pharmacy_model->update($data_img);
+
+                // SaaS: add the uploaded medicine image size to the storage quota usage.
+                try {
+                    $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (pharmacy add): ' . $e->getMessage());
+                }
             }
-        
-            $category_name = $this->notificationsetting_model->getmedicinecategoryDetails($this->input->post('medicine_category_id'));
+
+            $category_name = $this->notificationsetting_model->getmedicinecategoryDetails($this->input->post('medicine_category_id', TRUE));
 
             $event_data = array(
-                'medicine_name'        => $this->input->post('medicine_name'),
+                'medicine_name'        => $this->input->post('medicine_name', TRUE),
                 'medicine_category'    => $category_name['medicine_category'],
-                'medicine_company'     => $this->input->post('medicine_company'),
-                'medicine_composition' => $this->input->post('medicine_composition'),
-                'medicine_group'       => $this->input->post('medicine_group'),
-                'unit'                 => $this->input->post('unit'),
-                'unit_packing'         => $this->input->post('unit_packing'),
+                'medicine_company'     => $this->input->post('medicine_company', TRUE),
+                'medicine_composition' => $this->input->post('medicine_composition', TRUE),
+                'medicine_group'       => $this->input->post('medicine_group', TRUE),
+                'unit'                 => $this->input->post('unit', TRUE),
+                'unit_packing'         => $this->input->post('unit_packing', TRUE),
             );
 
             $this->system_notification->send_system_notification('add_medicine', $event_data);
@@ -202,6 +228,7 @@ class Pharmacy extends Admin_Controller
         if (!$this->rbac->hasPrivilege('medicine', 'can_view')) {
             access_denied();
         }
+        $this->session->set_userdata('top_menu', 'pharmacy');
         $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
         $data["medicineCategory"] = $medicineCategory;
         $resultlist               = $this->pharmacy_model->searchFullText();
@@ -221,9 +248,10 @@ class Pharmacy extends Admin_Controller
         $data['unitname']   = $this->pharmacy_model->getpharmacyunit();
         $data['company']    = $this->pharmacy_model->getcomapnyname();
         $data['get_medicine_group'] = $this->pharmacy_model->get_medicine_group();
-        $this->load->view('layout/header');
+        $data['module'] = 'pharmacy';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pharmacy/search', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function bulk_delete()
@@ -237,11 +265,28 @@ class Pharmacy extends Admin_Controller
             );
             $return_array = array('status' => 0, 'error' => $msg);
         } else {
-            $pharmacy = $this->input->post('delete_id');
+            $pharmacy = $this->input->post('delete_id', TRUE);
             if(!empty($pharmacy)){
                 foreach($pharmacy as $pharmacy_value){
+                    // SaaS: release the medicine image's storage before the medicine row is deleted
+                    // (mirrors the single delete() release; bulk delete was leaking the image quota).
+                    $saas_row = $this->pharmacy_model->getMedicineById($pharmacy_value);
+                    if (!empty($saas_row) && !empty($saas_row['medicine_image'])) {
+                        $saas_image = $saas_row['medicine_image'];
+                        $saas_dir   = (strpos($saas_image, '/') !== false) ? '' : 'uploads/medicine_images';
+                        $saas_kb    = $this->media_storage->getUploadedFileSize($saas_image, $saas_dir);
+                        if ($saas_kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $saas_kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (pharmacy bulk_delete id=' . $pharmacy_value . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($saas_image, $saas_dir);
+                    }
+
                     $this->pharmacy_model->bulkdelete($pharmacy_value);
-                }               
+                }
                 $return_array = array('status' => 1, 'error' => '', 'message' => $this->lang->line('delete_message'));
             }else{
                 $return_array = array('status' => 0, 'error' => $this->lang->line('something_went_wrong') , 'message' => '');
@@ -254,7 +299,7 @@ class Pharmacy extends Admin_Controller
 
     public function getPrescriptionById()
     {
-        $prescription_no = $this->input->post('prescription_no');
+        $prescription_no = $this->input->post('prescription_no', TRUE);
         if ($prescription_no != "") {
 
             $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
@@ -297,7 +342,8 @@ class Pharmacy extends Admin_Controller
 
     public function getpharmacyDatatable()
     {
-        $dt_response = $this->pharmacy_model->getAllpharmacyRecord();
+        $medicine_name = $this->input->post('medicine_name_filter', TRUE);
+        $dt_response = $this->pharmacy_model->getAllpharmacyRecord($medicine_name);
         $dt_response = json_decode($dt_response);
         
         $dt_data     = array();
@@ -327,22 +373,24 @@ class Pharmacy extends Admin_Controller
                 }  
                 
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
                 if ($this->rbac->hasPrivilege('medicine_bad_stock', 'can_add')) {
-                    $action .= "<a href='#' class='btn btn-default btn-xs' onclick='addbadstock(" . $value->id . ")' data-toggle='tooltip' title='" . $this->lang->line('add_bad_stock') . "' > <i class='fas fa-minus-square'></i> </a>";
+                    $action .= "<a href='#' class='btn btn-default btn-xs' onclick='addbadstock(" . $value->id . ")' data-bs-toggle='tooltip' title='" . $this->lang->line('add_bad_stock') . "'><i class='fas fa-minus-square'></i></a>";
                 }
                 
                 $action .= "<div'>";
                 $checkbox = "<input id='pharmacy' href='#' class='enable_delete'  type='checkbox' name='pharmacy[]' value='" . $value->id . "'>";
                 //==============================
                 $row[]     = $checkbox;
-                $row[]     = $value->medicine_name . $action;
+                $row[]     = $value->medicine_name;
                 $row[]     = $value->company_name;
                 $row[]     = $value->medicine_composition;
                 $row[]     = $value->medicine_category;
                 $row[]     = $value->group_name;
                 $row[]     = $value->unit_name;
                 $row[]     = $available_qty . $status . $status1 ;
+
+                $row[]     = $action;
                 $dt_data[] = $row;
             }
         }
@@ -374,9 +422,12 @@ class Pharmacy extends Admin_Controller
 
             $nestedData = array();
             $action     = "<div class='rowoptionview rowview-mt-19'>";
-            $action .= "<a href='#'  data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-record-id='" . $result_value->id . "' class='btn btn-default btn-xs add_payment' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
-            $action .= "<a href='#' onclick='viewDetail(" . $result_value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
-            $action .= "<a href='#'  data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-record-id='" . $result_value->id . "' class='btn btn-default btn-xs print_bill' data-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+            $action .= "<a href='#'  data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-record-id='" . $result_value->id . "' class='btn btn-default btn-xs add_payment' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a>";
+            $action .= "<a href='#' onclick='viewDetail(" . $result_value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+            $action .= "<a href='#'  data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-record-id='" . $result_value->id . "' class='btn btn-default btn-xs print_bill' data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+            if ($this->pharmacy_model->getSaleReturnCountForBill($result_value->id) > 0) {
+                $action .= "<a href='#' onclick='saleReturnHistory(" . $result_value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('return_history') . "'><i class='fa fa-history'></i></a>";
+            }
             $action .= "<div>";
 
             $nestedData[] = $this->customlib->getSessionPrefixByType('pharmacy_billing') . $result_value->id;
@@ -414,23 +465,30 @@ class Pharmacy extends Admin_Controller
                 // ====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
                 if ($this->rbac->hasPrivilege('pharmacy_partial_payment', 'can_view')) {
-                    $action .= "<span class='medium-lr-tooltip'><a href='#' data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment tooltip-inner-2' data-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a></span>";
+                    $action .= "<span class='medium-lr-tooltip'><a href='#' data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs add_payment tooltip-inner-2' data-bs-toggle='tooltip' title='" . $this->lang->line('add_view_payments') . "' ><i class='fa fa-money'></i></a></span>";
                 }
-                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
-                $action .= "<a href='#'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs print_bill' data-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "' ><i class='fa fa-reorder'></i></a>";
+                $action .= "<a href='#'  data-loading-text='" . $this->lang->line('please_wait') . "' data-record-id='" . $value->id . "' class='btn btn-default btn-xs print_bill' data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' ><i class='fa fa-print'></i></a>";
+                if ($this->pharmacy_model->getSaleReturnCountForBill($value->id) > 0) {
+                    $action .= "<a href='#' onclick='saleReturnHistory(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('return_history') . "'><i class='fa fa-history'></i></a>";
+                }
 
                 if ($value->case_reference_id > 0) {
                     $case_id = $value->case_reference_id;
                 } else {
                     $case_id = '';
                 }
-                $action .= "<div>";
-                
+                $action .= "</div>";
+
                 //==============================
                 $row[] = $this->customlib->getSessionPrefixByType('pharmacy_billing') . $value->id;
                 $row[] = $case_id;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date, $this->time_format);
-                $row[] = $value->patient_name . " (" . $value->pid . ")" . $action;
+                if (!empty($value->pid)) {
+                    $row[] = $value->patient_name . " (" . $value->pid . ")";
+                } else {
+                    $row[] = ($value->patient_name ?: $value->customer_name) . " (" . $this->lang->line('walk_in_customer') . ")";
+                }
                 $row[] = composeStaffNameByString($value->generated_byname, $value->generated_bysurname, $value->generated_byemployee_id);
                 $row[] = $value->doctor_name;
                 //====================
@@ -447,12 +505,21 @@ class Pharmacy extends Admin_Controller
 
                 $row[]     = $value->total;
                 $row[]     = $value->discount . " (" . $value->discount_percentage . "%)";
-                $discount_amt = ( $value->total * $value->discount_percentage ) / 100 ; 
-                $row[]  =  $value->tax ." (".amountFormat(($value->tax * 100) / ($value->total - $discount_amt), 2)."%)";   
+                if (( $value->total * $value->discount_percentage ) != 0) {
+                    $discount_amt = ( $value->total * $value->discount_percentage ) / 100 ; 
+                } else {
+                    $discount_amt = 0; // or handle it however your logic requires
+                }
+
+                if (amountFormat($value->tax * 100)  != 0) {
+                    $row[]     =  $value->tax ." (".amountFormat(($value->tax * 100) / ($value->total - $discount_amt), 2)."%)";   
+                } else {
+                     $row[] =0;
+                } 
                 $row[]     = $value->net_amount;
-                $row[]     = number_format($value->paid_amount, 2, '.', '');
-                $row[]     = number_format($value->refund_amount, 2, '.', '');         
-                $row[]     = number_format((float) $balance_amount, 2, '.', '');
+                $row[]     = number_format((float) $value->paid_amount, 2, '.', '');
+                $row[]     = number_format((float) $value->refund_amount, 2, '.', '');
+                $row[]     = number_format((float) $balance_amount, 2, '.', '') . $action;
                 $dt_data[] = $row;
             }
         }
@@ -565,9 +632,10 @@ class Pharmacy extends Admin_Controller
         $result                   = $this->pharmacy_model->getPharmacy();
         $data['result']           = $result;
         $data["payment_mode"]     = $this->payment_mode;
-        $this->load->view('layout/header');
+        $data['module'] = 'pharmacy';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pharmacy/purchase', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function getpharmacypurchaseDatatable()
@@ -583,19 +651,31 @@ class Pharmacy extends Admin_Controller
 
                 //====================================
                 $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action = "<div class='rowoptionview rowview-mt-19'>";
-                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('show') . "'  ><i class='fa fa-reorder'></i></a>";
-                
-                if ($this->rbac->hasPrivilege('medicine_tpa_charges', 'can_view')) {  
-                $action .= "<a href='#' onclick='view_tpa_charge_model(" . $value->id . ")' class='btn btn-default btn-xs' data-toggle='tooltip' title='" . $this->lang->line('tpa_charges') . "'  ><i class='fas fa-umbrella'></i></a>";
+                $action .= "<a href='#' onclick='viewDetail(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('show') . "'><i class='fa fa-reorder'></i></a>";
+
+                if ($this->rbac->hasPrivilege('medicine_purchase', 'can_edit')) {
+                    $action .= "<a href='#' onclick='editPurchase(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                }
+
+                if ($this->rbac->hasPrivilege('medicine_purchase', 'can_add')) {
+                    $action .= "<a href='#' onclick='purchaseReturn(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('return') . "'><i class='fa fa-undo'></i></a>";
+                }
+                $has_return_history = $this->pharmacy_model->getPurchaseReturnHistoryCount($value->id) > 0;
+                if ($this->rbac->hasPrivilege('medicine_purchase', 'can_view') && $has_return_history) {
+                    $action .= "<a href='#' onclick='purchaseReturnHistory(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('history') . "'><i class='fa fa-history'></i></a>";
+                }
+
+                if ($this->rbac->hasPrivilege('medicine_tpa_charges', 'can_view')) {
+                $action .= "<a href='#' onclick='view_tpa_charge_model(" . $value->id . ")' class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('tpa_charges') . "'><i class='fas fa-umbrella'></i></a>";
                 }
 
                 if (!empty($value->file)) {
-                    $action .= "<a href=" . base_url() . 'admin/pharmacy/download/' . $value->file . " onclick='' class='btn btn-default btn-xs'  data-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
+                    $action .= "<a href=" . base_url() . 'admin/pharmacy/download/' . $value->file . " class='btn btn-default btn-xs' data-bs-toggle='tooltip' title='" . $this->lang->line('download') . "'><i class='fa fa-download'></i></a>";
                 }
                 $action .= "<div>";
                 //==============================
-                $row[] = $this->customlib->getSessionPrefixByType('purchase_no') . $value->id . $action;
+                $return_badge = $has_return_history ? ' <span class="label label-warning">R</span>' : '';
+                $row[] = $this->customlib->getSessionPrefixByType('purchase_no') . $value->id . $return_badge ;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date);
                 $row[] = $value->invoice_no;
                 $row[] = $value->supplier;
@@ -615,7 +695,7 @@ class Pharmacy extends Admin_Controller
 
                 $row[] = $value->discount." (".amountFormat($discount_percentage)."%)";
                 $row[] = $value->tax." (".amountFormat($tax_percentage)."%)";
-                $row[] = $value->net_amount;
+                $row[] = $value->net_amount . $action;
                 //====================
 
                 $dt_data[] = $row;
@@ -658,11 +738,12 @@ class Pharmacy extends Admin_Controller
             );
 
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
-            $this->load->view('layout/header');
+            $data['module'] = 'pharmacy';
+            $this->load->view('layout/header', $data);
             $this->load->view('admin/pharmacy/import', $data);
-            $this->load->view('layout/footer');
+            $this->load->view('layout/footer', $data);
         } else {
-            $medicine_category_id = $this->input->post('medicine_category_id');
+            $medicine_category_id = $this->input->post('medicine_category_id', TRUE);
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $ext = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
 
@@ -773,7 +854,7 @@ class Pharmacy extends Admin_Controller
         $this->form_validation->set_rules('medicine_category_id', $this->lang->line('medicine_category_id'), 'required');
         $this->form_validation->set_rules('unit', $this->lang->line('unit'), 'required');
         $this->form_validation->set_rules('unit_packing', $this->lang->line('unit_packing'), 'required');
-        $this->form_validation->set_rules('medicine_image', $this->lang->line('image'), 'callback_check_upload');
+        $this->form_validation->set_rules('medicine_image', $this->lang->line('image'), 'callback_check_upload|callback_validateCanUploadFile[medicine_image]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'medicine_name'        => form_error('medicine_name'),
@@ -784,28 +865,51 @@ class Pharmacy extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id       = $this->input->post('id');
+            $id       = $this->input->post('id', TRUE);
             $pharmacy = array(
                 'id'                   => $id,
-                'medicine_name'        => $this->input->post('medicine_name'),
-                'medicine_category_id' => $this->input->post('medicine_category_id'),
-                'medicine_company'     => $this->input->post('medicine_company'),
-                'medicine_composition' => $this->input->post('medicine_composition'),
-                'medicine_group'       => $this->input->post('medicine_group'),
-                'unit'                 => $this->input->post('unit'),
-                'min_level'            => $this->input->post('min_level'),
-                'reorder_level'        => $this->input->post('reorder_level'),
-                'vat'                  => $this->input->post('vat'),
-                'unit_packing'         => $this->input->post('unit_packing'),
-                'note'                 => $this->input->post('edit_note'),
-                'vat_ac'               => $this->input->post('vat_ac'),
+                'medicine_name'        => $this->input->post('medicine_name', TRUE),
+                'medicine_category_id' => $this->input->post('medicine_category_id', TRUE),
+                'medicine_company'     => $this->input->post('medicine_company', TRUE),
+                'medicine_composition' => $this->input->post('medicine_composition', TRUE),
+                'medicine_group'       => $this->input->post('medicine_group', TRUE),
+                'unit'                 => $this->input->post('unit', TRUE),
+                'min_level'            => $this->input->post('min_level', TRUE),
+                'reorder_level'        => $this->input->post('reorder_level', TRUE),
+                'vat'                  => $this->input->post('vat', TRUE),
+                'unit_packing'         => $this->input->post('unit_packing', TRUE),
+                'note'                 => $this->input->post('edit_note', TRUE),
+                'vat_ac'               => $this->input->post('vat_ac', TRUE),
             );
             $this->pharmacy_model->update($pharmacy);
            
             if (isset($_FILES["medicine_image"]) && !empty($_FILES['medicine_image']['name'])) {
+                // SaaS: capture the existing medicine image for quota diff + cleanup.
+                $saas_existing  = $this->pharmacy_model->getMedicineById($id);
+                $saas_old_image = (!empty($saas_existing['medicine_image'])) ? $saas_existing['medicine_image'] : '';
+                $saas_old_dir   = (strpos($saas_old_image, '/') !== false) ? '' : 'uploads/medicine_images';
+                $saas_old_kb    = (!empty($saas_old_image)) ? $this->media_storage->getUploadedFileSize($saas_old_image, $saas_old_dir) : 0;
+
                 $file_name = $this->media_storage->fileupload("medicine_image","./uploads/medicine_images/");
-                $data_img = array('id' => $id, 'medicine_image' => 'uploads/medicine_images/' . $file_name);
-                $this->pharmacy_model->update($data_img);
+                if (!IsNullOrEmptyString($file_name)) {
+                    if (!empty($saas_old_image)) {
+                        $this->media_storage->filedelete($saas_old_image, $saas_old_dir);
+                    }
+                    $data_img = array('id' => $id, 'medicine_image' => 'uploads/medicine_images/' . $file_name);
+                    $this->pharmacy_model->update($data_img);
+
+                    // SaaS: adjust storage quota by the size difference (new vs replaced).
+                    try {
+                        $saas_new_kb = $this->media_storage->getTmpFileSize('medicine_image');
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pharmacy update): ' . $e->getMessage());
+                    }
+                }
             }
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
         }
@@ -818,6 +922,22 @@ class Pharmacy extends Admin_Controller
             access_denied();
         }
         if (!empty($id)) {
+            // SaaS: release the medicine image's storage from the quota and remove the file.
+            $saas_row = $this->pharmacy_model->getMedicineById($id);
+            if (!empty($saas_row) && !empty($saas_row['medicine_image'])) {
+                $saas_image = $saas_row['medicine_image'];
+                $saas_dir   = (strpos($saas_image, '/') !== false) ? '' : 'uploads/medicine_images';
+                $saas_kb    = $this->media_storage->getUploadedFileSize($saas_image, $saas_dir);
+                if ($saas_kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $saas_kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (pharmacy delete): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($saas_image, $saas_dir);
+            }
+
             $this->pharmacy_model->delete($id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
@@ -839,6 +959,73 @@ class Pharmacy extends Admin_Controller
     public function convertMonthToNumber($monthName)
     {
         return date('m', strtotime($monthName));
+    }
+
+    /**
+     * Medicines per strip/pack. packing_qty on purchase is units in one strip.
+     */
+    private function packingUnits($packing_qty)
+    {
+        $packing = (float) $packing_qty;
+        return $packing > 0 ? $packing : 1;
+    }
+
+    /**
+     * Convert purchased strips into stockable individual medicines.
+     * available_quantity = quantity (strips) × packing_qty (medicines per strip).
+     */
+    private function tabletStockQty($quantity, $packing_qty)
+    {
+        return (float) $quantity * $this->packingUnits($packing_qty);
+    }
+
+    /**
+     * Strip/pack sale rate → per-medicine sale rate for billing.
+     */
+    private function unitSaleRate($sale_rate, $packing_qty)
+    {
+        return round(((float) $sale_rate) / $this->packingUnits($packing_qty), 2);
+    }
+
+    /**
+     * Strip/pack purchase price → per-medicine purchase price.
+     */
+    private function unitPurchasePrice($purchase_price, $packing_qty)
+    {
+        return round(((float) $purchase_price) / $this->packingUnits($packing_qty), 2);
+    }
+
+    /**
+     * Fields persisted on medicine_batch_details for tablet-level billing/costing.
+     * sale_rate / purchase_price remain strip prices as entered on purchase.
+     */
+    private function unitPricingFields($sale_rate, $purchase_price, $packing_qty)
+    {
+        $fields = array(
+            'unit_sale_rate' => $this->unitSaleRate($sale_rate, $packing_qty),
+        );
+        if ($purchase_price !== null && $purchase_price !== '') {
+            $fields['unit_purchase_price'] = $this->unitPurchasePrice($purchase_price, $packing_qty);
+        }
+        return $fields;
+    }
+
+    /**
+     * Prefer stored unit_sale_rate; fall back to deriving from strip sale_rate.
+     */
+    private function resolveUnitSaleRate($batch)
+    {
+        if (is_array($batch)) {
+            if (isset($batch['unit_sale_rate']) && $batch['unit_sale_rate'] !== null && $batch['unit_sale_rate'] !== '') {
+                return round((float) $batch['unit_sale_rate'], 2);
+            }
+            return $this->unitSaleRate($batch['sale_rate'] ?? 0, $batch['packing_qty'] ?? 0);
+        }
+
+        if (isset($batch->unit_sale_rate) && $batch->unit_sale_rate !== null && $batch->unit_sale_rate !== '') {
+            return round((float) $batch->unit_sale_rate, 2);
+        }
+        return $this->unitSaleRate($batch->sale_rate ?? 0, $batch->packing_qty ?? 0);
     }
 
     public function medicineBatch()
@@ -867,9 +1054,9 @@ class Pharmacy extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id          = $this->input->post('pharmacy_id');
-            $inward_date = $this->input->post('inward_date');
-            $expdate     = $this->input->post('expiry_date');
+            $id          = $this->input->post('pharmacy_id', TRUE);
+            $inward_date = $this->input->post('inward_date', TRUE);
+            $expdate     = $this->input->post('expiry_date', TRUE);
 
             $explore = explode("/", $expdate);
             $monthary     = $explore[0];
@@ -878,19 +1065,28 @@ class Pharmacy extends Admin_Controller
             $month_number = $this->convertMonthToNumber($month);
             $insert_date  = $yearary . "-" . $month_number . "-01";
 
+            $pack_qty = $this->input->post('packing_qty', TRUE);
+            $strip_qty = $this->input->post('quantity', TRUE);
+            $sale_rate_val = $this->input->post('sale_rate', TRUE);
+            $purchase_rate_packing = $this->input->post('purchase_rate_packing', TRUE);
             $medicine_batch = array(
                 'pharmacy_id'           => $id,
-                'expiry_date'           => $this->input->post('expiry_date'),
+                'expiry_date'           => $this->input->post('expiry_date', TRUE),
                 'expiry_date_format'    => $insert_date,
                 'inward_date'           => $this->customlib->dateFormatToYYYYMMDD($inward_date),
-                'batch_no'              => $this->input->post('batch_no'),
-                'packing_qty'           => $this->input->post('packing_qty'),
-                'purchase_rate_packing' => $this->input->post('purchase_rate_packing'),
-                'quantity'              => $this->input->post('quantity'),
-                'mrp'                   => $this->input->post('mrp'),
-                'sale_rate'             => $this->input->post('sale_rate'),
-                'amount'                => $this->input->post('amount'),
-                'available_quantity'    => $this->input->post('quantity'),
+                'batch_no'              => $this->input->post('batch_no', TRUE),
+                'packing_qty'           => $pack_qty,
+                'purchase_rate_packing' => $purchase_rate_packing,
+                'quantity'              => $strip_qty,
+                'mrp'                   => $this->input->post('mrp', TRUE),
+                'sale_rate'             => $sale_rate_val,
+                'amount'                => $this->input->post('amount', TRUE),
+                // Stock is tracked in individual medicines (strips × medicines per strip)
+                'available_quantity'    => $this->tabletStockQty($strip_qty, $pack_qty),
+            );
+            $medicine_batch = array_merge(
+                $medicine_batch,
+                $this->unitPricingFields($sale_rate_val, $purchase_rate_packing, $pack_qty)
             );
             $this->pharmacy_model->medicineDetail($medicine_batch);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
@@ -907,7 +1103,7 @@ class Pharmacy extends Admin_Controller
         $result                 = $this->pharmacy_model->getMedicineBatch($id);
         $data["result"]         = $result;
         $badstockresult         = $this->pharmacy_model->getMedicineBadStock($id);
-        $data["badstockresult"] = $badstockresult;		 
+        $data["badstockresult"] = $badstockresult;
         $this->load->view('admin/pharmacy/medicineDetail', $data);
     }
 
@@ -918,10 +1114,12 @@ class Pharmacy extends Admin_Controller
         }
 
         $this->form_validation->set_rules('name', $this->lang->line('name'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
 
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'name' => form_error('name'),
+                'file' => form_error('file'),
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
@@ -933,19 +1131,19 @@ class Pharmacy extends Admin_Controller
             $patient_id = $check_patient_id + 1;
 
             $patient_data = array(
-                'patient_name'      => $this->input->post('name'),
-                'mobileno'          => $this->input->post('contact'),
-                'marital_status'    => $this->input->post('marital_status'),
-                'email'             => $this->input->post('email'),
-                'gender'            => $this->input->post('gender'),
-                'guardian_name'     => $this->input->post('guardian_name'),
-                'blood_group'       => $this->input->post('blood_group'),
-                'address'           => $this->input->post('address'),
-                'known_allergies'   => $this->input->post('known_allergies'),
+                'patient_name'      => $this->input->post('name', TRUE),
+                'mobileno'          => $this->input->post('contact', TRUE),
+                'marital_status'    => $this->input->post('marital_status', TRUE),
+                'email'             => $this->input->post('email', TRUE),
+                'gender'            => $this->input->post('gender', TRUE),
+                'guardian_name'     => $this->input->post('guardian_name', TRUE),
+                'blood_group'       => $this->input->post('blood_group', TRUE),
+                'address'           => $this->input->post('address', TRUE),
+                'known_allergies'   => $this->input->post('known_allergies', TRUE),
                 'patient_unique_id' => $patient_id,
-                'note'              => $this->input->post('note'),
-                'age'               => $this->input->post('age'),
-                'month'             => $this->input->post('month'),
+                'note'              => $this->input->post('note', TRUE),
+                'age'               => $this->input->post('age', TRUE),
+                'month'             => $this->input->post('month', TRUE),
                 'is_active'         => 'yes',
             );
             $insert_id = $this->patient_model->add_patient($patient_data);
@@ -961,9 +1159,17 @@ class Pharmacy extends Admin_Controller
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $insert_id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name);
-                $data_img = array('id' => $insert_id, 'image' => 'uploads/patient_images/' . $img_name);
-                $this->patient_model->add($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/patient_images/" . $img_name)) {
+                    $data_img = array('id' => $insert_id, 'image' => 'uploads/patient_images/' . $img_name);
+                    $this->patient_model->add($data_img);
+
+                    // SaaS: add the uploaded patient image size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pharmacy addpatient): ' . $e->getMessage());
+                    }
+                }
             }
         }
         echo json_encode($array);
@@ -974,7 +1180,7 @@ class Pharmacy extends Admin_Controller
         if (!$this->rbac->hasPrivilege('patient', 'can_view')) {
             access_denied();
         }
-        $id   = $this->input->post("id");
+        $id   = $this->input->post("id", TRUE);
         $data = $this->patient_model->patientDetails($id);
         echo json_encode($data);
     }
@@ -1006,9 +1212,10 @@ class Pharmacy extends Admin_Controller
         $data["bloodgroup"]       = $this->blood_group;
         $data["payment_mode"]     = $this->payment_mode;
         $data['organisation']   = $this->organisation_model->get();
-        $this->load->view('layout/header');
+        $data['module'] = 'pharmacy';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pharmacy/pharmacyBill', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function get_medicine_name()
@@ -1074,23 +1281,23 @@ class Pharmacy extends Admin_Controller
         $duplicate_medicine = false;
         $medicines          = array();
        
-        $prescription_no    = $this->input->post('is_prescription_no');
+        $prescription_no    = $this->input->post('is_prescription_no', TRUE);
 
         $custom_fields = $this->customfield_model->getByBelong('pharmacy');
-        $action_type   = $this->input->post('action_type');
+        $action_type   = $this->input->post('action_type', TRUE);
         foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
             if ($custom_fields_value['validation']) {
                 $custom_fields_id   = $custom_fields_value['id'];
                 $custom_fields_name = $custom_fields_value['name'];
-                $this->form_validation->set_rules("custom_fields[pharmacy][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required');
+                $this->form_validation->set_rules("custom_fields[pharmacy][" . $custom_fields_id . "]", $custom_fields_name, 'trim|required|xss_clean');
             }
         }
         $this->form_validation->set_rules('bill_no', $this->lang->line('bill_no'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
-        if ($this->input->post('payment_mode') == "Cheque") {
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
 
         if ($action_type !== 'update') {
@@ -1099,9 +1306,12 @@ class Pharmacy extends Admin_Controller
                     array('check_exists', array($this->pharmacy_model, 'validate_paymentamount')),
                 )
             );
+            // SaaS: count pre-check — block a NEW pharmacy bill once the tenant
+            // hits its no_of_pharmacy limit. Create-only (never on update).
+            $this->form_validation->set_rules('validate_resource', $this->lang->line('pharmacy'), 'callback_validateCanAddNewResource[no_of_pharmacy,1]');
         }
 
-        $total_rows = $this->input->post('total_rows');
+        $total_rows = $this->input->post('total_rows', TRUE);
         if (!isset($total_rows) && !isset($pathology) && !isset($radiology)) {
             $this->form_validation->set_rules('no_records', $this->lang->line('no_records'), 'trim|required|xss_clean',
                 array('required' => $this->lang->line('no_medicine_selected')));
@@ -1112,25 +1322,21 @@ class Pharmacy extends Admin_Controller
         if (isset($total_rows) && !empty($total_rows)) {
             foreach ($total_rows as $row_key => $row_value) {
 
-                $medicine_category  = $this->input->post('medicine_category_id_' . $row_value);
-                $medicine_name      = $this->input->post('medicine_name_id_' . $row_value);
-                $batch_no           = $this->input->post('batch_no_id_' . $row_value);
-                $expire_date        = $this->input->post('expire_date_' . $row_value);
-                $quantity           = $this->input->post('quantity_' . $row_value);
-                $available_quantity = $this->input->post('available_quantity_' . $row_value);
-                $sale_price         = $this->input->post('sale_price_' . $row_value);
-                
-                $expiry        = $this->input->post('expiry_' . $row_value);
+                $medicine_name      = $this->input->post('medicine_name_id_' . $row_value, TRUE);
+                $batch_no           = $this->input->post('batch_no_id_' . $row_value, TRUE);
+                $expire_date        = $this->input->post('expire_date_' . $row_value, TRUE);
+                $quantity           = $this->input->post('quantity_' . $row_value, TRUE);
+                $available_quantity = $this->input->post('available_quantity_' . $row_value, TRUE);
+                $sale_price         = $this->input->post('sale_price_' . $row_value, TRUE);
+
+                $expiry        = $this->input->post('expiry_' . $row_value, TRUE);
 
                 $get_medicine_name = $this->notificationsetting_model->getmedicineDetails($medicine_name);
                 if (!empty($get_medicine_name)) {
                     $medication_details[] = $get_medicine_name['medicine_name'] . ' (' . $batch_no . ')';
                 }
                 if ($quantity != "" && ($available_quantity < $quantity)) {
-                    $this->form_validation->set_rules('over_quantity_demand', 'Order Quantity', 'required', array('required' => $this->lang->line('order_quantity_should_not_be_greater_than_available_quantity')));
-                }
-                if ($medicine_category == "") {
-                    $this->form_validation->set_rules('medicine_category', $this->lang->line('medicine_category'), 'trim|required|xss_clean');
+                    $this->form_validation->set_rules('over_quantity_demand', $this->lang->line('order_quantity'), 'required', array('required' => $this->lang->line('order_quantity_should_not_be_greater_than_available_quantity')));
                 }
                 if ($medicine_name == "") {
                     $this->form_validation->set_rules('medicine_name', $this->lang->line('medicine_name'), 'trim|required|xss_clean');
@@ -1167,14 +1373,19 @@ class Pharmacy extends Admin_Controller
             }
         }
 
-        $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|xss_clean');
+        $is_walkin = ($this->input->post('bill_customer_type', TRUE) === 'walk-in')
+            || ($this->input->post('customer_type', TRUE) === 'walk-in');
+        if ($is_walkin) {
+            $this->form_validation->set_rules('customer_name', $this->lang->line('customer_name'), 'trim|required|xss_clean');
+        } else {
+            $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required|xss_clean');
+        }
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'bill_no'              => form_error('bill_no'),
                 'no_records'           => form_error('no_records'),
                 'duplicate_medicine'   => form_error('duplicate_medicine'),
                 'over_quantity_demand' => form_error('over_quantity_demand'),
-                'medicine_category'    => form_error('medicine_category'),
                 'medicine_name'        => form_error('medicine_name'),
                 'batch_no'             => form_error('batch_no'),
                 'expire_date'          => form_error('expire_date'),
@@ -1182,11 +1393,13 @@ class Pharmacy extends Admin_Controller
                 'sale_price'           => form_error('sale_price'),
                 'amount'               => form_error('amount'),
                 'patient_id'           => form_error('patient_id'),
+                'customer_name'        => form_error('customer_name'),
                 'net_amount'           => form_error('net_amount'),
                 'payment_amount'       => form_error('payment_amount'),
                 'cheque_no'            => form_error('cheque_no'),
                 'cheque_date'          => form_error('cheque_date'),
                 'document'             => form_error('document'),
+                'validate_resource'    => form_error('validate_resource'),
             );
             if (!empty($custom_fields)) {
                 foreach ($custom_fields as $custom_fields_key => $custom_fields_value) {
@@ -1205,32 +1418,44 @@ class Pharmacy extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $error_msg, 'message' => '');
         } else {
             $payment_section        = $this->config->item('payment_section');
-            $patient_id             = $this->input->post('patient_id');
-            $bill_date              = $this->input->post("date");
-            $bill_no                = $this->input->post('bill_no');
-            $pharmacy_bill_basic_id = $this->input->post('pharmacy_bill_basic_id');
-            $case_reference_id      = $this->input->post('case_reference_id');
+            $is_walkin              = ($this->input->post('bill_customer_type', TRUE) === 'walk-in')
+                || ($this->input->post('customer_type', TRUE) === 'walk-in');
+            $patient_id             = $this->input->post('patient_id', TRUE);
+            $bill_date              = $this->input->post("date", TRUE);
+            $bill_no                = $this->input->post('bill_no', TRUE);
+            $pharmacy_bill_basic_id = $this->input->post('pharmacy_bill_basic_id', TRUE);
+            $case_reference_id      = $this->input->post('case_reference_id', TRUE);
+
+            if ($is_walkin) {
+                $patient_id        = null;
+                $case_reference_id = null;
+            } elseif (empty($patient_id)) {
+                $patient_id = null;
+            }
 
             if (empty($case_reference_id)) {
                 $case_reference_id = null;
             }
-            if ($prescription_no != "") {
+            if ($is_walkin || $prescription_no == "") {
+                $prescription_no = null;
+            } else {
                 $prescription_prefix = splitPrefixType($prescription_no);
                 $prescription_no     = splitPrefixID($prescription_no);
-            } else {
-                $prescription_no = null;
             }
 
-            $is_tpa = $this->input->post('is_tpa');
+            $is_tpa = $this->input->post('is_tpa', TRUE);
+            if ($is_walkin) {
+                $is_tpa = 0;
+            }
 
             if($is_tpa=="" || $is_tpa==0){
                 $organisation_id    = null;
                 $insurance_id       = null;
                 $insurance_validity = null;
             }else{
-                $organisation_id    = $this->input->post('organisation_id');
-                $insurance_id       = $this->input->post('insurance_id');
-                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity'));
+                $organisation_id    = $this->input->post('organisation_id', TRUE);
+                $insurance_id       = $this->input->post('insurance_id', TRUE);
+                $insurance_validity = $this->customlib->dateFormatToYYYYMMDD($this->input->post('insurance_validity', TRUE));
             }
             if (empty($organisation_id)) {
                 $organisation_id    = null;
@@ -1244,27 +1469,29 @@ class Pharmacy extends Admin_Controller
                 'case_reference_id'         => $case_reference_id,
                 'date'                      => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
                 'patient_id'                => $patient_id,
-                'customer_name'             => $this->input->post('customer_name'),
+                'customer_name'             => $this->input->post('customer_name', TRUE),
+                'customer_type'             => $is_walkin ? 'walk-in' : 'patient',
+                'customer_phone'            => $is_walkin ? ($this->input->post('customer_phone', TRUE) ?: null) : null,
                 'ipd_prescription_basic_id' => $prescription_no,
-                'doctor_name'               => $this->input->post('doctor_name'),
-                'total'                     => $this->input->post('total'),
-                'discount'                  => $this->input->post('discount'),
-                'tax'                       => $this->input->post('tax'),
-                'net_amount'                => $this->input->post('net_amount'),
-                'note'                      => $this->input->post('note'),
-                'discount_percentage'       => $this->input->post('discount_percent'),
-                'tax_percentage'            => $this->input->post('tax_percent'),
+                'doctor_name'               => $this->input->post('doctor_name', TRUE),
+                'total'                     => $this->input->post('total', TRUE),
+                'discount'                  => $this->input->post('discount', TRUE),
+                'tax'                       => $this->input->post('tax', TRUE),
+                'net_amount'                => $this->input->post('net_amount', TRUE),
+                'note'                      => $this->input->post('note', TRUE),
+                'discount_percentage'       => $this->input->post('discount_percent', TRUE),
+                'tax_percentage'            => $this->input->post('tax_percent', TRUE),
                 'generated_by'              => $this->customlib->getLoggedInUserID(),
                 'organisation_id'           => $organisation_id,
                 'insurance_id'              => $insurance_id,
                 'insurance_validity'        => $insurance_validity,
             );
 
-            $custom_field_post  = $this->input->post("custom_fields[pharmacy]");
+            $custom_field_post  = $this->input->post("custom_fields[pharmacy]", TRUE);
             $custom_value_array = array();
             if (!empty($custom_field_post)) {
                 foreach ($custom_field_post as $key => $value) {
-                    $check_field_type = $this->input->post("custom_fields[pharmacy][" . $key . "]");
+                    $check_field_type = $this->input->post("custom_fields[pharmacy][" . $key . "]", TRUE);
                     $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                     $array_custom     = array(
                         'belong_table_id' => 0,
@@ -1280,20 +1507,20 @@ class Pharmacy extends Admin_Controller
                 $insert_medicines = array();
                 $update_medicines = array();
 
-                $prev_array   = $this->input->post('previous_ids');
+                $prev_array   = $this->input->post('previous_ids', TRUE);
                 $update_array = array();
-                $total_rows   = $this->input->post('total_rows');
+                $total_rows   = $this->input->post('total_rows', TRUE);
                 if (isset($total_rows) && !empty($total_rows)) {
                     foreach ($total_rows as $row_key => $row_value) {
-                        $inserted_id = $this->input->post('insert_id_' . $row_value);
+                        $inserted_id = $this->input->post('insert_id_' . $row_value, TRUE);
                         if ($inserted_id == 0) {
 
                             $insert_medicines[] = array(
                                 'pharmacy_bill_basic_id'   => 0,
-                                'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value),
-                                'quantity'                 => $this->input->post('quantity_' . $row_value),
-                                'sale_price'               => $this->input->post('sale_price_' . $row_value),
-							    'discount'               	=> $this->input->post('mdiscount_' . $row_value),																			   
+                                'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value, TRUE),
+                                'quantity'                 => $this->input->post('quantity_' . $row_value, TRUE),
+                                'sale_price'               => $this->input->post('sale_price_' . $row_value, TRUE),
+                                'discount'                 => $this->input->post('mdiscount_' . $row_value, TRUE),
                             );
 
                         } elseif ($inserted_id != 0) {
@@ -1301,40 +1528,54 @@ class Pharmacy extends Admin_Controller
                             $update_medicines[] = array(
                                 'id'                       => $inserted_id,
                                 'pharmacy_bill_basic_id'   => $pharmacy_bill_basic_id,
-                                'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value),
-                                'quantity'                 => $this->input->post('quantity_' . $row_value),
-                                'sale_price'               => $this->input->post('sale_price_' . $row_value),
-								'discount'               	=> $this->input->post('mdiscount_' . $row_value),
+                                'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value, TRUE),
+                                'quantity'                 => $this->input->post('quantity_' . $row_value, TRUE),
+                                'sale_price'               => $this->input->post('sale_price_' . $row_value, TRUE),
+                                'discount'                 => $this->input->post('mdiscount_' . $row_value, TRUE),
                             );
                         }
                     }
                 }
 
-                $payment_amount = $this->input->post('payment_amount');
-                $cheque_date    = $this->input->post('cheque_date');
+                $payment_amount = $this->input->post('payment_amount', TRUE);
+                $cheque_date    = $this->input->post('cheque_date', TRUE);
                 if (!empty($payment_amount)) {
                     $payment_array = array(
-                        'amount'                 => $this->input->post('payment_amount'),
+                        'amount'                 => $this->input->post('payment_amount', TRUE),
                         'type'                   => 'refund',
                         'case_reference_id'      => $case_reference_id,
                         'patient_id'             => $patient_id,
                         'section'                => $payment_section['pharmacy'],
                         'pharmacy_bill_basic_id' => $pharmacy_bill_basic_id,
-                        'payment_mode'           => $this->input->post('payment_mode'),
-                        'note'                   => $this->input->post('note'),
+                        'payment_mode'           => $this->input->post('payment_mode', TRUE),
+                        'note'                   => $this->input->post('note', TRUE),
                         'payment_date'           => date('Y-m-d H:i:s'),
                         'received_by'            => $this->customlib->getLoggedInUserID(),
                     );
-                   
-                    $cheque_date = $this->input->post("cheque_date");
-                    if ($this->input->post('payment_mode') == "Cheque") {
+
+                    $cheque_date = $this->input->post("cheque_date", TRUE);
+                    if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                         $payment_array['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                        $payment_array['cheque_no']       = $this->input->post('cheque_no');
+                        $payment_array['cheque_no']       = $this->input->post('cheque_no', TRUE);
                            
                            if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                             $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                             $payment_array['attachment']        = $file_name;
                             $payment_array['attachment_name']   = $_FILES["document"]["name"];
+
+                            // SaaS: add the uploaded document's size to the storage quota usage.
+                            try {
+                                $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                                // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                                if (is_string($saas_quota_result)) {
+                                    $saas_quota_decoded = json_decode($saas_quota_result);
+                                    if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                        log_message('error', 'SaaS storage quota update returned failure (pharmacy addBill update): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                                    }
+                                }
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota update failed (pharmacy addBill update): ' . $e->getMessage());
+                            }
                         }
                     }
 
@@ -1352,7 +1593,7 @@ class Pharmacy extends Admin_Controller
 
                 if (!empty($custom_fields)) {
                     foreach ($custom_field_post as $key => $value) {
-                        $check_field_type = $this->input->post("custom_fields[pharmacy][" . $key . "]");
+                        $check_field_type = $this->input->post("custom_fields[pharmacy][" . $key . "]", TRUE);
                         $field_value      = is_array($check_field_type) ? implode(",", $check_field_type) : $check_field_type;
                         $array_custom     = array(
                             'belong_table_id' => $is_inserted,
@@ -1367,17 +1608,17 @@ class Pharmacy extends Admin_Controller
                 //====================
             } else {
 
-                $payment_amount   = $this->input->post('payment_amount');
-                $cheque_date      = $this->input->post('cheque_date');
+                $payment_amount   = $this->input->post('payment_amount', TRUE);
+                $cheque_date      = $this->input->post('cheque_date', TRUE);
                 $insert_medicines = array();
-                $total_rows       = $this->input->post('total_rows');
+                $total_rows       = $this->input->post('total_rows', TRUE);
                 if (isset($total_rows) && !empty($total_rows)) {
                     foreach ($total_rows as $row_key => $row_value) {
                         $insert_medicines[] = array(
-                            'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value),
-                            'quantity'                 => $this->input->post('quantity_' . $row_value),
-                            'sale_price'               => $this->input->post('sale_price_' . $row_value),
-							'discount'               	=> $this->input->post('mdiscount_' . $row_value),
+                            'medicine_batch_detail_id' => $this->input->post('batch_no_id_' . $row_value, TRUE),
+                            'quantity'                 => $this->input->post('quantity_' . $row_value, TRUE),
+                            'sale_price'               => $this->input->post('sale_price_' . $row_value, TRUE),
+                            'discount'                 => $this->input->post('mdiscount_' . $row_value, TRUE),
                         );
                     }
                 }
@@ -1385,24 +1626,38 @@ class Pharmacy extends Admin_Controller
                 if ($payment_amount >= 0) {
 
                     $payment_array = array(
-                        'amount'       => $this->input->post('payment_amount'),
+                        'amount'       => $this->input->post('payment_amount', TRUE),
                         'type'         => 'payment',
                         'patient_id'   => $patient_id,
                         'section'      => $payment_section['pharmacy'],
-                        'payment_mode' => $this->input->post('payment_mode'),
-                        'note'         => $this->input->post('note'),
+                        'payment_mode' => $this->input->post('payment_mode', TRUE),
+                        'note'         => $this->input->post('note', TRUE),
                         'payment_date' => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
                         'received_by'  => $this->customlib->getLoggedInUserID(),
                     );
-					
-                    if ($this->input->post('payment_mode') == "Cheque") {
+
+                    if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                         $payment_array['cheque_date'] = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                        $payment_array['cheque_no']   = $this->input->post('cheque_no');
+                        $payment_array['cheque_no']   = $this->input->post('cheque_no', TRUE);
                        
                         if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
                             $file_name = $this->media_storage->fileupload("document",'./uploads/payment_document/');
                             $payment_array['attachment']        = $file_name;
                             $payment_array['attachment_name']   = $_FILES["document"]["name"];
+
+                            // SaaS: add the uploaded document's size to the storage quota usage.
+                            try {
+                                $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                                // Capture silent API failures (lib returns JSON status:false instead of throwing).
+                                if (is_string($saas_quota_result)) {
+                                    $saas_quota_decoded = json_decode($saas_quota_result);
+                                    if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                                        log_message('error', 'SaaS storage quota update returned failure (pharmacy addBill insert): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                                    }
+                                }
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota update failed (pharmacy addBill insert): ' . $e->getMessage());
+                            }
                         }
                     }
 
@@ -1415,30 +1670,42 @@ class Pharmacy extends Admin_Controller
                 if (!empty($custom_value_array)) {
                     $this->customfield_model->insertRecord($custom_value_array, $is_inserted);
                 }
+
+                // SaaS: a NEW pharmacy bill was created — increment the no_of_pharmacy
+                // count usage. Create-only branch; wrapped so an API hiccup never blocks the save.
+                if ($is_inserted) {
+                    try {
+                        $this->saasvalidation->updateResouceQuota('no_of_pharmacy', 1);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS no_of_pharmacy count increment failed (pharmacy addBill insert): ' . $e->getMessage());
+                    }
+                }
             }
 
             if ($is_inserted) {
                 $array = array('status' => 1, 'error' => '', 'message' => $this->lang->line('success_message'), 'insert_id' => $is_inserted);
 
                 $medication_details = implode(',', $medication_details);
-                $due_amount         = $this->input->post('net_amount') - $this->input->post('payment_amount');
+                $due_amount         = $this->input->post('net_amount', TRUE) - $this->input->post('payment_amount', TRUE);
 
                 $event_data = array(
                     'patient_id'       => $patient_id,
                     'case_id'          => $case_reference_id,
                     'bill_no'          => $this->customlib->getSessionPrefixByType('pharmacy_billing') . $bill_no,
                     'medicine_details' => $medication_details,
-                    'doctor_name'      => $this->input->post('doctor_name'),
-                    'total'            => $this->input->post('total'),
-                    'discount'         => $this->input->post('discount'),
-                    'tax'              => $this->input->post('tax'),
-                    'net_amount'       => $this->input->post('net_amount'),
-                    'paid'             => $this->input->post('payment_amount'),
+                    'doctor_name'      => $this->input->post('doctor_name', TRUE),
+                    'total'            => $this->input->post('total', TRUE),
+                    'discount'         => $this->input->post('discount', TRUE),
+                    'tax'              => $this->input->post('tax', TRUE),
+                    'net_amount'       => $this->input->post('net_amount', TRUE),
+                    'paid'             => $this->input->post('payment_amount', TRUE),
                     'due_amount'       => number_format((float) $due_amount, 2, '.', ''),
                     'date'             => $this->customlib->YYYYMMDDHisTodateFormat($bill_date, $this->customlib->getHospitalTimeFormat()),
                 );
 
-                $this->system_notification->send_system_notification('pharmacy_generate_bill', $event_data);
+                if (!empty($patient_id)) {
+                    $this->system_notification->send_system_notification('pharmacy_generate_bill', $event_data);
+                }
             } else {
                 $array = array('status' => 0, 'message' => $this->lang->line('something_went_wrong'));
             }
@@ -1501,18 +1768,18 @@ class Pharmacy extends Admin_Controller
         $data['detail'] = $detail;
         $action_details = "";
         if ($this->rbac->hasPrivilege('pharmacy_bill', 'can_view')) {
-            $action_details .= "<a href='#'  data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-toggle='tooltip' class='" . $bill_print . "' data-record-id='" . $id . "' data-original-title='" . $this->lang->line('print') . "'><i class='fa fa-print'></i></a>";
+            $action_details .= "<a href='#' class='btn btn-sm btn-light " . $bill_print . "' data-loading-text='<i class=\"fa fa-circle-o-notch fa-spin\"></i>' data-bs-toggle='tooltip' title='" . $this->lang->line('print') . "' data-record-id='" . $id . "'><i class='fa fa-print'></i></a>";
         }
 
         if ($this->rbac->hasPrivilege('pharmacy_bill', 'can_edit')) {
             if ($data["is_bill"]) {
-                $action_details .= "<a href='#' class='edit_bill' data-record-id='" . $id . "' data-prescription-id='" . $data['prescription']  . "'  data-toggle='tooltip'  data-original-title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
+                $action_details .= "<a href='#' class='btn btn-sm btn-light edit_bill' data-record-id='" . $id . "' data-prescription-id='" . $data['prescription'] . "' data-bs-toggle='tooltip' title='" . $this->lang->line('edit') . "'><i class='fa fa-pencil'></i></a>";
             }
         }
 
         if ($this->rbac->hasPrivilege('pharmacy_bill', 'can_delete')) {
             if ($data["is_bill"]) {
-                $action_details .= "<a data-record-id='" . $id . "'  href='#'  data-toggle='tooltip'  data-original-title='" . $this->lang->line('delete') . "' class='delete-record'><i class='fa fa-trash'></i></a>";
+                $action_details .= "<a href='#' class='btn btn-sm btn-light delete-record' data-record-id='" . $id . "' data-bs-toggle='tooltip' title='" . $this->lang->line('delete') . "'><i class='fa fa-trash'></i></a>";
             }
         }
 
@@ -1551,6 +1818,7 @@ class Pharmacy extends Admin_Controller
         $id                       = $this->input->post('id');
         $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
         $data["medicineCategory"] = $medicineCategory;
+        $data["medicineName"]     = $this->pharmacy_model->getMedicineName();
         $patients                 = $this->patient_model->getPatientListall();
         $data["patients"]         = $patients;
         $doctors                  = $this->staff_model->getStaffbyrole(3);
@@ -1588,7 +1856,7 @@ class Pharmacy extends Admin_Controller
         $data['custom_fields_value'] = display_custom_fields('pharmacy', $id);       
         $page = $this->load->view("admin/pharmacy/_editBill", $data, true);
         $total_rows = count($detail); 
-        echo json_encode(array('status' => 1, 'page' => $page, 'paid_amount' => $bill['paid_amount'],'refund_amount' => $bill['refund_amount'], 'patient_id' => $bill['patient_id'], 'patient_name' => $bill['patient_name'], 'bill_no' => $this->customlib->getSessionPrefixByType('pharmacy_billing').$bill['id'], 'date' => $bill['date'], 'case_reference_id' => $bill['case_reference_id'], 'total_rows' => $total_rows,'organisation_id'=>$bill['organisation_id']));
+        echo json_encode(array('status' => 1, 'page' => $page, 'paid_amount' => $bill['paid_amount'],'refund_amount' => $bill['refund_amount'], 'patient_id' => $bill['patient_id'], 'patient_name' => $bill['patient_name'], 'customer_name' => $bill['customer_name'], 'customer_type' => $bill['customer_type'], 'customer_phone' => isset($bill['customer_phone']) ? $bill['customer_phone'] : '', 'bill_no' => $this->customlib->getSessionPrefixByType('pharmacy_billing').$bill['id'], 'date' => $bill['date'], 'case_reference_id' => $bill['case_reference_id'], 'total_rows' => $total_rows,'organisation_id'=>$bill['organisation_id']));
     }
  
     public function getSupplierDetails($id)
@@ -1605,9 +1873,31 @@ class Pharmacy extends Admin_Controller
 
         $result         = $this->pharmacy_model->getSupplierDetails($id);
         $data['result'] = $result;
-        $detail         = $this->pharmacy_model->getAllSupplierDetails($id);       
+        $detail         = $this->pharmacy_model->getAllSupplierDetails($id);
         $data['detail'] = $detail;
+        $return_history = $this->pharmacy_model->getPurchaseReturnHistory($id);
+        foreach ($return_history as $key => $row) {
+            $return_history[$key]['items'] = $this->pharmacy_model->getPurchaseReturnDetail($row['id']);
+        }
+        $data['return_history'] = $return_history;
         $this->load->view('admin/pharmacy/printPurchase', $data);
+    }
+
+    public function printSupplierDetails($id)
+    {
+        if (!$this->rbac->hasPrivilege('medicine_purchase', 'can_view')) {
+            access_denied();
+        }
+        $data['id']            = $id;
+        $data['print_details'] = $this->printing_model->get('', 'pharmacy');
+        $data['result']        = $this->pharmacy_model->getSupplierDetails($id);
+        $data['detail']        = $this->pharmacy_model->getAllSupplierDetails($id);
+        $return_history        = $this->pharmacy_model->getPurchaseReturnHistory($id);
+        foreach ($return_history as $key => $row) {
+            $return_history[$key]['items'] = $this->pharmacy_model->getPurchaseReturnDetail($row['id']);
+        }
+        $data['return_history'] = $return_history;
+        $this->load->view('admin/pharmacy/printSupplierBill', $data);
     }
 
     public function download($file)
@@ -1627,6 +1917,9 @@ class Pharmacy extends Admin_Controller
         $batch_no = $this->input->get('batch_no');
         $med_id   = $this->input->get('med_id');
         $data     = $this->pharmacy_model->getQuantity($batch_no, $med_id);
+        if (!empty($data)) {
+            $data['sale_rate'] = $this->resolveUnitSaleRate($data);
+        }
         echo json_encode($data);
     }
 
@@ -1637,12 +1930,15 @@ class Pharmacy extends Admin_Controller
         }
         $batch_no = $this->input->get('batch_no');
         $data     = $this->pharmacy_model->getQuantityedit($batch_no);
+        if (!empty($data)) {
+            $data['sale_rate'] = $this->resolveUnitSaleRate($data);
+        }
         echo json_encode($data);
     }
 
     public function checkvalidation()
     {
-        $search = $this->input->post('search');
+        $search = $this->input->post('search', TRUE);
         $this->form_validation->set_rules('search_type', $this->lang->line('search_type'), 'trim|required|xss_clean');
         if ($this->form_validation->run() == false) {
             $msg = array(
@@ -1651,15 +1947,15 @@ class Pharmacy extends Admin_Controller
             $json_array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
             $param = array(
-                'search_type'   => $this->input->post('search_type'),
-                'collect_staff' => $this->input->post('collect_staff'),
-                'gender'        => $this->input->post('gender'),
-                'from_age'      => $this->input->post('from_age'),
-                'to_age'        => $this->input->post('to_age'),
-                'date_from'     => $this->input->post('date_from'),
-                'date_to'       => $this->input->post('date_to'),
-                'payment_mode'  => $this->input->post('payment_mode'),
-                'doctor_name'  => $this->input->post('doctor_name'),
+                'search_type'   => $this->input->post('search_type', TRUE),
+                'collect_staff' => $this->input->post('collect_staff', TRUE),
+                'gender'        => $this->input->post('gender', TRUE),
+                'from_age'      => $this->input->post('from_age', TRUE),
+                'to_age'        => $this->input->post('to_age', TRUE),
+                'date_from'     => $this->input->post('date_from', TRUE),
+                'date_to'       => $this->input->post('date_to', TRUE),
+                'payment_mode'  => $this->input->post('payment_mode', TRUE),
+                'doctor_name'   => $this->input->post('doctor_name', TRUE),
             );
 
             $json_array = array('status' => 'success', 'error' => '', 'param' => $param, 'message' => $this->lang->line('success_message'));
@@ -1688,9 +1984,10 @@ class Pharmacy extends Admin_Controller
         $data['payment_mode'] = $this->payment_mode;
         $data['pharmacydoctor'] = $this->pharmacy_model->getpharmacydoctor();       
         
-        $this->load->view('layout/header');
+        $data['module'] = 'pharmacy';
+        $this->load->view('layout/header', $data);
         $this->load->view('admin/pharmacy/billReport', $data);
-        $this->load->view('layout/footer');
+        $this->load->view('layout/footer', $data);
     }
 
     public function pharmacyreports()
@@ -1767,8 +2064,13 @@ class Pharmacy extends Admin_Controller
                 
                 $row[] = $action1.$this->customlib->getSessionPrefixByType('pharmacy_billing') . $value->id.$action2;
                 $row[] = $this->customlib->YYYYMMDDHisTodateFormat($value->date);
-                $row[] = composePatientName($value->patient_name, $value->patient_id);
-                $row[] = $this->customlib->get_patient_current_age($value->patient_id);
+                if (!empty($value->patient_id)) {
+                    $row[] = composePatientName($value->patient_name, $value->patient_id);
+                    $row[] = $this->customlib->get_patient_current_age($value->patient_id);
+                } else {
+                    $row[] = ($value->patient_name ?: '') . " (" . $this->lang->line('walk_in_customer') . ")";
+                    $row[] = '';
+                }
                 $row[] = ($value->gender) ? $this->lang->line(strtolower($value->gender)):"";
                 $row[] = $prescription_no;
                 $row[] = $value->doctor_name;
@@ -1790,7 +2092,9 @@ class Pharmacy extends Admin_Controller
 
                 $discount_amt = ( $value->total * $value->discount_percentage ) / 100 ; 
                 $tax_amt = (($value->total - $discount_amt) * $value->tax_percentage ) / 100;
-                $row[]     =    $value->tax ." (".amountFormat(($value->tax * 100) / ($value->total - $discount_amt), 2)."%)";   
+                $taxable_amt = $value->total - $discount_amt;
+                $tax_pct     = $taxable_amt != 0 ? ($value->tax * 100) / $taxable_amt : 0;
+                $row[]       = $value->tax . " (" . amountFormat($tax_pct, 2) . "%)";
                        
                 $row[]     = $value->net_amount;				
                 $row[]     = $value->paid_amount;
@@ -1883,7 +2187,13 @@ class Pharmacy extends Admin_Controller
 
         $this->form_validation->set_rules('bill_no', $this->lang->line('bill_no'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required');
+        $is_walkin = ($this->input->post('customer_type', TRUE) === 'walk-in')
+            || ($this->input->post('bill_customer_type', TRUE) === 'walk-in');
+        if ($is_walkin) {
+            $this->form_validation->set_rules('customer_name', $this->lang->line('customer_name'), 'trim|required');
+        } else {
+            $this->form_validation->set_rules('patient_id', $this->lang->line('patient'), 'trim|required');
+        }
         $this->form_validation->set_rules('medicine_category_id[]', $this->lang->line('medicine_category'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('medicine_name[]', $this->lang->line('medicine_name'), 'trim|required|xss_clean');
         $this->form_validation->set_rules('expire_date[]', $this->lang->line('expiry_date'), 'required');
@@ -1892,10 +2202,12 @@ class Pharmacy extends Admin_Controller
         $this->form_validation->set_rules('sale_price[]', $this->lang->line('sale_price'), 'required|numeric');
         $this->form_validation->set_rules('amount[]', $this->lang->line('amount'), 'required|numeric');
         $this->form_validation->set_rules('total', $this->lang->line('total'), 'required|numeric');
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
         if ($this->form_validation->run() == false) {
 
             $msg = array(
                 'bill_no'              => form_error('bill_no'),
+                'file'                 => form_error('file'),
                 'date'                 => form_error('date'),
                 'customer_name'        => form_error('customer_name'),
                 'patient_id'           => form_error('patient_id'),
@@ -1911,10 +2223,10 @@ class Pharmacy extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $id               = $this->input->post('bill_basic_id');
-            $bill_id          = $this->input->post("bill_detail_id[]");
-            $previous_bill_id = $this->input->post("previous_bill_id[]");
-            $bill_date        = $this->input->post("date");
+            $id               = $this->input->post('bill_basic_id', TRUE);
+            $bill_id          = $this->input->post("bill_detail_id[]", TRUE);
+            $previous_bill_id = $this->input->post("previous_bill_id[]", TRUE);
+            $bill_date        = $this->input->post("date", TRUE);
             $data_array       = array();
             $delete_arr       = array();
             foreach ($previous_bill_id as $pkey => $pvalue) {
@@ -1927,42 +2239,70 @@ class Pharmacy extends Admin_Controller
 
             $data = array(
                 'id'            => $id,
-                'bill_no'       => $this->input->post('bill_no'),
-                'patient_id'    => $this->input->post('patient_id'),
+                'bill_no'       => $this->input->post('bill_no', TRUE),
+                'patient_id'    => $is_walkin ? null : ($this->input->post('patient_id', TRUE) ?: null),
                 'date'          => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
-                'customer_name' => $this->input->post('customer_name'),
-                'customer_type' => $this->input->post('customer_type'),
-                'doctor_name'   => $this->input->post('doctor_name'),
-                'opd_ipd_no'    => $this->input->post('opd_ipd_no'),
-                'total'         => $this->input->post('total'),
-                'discount'      => $this->input->post('discount'),
-                'note'          => $this->input->post('note'),
-                'tax'           => $this->input->post('tax'),
-                'net_amount'    => $this->input->post('net_amount'),
+                'customer_name' => $this->input->post('customer_name', TRUE),
+                'customer_type' => $is_walkin ? 'walk-in' : ($this->input->post('customer_type', TRUE) ?: 'patient'),
+                'customer_phone'=> $is_walkin ? ($this->input->post('customer_phone', TRUE) ?: null) : null,
+                'doctor_name'   => $this->input->post('doctor_name', TRUE),
+                'opd_ipd_no'    => $this->input->post('opd_ipd_no', TRUE),
+                'total'         => $this->input->post('total', TRUE),
+                'discount'      => $this->input->post('discount', TRUE),
+                'note'          => $this->input->post('note', TRUE),
+                'tax'           => $this->input->post('tax', TRUE),
+                'net_amount'    => $this->input->post('net_amount', TRUE),
             );
 
             $this->pharmacy_model->addBill($data);
 
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: capture the existing prescription image + its size BEFORE the move — a
+                // same-extension upload overwrites the old file in place, so read the old size first.
+                $saas_existing = $this->pharmacy_model->getdate($id);
+                $saas_old_file = (!empty($saas_existing['file'])) ? $saas_existing['file'] : '';
+                $saas_old_dir  = (strpos($saas_old_file, '/') !== false) ? '' : 'uploads/pres_images';
+                $saas_old_kb   = (!empty($saas_old_file)) ? $this->media_storage->getUploadedFileSize($saas_old_file, $saas_old_dir) : 0;
+                $saas_new_kb   = $this->media_storage->getTmpFileSize('file');
+
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/pres_images/" . $img_name);
-                $data_img = array('id' => $id, 'file' => 'uploads/pres_images/' . $img_name);
-                $this->pharmacy_model->addBill($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/pres_images/" . $img_name)) {
+                    $new_file_path = 'uploads/pres_images/' . $img_name;
+                    $data_img = array('id' => $id, 'file' => $new_file_path);
+                    $this->pharmacy_model->addBill($data_img);
+
+                    // SaaS: adjust storage quota by the size DIFFERENCE (new vs replaced) instead of a
+                    // blind add, so editing the prescription image keeps usage accurate (was add-only).
+                    try {
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pharmacy updateBill): ' . $e->getMessage());
+                    }
+
+                    // SaaS: a different extension leaves the old file orphaned alongside the new one — remove it.
+                    if (!empty($saas_old_file) && $saas_old_file !== $new_file_path) {
+                        $this->media_storage->filedelete($saas_old_file, $saas_old_dir);
+                    }
+                }
             }
 
             if (!empty($id)) {
                 $pharmacy_bill_basic_id = $id;
-                $bill_detail_id         = $this->input->post('bill_detail_id');
-                $medicine_batch_id      = $this->input->post('medicine_batch_id');
-                $medicine_category_id   = $this->input->post('medicine_category_id');
-                $medicine_name          = $this->input->post('medicine_name');
-                $expiry_date            = $this->input->post('expire_date');
-                $batch_no               = $this->input->post('batch_no');
-                $quantity               = $this->input->post('quantity');
-                $total_quantity         = $this->input->post('available_quantity');
-                $amount                 = $this->input->post('amount');
-                $sale_price             = $this->input->post('sale_price');
+                $bill_detail_id         = $this->input->post('bill_detail_id', TRUE);
+                $medicine_batch_id      = $this->input->post('medicine_batch_id', TRUE);
+                $medicine_category_id   = $this->input->post('medicine_category_id', TRUE);
+                $medicine_name          = $this->input->post('medicine_name', TRUE);
+                $expiry_date            = $this->input->post('expire_date', TRUE);
+                $batch_no               = $this->input->post('batch_no', TRUE);
+                $quantity               = $this->input->post('quantity', TRUE);
+                $total_quantity         = $this->input->post('available_quantity', TRUE);
+                $amount                 = $this->input->post('amount', TRUE);
+                $sale_price             = $this->input->post('sale_price', TRUE);
                 $data                   = array();
                 $i                      = 0;
                 foreach ($medicine_category_id as $key => $value) {
@@ -2020,6 +2360,29 @@ class Pharmacy extends Admin_Controller
         echo json_encode($array);
     }
 
+    /**
+     * SaaS storage pre-check (form_validation callback).
+     * Returns false (blocking the save) when the upload would push the
+     * tenant over its storage quota. SaasValidation sets the error message.
+     */
+    public function validateCanUploadFile($str, $params_string)
+    {
+        $storage_array = array_map('trim', explode(',', $params_string));
+        return $this->saasvalidation->validateCanUploadFile($str, $storage_array);
+    }
+
+    /**
+     * SaaS count pre-check (form_validation callback).
+     * Param format "resource_name,quantity" (e.g. "no_of_pharmacy,1").
+     * Returns false (blocking the save) when adding the records would push
+     * the tenant over its allowed count. SaasValidation sets the error message.
+     */
+    public function validateCanAddNewResource($input, $resource_name)
+    {
+        list($resource_name, $quantity) = explode(',', $resource_name);
+        return $this->saasvalidation->validateCanAddNewResource($input, $resource_name, $quantity);
+    }
+
     public function addBillSupplier()
     {
         $this->form_validation->set_rules('date', $this->lang->line('date'), 'trim|required|xss_clean');
@@ -2037,11 +2400,11 @@ class Pharmacy extends Admin_Controller
         $this->form_validation->set_rules('total', $this->lang->line('total'), 'required|numeric');
         $this->form_validation->set_rules('payment_mode', $this->lang->line('payment_mode'), 'required|xss_clean|trim');
         $this->form_validation->set_rules('tax', $this->lang->line('tax'), 'trim|required|xss_clean');
-        $this->form_validation->set_rules('file', $this->lang->line("document"), 'callback_handle_doc_upload[file]');
-        if ($this->input->post('payment_mode') == "Cheque") {
+        $this->form_validation->set_rules('file', $this->lang->line("document"), 'callback_handle_doc_upload[file]|callback_validateCanUploadFile[file]');
+        if ($this->input->post('payment_mode', TRUE) == "Cheque") {
             $this->form_validation->set_rules('cheque_no', $this->lang->line('cheque_no'), 'required');
             $this->form_validation->set_rules('cheque_date', $this->lang->line('cheque_date'), 'required');
-            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]');
+            $this->form_validation->set_rules('document', $this->lang->line('document'), 'callback_handle_doc_upload[document]|callback_validateCanUploadFile[document]');
         }
         $this->form_validation->set_rules('file', '', 'callback_handle_doc_upload[file]');
 
@@ -2070,52 +2433,97 @@ class Pharmacy extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $supplier_id = $this->input->post('supplier_id');
-            $bill_date   = $this->input->post("date");
+            $supplier_id = $this->input->post('supplier_id', TRUE);
+            $bill_date   = $this->input->post("date", TRUE);
 
             $data = array(
                 'date'         => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
                 'supplier_id'  => $supplier_id,
-                'invoice_no'   => $this->input->post('invoice_no'),
-                'total'        => $this->input->post('total'),
-                'discount'     => $this->input->post('discount'),
-                'tax'          => $this->input->post('tax'),
-                'net_amount'   => $this->input->post('net_amount'),
-                'note'         => $this->input->post('note'),
-                'payment_mode' => $this->input->post('payment_mode'),
+                'invoice_no'   => $this->input->post('invoice_no', TRUE),
+                'total'        => $this->input->post('total', TRUE),
+                'discount'     => $this->input->post('discount', TRUE),
+                'tax'          => $this->input->post('tax', TRUE),
+                'net_amount'   => $this->input->post('net_amount', TRUE),
+                'note'         => $this->input->post('note', TRUE),
+                'payment_mode' => $this->input->post('payment_mode', TRUE),
                 'payment_date' => date('Y-m-d H:i:s'),
-                'payment_note' => $this->input->post('payment_note'),
+                'payment_note' => $this->input->post('payment_note', TRUE),
                 'received_by'  => $this->customlib->getStaffID(),
             );
 
-            $cheque_date = $this->input->post("cheque_date");
+            $cheque_date = $this->input->post("cheque_date", TRUE);
 
-            if ($this->input->post('payment_mode') == "Cheque") {
+            if ($this->input->post('payment_mode', TRUE) == "Cheque") {
                 $data['cheque_date']     = $this->customlib->dateFormatToYYYYMMDD($cheque_date);
-                $data['cheque_no']       = $this->input->post('cheque_no');  
+                $data['cheque_no']       = $this->input->post('cheque_no', TRUE);
             }
 
+            // SaaS: the supplier bill can carry TWO documents — a general 'file' attachment and a
+            // cheque 'document'. Meter BOTH independently. The general 'file' is saved to attachment
+            // here; the cheque 'document' filename is persisted to cheque_attachment after the insert.
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
-                $file_name = $this->media_storage->fileupload("file",'./uploads/payment_document/');
+                $file_name = $this->media_storage->fileupload("file", './uploads/payment_document/');
                 $data['attachment']      = "uploads/payment_document/" . $file_name;
                 $data['attachment_name'] = $_FILES["file"]["name"];
+
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['file']);
+                    if (is_string($saas_quota_result)) {
+                        $saas_quota_decoded = json_decode($saas_quota_result);
+                        if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (pharmacy addBillSupplier file): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (pharmacy addBillSupplier file): ' . $e->getMessage());
+                }
+            }
+
+            $saas_cheque_doc      = '';
+            $saas_cheque_doc_name = '';
+            if (isset($_FILES["document"]) && !empty($_FILES['document']['name'])) {
+                $saas_cheque_doc      = $this->media_storage->fileupload("document", './uploads/payment_document/');
+                $saas_cheque_doc_name = $_FILES["document"]["name"];
+
+                try {
+                    $saas_quota_result = $this->saasvalidation->updateStorageLimit('storage', ['document']);
+                    if (is_string($saas_quota_result)) {
+                        $saas_quota_decoded = json_decode($saas_quota_result);
+                        if (isset($saas_quota_decoded->status) && $saas_quota_decoded->status === false) {
+                            log_message('error', 'SaaS storage quota update returned failure (pharmacy addBillSupplier document): ' . ($saas_quota_decoded->message ?? 'unknown'));
+                        }
+                    }
+                } catch (Exception $e) {
+                    log_message('error', 'SaaS storage quota update failed (pharmacy addBillSupplier document): ' . $e->getMessage());
+                }
             }
 
             $insert_id = $this->pharmacy_model->addBillSupplier($data);
 
+            // SaaS: persist the cheque document reference in its own column so deleteSupplierBill can
+            // release it later. Guarded with field_exists so a not-yet-migrated DB never breaks the save.
+            if (!IsNullOrEmptyString($saas_cheque_doc) && !empty($insert_id)
+                && $this->db->field_exists('cheque_attachment', 'supplier_bill_basic')) {
+                $this->pharmacy_model->addBillSupplier(array(
+                    'id'                     => $insert_id,
+                    'cheque_attachment'      => "uploads/payment_document/" . $saas_cheque_doc,
+                    'cheque_attachment_name' => $saas_cheque_doc_name,
+                ));
+            }
+
             if ($insert_id) {
-                $medicine_category_id = $this->input->post('medicine_category_id');
-                $medicine_name        = $this->input->post('medicine_name');
-                $expiry_date          = $this->input->post('expiry_date');
-                $batch_no             = $this->input->post('batch_no');
-                $batch_amount         = $this->input->post('batch_amount');
-                $mrp                  = $this->input->post('mrp');
-                $sale_rate            = $this->input->post('sale_rate');
-                $packing_qty          = $this->input->post('packing_qty');
-                $quantity             = $this->input->post('quantity');
-                $purchase_price       = $this->input->post('purchase_price');
-                $amount               = $this->input->post('amount');
-                $tax                  = $this->input->post('purchase_tax');
+                $medicine_category_id = $this->input->post('medicine_category_id', TRUE);
+                $medicine_name        = $this->input->post('medicine_name', TRUE);
+                $expiry_date          = $this->input->post('expiry_date', TRUE);
+                $batch_no             = $this->input->post('batch_no', TRUE);
+                $batch_amount         = $this->input->post('batch_amount', TRUE);
+                $mrp                  = $this->input->post('mrp', TRUE);
+                $sale_rate            = $this->input->post('sale_rate', TRUE);
+                $packing_qty          = $this->input->post('packing_qty', TRUE);
+                $quantity             = $this->input->post('quantity', TRUE);
+                $purchase_price       = $this->input->post('purchase_price', TRUE);
+                $amount               = $this->input->post('amount', TRUE);
+                $tax                  = $this->input->post('purchase_tax', TRUE);
 
                 $data1 = array();
                 $j     = 0;
@@ -2145,9 +2553,14 @@ class Pharmacy extends Admin_Controller
                         'packing_qty'            => $packing_qty[$j],
                         'quantity'               => $quantity[$j],
                         'purchase_price'         => $purchase_price[$j],
-                        'available_quantity'     => $quantity[$j],
+                        // Stock is tracked in individual medicines (strips × medicines per strip)
+                        'available_quantity'     => $this->tabletStockQty($quantity[$j], $packing_qty[$j]),
                         'tax'                    => $tax[$j],
                         'amount'                 => $amount[$j],
+                    );
+                    $details = array_merge(
+                        $details,
+                        $this->unitPricingFields($sale_rate[$j], $purchase_price[$j], $packing_qty[$j])
                     );
                     $data1[] = $details;
 
@@ -2169,11 +2582,11 @@ class Pharmacy extends Admin_Controller
                 'supplier_name'    => $supplier_name['supplier'],
                 'medicine_details' => $medicine_var,
                 'purchase_date'    => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
-                'invoice_number'   => $this->input->post('invoiceno'),
-                'total'            => $this->input->post('total'),
-                'discount'         => number_format((float) $this->input->post('discount'), 2, '.', ''),
-                'tax'              => $this->input->post('tax'),
-                'net_amount'       => $this->input->post('net_amount'),
+                'invoice_number'   => $this->input->post('invoiceno', TRUE),
+                'total'            => $this->input->post('total', TRUE),
+                'discount'         => number_format((float) $this->input->post('discount', TRUE), 2, '.', ''),
+                'tax'              => $this->input->post('tax', TRUE),
+                'net_amount'       => $this->input->post('net_amount', TRUE),
             );
 
             $this->system_notification->send_system_notification('purchase_medicine', $event_data);
@@ -2184,7 +2597,7 @@ class Pharmacy extends Admin_Controller
 
     public function updateSupplierBill()
     {
-        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_edit')) {
+        if (!$this->rbac->hasPrivilege('medicine_purchase', 'can_edit')) {
             access_denied();
         }
 
@@ -2199,10 +2612,12 @@ class Pharmacy extends Admin_Controller
         $this->form_validation->set_rules('quantity[]', $this->lang->line('quantity'), 'required|numeric');
         $this->form_validation->set_rules('purchase_price[]', $this->lang->line('purchase_price'), 'required|numeric');
         $this->form_validation->set_rules('total', $this->lang->line('total'), 'required|numeric');
+        $this->form_validation->set_rules('file', $this->lang->line('file'), 'callback_validateCanUploadFile[file]');
         if ($this->form_validation->run() == false) {
             $msg = array(
                 'date'                 => form_error('date'),
                 'supplier_id'          => form_error('supplier_id'),
+                'file'                 => form_error('file'),
                 'medicine_category_id' => form_error('medicine_category_id[]'),
                 'medicine_name'        => form_error('medicine_name[]'),
                 'expiry_date'          => form_error('expiry_date[]'),
@@ -2215,54 +2630,82 @@ class Pharmacy extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id               = $this->input->post('bill_basic_id');
-            $bill_id          = $this->input->post("bill_detail_id[]");
-            $previous_bill_id = $this->input->post("previous_bill_id[]");
-            $supplier_id      = $this->input->post('supplier_id');
-            $purchase_no      = $this->input->post('purchase_no');
+            $id               = $this->input->post('bill_basic_id', TRUE);
+            $bill_id          = $this->input->post("bill_detail_id[]", TRUE);
+            $previous_bill_id = $this->input->post("previous_bill_id[]", TRUE);
+            $supplier_id      = $this->input->post('supplier_id', TRUE);
+            $purchase_no      = $this->input->post('purchase_no', TRUE);
             $data_array       = array();
             $delete_arr       = array();
 
-            $bill_date = $this->input->post("date");
+            $bill_date = $this->input->post("date", TRUE);
             $data      = array(
                 'id'          => $id,
+                'supplier_id' => $supplier_id,
                 'date'        => $this->customlib->dateFormatToYYYYMMDDHis($bill_date, $this->time_format),
-                'invoice_no'  => $this->input->post('invoice_no'),
-                'total'       => $this->input->post('total'),
-                'discount'    => $this->input->post('discount'),
-                'tax'         => $this->input->post('tax'),
-                'note'        => $this->input->post('note'),
-                'net_amount'  => $this->input->post('net_amount'),
+                'invoice_no'  => $this->input->post('invoice_no', TRUE),
+                'total'       => $this->input->post('total', TRUE),
+                'discount'    => $this->input->post('discount', TRUE),
+                'tax'         => $this->input->post('tax', TRUE),
+                'note'        => $this->input->post('note', TRUE),
+                'net_amount'  => $this->input->post('net_amount', TRUE),
             );
 
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
+                // SaaS: capture the existing attachment + its size BEFORE the move — a same-extension
+                // upload overwrites the old file in place, so the old size must be read first.
+                $saas_existing = $this->pharmacy_model->getSupplierDetails($id);
+                $saas_old_file = (!empty($saas_existing['file'])) ? $saas_existing['file'] : '';
+                $saas_old_dir  = (strpos($saas_old_file, '/') !== false) ? '' : 'uploads/medicine_images';
+                $saas_old_kb   = (!empty($saas_old_file)) ? $this->media_storage->getUploadedFileSize($saas_old_file, $saas_old_dir) : 0;
+                $saas_new_kb   = $this->media_storage->getTmpFileSize('file');
+
                 $fileInfo = pathinfo($_FILES["file"]["name"]);
                 $img_name = $id . '.' . $fileInfo['extension'];
-                move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/medicine_images/" . $img_name);
-                $data_img = array('id' => $id, 'file' => 'uploads/medicine_images/' . $img_name);
-                $this->pharmacy_model->addBillSupplier($data_img);
+                if (move_uploaded_file($_FILES["file"]["tmp_name"], "./uploads/medicine_images/" . $img_name)) {
+                    $new_file_path = 'uploads/medicine_images/' . $img_name;
+                    $data_img      = array('id' => $id, 'file' => $new_file_path);
+                    $this->pharmacy_model->addBillSupplier($data_img);
+
+                    // SaaS: adjust storage quota by the size DIFFERENCE (new vs replaced) instead of a
+                    // blind add, so editing the attachment keeps usage accurate.
+                    try {
+                        if ($saas_old_kb > $saas_new_kb) {
+                            $this->saasvalidation->deleteResouceQuota('storage', $saas_old_kb - $saas_new_kb);
+                        } elseif ($saas_new_kb > $saas_old_kb) {
+                            $this->saasvalidation->updateResouceQuota('storage', $saas_new_kb - $saas_old_kb);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pharmacy updateSupplierBill): ' . $e->getMessage());
+                    }
+
+                    // SaaS: a different extension leaves the old file orphaned alongside the new one — remove it.
+                    if (!empty($saas_old_file) && $saas_old_file !== $new_file_path) {
+                        $this->media_storage->filedelete($saas_old_file, $saas_old_dir);
+                    }
+                }
             }
             $this->pharmacy_model->addBillSupplier($data);
 
             if (!empty($id)) {
 
-                $bill_detail_id       = $this->input->post('bill_detail_id');
-                $medicine_batch_id    = $this->input->post('medicine_batch_id');
-                $medicine_category_id = $this->input->post('medicine_category_id');
-                $medicine_name        = $this->input->post('medicine_name');
-                $expiry_date          = $this->input->post('expiry_date');
-                $batch_no             = $this->input->post('batch_no');
-                $batch_amount         = $this->input->post('batch_amount');
-                $mrp                  = $this->input->post('mrp');
-                $sale_rate            = $this->input->post('sale_rate');
-                $packing_qty          = $this->input->post('packing_qty');
-                $quantity             = $this->input->post('quantity');
-                $total_quantity       = $this->input->post('available_quantity');
-                $amount               = $this->input->post('amount');
-                $purchase_price       = $this->input->post('purchase_price');
+                $bill_detail_id       = $this->input->post('bill_detail_id', TRUE);
+                $medicine_batch_id    = $this->input->post('medicine_batch_id', TRUE);
+                $medicine_category_id = $this->input->post('medicine_category_id', TRUE);
+                $medicine_name        = $this->input->post('medicine_name', TRUE);
+                $expiry_date          = $this->input->post('expiry_date', TRUE);
+                $batch_no             = $this->input->post('batch_no', TRUE);
+                $batch_amount         = $this->input->post('batch_amount', TRUE);
+                $mrp                  = $this->input->post('mrp', TRUE);
+                $sale_rate            = $this->input->post('sale_rate', TRUE);
+                $packing_qty          = $this->input->post('packing_qty', TRUE);
+                $quantity             = $this->input->post('quantity', TRUE);
+                $total_quantity       = $this->input->post('available_quantity', TRUE);
+                $amount               = $this->input->post('amount', TRUE);
+                $purchase_price       = $this->input->post('purchase_price', TRUE);
                 $data_array1          = array();
-                $bill_date1           = $this->input->post("date");
-                $tax                  = $this->input->post("purchase_tax");
+                $bill_date1           = $this->input->post("date", TRUE);
+                $tax                  = $this->input->post("purchase_tax", TRUE);
                 $j                    = 0;
                 foreach ($medicine_category_id as $key => $value) {
                     $expdate = $expiry_date[$j];
@@ -2286,10 +2729,15 @@ class Pharmacy extends Admin_Controller
                             'sale_rate'              => $sale_rate[$j],
                             'packing_qty'            => $packing_qty[$j],
                             'quantity'               => $quantity[$j],
-                            'available_quantity'     => $quantity[$j],
+                            // Stock is tracked in individual medicines (strips × medicines per strip)
+                            'available_quantity'     => $this->tabletStockQty($quantity[$j], $packing_qty[$j]),
                             'purchase_price'         => $purchase_price[$j],
                             'amount'                 => $amount[$j],
                             'tax'                    => $tax[$j],
+                        );
+                        $add_data = array_merge(
+                            $add_data,
+                            $this->unitPricingFields($sale_rate[$j], $purchase_price[$j], $packing_qty[$j])
                         );
                         $data_array[] = $add_data;
                     } else {
@@ -2306,10 +2754,15 @@ class Pharmacy extends Admin_Controller
                             'sale_rate'              => $sale_rate[$j],
                             'packing_qty'            => $packing_qty[$j],
                             'quantity'               => $quantity[$j],
-                            'available_quantity'     => $quantity[$j],
+                            // Stock is tracked in individual medicines (strips × medicines per strip)
+                            'available_quantity'     => $this->tabletStockQty($quantity[$j], $packing_qty[$j]),
                             'purchase_price'         => $purchase_price[$j],
                             'amount'                 => $amount[$j],
                             'tax'                    => $tax[$j],
+                        );
+                        $detail = array_merge(
+                            $detail,
+                            $this->unitPricingFields($sale_rate[$j], $purchase_price[$j], $packing_qty[$j])
                         );
 
                         $this->pharmacy_model->updateMedicineBatchDetail($detail);
@@ -2331,11 +2784,49 @@ class Pharmacy extends Admin_Controller
 
     public function deletePharmacyBill()
     {
-        $id = $this->input->post('id');
+        $id = $this->input->post('id', TRUE);
         if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_delete')) {
             access_denied();
         }
         if (!empty($id)) {
+            // SaaS: release every linked transaction's attachment from storage quota before deletion.
+            $saas_transactions = $this->transaction_model->pharmacyPayments($id);
+            if (!empty($saas_transactions)) {
+                foreach ($saas_transactions as $saas_transaction) {
+                    if (!empty($saas_transaction->attachment)) {
+                        $doc_path = $saas_transaction->attachment;
+                        $dir      = $this->media_storage->resolveAttachmentDir($doc_path);
+                        $kb       = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                        if ($kb > 0) {
+                            try {
+                                $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                            } catch (Exception $e) {
+                                log_message('error', 'SaaS storage quota release failed (pharmacy deletePharmacyBill transaction_id=' . $saas_transaction->id . '): ' . $e->getMessage());
+                            }
+                        }
+                        $this->media_storage->filedelete($doc_path, $dir);
+                    }
+                }
+            }
+
+            // SaaS: release the bill's own prescription image (pres_images, field `file`) — it is
+            // set/diffed in updateBill, so it must be released here too (the loop above only releases
+            // transaction/payment attachments, not the bill image).
+            $saas_bill = $this->pharmacy_model->getdate($id);
+            if (!empty($saas_bill['file'])) {
+                $bill_doc = $saas_bill['file'];
+                $bill_dir = (strpos($bill_doc, '/') !== false) ? '' : 'uploads/pres_images';
+                $bill_kb  = $this->media_storage->getUploadedFileSize($bill_doc, $bill_dir);
+                if ($bill_kb > 0) {
+                    try {
+                        $this->saasvalidation->deleteResouceQuota('storage', $bill_kb);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota release failed (pharmacy deletePharmacyBill file id=' . $id . '): ' . $e->getMessage());
+                    }
+                }
+                $this->media_storage->filedelete($bill_doc, $bill_dir);
+            }
+
             $this->pharmacy_model->deletePharmacyBill($id);
             $array = array('status' => 1, 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
@@ -2350,12 +2841,175 @@ class Pharmacy extends Admin_Controller
             access_denied();
         }
         if (!empty($id)) {
+            // SaaS: release the supplier bill's attachment(s) from storage quota before deletion —
+            // both the general 'attachment' and the cheque 'cheque_attachment' (if present).
+            $saas_supplier = $this->pharmacy_model->getSupplierDetails($id);
+            if (!empty($saas_supplier)) {
+                $saas_docs = array();
+                if (!empty($saas_supplier['attachment'])) {
+                    $saas_docs[] = $saas_supplier['attachment'];
+                }
+                if (!empty($saas_supplier['cheque_attachment'])) {
+                    $saas_docs[] = $saas_supplier['cheque_attachment'];
+                }
+                // SaaS: the 'file' column is written by the EDIT path (updateSupplierBill) — release it
+                // too, otherwise attachments uploaded via edit would leak on delete.
+                if (!empty($saas_supplier['file'])) {
+                    $saas_docs[] = $saas_supplier['file'];
+                }
+                foreach ($saas_docs as $doc_path) {
+                    $dir = $this->media_storage->resolveAttachmentDir($doc_path);
+                    $kb  = $this->media_storage->getUploadedFileSize($doc_path, $dir);
+                    if ($kb > 0) {
+                        try {
+                            $this->saasvalidation->deleteResouceQuota('storage', $kb);
+                        } catch (Exception $e) {
+                            log_message('error', 'SaaS storage quota release failed (pharmacy deleteSupplierBill): ' . $e->getMessage());
+                        }
+                    }
+                    $this->media_storage->filedelete($doc_path, $dir);
+                }
+            }
+
             $this->pharmacy_model->deleteSupplierBill($id);
             $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('delete_message'));
         } else {
             $array = array('status' => 'fail', 'error' => '', 'message' => '');
         }
         echo json_encode($array);
+    }
+
+    // ================================================================
+    // PURCHASE RETURN METHODS
+    // ================================================================
+
+    public function purchaseReturn($id)
+    {
+        if (!$this->rbac->hasPrivilege('medicine_purchase', 'can_add')) {
+            access_denied();
+        }
+        $purchase                  = $this->pharmacy_model->getSupplierDetails($id);
+        $batches                   = $this->pharmacy_model->getMedicineBatchesForPurchase($id);
+        $data['purchase']          = $purchase;
+        $data['batches']           = $batches;
+        $data['returned_amount']   = $this->pharmacy_model->getPurchaseReturnedAmount($id);
+        $this->load->view('admin/pharmacy/purchase_return_form', $data);
+    }
+
+    public function savePurchaseReturn()
+    {
+        if (!$this->rbac->hasPrivilege('medicine_purchase', 'can_add')) {
+            access_denied();
+        }
+        $this->form_validation->set_rules('supplier_bill_basic_id', $this->lang->line('purchase_no'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('return_date',            $this->lang->line('date'),        'trim|required|xss_clean');
+        $this->form_validation->set_rules('reason',                 $this->lang->line('reason'),      'trim|required|xss_clean');
+        if ($this->form_validation->run() == false) {
+            $array = array('status' => 'fail', 'error' => $this->form_validation->error_array(), 'message' => '');
+            echo json_encode($array);
+            return;
+        }
+        $supplier_bill_basic_id = $this->input->post('supplier_bill_basic_id', TRUE);
+        $batch_ids              = $this->input->post('batch_id',       TRUE);
+        $pharmacy_ids           = $this->input->post('pharmacy_id',    TRUE);
+        $batch_nos              = $this->input->post('batch_no',       TRUE);
+        $return_qtys            = $this->input->post('return_qty',     TRUE);
+        $purchase_prices        = $this->input->post('purchase_price', TRUE);
+        $available_qtys         = $this->input->post('available_qty',  TRUE);
+
+        // Validate at least one medicine has return qty > 0
+        $has_return = false;
+        foreach ($return_qtys as $qty) {
+            if ((int)$qty > 0) {
+                $has_return = true;
+                break;
+            }
+        }
+        if (!$has_return) {
+            $array = array('status' => 'fail', 'error' => array(), 'message' => $this->lang->line('please_enter_return_quantity'));
+            echo json_encode($array);
+            return;
+        }
+
+        // Validate each return_qty <= available_qty
+        $detail_data  = array();
+        $total_amount = 0;
+        foreach ($return_qtys as $j => $qty) {
+            $qty = (int)$qty;
+            if ($qty <= 0) {
+                continue;
+            }
+            $avail = (int)$available_qtys[$j];
+            if ($qty > $avail) {
+                $array = array('status' => 'fail', 'error' => array(), 'message' => $this->lang->line('return_qty_exceeds_available'));
+                echo json_encode($array);
+                return;
+            }
+            $price  = (float)$purchase_prices[$j];
+            $amount = $qty * $price;
+            $total_amount += $amount;
+            $detail_data[] = array(
+                'purchase_return_basic_id'  => 0, // will update after header insert
+                'medicine_batch_details_id' => (int)$batch_ids[$j],
+                'pharmacy_id'               => (int)$pharmacy_ids[$j],
+                'batch_no'                  => $batch_nos[$j],
+                'quantity'                  => $qty,
+                'purchase_price'            => $price,
+                'amount'                    => $amount,
+            );
+        }
+
+        $return_date = $this->input->post('return_date', TRUE);
+        $header = array(
+            'supplier_bill_basic_id' => $supplier_bill_basic_id,
+            'supplier_id'            => $this->input->post('supplier_id', TRUE),
+            'return_date'            => $this->customlib->dateFormatToYYYYMMDDHis($return_date, $this->time_format),
+            'total_amount'           => $total_amount,
+            'reason'                 => $this->input->post('reason', TRUE),
+            'note'                   => $this->input->post('note', TRUE),
+            'returned_by'            => $this->customlib->getStaffID(),
+        );
+
+        $fail_response = array('status' => 'fail', 'error' => array(), 'message' => $this->lang->line('something_went_wrong'));
+
+        $return_id = $this->pharmacy_model->addPurchaseReturn($header);
+        if (!$return_id) {
+            echo json_encode($fail_response);
+            return;
+        }
+
+        // Set return id in detail rows
+        foreach ($detail_data as &$row) {
+            $row['purchase_return_basic_id'] = $return_id;
+        }
+        unset($row);
+
+        // Insert detail rows first — only decrement inventory if insert succeeds
+        $detail_saved = $this->pharmacy_model->addPurchaseReturnDetail($detail_data);
+        if (!$detail_saved) {
+            echo json_encode($fail_response);
+            return;
+        }
+
+        $this->pharmacy_model->updateBatchAvailableQtyBulk($detail_data);
+
+        $array = array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message'));
+        echo json_encode($array);
+    }
+
+    public function getPurchaseReturnHistory($id)
+    {
+        if (!$this->rbac->hasPrivilege('medicine_purchase', 'can_view')) {
+            access_denied();
+        }
+        $history          = $this->pharmacy_model->getPurchaseReturnHistory($id);
+        $data['history']  = $history;
+        $data['purchase_id'] = $id;
+        foreach ($history as $key => $row) {
+            $history[$key]['items'] = $this->pharmacy_model->getPurchaseReturnDetail($row['id']);
+        }
+        $data['history'] = $history;
+        $this->load->view('admin/pharmacy/purchase_return_history', $data);
     }
 
     public function delete_medicine_batch($id)
@@ -2382,6 +3036,235 @@ class Pharmacy extends Admin_Controller
         echo json_encode($bill_no);
     }
 
+    // =====================================================================
+    // SALE RETURN METHODS
+    // =====================================================================
+
+    public function getSaleBillForReturn()
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_add')) {
+            access_denied();
+        }
+        $bill_no = $this->input->post('bill_no', TRUE);
+        if (empty($bill_no)) {
+            echo json_encode(array('status' => 0, 'msg' => 'Bill number required'));
+            return;
+        }
+        $bill = $this->pharmacy_model->getBillDetailsPharma($bill_no);
+        if (empty($bill)) {
+            echo json_encode(array('status' => 0, 'msg' => $this->lang->line('no_record_found')));
+            return;
+        }
+        $items            = $this->pharmacy_model->getAllBillDetails($bill_no);
+        $previous_returns = $this->pharmacy_model->getPreviousReturnsForBill($bill['id']);
+        foreach ($previous_returns as &$ret) {
+            $ret['items'] = $this->pharmacy_model->getSaleReturnItems($ret['id']);
+            $ret['date']  = $this->customlib->YYYYMMDDTodateFormat($ret['date']);
+        }
+        unset($ret);
+        echo json_encode(array('status' => 1, 'bill' => $bill, 'items' => $items, 'previous_returns' => $previous_returns));
+    }
+
+    public function salereturnbills()
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_view')) {
+            access_denied();
+        }
+        $this->session->set_userdata('top_menu', 'pharmacy');
+        $data['title']           = 'Sale Return Bills';
+        $data['saleReturnBills'] = $this->pharmacy_model->getSaleReturnBillsList();
+        $data['prefix_bill']     = $this->customlib->getSessionPrefixByType('pharmacy_billing');
+        $prefix_array            = $this->session->userdata('hospitaladmin')['prefix'];
+        $data['prefix_return']   = isset($prefix_array['pharmacy_return']) ? $prefix_array['pharmacy_return'] : 'RET';
+        $data['module'] = 'pharmacy';
+        $this->load->view('layout/header', $data);
+        $this->load->view('admin/pharmacy/saleReturnBills', $data);
+        $this->load->view('layout/footer', $data);
+    }
+
+    public function getSaleReturnDetails($return_id)
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_view')) {
+            access_denied();
+        }
+        $data['items']     = $this->pharmacy_model->getSaleReturnItems($return_id);
+        $data['return_id'] = $return_id;
+        $this->load->view('admin/pharmacy/sale_return_details', $data);
+    }
+
+    public function getSaleReturnHistoryForBill($bill_id)
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_view')) {
+            access_denied();
+        }
+        $history = $this->pharmacy_model->getSaleReturnHistoryForBill($bill_id);
+        foreach ($history as $key => $row) {
+            $history[$key]['items'] = $this->pharmacy_model->getSaleReturnItems($row['id']);
+        }
+        $data['history']  = $history;
+        $data['bill_id']  = $bill_id;
+        $this->load->view('admin/pharmacy/sale_return_history', $data);
+    }
+
+    public function createSaleReturn()
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_add')) {
+            access_denied();
+        }
+        $medicineCategory         = $this->medicine_category_model->getMedicineCategory();
+        $data['medicineCategory'] = $medicineCategory;
+        $doctors                  = $this->staff_model->getStaffbyrole(3);
+        $data['doctors']          = $doctors;
+        $data['payment_mode']     = $this->payment_mode;
+        $data['disable_option']   = false;
+
+        $result    = $this->pharmacy_model->getSaleReturnNo();
+        $return_no = !empty($result['id']) ? $result['id'] + 1 : 1;
+
+        $page = $this->load->view('admin/pharmacy/_createSaleReturn', $data, true);
+        echo json_encode(array('status' => 1, 'page' => $page, 'return_no' => $return_no));
+    }
+
+    public function addSaleReturn()
+    {
+        if (!$this->rbac->hasPrivilege('pharmacy_bill', 'can_add')) {
+            access_denied();
+        }
+
+        $this->form_validation->set_rules('sr_return_no', $this->lang->line('bill_no'), 'trim|required|xss_clean');
+        $this->form_validation->set_rules('sr_net_amount', $this->lang->line('net_amount'), 'trim|required|xss_clean');
+
+        if ($this->input->post('sr_payment_mode', TRUE) == 'Cheque') {
+            $this->form_validation->set_rules('sr_cheque_no', $this->lang->line('cheque_no'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('sr_cheque_date', $this->lang->line('cheque_date'), 'trim|required|xss_clean');
+            $this->form_validation->set_rules('sr_document', $this->lang->line('document'), 'callback_validateCanUploadFile[sr_document]');
+        }
+
+        $total_rows = $this->input->post('sr_total_rows', TRUE);
+        if (!isset($total_rows) || empty($total_rows)) {
+            $this->form_validation->set_rules('no_records', $this->lang->line('no_records'), 'trim|required|xss_clean',
+                array('required' => 'Return Qty required'));
+        }
+
+        if (isset($total_rows) && !empty($total_rows)) {
+            foreach ($total_rows as $row_value) {
+                $return_qty = $this->input->post('sr_quantity_' . $row_value, TRUE);
+                $sale_qty   = $this->input->post('sr_sale_qty_' . $row_value, TRUE);
+
+                // Must be numeric (integers only)
+                if ($return_qty !== '' && (!ctype_digit((string)$return_qty) || (int)$return_qty < 0)) {
+                    $this->form_validation->set_rules('invalid_return_qty', $this->lang->line('return_qty'), 'required',
+                        array('required' => 'Return Qty must be a valid positive number'));
+                    break;
+                }
+
+                // Must not exceed sale qty
+                if ($sale_qty !== '' && $return_qty !== '' && (int)$return_qty > (int)$sale_qty) {
+                    $this->form_validation->set_rules('over_return_qty', $this->lang->line('return_qty'), 'required',
+                        array('required' => 'Return Qty cannot be greater than Sale Qty'));
+                    break;
+                }
+            }
+        }
+
+        if ($this->form_validation->run() == false) {
+            $error = $this->form_validation->error_array();
+            echo json_encode(array('status' => 'fail', 'error' => $error, 'message' => ''));
+            return;
+        }
+
+        $return_date = $this->customlib->dateFormatToYYYYMMDDHis(
+            $this->input->post('sr_date', TRUE), $this->time_format
+        );
+        $patient_id  = $this->input->post('sr_patient_id', TRUE);
+
+        $basic_data = array(
+            'return_no'              => $this->input->post('sr_return_no', TRUE),
+            'pharmacy_bill_basic_id' => $this->input->post('sr_pharmacy_bill_basic_id', TRUE) ?: null,
+            'date'                   => $return_date,
+            'patient_id'             => !empty($patient_id) ? $patient_id : null,
+            'customer_name'          => $this->input->post('sr_customer_name', TRUE),
+            'customer_type'          => $this->input->post('sr_customer_type', TRUE),
+            'doctor_name'            => $this->input->post('sr_doctor_name', TRUE),
+            'total'                  => $this->input->post('sr_total', TRUE),
+            'discount_percentage'    => $this->input->post('sr_discount_percent', TRUE) ?: 0,
+            'discount'               => $this->input->post('sr_discount', TRUE) ?: 0,
+            'tax_percentage'         => 0,
+            'tax'                    => $this->input->post('sr_tax', TRUE) ?: 0,
+            'net_amount'             => $this->input->post('sr_net_amount', TRUE),
+            'note'                   => $this->input->post('sr_note', TRUE),
+            'returned_by'            => $this->customlib->getLoggedInUserID(),
+        );
+
+        $detail_array = array();
+        if (isset($total_rows) && !empty($total_rows)) {
+            foreach ($total_rows as $row_value) {
+                $quantity = $this->input->post('sr_quantity_' . $row_value, TRUE);
+                $batch_id = $this->input->post('sr_batch_no_id_' . $row_value, TRUE);
+                $price    = $this->input->post('sr_sale_price_' . $row_value, TRUE);
+                $discount = $this->input->post('sr_mdiscount_' . $row_value, TRUE) ?: 0;
+                $amount   = $this->input->post('sr_amount_' . $row_value, TRUE);
+
+                if (!empty($batch_id) && !empty($quantity)) {
+                    $detail_array[] = array(
+                        'medicine_batch_detail_id' => $batch_id,
+                        'quantity'                 => $quantity,
+                        'sale_price'               => $price,
+                        'discount'                 => $discount,
+                        'amount'                   => $amount,
+                    );
+                }
+            }
+        }
+
+        if (empty($detail_array)) {
+            echo json_encode(array('status' => 'fail', 'error' => array(), 'message' => $this->lang->line('return_qty_required')));
+            return;
+        }
+
+        // Build refund payment entry (mirrors addBill update-path payment_array)
+        $payment_section  = $this->config->item('payment_section');
+        $payment_amount   = $this->input->post('sr_payment_amount', TRUE);
+        if ($payment_amount !== '' && $payment_amount >= 0) {
+            $payment_array = array(
+                'amount'                 => $payment_amount,
+                'type'                   => 'refund',
+                'patient_id'             => !empty($patient_id) ? $patient_id : null,
+                'section'                => $payment_section['pharmacy'],
+                'pharmacy_bill_basic_id' => $this->input->post('sr_pharmacy_bill_basic_id', TRUE) ?: null,
+                'payment_mode'           => $this->input->post('sr_payment_mode', TRUE),
+                'note'                   => $this->input->post('sr_note', TRUE),
+                'payment_date'           => date('Y-m-d H:i:s'),
+                'received_by'            => $this->customlib->getLoggedInUserID(),
+            );
+            if ($this->input->post('sr_payment_mode', TRUE) == 'Cheque') {
+                $payment_array['cheque_date'] = $this->customlib->dateFormatToYYYYMMDD($this->input->post('sr_cheque_date', TRUE));
+                $payment_array['cheque_no']   = $this->input->post('sr_cheque_no', TRUE);
+                if (isset($_FILES['sr_document']) && !empty($_FILES['sr_document']['name'])) {
+                    $file_name = $this->media_storage->fileupload('sr_document', './uploads/payment_document/');
+                    $payment_array['attachment']      = $file_name;
+                    $payment_array['attachment_name'] = $_FILES['sr_document']['name'];
+
+                    // SaaS: add the uploaded sale-return document size to the storage quota usage.
+                    try {
+                        $this->saasvalidation->updateStorageLimit('storage', ['sr_document']);
+                    } catch (Exception $e) {
+                        log_message('error', 'SaaS storage quota update failed (pharmacy addSaleReturn): ' . $e->getMessage());
+                    }
+                }
+            }
+        } else {
+            $payment_array = array();
+        }
+
+        $result = $this->pharmacy_model->addSaleReturn($basic_data, $detail_array, $payment_array);
+        if ($result) {
+            echo json_encode(array('status' => 'success', 'error' => '', 'message' => $this->lang->line('success_message')));
+        } else {
+            echo json_encode(array('status' => 'fail', 'error' => '', 'message' => $this->lang->line('error_message')));
+        }
+    }
+
     public function getExpiryDate()
     {
         $medicine_batch_detail_id   =   $this->input->get_post('medicine_batch_detail_id');
@@ -2390,6 +3273,7 @@ class Pharmacy extends Admin_Controller
         $patient_id                 =   $this->input->post('patient_id');
         $is_tpa_valid               =   true;
         $organisation_id            =   "";
+        $use_org_charge             =   false;
 
         if($is_tpa == 1 && $patient_id != ""){   
             $patient_result  = $this->patient_model->getpatientDetails($patient_id);
@@ -2399,6 +3283,7 @@ class Pharmacy extends Admin_Controller
                     $result  = $this->pharmacy_model->getMedicineBatchByID($medicine_batch_detail_id,$patient_result['organisation_id']);
                     $result->expiry_date = $this->customlib->getMedicine_expire_month($result->expiry);
                     $sale_rate=$result->sale_rate= $result->org_charge;
+                    $use_org_charge = true;
                 }else{
                     $result = $this->pharmacy_model->getMedicineBatchByID($medicine_batch_detail_id);
                     $result->expiry_date = $this->customlib->getMedicine_expire_month($result->expiry);
@@ -2415,7 +3300,18 @@ class Pharmacy extends Admin_Controller
             $result  = $this->pharmacy_model->getMedicineBatchByID($medicine_batch_detail_id);
             $result->expiry_date = $this->customlib->getMedicine_expire_month($result->expiry);
             $sale_rate=$result->sale_rate;
-        }  
+        }
+
+        // Billing uses per-medicine price (stored unit_sale_rate; TPA org_charge is strip-level)
+        if ($result) {
+            if ($use_org_charge) {
+                $result->sale_rate = $this->unitSaleRate($result->sale_rate, $result->packing_qty ?? 0);
+            } else {
+                $result->sale_rate = $this->resolveUnitSaleRate($result);
+            }
+            $sale_rate = $result->sale_rate;
+        }
+
         if($is_tpa > 0 &&  isset($organisation_id) && ($sale_rate == 0 || $sale_rate == "")){
             echo json_encode(array('status' => 0, 'msg' => $this->lang->line('no_charge_has_configured_for_selected_category')));
         }elseif($result && !$is_tpa_valid){
@@ -2469,9 +3365,9 @@ class Pharmacy extends Admin_Controller
             );
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id          = $this->input->post('pharmacy_id');
-            $inward_date = $this->input->post('inward_date');
-            $expiry_date = $this->input->post('expiry_date');
+            $id          = $this->input->post('pharmacy_id', TRUE);
+            $inward_date = $this->input->post('inward_date', TRUE);
+            $expiry_date = $this->input->post('expiry_date', TRUE);
 
             $explore = explode("/", $expiry_date);
 
@@ -2484,16 +3380,16 @@ class Pharmacy extends Admin_Controller
             $insert_date        = $last_date_of_month;
             $medicine_batch     = array(
                 'pharmacy_id'               => $id,
-                'medicine_batch_details_id' => $this->input->post('medicine_batch_id'),
+                'medicine_batch_details_id' => $this->input->post('medicine_batch_id', TRUE),
                 'expiry_date'               => $insert_date,
                 'outward_date'              => $this->customlib->dateFormatToYYYYMMDD($inward_date),
-                'batch_no'                  => $this->input->post('batch_no'),
-                'quantity'                  => $this->input->post('packing_qty'),
-                'note'                      => $this->input->post('note'),
+                'batch_no'                  => $this->input->post('batch_no', TRUE),
+                'quantity'                  => $this->input->post('packing_qty', TRUE),
+                'note'                      => $this->input->post('note', TRUE),
             );
 
-            $batch_qty   = $this->input->post('available_quantity');
-            $packing_qty = $this->input->post('packing_qty');
+            $batch_qty   = $this->input->post('available_quantity', TRUE);
+            $packing_qty = $this->input->post('packing_qty', TRUE);
 
             if (!empty($batch_qty)) {
                 $available_quantity = $batch_qty - $packing_qty;
@@ -2501,16 +3397,16 @@ class Pharmacy extends Admin_Controller
                 $available_quantity = 0;
             }
 
-            $update_data = array('id' => $this->input->post('medicine_batch_id'), 'available_quantity' => $available_quantity);
+            $update_data = array('id' => $this->input->post('medicine_batch_id', TRUE), 'available_quantity' => $available_quantity);
 
             $this->pharmacy_model->addBadStock($medicine_batch);
             $this->pharmacy_model->updateMedicineBatch($update_data);
 
             $event_data = array(
-                'batch_no'     => $this->input->post('batch_no'),
+                'batch_no'     => $this->input->post('batch_no', TRUE),
                 'expiry_date'  => $this->customlib->YYYYMMDDTodateFormat($insert_date),
                 'outward_date' => $this->customlib->YYYYMMDDTodateFormat($inward_date),
-                'qty'          => $this->input->post('packing_qty'),
+                'qty'          => $this->input->post('packing_qty', TRUE),
             );
 
             $this->system_notification->send_system_notification('add_bad_stock', $event_data);
@@ -2611,8 +3507,8 @@ class Pharmacy extends Admin_Controller
             $msg   = array('sale_price' => form_error('salerate[]'));
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
-            $id         =   $this->input->post('id[]');
-            $salerate   =   $this->input->post('salerate[]');
+            $id         =   $this->input->post('id[]', TRUE);
+            $salerate   =   $this->input->post('salerate[]', TRUE);
             $data1      =   array();
             $j          =   0;
 
@@ -2633,7 +3529,7 @@ class Pharmacy extends Admin_Controller
 
     //****pharmacy TPA feature work start****
     public function view_tpa_charge_model(){
-        $id=$_POST['id'];
+        $id=$this->input->post('id', TRUE);
         $result         = $this->pharmacy_model->getSupplierDetails($id);
         $data['result'] = $result;
         $detail         = $this->pharmacy_model->getAllSupplierDetails($id);
@@ -2650,14 +3546,14 @@ class Pharmacy extends Admin_Controller
             $array = array('status' => 'fail', 'error' => $msg, 'message' => '');
         } else {
 
-            $id       =   $this->input->post('id[]');
+            $id       =   $this->input->post('id[]', TRUE);
             $data1    =   array();
 
             foreach($id as $value) {
-                $schedule_charge_id   =   $this->input->post("schedule_charge_id_".$value."[]");
+                $schedule_charge_id   =   $this->input->post("schedule_charge_id_".$value."[]", TRUE);
                 foreach($schedule_charge_id as $svalue) {
-                    $org_charge                         =  $this->input->post("schedule_charge_".$svalue."_".$value);
-                    $orgnization_medicine_charge_id     =  $this->input->post("orgnization_medicine_charge_id_".$svalue."_".$value);
+                    $org_charge                         =  $this->input->post("schedule_charge_".$svalue."_".$value, TRUE);
+                    $orgnization_medicine_charge_id     =  $this->input->post("orgnization_medicine_charge_id_".$svalue."_".$value, TRUE);
 
                     $details = array(
                         'id'                        => $orgnization_medicine_charge_id,
