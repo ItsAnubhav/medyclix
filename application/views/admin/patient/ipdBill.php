@@ -37,6 +37,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td width="25%" class="text-end"><?php echo $result["name"] . " " . $result["surname"]; ?></td>
                         </tr>
                         <tr>
+                            <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                            <td colspan="3"><?php echo html_escape(!empty($result['refference']) ? $result['refference'] : '-'); ?></td>
+                        </tr>
+                        <tr>
                             <th><?php echo $this->lang->line('ipd') . " " . $this->lang->line('no'); ?></th>
                             <td><?php echo $result['ipd_no']; ?></td> 
                             <th><?php echo $this->lang->line('organisation'); ?></th>
@@ -198,7 +202,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         
                     </table>
                     <div class="divider mt-10 mb-10"></div>
-                    <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
+                    <?php
+                    $bill_words_amount = empty($result['gross_total']) ? $gross_total : $result['gross_total'];
+                    $bill_payment_mode = isset($payment_details) ? $payment_details : '';
+                    include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+                    ?>
                     <div class="footer-fixed printfooter">
                         <?php if (!empty($print_details[0]['print_footer'])) { ?>    
                             <p class="ptt10"><?php echo $print_details[0]['print_footer']; ?></p>

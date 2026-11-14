@@ -1,3 +1,4 @@
+<?php if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); } ?>
 <link rel="stylesheet" href="<?php echo base_url(); ?>backend/dist/css/sh-print.css">
 <?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); ?>
 <div class="print-area">
@@ -21,6 +22,10 @@
                 <div class="col-6 col-md-4 sh-info-item">
                     <span class="sh-info-label"><?php echo $this->lang->line('case_id'); ?></span>
                     <span class="sh-info-value"><?php echo html_escape($case_id); ?></span>
+                </div>
+                <div class="col-6 col-md-4 sh-info-item">
+                    <span class="sh-info-label"><?php echo $this->lang->line('reference_doctor'); ?></span>
+                    <span class="sh-info-value"><?php echo html_escape(!empty($patient['refference']) ? $patient['refference'] : '-'); ?></span>
                 </div>
                 <?php if ($patient['date'] !== '') { ?>
                 <div class="col-6 col-md-4 sh-info-item">
@@ -145,6 +150,10 @@
                         <?php } ?>
                     </tbody>
                 </table>
+                <?php
+                $bill_words_amount = $amount;
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
             </div>
         </div>
     </div>

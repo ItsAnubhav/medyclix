@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $print_date      = date($this->customlib->getHospitalDateFormat(true, false));
 ?>
@@ -56,7 +57,7 @@ $print_date      = date($this->customlib->getHospitalDateFormat(true, false));
                     <td><?php echo $case_id; ?></td>
                     <td><?php if ($v['appointment_date']) echo $this->customlib->YYYYMMDDTodateFormat($v['appointment_date']); ?></td>
                     <td><?php echo $this->customlib->getSessionPrefixByType('checkup_id') . $v['visit_id']; ?></td>
-                    <td><?php echo html_escape($v['name'] . ' ' . $v['surname'] . ' (' . $v['employee_id'] . ')'); ?></td>
+                    <td><?php echo html_escape(trim($v['name'] . ' ' . $v['surname'])); ?></td>
                     <td><?php echo html_escape($v['symptoms']); ?></td>
                     <td><?php echo html_escape($v['finding_description']); ?></td>
                 </tr>
@@ -84,7 +85,7 @@ $print_date      = date($this->customlib->getHospitalDateFormat(true, false));
                     <td><?php echo $this->customlib->getSessionPrefixByType('ipd_no') . $v['id']; ?></td>
                     <td><?php echo $case_id; ?></td>
                     <td><?php if ($v['date']) echo $this->customlib->YYYYMMDDTodateFormat($v['date']); ?></td>
-                    <td><?php echo html_escape($v['name'] . ' ' . $v['surname'] . ' (' . $v['employee_id'] . ')'); ?></td>
+                    <td><?php echo html_escape(trim($v['name'] . ' ' . $v['surname'])); ?></td>
                     <td><?php echo html_escape($v['symptoms']); ?></td>
                     <td><?php echo html_escape($v['finding_description']); ?></td>
                 </tr>

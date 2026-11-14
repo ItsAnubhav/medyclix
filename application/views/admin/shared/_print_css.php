@@ -1,3 +1,4 @@
+<?php if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); } ?>
 <style>
 /* ============================================================
    Smart Hospital — Shared Print CSS

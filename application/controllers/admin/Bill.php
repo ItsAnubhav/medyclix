@@ -1059,6 +1059,7 @@ class Bill extends Admin_Controller
 
         $data['charge_details'] = $this->transaction_model->get_ipdopdchargebycaseId($case_id);
         $data['module_type']    = $module_type;
+        $data['bill_payment_mode'] = $this->transaction_model->getPaymentModesByCaseId($case_id);
         $page                   = $this->load->view('admin/bill/_generatebill', $data, true);
         echo json_encode(array('status' => 1, 'page' => $page));
     }
@@ -1088,6 +1089,7 @@ class Bill extends Admin_Controller
         }
 
         $data['discharge_card'] = $this->patient_model->get_dischargeCard(array('case_reference_id' => $case_id));
+        $data['bill_payment_mode'] = $this->transaction_model->getPaymentModesByCaseId($case_id);
         $page                   = $this->load->view('admin/bill/_generatebill_result', $data, true);
 
         if ($data['charge_details'][0]['tax'] > 0) {
@@ -6016,7 +6018,7 @@ class Bill extends Admin_Controller
                 'department_name', 'discharge_date', 'discharged', 'date', 'patient_type',
                 'case_type', 'organisation_name', 'organisation_id', 'insurance_id',
                 'insurance_validity', 'patient_unique_id', 'mobileno', 'address', 'gender',
-                'credit_limit', 'case_reference_id',
+                'credit_limit', 'case_reference_id', 'refference',
             );
             foreach ($merge_keys as $key) {
                 if (isset($ipd[$key]) && ($ipd[$key] !== '' && $ipd[$key] !== null)) {

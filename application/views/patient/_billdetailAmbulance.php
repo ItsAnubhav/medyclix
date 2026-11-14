@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $r               = $result;
 $discount_amount = 0; $tax_amount = 0; $balance = 0;

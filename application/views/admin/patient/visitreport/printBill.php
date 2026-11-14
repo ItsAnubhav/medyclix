@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 ?>
 
@@ -168,6 +169,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                                     <td class="text-end"><?php echo amountFormat($result["net_amount"]-$result["total_paid"]); ?></td>
                                 </tr>
                     </table>
+                    <?php
+                    $bill_words_amount = !empty($result['net_amount']) ? $result['net_amount'] : 0;
+                    $bill_payment_mode = !empty($result['payment_mode']) ? $result['payment_mode'] : (!empty($result['bill_payment_modes']) ? $result['bill_payment_modes'] : '');
+                    include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                    ?>
                          <div class="divider mb-10 mt-10"></div>  
                          <div class="table-responsive">          
                      <table class="w-100">

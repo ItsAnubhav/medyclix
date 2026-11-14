@@ -248,6 +248,15 @@ class Transaction_model extends MY_Model
         return $result;
     }
 
+    public function getPaymentModesByCaseId($case_id)
+    {
+        $query = $this->db->query(
+            "SELECT GROUP_CONCAT(DISTINCT payment_mode ORDER BY id SEPARATOR ', ') AS payment_modes FROM transactions WHERE case_reference_id = " . $this->db->escape($case_id) . " AND type = 'payment'"
+        );
+        $row = $query->row_array();
+        return !empty($row['payment_modes']) ? $row['payment_modes'] : '';
+    }
+
     public function getTransactionByCaseId($case_id)
     {
         $sql = "SELECT * FROM `transactions` WHERE case_reference_id =".$this->db->escape_str($case_id)." and type='payment'";

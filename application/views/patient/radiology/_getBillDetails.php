@@ -35,6 +35,10 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                                 <td><?php echo composePatientName($result->patient_name, $result->patient_id); ?></td>
                             </tr>
                             <tr>
+                                <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                                <td><?php echo html_escape(trim(preg_replace('/\s*\([^)]*\)/', '', (string) $result->doctor_name)) ?: '-'); ?></td>
+                            </tr>
+                            <tr>
                                 <th><?php echo $this->lang->line('case_id'); ?></th>
                                 <td><?php echo ($result->case_reference_id ?: '-'); ?></td>
                             </tr>
@@ -129,6 +133,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = $result->net_amount;
+                $bill_payment_mode = !empty($result->bill_payment_modes) ? $result->bill_payment_modes : $result->payment_mode;
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
 
             </div>
             </div>

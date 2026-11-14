@@ -41,7 +41,7 @@ $tax_amt=calculatePercent($total_discount_amount, $result['tax_percentage']);
                                 </tr>
                                 <tr>
                                     <th width="15%"><?php echo $this->lang->line('patient_name'); ?></th>
-                                    <td width="35%"><?php echo $result['patient_name']." (".$result['patient_id'].")"; ?></td>
+                                    <td width="35%"><?php echo $result['patient_name']; ?></td>
                                 </tr>
                                 <tr>
                                     <th width="15%"><?php echo $this->lang->line('blood_group'); ?></th>
@@ -144,6 +144,11 @@ $tax_amt=calculatePercent($total_discount_amount, $result['tax_percentage']);
                                 </tr>
                              </tbody>
                           </table>
+                          <?php
+                          $bill_words_amount = ($result['amount'] - $discont_amt) + $tax_amt;
+                          $bill_payment_mode = !empty($result['bill_payment_modes']) ? $result['bill_payment_modes'] : '';
+                          include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                          ?>
                         </div>
                     </div>    
                 </div>

@@ -110,6 +110,10 @@ $bill_no = $bill_no_prefix . 'BILL-' . $case_id;
                             <td><?php echo html_escape($doctor_display); ?></td>
                         </tr>
                         <tr>
+                            <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                            <td colspan="3"><?php echo html_escape(!empty($patient['refference']) ? $patient['refference'] : '-'); ?></td>
+                        </tr>
+                        <tr>
                             <th><?php echo $this->lang->line('department'); ?></th>
                             <td><?php echo html_escape(!empty($patient['department_name']) ? $patient['department_name'] : '-'); ?></td>
                             <th><?php echo $this->lang->line('mobile'); ?></th>
@@ -560,7 +564,11 @@ $bill_no = $bill_no_prefix . 'BILL-' . $case_id;
                     </tbody>
                 </table>
 
-                <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
+                <?php
+                $bill_words_amount = $total_amount - $overall_disc_amt;
+                $bill_payment_mode = isset($transaction_data) ? $transaction_data : '';
+                include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+                ?>
 
             </div>
             </div>

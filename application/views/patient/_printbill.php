@@ -51,7 +51,7 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         <?php } ?>
                         <tr>
                             <th><?php echo $this->lang->line('patient_name'); ?></th>
-                            <td><?php echo ($result['patient_name'] ?: '-') . ($result['patient_id'] ? ' (' . $result['patient_id'] . ')' : ''); ?></td>
+                            <td><?php echo ($result['patient_name'] ?: '-'); ?></td>
                             <th><?php echo $this->lang->line('address'); ?></th>
                             <td><?php echo ($result['address'] ?: '-'); ?></td>
                         </tr>
@@ -142,6 +142,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = $charge->apply_charge + $tax_amt - $discount_amt;
+                $bill_payment_mode = (isset($transaction) && !empty($transaction->payment_mode)) ? $transaction->payment_mode : '';
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
                 <?php } ?>
 
 

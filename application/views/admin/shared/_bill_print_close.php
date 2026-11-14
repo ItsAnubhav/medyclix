@@ -10,9 +10,10 @@ if (!empty($printed_by)) {
 }
 $bill_generated_by = !empty($generated_by) ? $generated_by : $bill_printed_by;
 $bill_print_time = $this->customlib->YYYYMMDDHisTodateFormat(date('Y-m-d H:i:s'), $this->customlib->getHospitalTimeFormat());
-$bill_by_line = $bill_generated_by ?: '-';
-if ($bill_printed_by && $bill_generated_by && $bill_printed_by !== $bill_generated_by) {
-    $bill_by_line .= ' / ' . $bill_printed_by;
+$bill_by_line = trim(preg_replace('/\s*\([^)]*\)/', '', (string) $bill_generated_by));
+$bill_by_line = $bill_by_line !== '' ? $bill_by_line : '-';
+if (isset($bill_words_amount)) {
+    include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
 }
 ?>
 <table class="bill-close" width="100%" style="width:100%; margin-top:28px; border-collapse:collapse; page-break-inside:avoid;">

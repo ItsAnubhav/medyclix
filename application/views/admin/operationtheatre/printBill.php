@@ -121,6 +121,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             </tr>
                         <?php } ?>
                     </table>
+                    <?php
+                    $bill_words_amount = !empty($result['net_amount']) ? $result['net_amount'] : (!empty($result['total']) ? $result['total'] : 0);
+                    $bill_payment_mode = !empty($result['payment_mode']) ? $result['payment_mode'] : '';
+                    include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                    ?>
                     <div class="divider mb-10 mt-10"></div>   
                    
                 </div>

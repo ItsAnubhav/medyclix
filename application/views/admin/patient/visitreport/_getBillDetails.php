@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $due_amount      = ($result['net_amount'] + $result['refund_amount']) - $result['paid_amount'];
 $due_class       = ($due_amount <= 0) ? 'sh-status-paid' : 'sh-status-due';

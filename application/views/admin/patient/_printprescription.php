@@ -73,11 +73,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                                 <tr>
                                     <th><?php echo $this->lang->line('prescribe_by'); ?></th>
                                     <td>
-                                        <?php echo ($result->prescribe_by_name ? $result->prescribe_by_name . ' ' . $result->prescribe_by_surname . ' (' . $result->prescribe_by_employee_id . ')' : '-'); ?>
+                                        <?php echo ($result->prescribe_by_name ? trim($result->prescribe_by_name . ' ' . $result->prescribe_by_surname) : '-'); ?>
                                     </td>
                                     <th><?php echo $this->lang->line('generated_by'); ?></th>
                                     <td>
-                                        <?php echo ($result->generated_by_name ? $result->generated_by_name . ' ' . $result->generated_by_surname . ' (' . $result->generated_by_employee_id . ')' : '-'); ?>
+                                        <?php echo ($result->generated_by_name ? trim($result->generated_by_name . ' ' . $result->generated_by_surname) : '-'); ?>
                                     </td>
                                     <th ><?php echo $this->lang->line('consultant_doctor'); ?></th>
                                     <td >

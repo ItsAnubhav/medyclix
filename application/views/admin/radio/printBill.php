@@ -146,7 +146,12 @@ if (!$print) {
                         <?php
 }
 ?>
-                    </table>                   
+                    </table>
+                    <?php
+                    $bill_words_amount = !empty($result['net_amount']) ? $result['net_amount'] : 0;
+                    $bill_payment_mode = !empty($result['bill_payment_modes']) ? $result['bill_payment_modes'] : '';
+                    include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                    ?> 
                     <div class="divider mt-10 mb-10"></div> 
                     <table class="printablea4 sh-print-right-30" width="100%">                       
                         <?php if (($print) != 'yes') { ?>

@@ -52,6 +52,10 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                                 <td><?php echo $result['name'] . '' . $result['surname']; ?></td>
                             </tr>
                             <tr>
+                                <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                                <td><?php echo html_escape(!empty($result['refference']) ? $result['refference'] : '-'); ?></td>
+                            </tr>
+                            <tr>
                                 <th><?php echo $this->lang->line('organisation'); ?></th>
                                 <td><?php echo ($result['organisation_name'] ?: '-'); ?></td>
                             </tr>
@@ -171,7 +175,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                     </tbody>
                 </table>
 
-                <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
+                <?php
+                $bill_words_amount = !empty($result['gross_total']) ? $result['gross_total'] : $gross_total;
+                $bill_payment_mode = isset($payment_details) ? $payment_details : '';
+                include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+                ?>
 
             </div>
             </div>

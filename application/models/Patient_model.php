@@ -3934,6 +3934,7 @@ class Patient_model extends MY_Model
             $patient_details['reporting_doctor_surname'] = isset($ipd_details['reporting_doctor_surname']) ? $ipd_details['reporting_doctor_surname'] : '';
             $patient_details['reporting_doctor_employee_id'] = isset($ipd_details['reporting_doctor_employee_id']) ? $ipd_details['reporting_doctor_employee_id'] : '';
             $patient_details['discharge_date'] = isset($ipd_details['discharge_date']) ? $ipd_details['discharge_date'] : '';
+            $patient_details['refference'] = isset($ipd_details['refference']) ? $ipd_details['refference'] : '';
        }       
 
        if(!empty($opd_details)){
@@ -3962,6 +3963,7 @@ class Patient_model extends MY_Model
             $patient_details['organisation_id'] =$opd_details['organisation_id'];
             $patient_details['organisation_name'] =$opd_details['organisation_name'];
             $patient_details['as_of_date'] =$opd_details['as_of_date'];
+            $patient_details['refference'] = isset($opd_details['refference']) ? $opd_details['refference'] : '';
 
        }
        return $patient_details;
@@ -3985,7 +3987,7 @@ class Patient_model extends MY_Model
 
     public function getDetailsopdByCaseId($case_id)
     {
-        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,opd_details.id as opdid,opd_details.discharged,visit_details.appointment_date,organisation.organisation_name,patients.as_of_date')->from('patients')
+        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,opd_details.id as opdid,opd_details.discharged,visit_details.appointment_date,IFNULL(NULLIF(visit_details.refference, \'\'), opd_details.refference) as refference,organisation.organisation_name,patients.as_of_date')->from('patients')
             ->join('opd_details', 'opd_details.patient_id=patients.id', 'inner')
             ->join('organisation', 'organisation.id=patients.organisation_id', 'left')
             ->join('visit_details', 'visit_details.opd_details_id=opd_details.id', 'inner')
@@ -3999,7 +4001,7 @@ class Patient_model extends MY_Model
         $this->load->model('bill_model');
         $this->bill_model->ensureCreditBillingSchema();
 
-        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.patient_unique_id,patients.patient_type,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,ipd_details.id as ipdid,ipd_details.case_reference_id,`ipd_details`.`date`,ipd_details.discharged,ipd_details.credit_limit,ipd_details.case_type,ipd_details.cons_doctor,ipd_details.reporting_doctor,ipd_details.bed_group_id,bed.name as bed_name,bed.id as bed_id,bed_group.name as bedgroup_name,floor.name as floor_name,organisation.organisation_name,patients.as_of_date,cons_staff.name as doctor_name,cons_staff.surname as doctor_surname,cons_staff.employee_id as doctor_employee_id,department.department_name,report_staff.name as reporting_doctor_name,report_staff.surname as reporting_doctor_surname,report_staff.employee_id as reporting_doctor_employee_id,discharge_card.discharge_date')->from('patients')
+        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.patient_unique_id,patients.patient_type,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,ipd_details.id as ipdid,ipd_details.case_reference_id,`ipd_details`.`date`,ipd_details.discharged,ipd_details.credit_limit,ipd_details.case_type,ipd_details.cons_doctor,ipd_details.refference,ipd_details.reporting_doctor,ipd_details.bed_group_id,bed.name as bed_name,bed.id as bed_id,bed_group.name as bedgroup_name,floor.name as floor_name,organisation.organisation_name,patients.as_of_date,cons_staff.name as doctor_name,cons_staff.surname as doctor_surname,cons_staff.employee_id as doctor_employee_id,department.department_name,report_staff.name as reporting_doctor_name,report_staff.surname as reporting_doctor_surname,report_staff.employee_id as reporting_doctor_employee_id,discharge_card.discharge_date')->from('patients')
             ->join('ipd_details', 'ipd_details.patient_id=patients.id', 'inner')
             ->join('organisation', 'organisation.id=patients.organisation_id', 'left')
             ->join('bed', 'ipd_details.bed = bed.id', "left")

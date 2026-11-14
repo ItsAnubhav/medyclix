@@ -69,8 +69,8 @@ if ($print) {
                         <td><?php echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['date'])); ?></td>
                     </tr>
                     <tr>
-                        <th><?php echo $this->lang->line('doctor'); ?></th>
-                        <td><?php echo ($result['doctor_name'] ?: '-'); ?></td>
+                        <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                        <td><?php echo html_escape(trim(preg_replace('/\s*\([^)]*\)/', '', (string) $result['doctor_name'])) ?: '-'); ?></td>
                     </tr>
                     <?php if (!empty($prescription)) { ?>
                     <tr>
@@ -175,6 +175,11 @@ if ($print) {
                 </tr>
             </tfoot>
         </table>
+        <?php
+        $bill_words_amount = $result['net_amount'];
+        $bill_payment_mode = !empty($result['bill_payment_modes']) ? $result['bill_payment_modes'] : '';
+        include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+        ?>
 
     </div>
     </div>

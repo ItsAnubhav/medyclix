@@ -46,6 +46,10 @@ $tax_amt   = 0;
                                 <td><?php echo composePatientName($result->patient_name, $result->patient_id); ?></td>
                             </tr>
                             <tr>
+                                <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                                <td><?php echo html_escape(trim(preg_replace('/\s*\([^)]*\)/', '', (string) $result->doctor_name)) ?: '-'); ?></td>
+                            </tr>
+                            <tr>
                                 <th><?php echo $this->lang->line('age'); ?></th>
                                 <td><?php echo ($this->customlib->get_patient_current_age($result->patient_id) ?: '-'); ?></td>
                             </tr>
@@ -166,7 +170,9 @@ $tax_amt   = 0;
                 </table>
 
                 <?php
-                $generated_by = composeStaffNameByString($result->name, $result->surname, $result->employee_id);
+                $generated_by = trim($result->name . ' ' . $result->surname);
+                $bill_words_amount = ($amount - $result->discount) + $result->tax;
+                $bill_payment_mode = !empty($result->bill_payment_modes) ? $result->bill_payment_modes : $result->payment_mode;
                 include(APPPATH . 'views/admin/shared/_bill_print_close.php');
                 ?>
 

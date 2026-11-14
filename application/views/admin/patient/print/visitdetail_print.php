@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $print_date = date($this->customlib->getHospitalDateFormat(true, false));
 ?>
 <html lang="en">

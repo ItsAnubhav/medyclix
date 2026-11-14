@@ -67,7 +67,7 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                                     <td><span id="collected_by"><?php
                                         if (!empty($result['received_by']) && (int)$result['received_by'] > 0) {
                                             $staff_data = $this->staff_model->getstaff($result['received_by']);
-                                            echo html_escape(($staff_data["name"] ?? '') . " " . ($staff_data["surname"] ?? '') . " (" . ($staff_data["employee_id"] ?? '') . ")");
+                                            echo html_escape(trim(($staff_data["name"] ?? '') . " " . ($staff_data["surname"] ?? '')));
                                         } else {
                                             echo '-';
                                         }

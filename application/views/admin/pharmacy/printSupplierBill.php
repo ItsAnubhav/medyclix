@@ -149,6 +149,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = $net;
+                $bill_payment_mode = !empty($result['payment_mode']) ? $result['payment_mode'] : '';
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
 
                 <!-- ④ Cheque payment note (text block) -->
                 <?php if ($result['payment_mode'] == 'Cheque' && !empty($result['payment_note'])) { ?>

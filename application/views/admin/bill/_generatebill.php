@@ -1,4 +1,4 @@
-
+<?php if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); } ?>
 <?php $currency_symbol = $this->customlib->getHospitalCurrencyFormat(); ?>
 <div class="fixed-print-header">
   <?php if (!empty($print_details[0]['print_header'])) { ?>
@@ -30,6 +30,7 @@
                           <div class="col-md-6">
                               <p><?php echo $this->lang->line('patient'); ?> : <?php echo composePatientName($patient['patient_name'],$patient['patient_id']); ?></p>
                               <p><?php echo $this->lang->line('case_id'); ?> : <?php echo $case_id; ?></p>
+                              <p><?php echo $this->lang->line('reference_doctor'); ?> : <?php echo html_escape(!empty($patient['refference']) ? $patient['refference'] : '-'); ?></p>
                           </div>
                           <div class="col-md-6 text-end text-rtl-left">
                             <?php 
@@ -140,6 +141,10 @@
                               <?php } ?>
                              </tbody>
                           </table>
+                          <?php
+                          $bill_words_amount = $amount;
+                          include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                          ?>
                         </div>
                     </div>                 
                 </div>

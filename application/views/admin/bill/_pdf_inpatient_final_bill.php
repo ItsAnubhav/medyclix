@@ -1,4 +1,5 @@
 <?php
+if (!defined('SH_BILL_PRINT')) { define('SH_BILL_PRINT', true); }
 $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
 $patient = isset($patient) ? $patient : array();
 $case_id = isset($case_id) ? $case_id : '';
@@ -188,6 +189,10 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; paddi
     <td>: <?php echo html_escape($doctor_display); ?></td>
 </tr>
 <tr>
+    <td class="meta-label"><?php echo $this->lang->line('reference_doctor'); ?></td>
+    <td colspan="4">: <?php echo html_escape(!empty($patient['refference']) ? $patient['refference'] : '-'); ?></td>
+</tr>
+<tr>
     <td class="meta-label"><?php echo $this->lang->line('department'); ?></td>
     <td>: <?php echo html_escape(!empty($patient['department_name']) ? $patient['department_name'] : '-'); ?></td>
     <td class="meta-sep"></td>
@@ -217,6 +222,10 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111; paddi
     <td class="meta-label"><?php echo $this->lang->line('consultant_doctor'); ?></td>
     <td>: <?php echo html_escape($doctor_display); ?></td>
     <td class="meta-sep"></td>
+    <td class="meta-label"><?php echo $this->lang->line('reference_doctor'); ?></td>
+    <td>: <?php echo html_escape(!empty($patient['refference']) ? $patient['refference'] : '-'); ?></td>
+</tr>
+<tr>
     <td class="meta-label"><?php echo $this->lang->line('department'); ?></td>
     <td>: <?php echo html_escape(!empty($patient['department_name']) ? $patient['department_name'] : '-'); ?></td>
 </tr>
@@ -385,7 +394,11 @@ $net_due = $total_amount - $total_discount - $overall_disc_amt - $deposited + $r
 </div>
 <div class="section-clear"></div>
 
-<?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
+<?php
+$bill_words_amount = $total_amount - $total_discount - $overall_disc_amt;
+$bill_payment_mode = isset($transaction_data) ? $transaction_data : '';
+include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+?>
 <div class="letterhead-bottom"></div>
 </body>
 </html>

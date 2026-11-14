@@ -77,11 +77,137 @@ function uniqueFileName()
     return time() . uniqid(rand());
 }
 
+function sh_bill_show_codes()
+{
+    return !(defined('SH_BILL_PRINT') && SH_BILL_PRINT);
+}
+
+function sh_number_to_words($number)
+{
+    $number = (int) $number;
+    if ($number === 0) {
+        return 'Zero';
+    }
+
+    $ones = array(
+        '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+        'Seventeen', 'Eighteen', 'Nineteen',
+    );
+    $tens = array('', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety');
+
+    $two_digits = function ($value) use ($ones, $tens) {
+        $value = (int) $value;
+        if ($value < 20) {
+            return $ones[$value];
+        }
+        $ten = (int) floor($value / 10);
+        $one = $value % 10;
+        return $tens[$ten] . ($one ? ' ' . $ones[$one] : '');
+    };
+
+    $parts = array();
+    $crore = (int) floor($number / 10000000);
+    $number %= 10000000;
+    $lakh = (int) floor($number / 100000);
+    $number %= 100000;
+    $thousand = (int) floor($number / 1000);
+    $number %= 1000;
+    $hundred = (int) floor($number / 100);
+    $rest = $number % 100;
+
+    if ($crore) {
+        $parts[] = sh_number_to_words($crore) . ' Crore';
+    }
+    if ($lakh) {
+        $parts[] = $two_digits($lakh) . ' Lakh';
+    }
+    if ($thousand) {
+        $parts[] = $two_digits($thousand) . ' Thousand';
+    }
+    if ($hundred) {
+        $parts[] = $ones[$hundred] . ' Hundred';
+    }
+    if ($rest) {
+        $parts[] = $two_digits($rest);
+    }
+
+    return trim(implode(' ', $parts));
+}
+
+function amountInWords($amount)
+{
+    $amount = round((float) $amount, 2);
+    $negative = $amount < 0;
+    $amount = abs($amount);
+    $rupees = (int) floor($amount + 0.0000001);
+    $paise = (int) round(($amount - $rupees) * 100);
+    if ($paise === 100) {
+        $rupees++;
+        $paise = 0;
+    }
+
+    $text = 'Rupees ' . sh_number_to_words($rupees);
+    if ($paise > 0) {
+        $text .= ' and ' . sh_number_to_words($paise) . ' Paise';
+    }
+    $text .= ' Only';
+
+    return $negative ? 'Minus ' . $text : $text;
+}
+
+function sh_payment_mode_label($modes)
+{
+    $CI = &get_instance();
+    $list = array();
+
+    $push = function ($value) use (&$list) {
+        $value = trim((string) $value);
+        if ($value !== '') {
+            $list[] = $value;
+        }
+    };
+
+    if (is_object($modes)) {
+        $modes = isset($modes->payment_mode) ? $modes->payment_mode : '';
+    }
+
+    if (is_array($modes)) {
+        foreach ($modes as $item) {
+            if (is_object($item)) {
+                $push(isset($item->payment_mode) ? $item->payment_mode : '');
+            } elseif (is_array($item)) {
+                $push(isset($item['payment_mode']) ? $item['payment_mode'] : '');
+            } else {
+                foreach (preg_split('/\s*,\s*/', (string) $item) as $part) {
+                    $push($part);
+                }
+            }
+        }
+    } else {
+        foreach (preg_split('/\s*,\s*/', (string) $modes) as $part) {
+            $push($part);
+        }
+    }
+
+    $labels = array();
+    foreach (array_unique($list) as $mode) {
+        $key = strtolower($mode);
+        $label = $CI->lang->line($key);
+        if ($label === false || $label === '' || $label === $key) {
+            $label = $mode;
+        }
+        $labels[] = $label;
+    }
+
+    return $labels ? implode(', ', $labels) : '-';
+}
+
 function composePatientName($patient_name, $patient_id)
 {
     $name = "";
     if ($patient_name != "") {
-        $name = ($patient_id != "") ? $patient_name . " (" . $patient_id . ")" : $patient_name;
+        $name = (sh_bill_show_codes() && $patient_id != "") ? $patient_name . " (" . $patient_id . ")" : $patient_name;
     }
 
     return $name;
@@ -101,7 +227,10 @@ function composeStaffNameByString($staff_name, $staff_surname, $staff_employeid)
 {
     $name = "";
     if ($staff_name != "") {
-        $name = ($staff_surname == "") ? $staff_name . " (" . $staff_employeid . ")" : $staff_name . " " . $staff_surname . " (" . $staff_employeid . ")";
+        $name = ($staff_surname == "") ? $staff_name : $staff_name . " " . $staff_surname;
+        if (sh_bill_show_codes() && $staff_employeid != "") {
+            $name .= " (" . $staff_employeid . ")";
+        }
     }
 
     return $name;

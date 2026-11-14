@@ -60,7 +60,7 @@ $print_date = date($this->customlib->getHospitalDateFormat(true, false));
                         <th><?php echo $this->lang->line('address'); ?></th>
                         <td><?php echo ($result['address'] ?: '-'); ?></td>
                         <th><?php echo $this->lang->line('consultant_doctor'); ?></th>
-                        <td><?php echo ($result['name'] ? $result['name'] . ' ' . $result['surname'] . ' (' . $result['employee_id'] . ')' : '-'); ?></td>
+                        <td><?php echo ($result['name'] ? trim($result['name'] . ' ' . $result['surname']) : '-'); ?></td>
                     </tr>
                     <tr>
                         <th><?php echo $this->lang->line('known_allergies'); ?></th>

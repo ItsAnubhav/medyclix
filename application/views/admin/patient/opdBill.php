@@ -49,6 +49,10 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                             <td width="25%"><?php echo $result["name"] . " " . $result["surname"]; ?></td>
                         </tr>
                         <tr>
+                            <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                            <td colspan="3"><?php echo html_escape(!empty($result['refference']) ? $result['refference'] : '-'); ?></td>
+                        </tr>
+                        <tr>
                             <th width="25%"><?php echo $this->lang->line('appointment')." ".$this->lang->line('date'); ?></th>
                             <td width="25%"><?php  if (!empty($result['appointment_date'])) {
                                         echo date($this->customlib->getHospitalDateFormat(true, true), strtotime($result['appointment_date'])); } ?></td>
@@ -217,7 +221,11 @@ $currency_symbol = $this->customlib->getHospitalCurrencyFormat();
                         </tr>
                     </table>
                     <div class="divider mt-10 mb-10"></div>
-                    <?php include(APPPATH . 'views/admin/shared/_bill_print_close.php'); ?>
+                    <?php
+                    $bill_words_amount = !empty($billstatus['gross_total']) ? $billstatus['gross_total'] : (isset($gross_total) ? $gross_total : 0);
+                    $bill_payment_mode = !empty($result['bill_paymode']) ? $result['bill_paymode'] : (isset($payment_details) ? $payment_details : '');
+                    include(APPPATH . 'views/admin/shared/_bill_print_close.php');
+                    ?>
                     <div class="footer-fixed"> 
                         <?php if (!empty($print_details[0]['print_footer'])) { ?>    
                             <p class="ptt10"><?php echo $print_details[0]['print_footer']; ?></p>

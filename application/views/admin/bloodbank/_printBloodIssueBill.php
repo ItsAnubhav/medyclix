@@ -124,6 +124,11 @@ $tax_amt = calculatePercent($total_discount_amount, $blood_issues_detail['tax_pe
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = ($blood_issues_detail['amount'] - $discont_amt) + $tax_amt;
+                $bill_payment_mode = !empty($blood_issues_detail['bill_payment_modes']) ? $blood_issues_detail['bill_payment_modes'] : '';
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
 
 
             </div>

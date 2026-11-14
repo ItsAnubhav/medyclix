@@ -132,6 +132,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = $result['net_amount'];
+                $bill_payment_mode = !empty($result['bill_payment_modes']) ? $result['bill_payment_modes'] : '';
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
 
                 <?php if (!empty($result['note'])) { ?>
                 <div class="sh-note-box">

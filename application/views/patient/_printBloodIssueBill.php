@@ -113,6 +113,11 @@ $total_due    = $net_amount - (float)$blood_issues_detail['total_deposit'];
                     </tr>
                 </tfoot>
             </table>
+            <?php
+            $bill_words_amount = $net_amount;
+            $bill_payment_mode = !empty($blood_issues_detail['bill_payment_modes']) ? $blood_issues_detail['bill_payment_modes'] : '';
+            include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+            ?>
 
             <!-- Signatures -->
             <div class="sh-print-signatures">

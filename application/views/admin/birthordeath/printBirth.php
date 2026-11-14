@@ -69,7 +69,7 @@ $no_pic = "uploads/patient_images/no_image.png";
                     <th><?php echo $this->lang->line('weight'); ?></th>
                     <td><?php echo html_escape($result['weight']); ?></td>
                     <th><?php echo $this->lang->line('mother_name'); ?></th>
-                    <td><?php echo html_escape($result['patient_name']) . ' (' . html_escape($result['patient_id']) . ')'; ?></td>
+                    <td><?php echo html_escape($result['patient_name']); ?></td>
                 </tr>
                 <tr>
                     <th><?php echo $this->lang->line('case_id'); ?></th>

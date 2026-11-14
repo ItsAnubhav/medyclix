@@ -49,7 +49,7 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         <?php } ?>
                         <tr>
                             <th><?php echo $this->lang->line('patient_name'); ?></th>
-                            <td><?php echo ($result['patient_name'] ? $result['patient_name'] . ' (' . $result['patient_id'] . ')' : '-'); ?></td>
+                            <td><?php echo ($result['patient_name'] ? $result['patient_name'] : '-'); ?></td>
                             <th><?php echo $this->lang->line('age'); ?></th>
                             <td><?php echo ($this->customlib->get_patient_current_age($result['patient_id']) ?: '-'); ?></td>
                             <th><?php echo $this->lang->line('gender'); ?></th>
@@ -69,7 +69,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                         <tr>
                             <th><?php echo $this->lang->line('consultant_doctor'); ?></th>
-                            <td colspan="5"><?php echo ($result['name'] ? $result['name'] . ' ' . $result['surname'] . ' (' . $result['employee_id'] . ')' : '-'); ?></td>
+                            <td colspan="5"><?php echo ($result['name'] ? trim($result['name'] . ' ' . $result['surname']) : '-'); ?></td>
+                        </tr>
+                        <tr>
+                            <th><?php echo $this->lang->line('reference_doctor'); ?></th>
+                            <td colspan="5"><?php echo html_escape(!empty($result['refference']) ? $result['refference'] : '-'); ?></td>
                         </tr>
                         <?php if (!empty($fields)) { foreach ($fields as $fields_value) { ?>
                         <tr>
@@ -148,6 +152,11 @@ include(APPPATH . 'views/admin/shared/_print_css.php');
                         </tr>
                     </tfoot>
                 </table>
+                <?php
+                $bill_words_amount = $net_amt;
+                $bill_payment_mode = (isset($transaction) && !empty($transaction->payment_mode)) ? $transaction->payment_mode : '';
+                include(APPPATH . 'views/admin/shared/_bill_amount_words.php');
+                ?>
                 <?php } ?>
 
 
