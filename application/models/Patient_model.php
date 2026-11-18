@@ -3987,7 +3987,7 @@ class Patient_model extends MY_Model
 
     public function getDetailsopdByCaseId($case_id)
     {
-        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,opd_details.id as opdid,opd_details.discharged,visit_details.appointment_date,IFNULL(NULLIF(visit_details.refference, \'\'), opd_details.refference) as refference,organisation.organisation_name,patients.as_of_date')->from('patients')
+        return $this->db->select('patients.id as patient_id,patients.patient_name,patients.dob,patients.age,patients.month,patients.day,patients.image,patients.mobileno,patients.email,patients.gender,patients.blood_group,patients.address,patients.guardian_name,patients.is_dead,patients.insurance_id,patients.insurance_validity,patients.organisation_id,opd_details.id as opdid,opd_details.discharged,visit_details.appointment_date,visit_details.refference as refference,organisation.organisation_name,patients.as_of_date')->from('patients')
             ->join('opd_details', 'opd_details.patient_id=patients.id', 'inner')
             ->join('organisation', 'organisation.id=patients.organisation_id', 'left')
             ->join('visit_details', 'visit_details.opd_details_id=opd_details.id', 'inner')
