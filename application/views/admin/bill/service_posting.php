@@ -21,8 +21,8 @@ $page_title  = ($posting_type === 'opd')
 .sp-table .form-control { height: 30px; padding: 2px 6px; font-size: 12px; width: 100%; min-width: 56px; }
 .sp-table .sp-name-input { min-width: 160px; }
 .sp-table .sp-code-input { min-width: 100px; }
-.sp-table .sp-date-cell { min-width: 168px; white-space: nowrap; }
-#sp_service_date { width: 175px; min-width: 175px; }
+.sp-table .sp-date-cell { min-width: 188px; white-space: nowrap; }
+.sp-table .sp-service-date, #sp_service_date { width: 175px; min-width: 175px; }
 .sp-totals-bar { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
 .sp-totals-inline { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
 .sp-totals-inline .sp-titem.sp-disc-edit { min-width: 92px; }
@@ -527,6 +527,10 @@ $page_title  = ($posting_type === 'opd')
             var remarksInput = canEdit
                 ? '<input type="text" class="form-control form-control-sm sp-remarks" value="' + $('<div>').text(row.remarks || '').html() + '">'
                 : $('<div>').text(row.remarks || '').html();
+            var dateValue = $('<div>').text(row.service_date || '').html();
+            var dateCell = canEdit
+                ? '<input type="text" class="form-control form-control-sm datetime sp-service-date" value="' + dateValue + '" autocomplete="off" title="<?php echo $this->lang->line('date'); ?>">'
+                : dateValue;
             var doctorInput = doctorSelectHtml(row.reporting_doctor, canEdit);
 
             $body.append(
@@ -542,7 +546,7 @@ $page_title  = ($posting_type === 'opd')
                 '<td class="text-end sp-disc-amt-disp">' + money(row.discount_amount) + '</td>' +
                 '<td class="text-end fw-semibold sp-net-disp">' + money(row.net_amount) + '</td>' +
                 '<td>' + doctorInput + '</td>' +
-                '<td class="sp-date-cell">' + $('<div>').text(row.service_date || '').html() + '</td>' +
+                '<td class="sp-date-cell">' + dateCell + '</td>' +
                 '<td>' + remarksInput + '</td>' +
                 '<td class="text-nowrap">' + saveBtn + '</td>' +
                 '</tr>'
@@ -630,7 +634,7 @@ $page_title  = ($posting_type === 'opd')
         $('#sp_overall_disc_pct').val('0.00');
         $('#sp_overall_disc_amt').val('0.00');
         overallDiscMode = 'percent';
-        $('#sp_service_code').val('').prop('disabled', false);
+        $('#sp_service_code').val('').prop('disabled', false).find('option').prop('disabled', false);
         $('#sp_item_id').val('');
         $('#sp_service_search').val('').prop('disabled', true);
         $('#sp_rate').val('');
@@ -664,17 +668,21 @@ $page_title  = ($posting_type === 'opd')
         }
         mappedType = $.trim(mappedType || '');
         var $select = $('#sp_service_code');
+        $select.prop('disabled', false);
+        $select.find('option').prop('disabled', false);
         if (mappedType && $select.find('option').filter(function () {
             return $(this).val() === mappedType;
         }).length) {
-            if (isNewCase || !$select.val()) {
-                $select.prop('disabled', false);
+            // Bed group still defaults the charge type. Pharmacy stays selectable.
+            $select.find('option').each(function () {
+                var val = $(this).val();
+                $(this).prop('disabled', !!val && val !== mappedType && val !== 'Pharmacy');
+            });
+            if (isNewCase || !$select.val() || $select.find('option:selected').prop('disabled')) {
                 $select.val(mappedType).trigger('change');
             }
-            $select.prop('disabled', true);
             return;
         }
-        $select.prop('disabled', false);
         if (isNewCase) {
             $select.val('').trigger('change');
         }
@@ -787,6 +795,10 @@ $page_title  = ($posting_type === 'opd')
                     response($.map(data.result || [], function (item) {
                         return { label: item.name + ' — ' + item.rate, value: item.name, id: item.id, rate: item.rate };
                     }));
+                },
+                error: function () {
+                    response([]);
+                    errorMsg(<?php echo json_encode($this->lang->line('error_occurred_please_try_again')); ?>);
                 }
             });
         },
@@ -833,6 +845,9 @@ $page_title  = ($posting_type === 'opd')
                 } else {
                     errorMsg(res.message || <?php echo json_encode($this->lang->line('warning_message')); ?>);
                 }
+            },
+            error: function () {
+                errorMsg(<?php echo json_encode($this->lang->line('error_occurred_please_try_again')); ?>);
             }
         });
     });
@@ -856,7 +871,8 @@ $page_title  = ($posting_type === 'opd')
                 apply_charge: $tr.find('.sp-rate').val(),
                 discount_percentage: $tr.find('.sp-disc').val(),
                 remarks: $tr.find('.sp-remarks').val(),
-                reporting_doctor: $tr.find('.sp-reporting-doctor').val() || ''
+                reporting_doctor: $tr.find('.sp-reporting-doctor').val() || '',
+                service_date: $tr.find('.sp-service-date').val() || ''
             }),
             success: function (res) {
                 if (res.status == 1) {
@@ -1032,7 +1048,8 @@ $page_title  = ($posting_type === 'opd')
                 apply_charge: $tr.find('.sp-rate').val(),
                 discount_percentage: $tr.find('.sp-disc').val(),
                 remarks: $tr.find('.sp-remarks').val(),
-                reporting_doctor: $(this).val() || ''
+                reporting_doctor: $(this).val() || '',
+                service_date: $tr.find('.sp-service-date').val() || ''
             }),
             success: function (res) {
                 if (res.status == 1) {

@@ -806,6 +806,10 @@ class Bill extends Admin_Controller
                 'discount_percentage' => $discount_percentage,
                 'amount'              => $amount,
             );
+            $posted_date = trim((string) $this->input->post('service_date'));
+            if ($posted_date !== '') {
+                $update['date'] = $this->parsePostedServiceDate($posted_date);
+            }
             $this->charge_model->add_charges($update);
             echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => $amount));
             return;
@@ -5666,12 +5670,14 @@ class Bill extends Admin_Controller
         }
 
         if ($module === 'pharmacy') {
+            $posted_date = trim((string) $this->input->post('service_date'));
             $result = $this->bill_model->updatePharmacyBillLine(
                 $id,
                 $this->input->post('qty'),
                 $this->input->post('apply_charge'),
                 $this->input->post('discount_percentage'),
-                $this->input->post('remarks')
+                $this->input->post('remarks'),
+                $posted_date !== '' ? $this->parsePostedServiceDate($posted_date) : null
             );
             echo json_encode($result['status']
                 ? array('status' => 1, 'message' => $this->lang->line('success_message'), 'amount' => isset($result['amount']) ? $result['amount'] : null)
@@ -5685,7 +5691,14 @@ class Bill extends Admin_Controller
             return;
         }
 
-        // Pathology / Radiology: reporting doctor already saved above
+        $posted_date = trim((string) $this->input->post('service_date'));
+        if ($posted_date !== '' && $id > 0 && ($module === 'pathology' || $module === 'radiology')) {
+            $table = ($module === 'pathology') ? 'pathology_billing' : 'radiology_billing';
+            $this->db->where('id', $id)->update($table, array(
+                'date' => $this->parsePostedServiceDate($posted_date),
+            ));
+        }
+
         echo json_encode(array('status' => 1, 'message' => $this->lang->line('success_message')));
     }
 

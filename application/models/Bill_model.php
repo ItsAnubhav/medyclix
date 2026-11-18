@@ -998,7 +998,7 @@ class Bill_model extends MY_Model
     /**
      * Update pharmacy bill header/detail for Service Posting edit.
      */
-    public function updatePharmacyBillLine($bill_id, $qty, $rate, $discount_percentage = null, $note = null)
+    public function updatePharmacyBillLine($bill_id, $qty, $rate, $discount_percentage = null, $note = null, $service_date = null)
     {
         $bill_id = (int) $bill_id;
         $bill = $this->db->where('id', $bill_id)->get('pharmacy_bill_basic')->row_array();
@@ -1070,6 +1070,9 @@ class Bill_model extends MY_Model
         );
         if ($note !== null) {
             $update_bill['note'] = $note;
+        }
+        if ($service_date !== null && trim((string) $service_date) !== '') {
+            $update_bill['date'] = $this->normalizeServiceDateTime($service_date);
         }
         $this->db->where('id', $bill_id)->update('pharmacy_bill_basic', $update_bill);
 
@@ -1354,7 +1357,11 @@ class Bill_model extends MY_Model
         }
 
         if ($service_code === 'pharmacy') {
-            $this->db->select('medicine_batch_details.id, pharmacy.medicine_name, medicine_batch_details.batch_no, medicine_batch_details.available_quantity, medicine_batch_details.sale_rate, medicine_batch_details.unit_sale_rate, medicine_batch_details.tax, medicine_batch_details.expiry, medicine_batch_details.packing_qty');
+            $batch_cols = 'medicine_batch_details.id, pharmacy.medicine_name, medicine_batch_details.batch_no, medicine_batch_details.available_quantity, medicine_batch_details.sale_rate, medicine_batch_details.tax, medicine_batch_details.expiry, medicine_batch_details.packing_qty';
+            if ($this->db->field_exists('unit_sale_rate', 'medicine_batch_details')) {
+                $batch_cols .= ', medicine_batch_details.unit_sale_rate';
+            }
+            $this->db->select($batch_cols);
             $this->db->from('medicine_batch_details');
             $this->db->join('pharmacy', 'pharmacy.id = medicine_batch_details.pharmacy_id', 'inner');
             $this->db->where('medicine_batch_details.available_quantity >', 0);
@@ -1430,6 +1437,12 @@ class Bill_model extends MY_Model
             return array('status' => false, 'message' => 'Invalid pharmacy quantity or batch.');
         }
 
+        $CI = &get_instance();
+        $CI->load->model('pharmacy_model');
+        if (method_exists($CI->pharmacy_model, 'ensureWalkinBillingSchema')) {
+            $CI->pharmacy_model->ensureWalkinBillingSchema();
+        }
+
         $this->db->trans_start();
         $batch = $this->db->select('medicine_batch_details.*, pharmacy.medicine_name, pharmacy.id as pharmacy_id')
             ->from('medicine_batch_details')
@@ -1465,13 +1478,18 @@ class Bill_model extends MY_Model
             ->where('ipd_details.case_reference_id', (int) $case_id)
             ->order_by('ipd_details.id', 'desc')->limit(1)->get()->row_array();
 
+        $customer_name = !empty($patient['patient_name']) ? $patient['patient_name'] : '';
+        $doctor_name = !empty($ipd) ? trim($ipd['doctor_name'] . ' ' . $ipd['doctor_surname']) : '';
+        $customer_name = function_exists('mb_substr') ? mb_substr($customer_name, 0, 100) : substr($customer_name, 0, 100);
+        $doctor_name = function_exists('mb_substr') ? mb_substr($doctor_name, 0, 50) : substr($doctor_name, 0, 50);
+
         $this->db->insert('pharmacy_bill_basic', array(
             'date'                => $this->normalizeServiceDateTime($service_date),
             'patient_id'          => (int) $patient_id,
             'case_reference_id'   => (int) $case_id,
-            'customer_name'       => !empty($patient['patient_name']) ? $patient['patient_name'] : '',
+            'customer_name'       => $customer_name,
             'customer_type'       => 'patient',
-            'doctor_name'         => !empty($ipd) ? trim($ipd['doctor_name'] . ' ' . $ipd['doctor_surname']) : '',
+            'doctor_name'         => $doctor_name,
             'file'                => '',
             'total'               => $subtotal,
             'discount_percentage' => $discount_percentage,
@@ -1510,7 +1528,12 @@ class Bill_model extends MY_Model
 
         $this->db->trans_complete();
         if ($this->db->trans_status() === false) {
-            return array('status' => false, 'message' => 'Unable to create pharmacy bill.');
+            $error = $this->db->error();
+            $message = 'Unable to create pharmacy bill.';
+            if (!empty($error['message'])) {
+                $message .= ' ' . $error['message'];
+            }
+            return array('status' => false, 'message' => $message);
         }
 
         return array(
